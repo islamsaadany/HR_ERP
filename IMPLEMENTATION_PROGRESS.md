@@ -7,7 +7,7 @@
 ## Status at a glance
 | Phase | Status |
 |-------|--------|
-| 0 — Docs & specs | 🟡 In progress (spec-kit adopted; specs 001–004 done) |
+| 0 — Docs & specs | 🟡 In progress (spec-kit adopted; specs 001–005 done) |
 | 1 — Foundation (+ My Documents) | ⬜ Not started |
 | 2 — Team Directory | ⬜ Not started |
 | 3 — Onboarding | ⬜ Not started |
@@ -38,9 +38,10 @@
 | 002 | Onboarding — Role-Aware New-Joiner Journey | ✅ clarified, plan-ready |
 | 003 | Team Directory (V1) | ✅ complete, plan-ready |
 | 004 | Handbook & Resources | ✅ clarified, plan-ready |
+| 005 | Time-Off / Leave Management (V1) | ✅ complete, plan-ready |
 
 ## Next up
-1. Continue formalizing modules as specs (Time-Off · Dashboard · Benefits*) — one at a time.
+1. Continue formalizing modules as specs (Dashboard · Benefits*) — one at a time.
    *Benefits still needs per-benefit limits + medical handling; ceilings already captured.
    Note: personal document upload (My Documents) folded into Foundation spec 001; no standalone HR Documents module.
 2. Or begin `/speckit-plan` on Foundation to move toward the build.
