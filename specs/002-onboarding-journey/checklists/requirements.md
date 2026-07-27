@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — 1 open (FR-019 completion model: self-attested vs verified)
+- [x] No [NEEDS CLARIFICATION] markers remain — resolved 2026-07-27 (FR-019: all completions self-attested)
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,5 +31,5 @@
 
 ## Notes
 
-- One clarification remains (FR-019: are all completions self-attested, or do some items require
-  HR/manager confirmation?). Genuine decision surfaced to the user — resolve before `/speckit-plan`.
+- All clarifications resolved 2026-07-27 (FR-019: self-attested completion). Spec is ready for
+  `/speckit-plan`.

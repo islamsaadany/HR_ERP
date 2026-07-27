@@ -8,6 +8,12 @@
 
 **Input**: User description: "Onboarding — a guided, role-aware new-joiner journey built on the employee registry, and the guided front door into the rest of the app. Timeline stages (Day 1 / Week 1 / First month / 30-60-90), activities typed as Policy (acknowledge) or Action (complete), a common core plus role tracks (Consulting first), progress tracking, HR authoring, and cross-module links."
 
+## Clarifications
+
+### Session 2026-07-27
+
+- **Q: Completion model — self-attested or verified?** → All items are **self-attested** by the joiner. Acknowledging a policy or completing an action is done by the employee; no HR/manager sign-off is required for an item to count.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - New joiner works through their onboarding (Priority: P1)
@@ -134,7 +140,7 @@ The joiner's manager (derived from the org chart) is the counterpart for the int
 
 **Access & scope**
 - **FR-018**: The system MUST show a joiner only their own journey and progress; HR Admin / Super User may view any joiner's.
-- **FR-019**: Completion is [NEEDS CLARIFICATION: self-attested by the employee for all items, OR do certain items (e.g., document upload, manager intro 1:1, 30/60/90 check-in) require confirmation by HR or the manager before they count as done?].
+- **FR-019**: Completion is **self-attested** by the employee for all items — acknowledging a Policy or marking an Action done is done by the joiner themselves; no HR or manager sign-off is required for an item to count (confirmed 2026-07-27).
 
 ### Key Entities *(include if feature involves data)*
 

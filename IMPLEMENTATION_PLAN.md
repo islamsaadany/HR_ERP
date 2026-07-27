@@ -36,14 +36,20 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 - **2026 — Benefits data:** real rate card / ceilings / tenure bands come later; build an admin config screen + placeholder seed meanwhile (Decision E).
 - **2026 — Learning Track:** Phase 2 (Decision F).
 - **2026-07-27 — Repo access resolved:** planning set recreated directly in HR_ERP.
+- **2026-07-27 — Spec-kit adopted:** `specs/` is the single spec home (`product-specs/` retired); constitution authored from house rules; per-feature flow specify→clarify→plan→tasks→implement.
+- **2026-07-27 — Roles:** Employee / HR Admin / Super User (superset). Manager is a capability derived from the org chart, not a role.
+- **2026-07-27 — Modules added:** Handbook/Knowledge Base (its own module, built from the 118-page Onboarding Kit) and Time-Off/Leave Management (request → direct-manager approval). Learning Track is a v1 placeholder.
+- **2026-07-27 — B/C (type & tenure):** admin-set on the profile, authoritative; tenure is an HR-set enum of four bands (6mo–2y / 2–4y / 4–7y / 7–10y) now, derive-from-start-date later.
+- **2026-07-27 — Benefits ceilings confirmed (EGP):** FT 20/30/45/65k · PT 14/21/30/42k across the four bands. Basket has 4 categories (Gym · Mobile · Personal Medical · Schooling); FT 50% single-benefit cap; PT = max 2 picks. Per-benefit limits + medical handling still pending.
+- **2026-07-27 — D (admin grant):** `ADMIN_EMAILS` allowlist bootstrap, then in-app promotion by a Super User.
+- **2026-07-27 — Employee self-edit:** employees may edit only their own contact field(s) (phone); all else HR-managed.
+- **2026-07-27 — Onboarding:** timeline stages (Day 1 / Week 1 / First month / 30-60-90); Policy vs Action item types; common core + role tracks (Consulting first); self-attested completion.
+- **2026-07-27 — Login vs directory:** login stays domain-locked to `@forefront.consulting`; people with placeholder external emails appear in the directory but can't sign in until they get a company address.
 
-### Open (defaults assumed; confirm to finalize before writing detailed specs)
-- **A · Design language** — *default:* the benefits selector palette (paper/pine, Fraunces + Hanken Grotesk) product-wide. Alternative: the reference tool's navy/gold.
-- **B · Employment type & tenure source** — *default:* admin-set on the employee profile (authoritative), since it sets real benefit money. Alternative: self-selected.
-- **C · Tenure band derivation** — *default:* admin-set enum now; derive-from-`startDate` later. Alternative: derive immediately from start date.
-- **D · Admin grant mechanism** — *default:* `ADMIN_EMAILS` allowlist to bootstrap, then in-app promotion by an existing admin. Alternative: manual DB/SQL only.
-- **E · Real benefit figures** — *resolved:* user will share later; build admin config + placeholder seed meanwhile.
-- **F · Learning Track timing** — *resolved:* stays Phase 2.
+### Resolved earlier / Open
+- **A · Design language** — *default (unconfirmed):* benefits paper/pine palette product-wide. Alternative: reference navy/gold. **Still to confirm.**
+- **E · Real benefit figures** — ceilings now confirmed; per-benefit monetary limits + medical-insurance handling still pending.
+- **F · Learning Track timing** — *resolved:* stays Phase 2 (placeholder present in v1).
 
 ---
 
