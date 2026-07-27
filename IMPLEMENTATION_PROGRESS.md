@@ -39,7 +39,7 @@
 | 003 | Team Directory (V1) | ✅ complete, plan-ready |
 
 ## Next up
-1. Continue formalizing modules as specs (Handbook · Team Directory · HR Documents · Time-Off · Dashboard · Benefits*) — one at a time.
+1. Continue formalizing modules as specs (Handbook · HR Documents · Time-Off · Dashboard · Benefits*) — one at a time.
    *Benefits still needs per-benefit limits + medical handling; ceilings already captured.
 2. Or begin `/speckit-plan` on Foundation to move toward the build.
 
