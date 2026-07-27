@@ -14,16 +14,16 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 | Phase | Deliverable | Notes |
 |-------|-------------|-------|
-| **0 — Docs & specs** | The four files + `product-specs/` (overview now; 8 module specs after decisions A–F) | *in progress* |
-| **1 — Foundation** | Scaffold Next+Prisma+Tailwind; NextAuth Google (domain-locked); roles; `User`; app shell; design tokens; seed | |
-| **2 — Team Directory** | Simplest module; validates identity + registry + shell; member cards + org chart | |
-| **3 — Onboarding** | Employee wizard + progress; admin content authoring | |
-| **4 — Benefits (admin config)** | Plan-year window, pool ceilings, rate card, guaranteed benefits, catalog, tenure bands | Selector is meaningless without these |
-| **5 — Benefits (employee selector)** | Port the HTML selector to React; autosave + submit; **server-side rule enforcement** | The money module |
-| **6 — HR Documents** | Company + personal docs; Vercel Blob upload/download | |
-| **7 — Dashboard + polish** | Onboarding progress, benefits status, quick links, announcements; responsive/print pass | |
-| **8 — Learning Track** | Phase-2 product | |
-| **9 — Handoff** | Docs current; deploy | |
+| **0 — Docs & specs** | Four files + spec-kit adopted; per-module specs via `/speckit-specify` | *in progress* |
+| **1 — Foundation** | Scaffold Next+Prisma+Tailwind; NextAuth Google (domain-locked); roles; `User`; **My Documents** (personal uploads); app shell; design tokens; seed | spec `001` |
+| **2 — Team Directory** | Active-employee directory; name search + department filter; person view (V1, no org chart) | spec `003` |
+| **3 — Onboarding** | Role-aware timeline journey (Policy/Action items); admin authoring; cross-module links | spec `002` |
+| **4 — Handbook & Resources** | Structured handbook sections + downloadable Resources (company profile, templates, policies) | content from the Onboarding Kit |
+| **5 — Time-Off / Leave** | Request → direct-manager approval; balance tracking | new module |
+| **6 — Benefits (admin config)** | Plan-year window, pool ceilings, fixed benefits, basket catalog, medical handling | Selector is meaningless without these |
+| **7 — Benefits (employee selector)** | Port the HTML selector to React; autosave + submit; **server-side rule enforcement** | The money module |
+| **8 — Dashboard + polish** | Onboarding progress, benefits status, quick links, announcements; responsive pass | |
+| **9 — Learning Track (placeholder) + Handoff** | Placeholder surface; docs current; deploy | Phase-2 for full Learning Track |
 
 ## Decisions log
 
@@ -45,6 +45,7 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 - **2026-07-27 — Employee self-edit:** employees may edit only their own contact field(s) (phone); all else HR-managed.
 - **2026-07-27 — Onboarding:** timeline stages (Day 1 / Week 1 / First month / 30-60-90); Policy vs Action item types; common core + role tracks (Consulting first); self-attested completion.
 - **2026-07-27 — Login vs directory:** login stays domain-locked to `@forefront.consulting`; people with placeholder external emails appear in the directory but can't sign in until they get a company address.
+- **2026-07-27 — Documents reshaped:** no standalone "HR Documents" module. Personal document upload becomes **My Documents** inside the employee Profile (Foundation, spec `001`). Company-wide content (policies, handbook, company profile, templates) lives in a **Handbook & Resources** module (structured handbook + a downloadable Resources area). Onboarding links updated accordingly.
 
 ### Resolved earlier / Open
 - **A · Design language** — *default (unconfirmed):* benefits paper/pine palette product-wide. Alternative: reference navy/gold. **Still to confirm.**

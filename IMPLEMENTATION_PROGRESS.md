@@ -8,15 +8,15 @@
 | Phase | Status |
 |-------|--------|
 | 0 — Docs & specs | 🟡 In progress (spec-kit adopted; specs 001–003 done) |
-| 1 — Foundation | ⬜ Not started |
+| 1 — Foundation (+ My Documents) | ⬜ Not started |
 | 2 — Team Directory | ⬜ Not started |
 | 3 — Onboarding | ⬜ Not started |
-| 4 — Benefits (admin config) | ⬜ Not started |
-| 5 — Benefits (employee selector) | ⬜ Not started |
-| 6 — HR Documents | ⬜ Not started |
-| 7 — Dashboard + polish | ⬜ Not started |
-| 8 — Learning Track (Phase 2) | ⬜ Not started |
-| 9 — Handoff | ⬜ Not started |
+| 4 — Handbook & Resources | ⬜ Not started |
+| 5 — Time-Off / Leave | ⬜ Not started |
+| 6 — Benefits (admin config) | ⬜ Not started |
+| 7 — Benefits (employee selector) | ⬜ Not started |
+| 8 — Dashboard + polish | ⬜ Not started |
+| 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
 ## Phase 0 — Docs & specs
 - [x] Repo access to `islamsaadany/HR_ERP` confirmed and cloned.
@@ -39,8 +39,9 @@
 | 003 | Team Directory (V1) | ✅ complete, plan-ready |
 
 ## Next up
-1. Continue formalizing modules as specs (Handbook · HR Documents · Time-Off · Dashboard · Benefits*) — one at a time.
+1. Continue formalizing modules as specs (Handbook & Resources · Time-Off · Dashboard · Benefits*) — one at a time.
    *Benefits still needs per-benefit limits + medical handling; ceilings already captured.
+   Note: personal document upload (My Documents) folded into Foundation spec 001; no standalone HR Documents module.
 2. Or begin `/speckit-plan` on Foundation to move toward the build.
 
 ## Notes / carry-over

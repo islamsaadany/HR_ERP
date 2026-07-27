@@ -25,31 +25,32 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 
 ## 3. Modules → features → data (v1)
 
-### Foundation (cross-cutting)
-- Google SSO (domain-locked), app shell + left nav, personal profile view.
-- Roles: `EMPLOYEE`, `ADMIN`. Admin bootstrap via `ADMIN_EMAILS`.
-- **Data:** `User { id, googleId, email, name, photoUrl, role, employmentType, tenureBand, reportsToId, title, department, startDate }`
+### Foundation (cross-cutting) — spec `001`
+- Google SSO (domain-locked), app shell + left nav, My Profile, and **My Documents** (personal uploads).
+- Roles: `EMPLOYEE`, `HR_ADMIN`, `SUPER_USER` (superset). Manager is a capability derived from the org chart. Bootstrap via `ADMIN_EMAILS`; Super User promotes in-app.
+- Registry fields (public: name, email, department, title, phone) + HR-private (employment type, tenure band, start/end date, status Active/Left, DOB, marital status, dependants {name, dob}, reportsTo). Age / years-of-service / dependant ages are **derived, not stored**. Employees self-edit contact only.
+- **My Documents:** each employee uploads/views their own files (ID, certificate, contract, HR letters); visible to owner + HR/Super User only. (Company-wide files live in Handbook & Resources, not here.)
 
-### Onboarding
-- Employee: work through phases → steps → checklist; progress % persisted.
-- Admin: author phases/steps, link to HR docs/resources.
-- **Data:** `OnboardingPhase`, `OnboardingStep`, `StepCompletion { userId, stepId, completedAt }`
+### Onboarding — spec `002`
+- Timeline stages (Day 1 / Week 1 / First month / 30-60-90); each activity typed **Policy** (acknowledge) or **Action** (complete); **common core + role tracks** (Consulting first), assigned from the registry. Progress % persisted; completion is self-attested. Links into Registry, My Documents, Benefits, Directory, Handbook & Resources, Time-Off.
+- Admin: author stages/activities, types, links, track membership; view completion overview.
 
 ### Benefits (the money module)
-- Employee: employment type + tenure come from their profile (not self-selected); view guaranteed benefits; build a flexible basket (50% single-benefit cap, max 4, rate-card medical modal); save (autosave) and submit for the plan year.
-- Admin: configure plan-year window, pool ceilings (type × tenure), guaranteed benefits, benefit catalog, medical rate card, tenure bands; view all submissions.
-- **Server-authoritative rules:** pool ceiling, 50% cap, max-4, medical exemption (may exceed 50% but never the pool ceiling).
-- **Data:** `PlanYear`, `BenefitCatalogItem`, `PoolCeiling { employmentType, tenureBand, amount }`, `GuaranteedBenefit`, `MedicalRateCard`, `BenefitSelection { userId, planYearId, status }`, `SelectionLine { selectionId, itemId, amount, config }`
+- Employee: employment type + tenure come from their profile (not self-selected); view fixed/guaranteed benefits; build the flexible basket (server-enforced rules), save (autosave) and submit for the plan year.
+- Admin: configure plan-year window, pool ceilings (type × tenure), fixed benefits, basket catalog, medical handling; view submissions.
+- **Server-authoritative rules:** pool ceiling, 50% single-benefit cap, selection-count limit (FT practical 2–4 / PT max 2), medical handling. See §5 for the confirmed figures.
 
-### Team Directory
-- Employee: browse members, profile cards, org chart via `reportsToId`.
-- Admin: edit titles/roles/reporting lines.
-- **Data:** reuses `User`.
+### Team Directory — spec `003`
+- Employee: browse **active** employees (cards: photo, name, title, department, email, phone); **name search + department filter**; person view with public fields + contact actions. View-only. **No org chart in V1.**
+- **Data:** read model over `User` (public projection).
 
-### HR Documents
-- Employee: view company-wide docs; view own personal docs.
-- Admin: upload company docs; upload personal docs per employee.
-- **Data:** `HrDocument { id, scope: COMPANY|PERSONAL, userId?, title, blobUrl, uploadedById, createdAt }`
+### Handbook & Resources
+- The structured handbook content (sections from the 118-page Onboarding Kit: strategic foundation, structure & roles, brand, meetings, tools, documentation, people governance, consulting, AI consulting, assignment phases) **plus a Resources area** for downloadable company files (company profile, templates, policies).
+- Employee: browse/read sections; download resources. Admin: author sections + upload resources.
+
+### Time-Off / Leave Management
+- Employee: request time off. **Direct manager** (from the org chart) approves/declines. Balance tracking.
+- **Data (sketch):** `LeaveRequest { userId, type, startDate, endDate, status, approverId }`.
 
 ### Dashboard
 - Employee home: onboarding progress, benefits status, quick links, announcements.
@@ -61,15 +62,14 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Case Studies** — shared knowledge library.
 - **Benefits claims/reimbursement** — invoice/receipt submission against selected benefits.
 
-## 5. Benefits domain model (from the reference simulator)
-Faithfully ported behavior; figures are placeholders until the real card arrives.
+## 5. Benefits domain model (real policy from the Onboarding Kit; interaction ported from the HTML simulator)
 - **Employment type:** Full-time / Part-time.
-- **Tenure bands (placeholder):** 6mo–2y, 2–4y, 4–7y, 7–10y.
-- **Pool ceiling:** set per (type × tenure); the maximum claimable for the year.
-- **Guaranteed benefits:** shown first, separate from the basket, vary by type × tenure (e.g. marriage allowance, summer allowance, professional development, special events, loans).
-- **Flexible basket:** max 4 benefits; no single benefit > 50% of the pool; amounts in steps of 1,000.
-- **Medical insurance:** rate-card driven (personal/family tiers, dependants); **exempt from the 50% cap** but capped at the pool ceiling.
-- **Catalog categories (placeholder):** Health & protection · Wellbeing · Life & family · Personal growth · Lifestyle & flexibility.
+- **Tenure bands (confirmed):** 6mo–2y · 2–4y · 4–7y · 7–10y.
+- **Pool ceiling (confirmed, EGP):** FT 20,000 / 30,000 / 45,000 / 65,000 · PT 14,000 / 21,000 / 30,000 / 42,000. (Note: real PT is ~65–70% of FT, not the policy's "50%" wording.)
+- **Fixed / guaranteed benefits:** Marriage allowance · Loans (after 1yr, 1-month salary) · Summer allowance · Professional development · Special events. Shown first, separate from the basket.
+- **Flexible basket:** 4 categories — **Gym · Mobile device · Personal medical insurance · Schooling**. FT: no single benefit > 50% of the pool (⇒ practically 2–4 picks). PT: **max 2** picks within the (smaller) budget. Amounts in steps of 1,000.
+- **Still pending:** per-benefit monetary limits/eligibility ("detailed benefit descriptions") and whether medical insurance keeps the HTML's rate-card tiers + 50%-exemption or a simpler limit.
+- **Placeholder note:** figures never presented as final until fully confirmed.
 
 ## 6. Security & integrity notes
 - Domain lock enforced in NextAuth `signIn` callback.

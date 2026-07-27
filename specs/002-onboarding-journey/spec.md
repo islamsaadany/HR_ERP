@@ -68,7 +68,7 @@ An HR Admin creates and maintains the onboarding content: the timeline stages, t
 
 ### User Story 4 - Onboarding routes joiners into the rest of the app (Priority: P2)
 
-Activities link into other modules: HR profile/emergency contact → Registry; upload documents → HR Documents; benefit basket → Benefits; meet the team → Team Directory; policy content → Handbook; leave info → Time-Off. Onboarding is the guided front door.
+Activities link into other modules: HR profile/emergency contact → Registry; upload documents → My Documents (Profile); benefit basket → Benefits; meet the team → Team Directory; policy content → Handbook & Resources; leave info → Time-Off. Onboarding is the guided front door.
 
 **Why this priority**: The cross-module links are what make onboarding a hub rather than a static list, but they depend on those modules existing.
 
@@ -78,7 +78,7 @@ Activities link into other modules: HR profile/emergency contact → Registry; u
 
 1. **Given** a Policy item tied to a Handbook section, **When** the joiner opens it, **Then** they are taken to that Handbook section.
 2. **Given** the "Make your benefit basket selection" Action, **When** the joiner opens it while the benefits window is open, **Then** they are routed to the Benefits selector; **When** the window is closed, **Then** they see that selection isn't currently available.
-3. **Given** the "Upload required documents" Action, **When** the joiner opens it, **Then** they are routed to the HR Documents upload for their own file.
+3. **Given** the "Upload required documents" Action, **When** the joiner opens it, **Then** they are routed to My Documents (in their Profile) to upload for their own file.
 
 ---
 
@@ -167,7 +167,7 @@ The joiner's manager (derived from the org chart) is the counterpart for the int
 - **Stages are organizational, not hard-gated**: a joiner can act on any assigned item regardless of stage; stages guide pacing rather than lock later work.
 - **A journey is assigned once at join** based on the registry record; re-onboarding on role change is out of scope for v1.
 - **Policy acknowledgement is a recorded, timestamped "I have read/understood"** — not a legal e-signature flow in v1.
-- **The Handbook, Benefits, HR Documents, Team Directory, and Time-Off modules are the link destinations**; this feature only links into them and does not implement their content.
+- **The Handbook & Resources, Benefits, My Documents (Profile), Team Directory, and Time-Off destinations are where onboarding links**; this feature only links into them and does not implement their content.
 - **Learning Track** is a placeholder in v1; any onboarding item pointing to it is informational.
 - **Only the Consulting role track is defined now**; Marketing & Community, Data Management, and Finance tracks are added later and start from the common core.
 - **No email notifications** (v1) — reminders/nudges are in-app only if present at all.

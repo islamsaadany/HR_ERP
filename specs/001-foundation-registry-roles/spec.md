@@ -99,9 +99,25 @@ Employees can see each other's public fields (name, email, department, title, ph
 
 ---
 
+### User Story 6 - My Documents (personal document upload) (Priority: P2)
+
+An employee, from their Profile, uploads and views their own personal documents (ID, certificates, signed contract, HR letters). Only they and HR / Super User can see their file. HR / Super User can view any employee's documents and can also upload to a person's file.
+
+**Why this priority**: Onboarding's "upload required documents" step lands here, and it keeps each person's paperwork in one private place — but it builds on the profile/registry.
+
+**Independent Test**: As an employee, upload a document to My Documents and confirm it appears for you and for HR, but not for another employee.
+
+**Acceptance Scenarios**:
+
+1. **Given** an employee on their Profile, **When** they upload a document, **Then** it is saved to their personal file and listed for them.
+2. **Given** an employee's personal document, **When** another (non-HR) employee tries to access it, **Then** the system does not return it.
+3. **Given** HR / Super User, **When** they open an employee's record, **Then** they can view (and upload to) that employee's personal documents.
+4. **Given** a document the employee uploaded, **When** they choose to delete or replace it, **Then** the change is applied (employees manage their own uploads; HR can remove any).
+
 ### Edge Cases
 
 - **Unknown company-domain account** (no employee record): handled per the "unknown account" rule (see Assumptions) — never auto-provisioned as an admin.
+- **Large or unsupported document upload**: rejected with a clear message rather than failing silently (specific limits set at planning).
 - **Placeholder / non-company email** on a record: the person appears in the directory but cannot sign in until they have a company-domain address; the record is not blocked from existing.
 - **Employee with no reporting line** (e.g., the Managing Director): allowed; they simply have no manager and may sit at the top of the org chart.
 - **Reporting line integrity**: a reporting line cannot point to a non-existent employee, to the employee themselves, or form a cycle.
@@ -141,6 +157,12 @@ Employees can see each other's public fields (name, email, department, title, ph
 - **FR-018**: The system MUST restrict HR-private fields (employment type, tenure band, start/end date, status, date of birth, marital status, dependants, detailed reporting data) to HR Admin / Super User, enforced server-side.
 - **FR-019**: The system MUST allow an employee to view their own full record (including their own private fields) in read-only form for money-affecting fields.
 
+**Personal documents (My Documents)**
+- **FR-024**: The system MUST let an employee upload and view their own personal documents from their Profile.
+- **FR-025**: The system MUST restrict a personal document to its owner and HR / Super User, enforced server-side; no other employee can access it.
+- **FR-026**: HR / Super User MUST be able to view and upload personal documents on any employee's record.
+- **FR-027**: The system MUST let an employee delete or replace their own uploaded documents; HR / Super User may remove any.
+
 **Data handling**
 - **FR-020**: The system MUST support loading the initial team dataset via a database seed that is kept out of version control because it contains personal data (dates of birth, marital status, children's birth dates).
 - **FR-021**: The system MUST allow an employee record to exist with a placeholder (non-company) email such that the person appears in the directory but cannot sign in until a company-domain email is set.
@@ -154,6 +176,7 @@ Employees can see each other's public fields (name, email, department, title, ph
 - **Dependant**: a child or dependant of an Employee, with a name and a date of birth; drives benefits eligibility later (family cover, special-event gifts). Age is derived, not stored.
 - **Role**: the authorization level of an Employee — Employee, HR Admin, or Super User (superset). The manager capability is not stored here; it is derived from reporting lines.
 - **Department**: an organizational grouping in use (Consulting, Financial, Top Management, Marketing & Community, Data Management Unit).
+- **Personal Document**: a file belonging to one Employee (ID, certificate, contract, HR letter), visible only to that employee and HR / Super User. Uploaded by the employee or by HR. Company-wide/shared documents are NOT here — those live in the Handbook & Resources module.
 
 ## Success Criteria *(mandatory)*
 

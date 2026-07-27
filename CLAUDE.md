@@ -86,7 +86,7 @@ the four steering files above track scope, decisions, and progress across featur
 ### What This App Is
 **HR_ERP** is an internal HR platform for **Forefront Consulting**. Employees sign in with Google (restricted to the company domain); a small **HR/Admin** group manages content and configuration. The product is in English.
 
-**v1 modules:** Foundation (auth + roles + employee registry) · Onboarding · Benefits · Team Directory · HR Documents · Dashboard · Handbook/Knowledge Base · Time-Off / Leave Management · Learning Track (placeholder in v1).
+**v1 modules:** Foundation (auth + roles + employee registry + **My Documents** personal uploads) · Onboarding · Benefits · Team Directory · **Handbook & Resources** (shared policies/handbook + downloadable company files) · Time-Off / Leave Management · Dashboard · Learning Track (placeholder in v1).
 **Phase-2 (designed-for, built later):** full Learning Track, Case Studies, benefits claims/reimbursement.
 
 The **Benefits** module is the heart of v1 — it is the only module involving money and admin-configured rules (pool ceilings by employment type × tenure, a 50% single-benefit cap, a max of 4 flexible benefits, and rate-card-driven medical insurance that is exempt from the 50% cap). All rule enforcement lives server-side.
