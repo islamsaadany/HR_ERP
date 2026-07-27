@@ -7,7 +7,7 @@
 ## Status at a glance
 | Phase | Status |
 |-------|--------|
-| 0 — Docs & specs | 🟡 In progress (spec-kit adopted; specs 001–003 done) |
+| 0 — Docs & specs | 🟡 In progress (spec-kit adopted; specs 001–003 done; 004 drafted) |
 | 1 — Foundation (+ My Documents) | ⬜ Not started |
 | 2 — Team Directory | ⬜ Not started |
 | 3 — Onboarding | ⬜ Not started |
@@ -37,6 +37,7 @@
 | 001 | Foundation — Employee Registry & Roles | ✅ clarified, plan-ready |
 | 002 | Onboarding — Role-Aware New-Joiner Journey | ✅ clarified, plan-ready |
 | 003 | Team Directory (V1) | ✅ complete, plan-ready |
+| 004 | Handbook & Resources | 🟡 drafted, 2 clarifications open |
 
 ## Next up
 1. Continue formalizing modules as specs (Handbook & Resources · Time-Off · Dashboard · Benefits*) — one at a time.
