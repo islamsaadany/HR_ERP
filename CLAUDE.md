@@ -14,9 +14,16 @@ in this order at the start of every session:
 2. **`PROJECT_DETAILS.md`** — technical reference: stack, schema, modules, decisions that are settled.
 3. **`IMPLEMENTATION_PLAN.md`** — the source of truth for phases, scope, and the decisions log (including open decisions).
 4. **`IMPLEMENTATION_PROGRESS.md`** — the live tracker of what is built, in progress, and next.
-5. **`product-specs/`** — one human-readable specification file per module/feature. This is the written product-spec set; code must match it.
+5. **`specs/`** — the spec-kit home for per-feature specifications (one folder per feature, authored via `/speckit-specify`). This is the written product-spec set; code must match it.
 
-**When any of the above changes materially, update it in the same commit as the code.** A drift between `product-specs/` and code is a documentation bug — report it before silently realigning.
+**When any of the above changes materially, update it in the same commit as the code.** A drift between `specs/` and code is a documentation bug — report it before silently realigning.
+
+### Spec-Driven Development (spec-kit)
+This project uses **spec-kit** for feature work. The governing document is
+`.specify/memory/constitution.md` (our house rules in enforceable form). Per feature, follow:
+`/speckit-specify` → `/speckit-clarify` (if ambiguous) → `/speckit-plan` → `/speckit-tasks`
+→ `/speckit-implement`, honoring "Align Before Building" at every gate. Specs live in `specs/`;
+the four steering files above track scope, decisions, and progress across features.
 
 ---
 
@@ -79,8 +86,8 @@ in this order at the start of every session:
 ### What This App Is
 **HR_ERP** is an internal HR platform for **Forefront Consulting**. Employees sign in with Google (restricted to the company domain); a small **HR/Admin** group manages content and configuration. The product is in English.
 
-**v1 modules:** Foundation (auth + roles + employee registry) · Onboarding · Benefits · Team Directory · HR Documents · Dashboard.
-**Phase-2 (designed-for, built later):** Learning Track, Case Studies, benefits claims/reimbursement.
+**v1 modules:** Foundation (auth + roles + employee registry) · Onboarding · Benefits · Team Directory · HR Documents · Dashboard · Handbook/Knowledge Base · Time-Off / Leave Management · Learning Track (placeholder in v1).
+**Phase-2 (designed-for, built later):** full Learning Track, Case Studies, benefits claims/reimbursement.
 
 The **Benefits** module is the heart of v1 — it is the only module involving money and admin-configured rules (pool ceilings by employment type × tenure, a 50% single-benefit cap, a max of 4 flexible benefits, and rate-card-driven medical insurance that is exempt from the 50% cap). All rule enforcement lives server-side.
 
@@ -109,16 +116,8 @@ HR_ERP/
   PROJECT_DETAILS.md
   IMPLEMENTATION_PLAN.md
   IMPLEMENTATION_PROGRESS.md
-  product-specs/
-    00_overview.md
-    01_foundation_auth_roles.md
-    02_onboarding.md
-    03_benefits.md
-    04_team_directory.md
-    05_hr_documents.md
-    06_dashboard.md
-    07_design_system.md
-    08_learning_track.md        # Phase 2
+  .specify/                        # spec-kit: templates, workflow, memory/constitution.md
+  specs/                           # spec-kit feature specifications (one folder per feature)
   src/
     app/
       layout.tsx  globals.css  page.tsx
@@ -144,7 +143,7 @@ HR_ERP/
 
 ### Important Patterns (project-specific)
 - **Domain-locked Google SSO** — only `@forefront.consulting` accounts may sign in. Enforced in the NextAuth `signIn` callback, not just the UI.
-- **Roles** — `EMPLOYEE` and `ADMIN` (HR). Admin surfaces and admin API routes check the role server-side. Bootstrap admins via an `ADMIN_EMAILS` allowlist; later, admins can promote others in-app. *(pending decision — see plan.)*
+- **Roles** — `EMPLOYEE`, `HR_ADMIN`, and `SUPER_USER` (superset of HR Admin; adds governance: role grants + app-wide settings). A `manager` capability derives from the org chart (an employee with direct reports) — e.g. approving their team's time-off. Admin surfaces and API routes check role server-side. Bootstrap admins via `ADMIN_EMAILS`; later, promotion in-app.
 - **Employee registry is the backbone** — `User` (Google identity + employmentType + tenureBand + reportsTo + role) is read by Directory, Onboarding, Benefits, and Dashboard. It is built and validated first (Phase 2) before the money module is built on top.
 - **Benefits rules are server-side** — pool ceiling (type × tenure), 50% single-benefit cap, max-4 selections, and medical-insurance exemption are all validated on save/submit in `src/lib/benefits/`. The client mirrors them for UX only.
 - **Plan-year window** — an admin opens/closes a benefits selection cycle; employees can only save/submit while it is open. A submitted basket is locked (or requires admin reopen) per the benefits spec.
@@ -203,7 +202,7 @@ prior sessions have accidentally reverted agreed-upon designs.
 ### Keeping Docs Current (MANDATORY before merging to main)
 1. Update **`PROJECT_DETAILS.md`** for new features, endpoints, schema, or behavior.
 2. Update **`IMPLEMENTATION_PROGRESS.md`** to reflect what's built.
-3. Update the relevant **`product-specs/`** file if product behavior changed.
+3. Update the relevant **`specs/`** feature spec if product behavior changed.
 4. Update **`IMPLEMENTATION_PLAN.md`** decisions log for any resolved decision.
 5. Update this **`CLAUDE.md`** if a new pattern/rule/workflow was established.
 
