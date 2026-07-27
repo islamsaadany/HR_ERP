@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — 2 open (FR-014 content form, FR-015 seeding)
+- [x] No [NEEDS CLARIFICATION] markers remain — resolved 2026-07-27 (hybrid content; seeded from kit)
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,5 +31,4 @@
 
 ## Notes
 
-- Two clarifications remain (content form; launch seeding) — both scope-significant. Resolve
-  before `/speckit-plan`.
+- All clarifications resolved 2026-07-27 (hybrid content form; seeded from the kit). Plan-ready.

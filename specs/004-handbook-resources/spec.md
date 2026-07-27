@@ -8,6 +8,13 @@
 
 **Input**: User description: "Handbook & Resources — the company's living reference in the ERP. A browsable Handbook organized into sections (mirroring the 118-page Onboarding Kit) so people can look anything up instead of losing a slide deck, plus a Resources area of downloadable company files (company profile, templates, policies). Employees read/download; HR authors."
 
+## Clarifications
+
+### Session 2026-07-27
+
+- **Q: How is Handbook content authored?** → **Hybrid**: core sections are native in-app pages (browsable + searchable), and the full source deck is also downloadable in Resources as a backup.
+- **Q: What ships at launch?** → **Seeded**: the 10 sections' content is migrated from the existing Onboarding Kit at launch; HR maintains it thereafter.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Look something up in the Handbook (Priority: P1)
@@ -106,9 +113,8 @@ Onboarding policy items link to the specific Handbook section they reference (e.
 - **FR-012**: The Handbook & Resources MUST be visible only to signed-in employees (company-internal; nothing public).
 - **FR-013**: The system MUST render gracefully for empty sections, missing files, and broken deep links.
 
-*Open items (to resolve in `/speckit-clarify`):*
-- **FR-014**: Handbook content is authored as [NEEDS CLARIFICATION: native in-app pages (browsable/searchable, richest but most content work), OR an index of sections that links to/embeds the source files (PDF/slides/Google Docs), OR a hybrid — key sections native plus the source deck available as a Resource?].
-- **FR-015**: At launch the Handbook is [NEEDS CLARIFICATION: seeded now with the 10 sections' content migrated from the existing kit, OR delivered as the section framework for HR to fill progressively?].
+- **FR-014**: Handbook content MUST be **hybrid**: the core sections are authored as native in-app pages (browsable + searchable), and the full source deck is also made available as a downloadable file in Resources as a backup (confirmed 2026-07-27).
+- **FR-015**: At launch the Handbook MUST be **seeded** with the 10 sections' content migrated from the existing Onboarding Kit, so it is useful from day one; HR maintains it thereafter (confirmed 2026-07-27).
 
 ### Key Entities *(include if feature involves data)*
 
