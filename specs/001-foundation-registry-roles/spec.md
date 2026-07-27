@@ -8,6 +8,13 @@
 
 **Input**: User description: "Foundation — Employee Registry & Roles. The backbone module every other module reads from: domain-locked Google SSO, three roles (Employee / HR Admin / Super User) plus a manager capability from the org chart, and the employee registry (public + HR-private fields, HR-authoritative money fields, derived age/tenure)."
 
+## Clarifications
+
+### Session 2026-07-27
+
+- **Q: What is the set of tenure bands?** → Four HR-set bands — 6mo–2y, 2–4y, 4–7y, 7–10y — carrying the Benefits pool ceiling (EGP). Full-time: 20,000 / 30,000 / 45,000 / 65,000. Part-time: 14,000 / 21,000 / 30,000 / 42,000. (Ceiling amounts belong to the Benefits module config; the band enum lives here.)
+- **Q: Can employees edit their own profile?** → Only their contact field(s) (phone). All other registry fields are HR-managed and read-only to the employee.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Sign in with a company Google account (Priority: P1)
@@ -138,9 +145,8 @@ Employees can see each other's public fields (name, email, department, title, ph
 - **FR-020**: The system MUST support loading the initial team dataset via a database seed that is kept out of version control because it contains personal data (dates of birth, marital status, children's birth dates).
 - **FR-021**: The system MUST allow an employee record to exist with a placeholder (non-company) email such that the person appears in the directory but cannot sign in until a company-domain email is set.
 
-*Open items (to resolve in `/speckit-clarify`):*
-- **FR-022**: The system MUST record tenure using [NEEDS CLARIFICATION: the exact set of tenure bands — the benefits reference used 6mo–2y / 2–4y / 4–7y / 7–10y, but the real benefits bands are not yet confirmed].
-- **FR-023**: Employees MUST be able to edit [NEEDS CLARIFICATION: which of their own fields, if any — e.g. self-service edit of phone/contact only, versus a fully HR-managed profile that is entirely read-only to the employee].
+- **FR-022**: The system MUST record tenure using one of four HR-set tenure bands — **6 months–2 years, 2–4 years, 4–7 years, 7–10 years** — which drive the Benefits pool ceiling (confirmed 2026-07-27).
+- **FR-023**: Employees MUST be able to edit only their own **contact field(s)** (phone); all other registry fields are HR-managed and read-only to the employee (confirmed 2026-07-27).
 
 ### Key Entities *(include if feature involves data)*
 

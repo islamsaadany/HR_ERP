@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — 2 open (FR-022 tenure bands, FR-023 employee self-edit scope)
+- [x] No [NEEDS CLARIFICATION] markers remain — resolved 2026-07-27 (tenure bands + ceilings; employee self-edit = contact only)
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,7 +31,7 @@
 
 ## Notes
 
-- Two clarifications remain (tenure band set; employee self-edit scope). Both are genuine
-  open decisions surfaced to the user — resolve via `/speckit-clarify` before `/speckit-plan`.
-- Tenure-band set is coupled to the real Benefits figures, which arrive later; it can be
-  provisionally answered to unblock Foundation planning.
+- All clarifications resolved 2026-07-27 (see spec Clarifications section). Spec is ready for
+  `/speckit-plan`.
+- Benefits pool ceilings captured: FT 20/30/45/65k, PT 14/21/30/42k EGP across the four bands.
+  Note for Benefits: real part-time figures are ~65–70% of full-time, not the policy's "50%".
