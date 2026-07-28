@@ -8,8 +8,8 @@
 | Phase | Status |
 |-------|--------|
 | 0 — Docs & specs | 🟡 In progress (spec-kit adopted; specs 001–007 done — all v1 modules specced) |
-| 1 — Foundation (+ My Documents) | 🟡 In progress (scaffold + auth + registry + shell build green) |
-| 2 — Team Directory | ⬜ Not started |
+| 1 — Foundation (+ My Documents) | 🟢 Feature-complete (auth, registry CRUD, roles, profile, My Documents, seed) |
+| 2 — Team Directory | 🟡 In progress |
 | 3 — Onboarding | ⬜ Not started |
 | 4 — Handbook & Resources | ⬜ Not started |
 | 5 — Time-Off / Leave | ⬜ Not started |
@@ -54,8 +54,13 @@ Autonomous build to the approved specs, module by module in phase order (design 
   registry (User/Dependant/PersonalDocument + enums). App shell (navy/gold), /signin, /dashboard,
   /profile (real registry read + derived age/tenure), and coming-soon stubs for every module route.
   `npm run typecheck` and `npm run build` both green. `prisma/sql/000_initial_schema.sql` generated
-  for Neon. Still to do in Foundation: HR registry admin CRUD, role-grant UI, My Documents upload
-  (Vercel Blob), and the team-data seed SQL (PII, gitignored).
+  for Neon.
+- **2026-07-27 — Foundation complete:** HR registry admin CRUD (/admin/employees list/new/edit) with
+  zod validation, email-uniqueness + reporting-line self/cycle guards, Super-User-only role grants;
+  My Documents (Vercel Blob upload + authorized download route + delete); team seed SQL generated
+  (`prisma/sql/seed_data_team.sql`, gitignored — 19 employees + dependants, delivered to user).
+  Minor gap deferred: HR view/upload of another employee's personal docs from the admin record
+  (FR-026 — download route already authorizes admins; admin upload UI to add later).
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
