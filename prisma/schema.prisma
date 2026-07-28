@@ -84,6 +84,10 @@ model User {
   // Onboarding
   onboardingCompletions ActivityCompletion[]
 
+  // Time-off
+  leaveRequests  LeaveRequest[] @relation("LeaveRequester")
+  leaveApprovals LeaveRequest[] @relation("LeaveApprover")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -201,4 +205,34 @@ model Resource {
   createdAt    DateTime @default(now())
 
   @@index([category])
+}
+
+// ─── Time-Off / Leave (spec 005) ────────────────────────────────────────
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+/// A time-off request (full days). Approved by the requester's direct manager
+/// (or a Super User when none exists). No balances/types in v1.
+model LeaveRequest {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation("LeaveRequester", fields: [userId], references: [id], onDelete: Cascade)
+  startDate       DateTime
+  endDate         DateTime
+  note            String?
+  status          LeaveStatus @default(PENDING)
+  approverId      String?
+  approver        User?       @relation("LeaveApprover", fields: [approverId], references: [id], onDelete: SetNull)
+  decisionComment String?
+  decidedAt       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([approverId, status])
 }

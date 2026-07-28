@@ -25,6 +25,9 @@ CREATE TYPE "OnboardingStage" AS ENUM ('DAY_1', 'WEEK_1', 'FIRST_MONTH', 'CHECK_
 -- CreateEnum
 CREATE TYPE "OnboardingTrackKey" AS ENUM ('COMMON_CORE', 'CONSULTING');
 
+-- CreateEnum
+CREATE TYPE "LeaveStatus" AS ENUM ('PENDING', 'APPROVED', 'DECLINED', 'CANCELLED');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -131,6 +134,23 @@ CREATE TABLE "Resource" (
     CONSTRAINT "Resource_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "LeaveRequest" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "note" TEXT,
+    "status" "LeaveStatus" NOT NULL DEFAULT 'PENDING',
+    "approverId" TEXT,
+    "decisionComment" TEXT,
+    "decidedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "LeaveRequest_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -167,6 +187,12 @@ CREATE INDEX "HandbookSection_order_idx" ON "HandbookSection"("order");
 -- CreateIndex
 CREATE INDEX "Resource_category_idx" ON "Resource"("category");
 
+-- CreateIndex
+CREATE INDEX "LeaveRequest_userId_idx" ON "LeaveRequest"("userId");
+
+-- CreateIndex
+CREATE INDEX "LeaveRequest_approverId_status_idx" ON "LeaveRequest"("approverId", "status");
+
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_reportsToId_fkey" FOREIGN KEY ("reportsToId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -184,4 +210,10 @@ ALTER TABLE "ActivityCompletion" ADD CONSTRAINT "ActivityCompletion_userId_fkey"
 
 -- AddForeignKey
 ALTER TABLE "ActivityCompletion" ADD CONSTRAINT "ActivityCompletion_activityId_fkey" FOREIGN KEY ("activityId") REFERENCES "OnboardingActivity"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LeaveRequest" ADD CONSTRAINT "LeaveRequest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LeaveRequest" ADD CONSTRAINT "LeaveRequest_approverId_fkey" FOREIGN KEY ("approverId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 

@@ -12,8 +12,8 @@
 | 2 — Team Directory | 🟢 Complete (V1) |
 | 3 — Onboarding | 🟢 Complete |
 | 4 — Handbook & Resources | 🟢 Complete |
-| 5 — Time-Off / Leave | 🟡 In progress |
-| 6 — Benefits (admin config) | ⬜ Not started |
+| 5 — Time-Off / Leave | 🟢 Complete (V1) |
+| 6 — Benefits (admin config) | 🟡 In progress |
 | 7 — Benefits (employee selector) | ⬜ Not started |
 | 8 — Dashboard + polish | ⬜ Not started |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
@@ -43,8 +43,8 @@
 | 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
 
 ## Next up
-Autonomous build to the approved specs. Done: Foundation · Team Directory · Onboarding · Handbook & Resources.
-1. **Time-Off** (next) → Benefits (the big one) → Dashboard.
+Autonomous build to the approved specs. Done: Foundation · Team Directory · Onboarding · Handbook & Resources · Time-Off.
+1. **Benefits** (next — the big one) → Dashboard.
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
@@ -71,6 +71,11 @@ Autonomous build to the approved specs. Done: Foundation · Team Directory · On
   /handbook (searchable native sections + downloadable resources) + /handbook/[slug] reader;
   authorized resource download route; HR /admin/handbook (section CRUD + resource upload/delete
   via Vercel Blob); seeded 10 sections from the kit (`prisma/sql/002_seed_handbook.sql`). Build green.
+
+- **2026-07-27 — Time-Off complete (V1):** schema (LeaveRequest + LeaveStatus); employee /time-off
+  (request full-day range + note; my-requests list with status; cancel pending); direct-manager
+  approval queue (approve/decline + comment); no-manager falls back to a Super User; date validation.
+  Single generic type, no balances, full days. Build green.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
