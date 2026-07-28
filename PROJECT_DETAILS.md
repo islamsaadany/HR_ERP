@@ -27,6 +27,8 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 
 ### Foundation (cross-cutting) — spec `001`
 - Google SSO (domain-locked), app shell + left nav, My Profile, and **My Documents** (personal uploads).
+- **Auth bridge (temporary):** while Google OAuth is being set up, sign-in is username/password (NextAuth Credentials) against a single bootstrap admin (`BOOTSTRAP_ADMIN_*`, defaults `Islam`/`1234`), upserted as an active Super User on first login. Google is shown only when `AUTH_GOOGLE_ID`/`_SECRET` are configured.
+- **Bulk employee import:** Admin → Employees → **Import CSV** uploads the HR spreadsheet (upsert by email; tolerant date parsing with day-first for ambiguous dates; tenure band derived from hire date; per-row review report). Replaces a hand-written PII SQL seed.
 - Roles: `EMPLOYEE`, `HR_ADMIN`, `SUPER_USER` (superset). Manager is a capability derived from the org chart. Bootstrap via `ADMIN_EMAILS`; Super User promotes in-app.
 - Registry fields (public: name, email, department, title, phone) + HR-private (employment type, tenure band, start/end date, status Active/Left, DOB, marital status, dependants {name, dob}, reportsTo). Age / years-of-service / dependant ages are **derived, not stored**. Employees self-edit contact only.
 - **My Documents:** each employee uploads/views their own files (ID, certificate, contract, HR letters); visible to owner + HR/Super User only. (Company-wide files live in Handbook & Resources, not here.)

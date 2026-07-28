@@ -91,6 +91,20 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
   (onboarding progress, benefits status, time-off, manager approvals tile, announcements, quick
   links — role-adaptive); HR /admin/announcements. All 7 modules build green (typecheck + next build).
 
+- **2026-07-28 — Auth bridge + CSV employee import:**
+  - **Temporary username/password sign-in** (NextAuth Credentials provider) so HR can use
+    the app before Google OAuth is configured. Validated against a single bootstrap admin
+    (`BOOTSTRAP_ADMIN_*`, defaults `Islam`/`1234`), upserted as an active SUPER_USER on first
+    login — no seed/SQL. Google provider is now optional (shown only when `AUTH_GOOGLE_ID`/
+    `_SECRET` set); signin page swapped to a username/password form (UI snapshot saved).
+  - **Bulk employee import** at `/admin/employees` → **Import CSV**. Dependency-free CSV/TSV
+    parser + tolerant date parser (long-form, dotted, `d-Mon-yy`, slash formats; ambiguous
+    numeric dates read **day-first** per HR decision; unreadable/annotated dates left blank &
+    flagged). Tenure band **derived from hire date**. Upsert by email (never changes an
+    existing role); external-domain emails imported (directory-visible, can't sign in yet);
+    kids → dependants when a DOB parses. Per-row on-screen review report. Verified against the
+    real 19-row sheet. Replaces the gitignored `seed_data_team.sql` handoff. Build green.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
