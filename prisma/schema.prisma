@@ -1,0 +1,119 @@
+// HR_ERP — Prisma schema
+// Foundation module (spec 001): employee registry, roles, dependants, personal documents.
+// Later modules add their own models. Real employee PII is seeded via prisma/sql/ files
+// that are kept OUT of git (see .gitignore).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum Role {
+  EMPLOYEE
+  HR_ADMIN
+  SUPER_USER
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+}
+
+// Four confirmed tenure bands (drive Benefits pool ceilings)
+enum TenureBand {
+  BAND_6MO_2Y // 6 months – 2 years
+  BAND_2_4Y // 2 – 4 years
+  BAND_4_7Y // 4 – 7 years
+  BAND_7_10Y // 7 – 10 years
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  LEFT
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+/// The employee registry — the backbone every module reads from.
+model User {
+  id      String @id @default(cuid())
+  email   String @unique // login identity (Google, company domain)
+  name    String
+  photoUrl String?
+
+  // Public directory fields
+  phone      String?
+  department String?
+  title      String?
+
+  // Authorization
+  role Role @default(EMPLOYEE)
+
+  // HR-private employment fields (money-affecting: HR-set, authoritative)
+  employmentType EmploymentType?
+  tenureBand     TenureBand?
+  startDate      DateTime?
+  endDate        DateTime?
+  status         EmployeeStatus @default(ACTIVE)
+
+  // HR-private personal fields
+  dateOfBirth   DateTime?
+  maritalStatus MaritalStatus?
+
+  // Reporting line (org chart) — self relation
+  reportsToId String?
+  reportsTo   User?   @relation("Reports", fields: [reportsToId], references: [id], onDelete: SetNull)
+  reports     User[]  @relation("Reports")
+
+  dependants Dependant[]
+
+  // Personal documents owned by this user
+  documents         PersonalDocument[] @relation("DocOwner")
+  uploadedDocuments PersonalDocument[] @relation("DocUploader")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([department])
+  @@index([status])
+  @@index([reportsToId])
+}
+
+/// A dependant (child) of an employee — name + DOB. Age is derived, never stored.
+model Dependant {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String?
+  dateOfBirth DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// A personal document owned by one employee (ID, certificate, contract, HR letter).
+/// Visible to the owner and HR/Super User only. Company-wide files live in Handbook & Resources.
+model PersonalDocument {
+  id           String   @id @default(cuid())
+  ownerId      String
+  owner        User     @relation("DocOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  title        String
+  blobUrl      String
+  contentType  String?
+  sizeBytes    Int?
+  uploadedById String?
+  uploadedBy   User?    @relation("DocUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+
+  @@index([ownerId])
+}

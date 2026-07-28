@@ -1,0 +1,38 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# env
+.env
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+
+# prisma - generated client
+/prisma/generated
+# prisma - hand-runnable SQL that carries real employee PII (never commit)
+/prisma/sql/seed_data_*.sql
+/prisma/data/*.local.*
+
+# os / editor
+.DS_Store
+*.pem
+npm-debug.log*
+.idea
+.vscode
+
+# logs
+*.log

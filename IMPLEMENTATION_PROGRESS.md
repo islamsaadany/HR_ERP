@@ -8,7 +8,7 @@
 | Phase | Status |
 |-------|--------|
 | 0 — Docs & specs | 🟡 In progress (spec-kit adopted; specs 001–007 done — all v1 modules specced) |
-| 1 — Foundation (+ My Documents) | ⬜ Not started |
+| 1 — Foundation (+ My Documents) | 🟡 In progress (scaffold + auth + registry + shell build green) |
 | 2 — Team Directory | ⬜ Not started |
 | 3 — Onboarding | ⬜ Not started |
 | 4 — Handbook & Resources | ⬜ Not started |
@@ -43,9 +43,19 @@
 | 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
 
 ## Next up
-1. **All 7 v1 module specs are written and plan-ready.** Remaining open product decision: **Design language (A)** — paper/pine vs navy/gold — affects all UI.
-2. Begin the build: `/speckit-plan` on Foundation (001), then tasks → implement, module by module in the phase order.
-   Note: personal document upload (My Documents) is in Foundation spec 001; no standalone HR Documents module.
+Autonomous build to the approved specs, module by module in phase order (design language = navy/gold; all 7 specs done).
+1. Finish Foundation: HR registry admin CRUD + role grants; My Documents upload (Vercel Blob); team-data seed SQL (PII, gitignored).
+2. Then Team Directory → Onboarding → Handbook & Resources → Time-Off → Benefits → Dashboard.
+3. Hand-off items for the user: run `prisma/sql/*` in Neon; set env vars + Google OAuth in Vercel.
+
+## Build log
+- **2026-07-27 — Phase 1 Foundation scaffold:** Next.js 15.5 + React 19 + TS + Tailwind v4 +
+  Prisma + NextAuth v5 (Google, domain-locked, JWT, no auto-provision). Prisma schema for the
+  registry (User/Dependant/PersonalDocument + enums). App shell (navy/gold), /signin, /dashboard,
+  /profile (real registry read + derived age/tenure), and coming-soon stubs for every module route.
+  `npm run typecheck` and `npm run build` both green. `prisma/sql/000_initial_schema.sql` generated
+  for Neon. Still to do in Foundation: HR registry admin CRUD, role-grant UI, My Documents upload
+  (Vercel Blob), and the team-data seed SQL (PII, gitignored).
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

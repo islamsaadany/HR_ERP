@@ -11,7 +11,7 @@ An internal, English-language HR platform for **Forefront Consulting**. Google S
 ## 2. Stack
 | Layer | Choice |
 |-------|--------|
-| Framework | Next.js 16 (App Router) + React 19 |
+| Framework | Next.js 15.5 (App Router) + React 19 · Tailwind v4 |
 | Language | TypeScript |
 | DB | PostgreSQL (Neon) + Prisma |
 | Auth | NextAuth v5, Google provider, domain-locked |
