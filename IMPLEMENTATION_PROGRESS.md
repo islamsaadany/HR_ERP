@@ -15,7 +15,7 @@
 | 5 — Time-Off / Leave | 🟢 Complete (V1) |
 | 6 — Benefits (admin config) | 🟢 Complete |
 | 7 — Benefits (employee selector) | 🟢 Complete |
-| 8 — Dashboard + polish | 🟡 In progress |
+| 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
 ## Phase 0 — Docs & specs
@@ -43,8 +43,8 @@
 | 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
 
 ## Next up
-Autonomous build to the approved specs. Done: Foundation · Team Directory · Onboarding · Handbook & Resources · Time-Off · Benefits.
-1. **Dashboard** (last module) → then polish + handoff.
+Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Directory · Onboarding · Handbook · Time-Off · Benefits · Dashboard).
+1. Build complete. Remaining: your setup actions in HANDOFF.md (Neon SQL, env, Google OAuth), then deploy + smoke test; optional polish (benefits visual fidelity, HR config-editing UI).
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
@@ -86,6 +86,10 @@ Autonomous build to the approved specs. Done: Foundation · Team Directory · On
   /admin/benefits: plan-year open/close + create, submissions view + reopen. Seeded confirmed config
   (`prisma/sql/003_seed_benefits.sql`). Deferred: HR editing UI for ceilings/guaranteed/rate-card
   (values seeded & authoritative); selector visual polish vs the HTML reference. Build green.
+
+- **2026-07-27 — Dashboard complete + build complete:** Announcement model; composed /dashboard
+  (onboarding progress, benefits status, time-off, manager approvals tile, announcements, quick
+  links — role-adaptive); HR /admin/announcements. All 7 modules build green (typecheck + next build).
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

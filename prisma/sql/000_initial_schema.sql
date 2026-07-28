@@ -233,6 +233,17 @@ CREATE TABLE "BenefitSelection" (
 );
 
 -- CreateTable
+CREATE TABLE "Announcement" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "authorId" TEXT,
+    "publishedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Announcement_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "SelectionLine" (
     "id" TEXT NOT NULL,
     "selectionId" TEXT NOT NULL,
@@ -292,6 +303,9 @@ CREATE UNIQUE INDEX "BenefitCatalogItem_key_key" ON "BenefitCatalogItem"("key");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "BenefitSelection_userId_planYearId_key" ON "BenefitSelection"("userId", "planYearId");
+
+-- CreateIndex
+CREATE INDEX "Announcement_publishedAt_idx" ON "Announcement"("publishedAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SelectionLine_selectionId_catalogItemId_key" ON "SelectionLine"("selectionId", "catalogItemId");

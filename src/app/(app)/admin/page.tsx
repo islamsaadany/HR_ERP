@@ -13,7 +13,7 @@ const CARDS = [
   { href: "/admin/onboarding", title: "Onboarding Content", body: "Author onboarding stages and activities.", ready: true },
   { href: "/admin/handbook", title: "Handbook & Resources", body: "Author handbook sections and upload resources.", ready: true },
   { href: "/admin/benefits", title: "Benefits Configuration", body: "Plan-year window and submissions.", ready: true },
-  { href: "/admin", title: "Announcements", body: "Post company announcements.", ready: false },
+  { href: "/admin/announcements", title: "Announcements", body: "Post company announcements.", ready: true },
 ];
 
 export default async function AdminPage() {

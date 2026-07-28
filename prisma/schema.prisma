@@ -324,6 +324,19 @@ model BenefitSelection {
   @@unique([userId, planYearId])
 }
 
+// ─── Dashboard (spec 006) ───────────────────────────────────────────────
+
+/// A short company announcement shown on the dashboard (newest first).
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  authorId    String?
+  publishedAt DateTime @default(now())
+
+  @@index([publishedAt])
+}
+
 /// One chosen benefit line (amount; for medical, the computed premium).
 model SelectionLine {
   id            String             @id @default(cuid())
