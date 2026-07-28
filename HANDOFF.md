@@ -9,7 +9,20 @@ Paste these files from `prisma/sql/` into Neon, **in numeric order**:
 - [ ] `001_seed_onboarding.sql` — the onboarding activities (no PII; in the repo).
 - [ ] `002_seed_handbook.sql` — the 10 handbook sections (company-internal; in the repo).
 - [ ] `003_seed_benefits.sql` — benefits config: ceilings, guaranteed amounts, medical rate card, catalog, open plan year (in the repo).
-- [ ] `seed_data_team.sql` — the 19 real employees + dependants (delivered separately; **gitignored**, contains PII).
+
+**Team members (employees):** you no longer need a PII SQL seed. Sign in (see §1a),
+open **Admin → Employees → Import CSV**, and upload your employee spreadsheet saved as
+CSV. Rows are matched by email (added or updated); dates are read in the sheet's own
+formats and anything ambiguous/unreadable is listed after import so you can fix it in the
+person's profile. Only **Name** and **Email** are required.
+
+## 1a. Temporary sign-in (until Google OAuth is live)
+Sign-in is currently **username + password** (a bridge). Default test admin: **`Islam` /
+`1234`** — on first login it creates your account as an active **Super User** (no seed
+needed). Override the defaults with env vars `BOOTSTRAP_ADMIN_USERNAME` /
+`BOOTSTRAP_ADMIN_PASSWORD` / `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_NAME`. **Change the
+password before real use.** When you set `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` (§3), a
+"Continue with Google" button reappears; remove the bootstrap vars to retire the bridge.
 
 ## 2. Environment variables (Vercel → Project → Settings → Environment Variables)
 Set these (see `.env.example` for the shape):

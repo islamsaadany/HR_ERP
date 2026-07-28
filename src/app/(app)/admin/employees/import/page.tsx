@@ -1,0 +1,60 @@
+import Link from "next/link";
+import { requireAdmin } from "@/lib/roles";
+import { EmployeeImportForm } from "@/components/admin/EmployeeImportForm";
+
+export const dynamic = "force-dynamic";
+
+export default async function ImportEmployeesPage() {
+  await requireAdmin();
+
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
+        Admin · Registry
+      </p>
+      <h1 className="mt-1 font-serif text-3xl text-ink">Import employees</h1>
+      <p className="mt-2 max-w-2xl text-muted">
+        Upload your employee spreadsheet saved as a CSV. Each row is added or
+        updated (matched by email). Dates are read in the sheet&rsquo;s own
+        formats; anything the app has to guess or can&rsquo;t read is listed
+        after import so you can fix it in the person&rsquo;s profile.
+      </p>
+
+      <div className="mt-6 rounded-xl border border-line bg-paper p-5 text-sm text-ink">
+        <p className="font-medium">Columns the importer reads</p>
+        <p className="mt-2 text-muted">
+          Name, Department, Date of Hiring, Title, Contract Type, Email, Phone
+          Number, Date of Birth, Marital Status, Number of Kids, and
+          &ldquo;Kid (1) / Kid (2) Date of Birth&rdquo;. Only Name and Email are
+          required; everything else is optional. Extra columns are ignored.
+        </p>
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-muted">
+          <li>Contract Type: &ldquo;Full Time&rdquo; / &ldquo;Part Time&rdquo;.</li>
+          <li>
+            Tenure band is calculated from Date of Hiring (people under 6 months
+            are flagged).
+          </li>
+          <li>
+            Ambiguous numeric dates like 4/5/1980 are read day-first (4 May) and
+            flagged for you to verify.
+          </li>
+          <li>
+            Non-company emails are imported and visible in the directory but
+            can&rsquo;t sign in yet.
+          </li>
+        </ul>
+      </div>
+
+      <EmployeeImportForm />
+
+      <div className="mt-8">
+        <Link
+          href="/admin/employees"
+          className="text-sm font-medium text-navy-600 hover:text-navy-800"
+        >
+          ← Back to employees
+        </Link>
+      </div>
+    </div>
+  );
+}
