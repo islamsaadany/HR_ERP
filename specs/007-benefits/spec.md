@@ -143,7 +143,7 @@ HR / Super User configures the plan-year window (open/close), the pool ceilings 
 - **FR-022**: The system MUST NOT present any figure as final while it is flagged as placeholder/pending.
 
 **Design fidelity**
-- **FR-023**: The employee selection experience MUST faithfully port the design and interaction model of `benefitsselector_3.html` (paper/pine palette, Fraunces + Hanken Grotesk, the guaranteed panel, the basket list, the live meter, and the medical modal) without redesign.
+- **FR-023**: The employee selection experience MUST faithfully port the **layout & interaction model** of `benefitsselector_3.html` (the guaranteed panel, the basket list, the live meter, and the medical modal) without redesigning its structure, **recolored into the product's navy/gold palette** (not the original paper/pine).
 
 ### Key Entities *(include if feature involves data)*
 

@@ -15,8 +15,10 @@ uncertain, ask — do not assume. "Let's align first" means stop and discuss.
 
 ### II. UI Changes Require Explicit Approval
 No visual element — colors, layout, spacing, typography, labels, icons, section order —
-changes without explicit approval. The benefits selector design (paper/pine palette,
-Fraunces + Hanken Grotesk) is a preserved asset: port it faithfully, never modernize it.
+changes without explicit approval. The **product design language is navy/gold** (from the
+Forefront reference tool). The benefits selector's **layout & interaction model** (guaranteed
+panel, basket list, live meter, medical modal) is a preserved asset: port its structure
+faithfully, recolored into the navy/gold palette — do not redesign the structure.
 Before editing any UI file, snapshot it to `ui-versions/<component>/<date>_<desc>.tsx`.
 
 ### III. Benefits Money & Rules Are Server-Authoritative (NON-NEGOTIABLE)

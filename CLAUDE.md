@@ -47,7 +47,7 @@ the four steering files above track scope, decisions, and progress across featur
 ### 1c. CRITICAL: UI Changes Require Explicit Approval
 - **NEVER change any UI design, layout, styling, or visual element without explicit user approval.**
 - **This includes: colors, borders, spacing, card designs, labels, icons, section order, font sizes — EVERYTHING visual.**
-- **The benefits selector design (paper/pine palette, Fraunces + Hanken Grotesk) is a preserved asset — port it faithfully; do not "modernize" it.**
+- **Product design language is navy/gold (from the Forefront reference tool).** The benefits selector's **layout & interaction model** is a preserved asset — port its structure faithfully, recolored to navy/gold; do not redesign it.
 - **When restoring a design, match the original EXACTLY.**
 - **After ANY UI change, save a snapshot of the changed file to `ui-versions/` (see UI Version Tracking below).**
 
@@ -96,7 +96,7 @@ The **Benefits** module is the heart of v1 — it is the only module involving m
 - **Language:** TypeScript
 - **Database:** PostgreSQL (Neon, serverless) + Prisma
 - **Auth:** NextAuth.js v5, Google provider, restricted to the company domain. HR/Admin role gating on server routes.
-- **Styling:** Tailwind CSS, with design tokens ported from the benefits selector (paper/pine palette, Fraunces + Hanken Grotesk).
+- **Styling:** Tailwind CSS. Product design language is **navy/gold** (from the Forefront reference tool). The benefits selector's layout/interaction is ported faithfully in that palette.
 - **File storage:** Vercel Blob (HR documents, personal docs).
 - **Deployment:** Vercel.
 - **Email:** none in v1 (no invitations/reminders).

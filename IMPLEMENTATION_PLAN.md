@@ -50,7 +50,7 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 - **2026-07-27 — Benefits figures fully confirmed:** guaranteed amounts by band (FT & PT) = the real figures; medical rate card = single tier (self/spouse 8k, child <18 4.5k, child ≥18 8k), exempt from 50% cap, dependants entered manually for now; no per-category caps/eligibility. All 7 v1 module specs written (`specs/001`–`007`).
 
 ### Resolved earlier / Open
-- **A · Design language** — *default (unconfirmed):* benefits paper/pine palette product-wide. Alternative: reference navy/gold. **Still to confirm** (last open product decision before build).
+- **A · Design language** — *resolved 2026-07-27:* **navy/gold** (Forefront reference tool) product-wide. The benefits selector's layout/interaction is preserved but recolored to navy/gold (not paper/pine).
 - **E · Real benefit figures** — *resolved:* ceilings, guaranteed amounts, and medical rate card all confirmed (spec `007`).
 - **F · Learning Track timing** — *resolved:* stays Phase 2 (placeholder present in v1).
 
