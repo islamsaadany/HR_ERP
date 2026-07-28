@@ -27,7 +27,7 @@ An employee opens the Handbook and browses by section (Strategic Foundation, Str
 
 **Acceptance Scenarios**:
 
-1. **Given** a signed-in employee, **When** they open the Handbook, **Then** they see the list of sections and can open any one to read it.
+1. **Given** a signed-in employee, **When** they open the Handbook, **Then** they see the list of sections and can open any one to read it. *(Presentation: a Vercel-style master–detail — a left list of sections + a Resources group, content opens on the right, the active item bold with a navy underline; the app sidebar auto-collapses to a rail here.)*
 2. **Given** a section, **When** it contains subsections, **Then** the employee can navigate within it.
 3. **Given** the Handbook, **When** an employee returns later, **Then** the same reference content is available (persistent, not tied to onboarding state).
 

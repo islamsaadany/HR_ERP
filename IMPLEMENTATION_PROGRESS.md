@@ -105,10 +105,25 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     kids → dependants when a DOB parses. Per-row on-screen review report. Verified against the
     real 19-row sheet. Replaces the gitignored `seed_data_team.sql` handoff. Build green.
 
+- **2026-07-28 — Benefits catalog + shell polish:**
+  - **Benefits selector rebuilt to `benefitsselector_3.html`:** catalog grouped into 5 display
+    categories (Health & protection · Wellbeing · Life & family · Personal growth · Lifestyle &
+    flexibility) with their items; category headers + "Selected" + "Terms & conditions" panels,
+    navy/gold. Added `category` to `BenefitCatalogItem`; reseeded (`003`) + migration
+    (`004_benefits_categories.sql`). Medical unchanged (Personal = self only; dependants separate
+    in the modal). All money rules still server-side. Also fixed the `003` apostrophe bug.
+  - **Collapsible sidebar:** chevron collapse → narrow icon rail with reopen; remembered in
+    localStorage; **Handbook auto-collapses** it. Shell is now a client component; sign-out moved to
+    a server action.
+  - **Handbook & Resources → Vercel-style master–detail:** left list of sections + Resources group,
+    content opens on the right, active item bold + navy underline, search retained. Removed the old
+    card `HandbookBrowser`. Excluded `ui-versions/` snapshots from `tsc`.
+  - Build green (typecheck + next build). UI snapshots saved before each edit.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-07-27.*
+*Last Updated: 2026-07-28.*
