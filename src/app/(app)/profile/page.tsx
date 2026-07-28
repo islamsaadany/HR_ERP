@@ -8,6 +8,7 @@ import {
   TENURE_BAND_LABEL,
   formatDate,
 } from "@/lib/labels";
+import { uploadMyDocument, deleteMyDocument } from "./documents-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +21,19 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ docError?: string }>;
+}) {
   const sessionUser = await requireUser();
+  const { docError } = await searchParams;
   const me = await prisma.user.findUnique({
     where: { id: sessionUser.id },
     include: {
       reportsTo: { select: { name: true, title: true } },
       dependants: { orderBy: { dateOfBirth: "asc" } },
+      documents: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -113,13 +120,79 @@ export default async function ProfilePage() {
         />
       </section>
 
-      {/* My Documents — placeholder for the upload UI (spec 001 · US6) */}
+      {/* My Documents (spec 001 · US6) */}
       <section className="mt-6 rounded-xl border border-line bg-surface p-6">
         <h2 className="font-serif text-lg text-ink">My Documents</h2>
         <p className="mt-1 text-sm text-muted">
-          Upload and view your personal documents (ID, certificates, contract).
+          Your personal documents (ID, certificates, contract). Only you and HR can see these.
         </p>
-        <p className="mt-3 text-xs italic text-muted">Coming soon</p>
+
+        {docError ? (
+          <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
+            {docError}
+          </p>
+        ) : null}
+
+        <form action={uploadMyDocument} className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[180px]">
+            <label className="block text-xs uppercase tracking-wide text-muted mb-1">
+              Title (optional)
+            </label>
+            <input
+              name="title"
+              placeholder="e.g. National ID"
+              className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-navy-500 focus:outline-none"
+            />
+          </div>
+          <input
+            name="file"
+            type="file"
+            required
+            className="text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-navy-800 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-navy-700"
+          />
+          <button
+            type="submit"
+            className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700"
+          >
+            Upload
+          </button>
+        </form>
+
+        <ul className="mt-5 divide-y divide-line">
+          {me.documents.length === 0 ? (
+            <li className="py-3 text-sm text-muted">No documents yet.</li>
+          ) : (
+            me.documents.map((doc) => (
+              <li key={doc.id} className="flex items-center justify-between py-3">
+                <div className="min-w-0">
+                  <a
+                    href={`/api/documents/${doc.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-navy-700 hover:text-navy-900 hover:underline"
+                  >
+                    {doc.title}
+                  </a>
+                  <div className="text-xs text-muted">
+                    {formatDate(doc.createdAt)}
+                    {doc.sizeBytes
+                      ? ` · ${Math.max(1, Math.round(doc.sizeBytes / 1024))} KB`
+                      : ""}
+                  </div>
+                </div>
+                <form action={deleteMyDocument}>
+                  <input type="hidden" name="id" value={doc.id} />
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-line px-3 py-1.5 text-xs text-muted hover:border-red-300 hover:text-red-600"
+                  >
+                    Delete
+                  </button>
+                </form>
+              </li>
+            ))
+          )}
+        </ul>
       </section>
     </div>
   );

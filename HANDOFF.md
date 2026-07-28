@@ -28,6 +28,9 @@ Set these (see `.env.example` for the shape):
 - [ ] Add Vercel Blob storage (for My Documents / Resources uploads).
 
 ## Notes
+- **Personal documents** are stored in Vercel Blob with public-but-unguessable URLs; the app only
+  ever exposes an authorized download route (`/api/documents/[id]`) that checks owner/HR. Good for
+  v1; if you need hard private storage later, revisit.
 - Sign-in is refused for anyone without a matching, active employee record — seed the team first.
 - The 6 employees with placeholder external emails can't sign in until you set their real
   `@forefront.consulting` emails (update the seed or edit them in the app once you can sign in).
