@@ -88,6 +88,9 @@ model User {
   leaveRequests  LeaveRequest[] @relation("LeaveRequester")
   leaveApprovals LeaveRequest[] @relation("LeaveApprover")
 
+  // Benefits
+  benefitSelections BenefitSelection[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -235,4 +238,100 @@ model LeaveRequest {
 
   @@index([userId])
   @@index([approverId, status])
+}
+
+// ─── Benefits (spec 007) ────────────────────────────────────────────────
+
+enum PlanYearStatus {
+  OPEN
+  CLOSED
+}
+
+enum SelectionStatus {
+  DRAFT
+  SUBMITTED
+}
+
+/// A benefits cycle. Employees can save/submit only while OPEN.
+model PlanYear {
+  id         String             @id @default(cuid())
+  name       String
+  status     PlanYearStatus     @default(OPEN)
+  createdAt  DateTime           @default(now())
+  selections BenefitSelection[]
+}
+
+/// Pool ceiling per (employment type × tenure band). Max claimable for the year.
+model PoolCeiling {
+  id             String         @id @default(cuid())
+  employmentType EmploymentType
+  tenureBand     TenureBand
+  amount         Int
+
+  @@unique([employmentType, tenureBand])
+}
+
+/// A fixed/guaranteed benefit (display-only), amounts per band, per employment type.
+model GuaranteedBenefit {
+  id             String         @id @default(cuid())
+  name           String
+  note           String?
+  employmentType EmploymentType
+  band6mo2y      Int?
+  band2to4y      Int?
+  band4to7y      Int?
+  band7to10y     Int?
+  order          Int            @default(0)
+}
+
+/// Medical insurance rate card (single tier). One row.
+model MedicalRateCard {
+  id           String @id @default(cuid())
+  self         Int
+  spouse       Int
+  childUnder18 Int
+  child18Plus  Int
+}
+
+/// A selectable flexible-basket category. Medical is special (rate-card priced, cap-exempt).
+model BenefitCatalogItem {
+  id          String          @id @default(cuid())
+  key         String          @unique
+  name        String
+  description String?
+  isMedical   Boolean         @default(false)
+  order       Int             @default(0)
+  active      Boolean         @default(true)
+  lines       SelectionLine[]
+}
+
+/// An employee's basket for a plan year.
+model BenefitSelection {
+  id                     String          @id @default(cuid())
+  userId                 String
+  user                   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planYearId             String
+  planYear               PlanYear        @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  status                 SelectionStatus @default(DRAFT)
+  medicalSpouse          Boolean         @default(false)
+  medicalChildrenUnder18 Int             @default(0)
+  medicalChildren18Plus  Int             @default(0)
+  submittedAt            DateTime?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  lines                  SelectionLine[]
+
+  @@unique([userId, planYearId])
+}
+
+/// One chosen benefit line (amount; for medical, the computed premium).
+model SelectionLine {
+  id            String             @id @default(cuid())
+  selectionId   String
+  selection     BenefitSelection   @relation(fields: [selectionId], references: [id], onDelete: Cascade)
+  catalogItemId String
+  catalogItem   BenefitCatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  amount        Int
+
+  @@unique([selectionId, catalogItemId])
 }

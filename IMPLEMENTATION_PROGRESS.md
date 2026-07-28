@@ -13,9 +13,9 @@
 | 3 — Onboarding | 🟢 Complete |
 | 4 — Handbook & Resources | 🟢 Complete |
 | 5 — Time-Off / Leave | 🟢 Complete (V1) |
-| 6 — Benefits (admin config) | 🟡 In progress |
-| 7 — Benefits (employee selector) | ⬜ Not started |
-| 8 — Dashboard + polish | ⬜ Not started |
+| 6 — Benefits (admin config) | 🟢 Complete |
+| 7 — Benefits (employee selector) | 🟢 Complete |
+| 8 — Dashboard + polish | 🟡 In progress |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
 ## Phase 0 — Docs & specs
@@ -43,8 +43,8 @@
 | 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
 
 ## Next up
-Autonomous build to the approved specs. Done: Foundation · Team Directory · Onboarding · Handbook & Resources · Time-Off.
-1. **Benefits** (next — the big one) → Dashboard.
+Autonomous build to the approved specs. Done: Foundation · Team Directory · Onboarding · Handbook & Resources · Time-Off · Benefits.
+1. **Dashboard** (last module) → then polish + handoff.
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
@@ -76,6 +76,16 @@ Autonomous build to the approved specs. Done: Foundation · Team Directory · On
   (request full-day range + note; my-requests list with status; cancel pending); direct-manager
   approval queue (approve/decline + comment); no-manager falls back to a Super User; date validation.
   Single generic type, no balances, full days. Build green.
+
+- **2026-07-27 — Benefits complete:** schema (PlanYear, PoolCeiling, GuaranteedBenefit,
+  MedicalRateCard, BenefitCatalogItem, BenefitSelection, SelectionLine + enums). Server-authoritative
+  rule engine (`src/lib/benefits/rules.ts`): pool ceiling, FT 50% single-benefit cap, FT max-4 / PT
+  max-2, medical rate-card premium (self always + spouse/children by bracket) exempt from 50% but
+  ceiling-capped, steps of 1,000. Employee /benefits: guaranteed panel + ported navy/gold selector
+  (toggles, steppers, live meter, medical modal) with save-draft/submit-lock; window-gated. HR
+  /admin/benefits: plan-year open/close + create, submissions view + reopen. Seeded confirmed config
+  (`prisma/sql/003_seed_benefits.sql`). Deferred: HR editing UI for ceilings/guaranteed/rate-card
+  (values seeded & authoritative); selector visual polish vs the HTML reference. Build green.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

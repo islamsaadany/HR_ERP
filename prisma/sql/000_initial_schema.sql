@@ -28,6 +28,12 @@ CREATE TYPE "OnboardingTrackKey" AS ENUM ('COMMON_CORE', 'CONSULTING');
 -- CreateEnum
 CREATE TYPE "LeaveStatus" AS ENUM ('PENDING', 'APPROVED', 'DECLINED', 'CANCELLED');
 
+-- CreateEnum
+CREATE TYPE "PlanYearStatus" AS ENUM ('OPEN', 'CLOSED');
+
+-- CreateEnum
+CREATE TYPE "SelectionStatus" AS ENUM ('DRAFT', 'SUBMITTED');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -151,6 +157,91 @@ CREATE TABLE "LeaveRequest" (
     CONSTRAINT "LeaveRequest_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "PlanYear" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "status" "PlanYearStatus" NOT NULL DEFAULT 'OPEN',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PlanYear_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PoolCeiling" (
+    "id" TEXT NOT NULL,
+    "employmentType" "EmploymentType" NOT NULL,
+    "tenureBand" "TenureBand" NOT NULL,
+    "amount" INTEGER NOT NULL,
+
+    CONSTRAINT "PoolCeiling_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "GuaranteedBenefit" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "note" TEXT,
+    "employmentType" "EmploymentType" NOT NULL,
+    "band6mo2y" INTEGER,
+    "band2to4y" INTEGER,
+    "band4to7y" INTEGER,
+    "band7to10y" INTEGER,
+    "order" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "GuaranteedBenefit_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MedicalRateCard" (
+    "id" TEXT NOT NULL,
+    "self" INTEGER NOT NULL,
+    "spouse" INTEGER NOT NULL,
+    "childUnder18" INTEGER NOT NULL,
+    "child18Plus" INTEGER NOT NULL,
+
+    CONSTRAINT "MedicalRateCard_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "BenefitCatalogItem" (
+    "id" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "isMedical" BOOLEAN NOT NULL DEFAULT false,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+
+    CONSTRAINT "BenefitCatalogItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "BenefitSelection" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "planYearId" TEXT NOT NULL,
+    "status" "SelectionStatus" NOT NULL DEFAULT 'DRAFT',
+    "medicalSpouse" BOOLEAN NOT NULL DEFAULT false,
+    "medicalChildrenUnder18" INTEGER NOT NULL DEFAULT 0,
+    "medicalChildren18Plus" INTEGER NOT NULL DEFAULT 0,
+    "submittedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "BenefitSelection_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "SelectionLine" (
+    "id" TEXT NOT NULL,
+    "selectionId" TEXT NOT NULL,
+    "catalogItemId" TEXT NOT NULL,
+    "amount" INTEGER NOT NULL,
+
+    CONSTRAINT "SelectionLine_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -193,6 +284,18 @@ CREATE INDEX "LeaveRequest_userId_idx" ON "LeaveRequest"("userId");
 -- CreateIndex
 CREATE INDEX "LeaveRequest_approverId_status_idx" ON "LeaveRequest"("approverId", "status");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "PoolCeiling_employmentType_tenureBand_key" ON "PoolCeiling"("employmentType", "tenureBand");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "BenefitCatalogItem_key_key" ON "BenefitCatalogItem"("key");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "BenefitSelection_userId_planYearId_key" ON "BenefitSelection"("userId", "planYearId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SelectionLine_selectionId_catalogItemId_key" ON "SelectionLine"("selectionId", "catalogItemId");
+
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_reportsToId_fkey" FOREIGN KEY ("reportsToId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -216,4 +319,16 @@ ALTER TABLE "LeaveRequest" ADD CONSTRAINT "LeaveRequest_userId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "LeaveRequest" ADD CONSTRAINT "LeaveRequest_approverId_fkey" FOREIGN KEY ("approverId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BenefitSelection" ADD CONSTRAINT "BenefitSelection_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BenefitSelection" ADD CONSTRAINT "BenefitSelection_planYearId_fkey" FOREIGN KEY ("planYearId") REFERENCES "PlanYear"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SelectionLine" ADD CONSTRAINT "SelectionLine_selectionId_fkey" FOREIGN KEY ("selectionId") REFERENCES "BenefitSelection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SelectionLine" ADD CONSTRAINT "SelectionLine_catalogItemId_fkey" FOREIGN KEY ("catalogItemId") REFERENCES "BenefitCatalogItem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
