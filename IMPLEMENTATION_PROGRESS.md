@@ -9,8 +9,8 @@
 |-------|--------|
 | 0 — Docs & specs | 🟡 In progress (spec-kit adopted; specs 001–007 done — all v1 modules specced) |
 | 1 — Foundation (+ My Documents) | 🟢 Feature-complete (auth, registry CRUD, roles, profile, My Documents, seed) |
-| 2 — Team Directory | 🟡 In progress |
-| 3 — Onboarding | ⬜ Not started |
+| 2 — Team Directory | 🟢 Complete (V1) |
+| 3 — Onboarding | 🟡 In progress |
 | 4 — Handbook & Resources | ⬜ Not started |
 | 5 — Time-Off / Leave | ⬜ Not started |
 | 6 — Benefits (admin config) | ⬜ Not started |
