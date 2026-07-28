@@ -1,0 +1,350 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+import {
+  STEP,
+  evaluateBasket,
+  computeMedicalPremium,
+  type MedicalConfig,
+} from "@/lib/benefits/rules";
+import { saveBasket, type SelectionPayload } from "@/app/(app)/benefits/actions";
+
+type CatalogItem = {
+  key: string;
+  name: string;
+  description: string | null;
+  isMedical: boolean;
+};
+type Rate = {
+  self: number;
+  spouse: number;
+  childUnder18: number;
+  child18Plus: number;
+};
+
+const egp = (n: number) => "EGP " + Math.round(n).toLocaleString();
+
+export function BenefitsSelector({
+  employmentType,
+  ceiling,
+  catalog,
+  medicalRate,
+  initialItems,
+  initialMedical,
+  initialStatus,
+}: {
+  employmentType: "FULL_TIME" | "PART_TIME";
+  ceiling: number;
+  catalog: CatalogItem[];
+  medicalRate: Rate;
+  initialItems: Record<string, number>;
+  initialMedical: MedicalConfig;
+  initialStatus: "DRAFT" | "SUBMITTED" | "NONE";
+}) {
+  const [amounts, setAmounts] = useState<Record<string, number>>(initialItems);
+  const [medical, setMedical] = useState<MedicalConfig>(initialMedical);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [status, setStatus] = useState(initialStatus);
+  const [serverMsg, setServerMsg] = useState<{ errors: string[]; warnings: string[] } | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const locked = status === "SUBMITTED";
+  const medicalItem = catalog.find((c) => c.isMedical);
+  const nonMedical = catalog.filter((c) => !c.isMedical);
+
+  const result = useMemo(
+    () =>
+      evaluateBasket({
+        employmentType,
+        ceiling,
+        lines: nonMedical
+          .filter((c) => (amounts[c.key] ?? 0) > 0)
+          .map((c) => ({ key: c.key, name: c.name, amount: amounts[c.key] ?? 0 })),
+        medical,
+        medicalRate,
+      }),
+    [amounts, medical, employmentType, ceiling, nonMedical, medicalRate]
+  );
+
+  const pct = Math.min(100, ceiling > 0 ? (result.total / ceiling) * 100 : 0);
+
+  function setAmount(key: string, val: number) {
+    if (locked) return;
+    setAmounts((a) => ({ ...a, [key]: Math.max(0, val) }));
+  }
+  function toggleItem(key: string) {
+    if (locked) return;
+    setAmounts((a) => {
+      const next = { ...a };
+      if ((next[key] ?? 0) > 0) delete next[key];
+      else next[key] = STEP;
+      return next;
+    });
+  }
+
+  function persist(submit: boolean) {
+    const payload: SelectionPayload = {
+      items: nonMedical.map((c) => ({ key: c.key, amount: amounts[c.key] ?? 0 })),
+      medical,
+    };
+    startTransition(async () => {
+      const res = await saveBasket(payload, submit);
+      setServerMsg({ errors: res.errors, warnings: res.warnings });
+      if (res.ok && res.status) setStatus(res.status);
+    });
+  }
+
+  const medicalPreview = computeMedicalPremium(medicalRate, { ...medical, selected: true });
+
+  return (
+    <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
+      {/* Basket */}
+      <div>
+        {locked ? (
+          <div className="mb-4 rounded-lg bg-navy-50 px-4 py-3 text-sm text-navy-700">
+            Your basket is <strong>submitted and locked</strong>. Ask HR to reopen it to make changes.
+          </div>
+        ) : null}
+
+        <div className="space-y-2">
+          {nonMedical.map((item) => {
+            const amt = amounts[item.key] ?? 0;
+            const on = amt > 0;
+            const over =
+              employmentType === "FULL_TIME" && amt > result.cap;
+            return (
+              <div
+                key={item.key}
+                className={
+                  "flex items-center gap-3 rounded-xl border bg-surface p-4 " +
+                  (over ? "border-red-300" : "border-line")
+                }
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleItem(item.key)}
+                  disabled={locked}
+                  className={
+                    "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
+                    (on ? "border-navy-700 bg-navy-700 text-white" : "border-line text-transparent")
+                  }
+                >
+                  ✓
+                </button>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-ink">{item.name}</div>
+                  {item.description ? (
+                    <div className="text-xs text-muted">{item.description}</div>
+                  ) : null}
+                  {over ? (
+                    <div className="text-xs font-medium text-red-600">
+                      Over the 50% cap (max {egp(result.cap)})
+                    </div>
+                  ) : null}
+                </div>
+                {on ? (
+                  <div className="flex items-center gap-1">
+                    <button type="button" disabled={locked} onClick={() => setAmount(item.key, amt - STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50">−</button>
+                    <input
+                      value={amt.toLocaleString()}
+                      onChange={(e) =>
+                        setAmount(item.key, parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0)
+                      }
+                      disabled={locked}
+                      className="w-24 rounded-lg border border-line px-2 py-1.5 text-right text-sm tabular-nums"
+                    />
+                    <button type="button" disabled={locked} onClick={() => setAmount(item.key, amt + STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50">+</button>
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted">Select to allocate</span>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Medical */}
+          {medicalItem ? (
+            <div className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4">
+              <button
+                type="button"
+                onClick={() => {
+                  if (locked) return;
+                  if (medical.selected) setMedical({ ...medical, selected: false });
+                  else setModalOpen(true);
+                }}
+                disabled={locked}
+                className={
+                  "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
+                  (medical.selected ? "border-navy-700 bg-navy-700 text-white" : "border-line text-transparent")
+                }
+              >
+                ✓
+              </button>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-ink">{medicalItem.name}</span>
+                  <span className="rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gold-800">
+                    50% exempt
+                  </span>
+                </div>
+                <div className="text-xs text-muted">
+                  {medical.selected
+                    ? `You${medical.spouse ? " + spouse" : ""}${
+                        medical.childrenUnder18 + medical.children18Plus > 0
+                          ? ` + ${medical.childrenUnder18 + medical.children18Plus} child(ren)`
+                          : ""
+                      }`
+                    : item_desc(medicalItem)}
+                </div>
+              </div>
+              {medical.selected ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-navy-800">{egp(result.medicalAmount)}</span>
+                  <button type="button" disabled={locked} onClick={() => setModalOpen(true)} className="rounded-lg border border-line px-3 py-1.5 text-xs hover:bg-navy-50">Edit</button>
+                </div>
+              ) : (
+                <span className="text-xs text-muted">Configure cover</span>
+              )}
+            </div>
+          ) : null}
+        </div>
+
+        {/* Server messages */}
+        {serverMsg?.errors.length ? (
+          <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+            <ul className="list-disc pl-4">{serverMsg.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>
+          </div>
+        ) : null}
+        {serverMsg && serverMsg.warnings.length > 0 ? (
+          <div className="mt-3 rounded-lg bg-gold-50 px-4 py-2 text-sm text-gold-800">
+            {serverMsg.warnings.join(" ")}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Meter / actions */}
+      <aside className="lg:sticky lg:top-6 h-fit rounded-xl border border-line bg-surface p-5">
+        <div className="text-3xl font-serif text-ink tabular-nums">{egp(result.total)}</div>
+        <div className="text-sm text-muted">allocated of {egp(ceiling)} pool</div>
+        <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
+          <div
+            className={"h-full rounded-full " + (result.total > ceiling ? "bg-red-500" : "bg-gold-500")}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="mt-3 flex justify-between text-sm">
+          <span className="text-muted">{result.remaining < 0 ? "Over by" : "Remaining"}</span>
+          <span className={result.remaining < 0 ? "font-semibold text-red-600" : "font-semibold text-navy-700"}>
+            {egp(Math.abs(result.remaining))}
+          </span>
+        </div>
+        <div className="mt-1 flex justify-between text-sm">
+          <span className="text-muted">Benefits chosen</span>
+          <span className="font-semibold text-ink">{result.selectionCount} of {result.maxSelect}</span>
+        </div>
+        <p className="mt-3 text-xs text-muted">
+          No single benefit may exceed 50% of the pool ({egp(result.cap)}). Medical insurance is exempt.
+        </p>
+
+        {!locked ? (
+          <div className="mt-5 space-y-2">
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => persist(false)}
+              className="w-full rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50 disabled:opacity-60"
+            >
+              {pending ? "Saving…" : "Save draft"}
+            </button>
+            <button
+              type="button"
+              disabled={pending || result.errors.length > 0}
+              onClick={() => persist(true)}
+              className="w-full rounded-lg bg-navy-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50"
+            >
+              Submit basket
+            </button>
+            {result.errors.length > 0 ? (
+              <p className="text-xs text-muted">Resolve the highlighted issues to submit.</p>
+            ) : null}
+          </div>
+        ) : null}
+      </aside>
+
+      {/* Medical modal */}
+      {modalOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-navy-950/50 p-4" onClick={() => setModalOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-surface p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-serif text-xl text-ink">Personal medical insurance</h3>
+            <p className="mt-1 text-sm text-muted">You are always covered. Add dependants below.</p>
+
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-line px-4 py-3">
+                <div>
+                  <div className="text-sm font-medium text-ink">You</div>
+                  <div className="text-xs text-muted">{egp(medicalRate.self)}</div>
+                </div>
+                <span className="text-xs text-muted">Included</span>
+              </div>
+              <label className="flex items-center justify-between rounded-lg border border-line px-4 py-3">
+                <div>
+                  <div className="text-sm font-medium text-ink">Spouse</div>
+                  <div className="text-xs text-muted">{egp(medicalRate.spouse)}</div>
+                </div>
+                <input type="checkbox" checked={medical.spouse} onChange={(e) => setMedical({ ...medical, spouse: e.target.checked })} className="h-5 w-5" />
+              </label>
+              <Counter label="Children under 18" note={egp(medicalRate.childUnder18) + " each"} value={medical.childrenUnder18} onChange={(v) => setMedical({ ...medical, childrenUnder18: v })} />
+              <Counter label="Children 18+" note={egp(medicalRate.child18Plus) + " each"} value={medical.children18Plus} onChange={(v) => setMedical({ ...medical, children18Plus: v })} />
+            </div>
+
+            <div className="mt-4 flex items-center justify-between rounded-lg bg-navy-50 px-4 py-3">
+              <span className="text-sm font-medium text-navy-800">Annual premium</span>
+              <span className="font-serif text-lg text-navy-800">{egp(medicalPreview)}</span>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => setModalOpen(false)} className="rounded-lg border border-line px-4 py-2 text-sm text-muted">Cancel</button>
+              <button
+                type="button"
+                onClick={() => { setMedical({ ...medical, selected: true }); setModalOpen(false); }}
+                className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function item_desc(i: { description: string | null }) {
+  return i.description ?? "Health cover for you and your dependants.";
+}
+
+function Counter({
+  label,
+  note,
+  value,
+  onChange,
+}: {
+  label: string;
+  note: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-line px-4 py-3">
+      <div>
+        <div className="text-sm font-medium text-ink">{label}</div>
+        <div className="text-xs text-muted">{note}</div>
+      </div>
+      <div className="flex items-center gap-1">
+        <button type="button" onClick={() => onChange(Math.max(0, value - 1))} className="h-8 w-8 rounded-lg border border-line text-muted">−</button>
+        <span className="w-8 text-center text-sm font-semibold tabular-nums">{value}</span>
+        <button type="button" onClick={() => onChange(value + 1)} className="h-8 w-8 rounded-lg border border-line text-muted">+</button>
+      </div>
+    </div>
+  );
+}

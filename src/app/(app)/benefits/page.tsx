@@ -103,7 +103,7 @@ export default async function BenefitsPage() {
           <BenefitsSelector
             employmentType={user.employmentType}
             ceiling={ceilingRow.amount}
-            catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, isMedical: c.isMedical }))}
+            catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical }))}
             medicalRate={{ self: medicalRate.self, spouse: medicalRate.spouse, childUnder18: medicalRate.childUnder18, child18Plus: medicalRate.child18Plus }}
             initialItems={initialItems}
             initialMedical={initialMedical}

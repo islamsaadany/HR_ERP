@@ -13,7 +13,7 @@
 ### Session 2026-07-27
 
 - **Pool ceilings (EGP) by tenure band** — FT: 20,000 / 30,000 / 45,000 / 65,000 · PT: 14,000 / 21,000 / 30,000 / 42,000, across bands 6mo–2y / 2–4y / 4–7y / 7–10y.
-- **Basket categories (4):** Gym · Mobile device · Personal Medical Insurance · Schooling. No separate per-category cap and no extra per-benefit eligibility — the pool ceiling + 50% cap (FT) / max-2 (PT) govern.
+- **Basket catalog (grouped, ported from `benefitsselector_3.html`):** items are grouped into 5 categories for display — **Health & protection** (Personal Medical Insurance, Annual health check-up) · **Wellbeing** (Gym membership, Coaching / therapy, Sports expenses) · **Life & family** (Schooling / education, Childcare / nursery, Caregiver support) · **Personal growth** (Personal learning) · **Lifestyle & flexibility** (Mobile device, Home-office setup). Personal Medical Insurance covers the employee only; spouse/children are separate priced options in the medical modal. No separate per-category cap and no extra per-benefit eligibility — the pool ceiling + 50% cap (FT) / max-2 (PT) govern.
 - **Full-time rule:** no single (non-medical) benefit may exceed 50% of the pool; up to 4 picks (⇒ practically 2–4). **Part-time rule:** max 2 picks; budget = the part-time ceiling.
 - **Medical insurance:** single tier; self 8,000 (always included, auto-marked), spouse 8,000, child <18 4,500, child ≥18 8,000; **exempt from the 50% cap** but capped at the pool ceiling. Dependants entered manually in the selection for now (not pulled from the registry).
 - **Guaranteed/fixed benefits are real figures** by tenure (see Assumptions) and are **display-only**.
@@ -117,7 +117,7 @@ HR / Super User configures the plan-year window (open/close), the pool ceilings 
 - **FR-002**: The system MUST show the guaranteed/fixed benefits (display-only) with the amounts for the employee's type × band.
 
 **Flexible basket & rules (server-authoritative)**
-- **FR-003**: The system MUST offer the 4 basket categories (Gym, Mobile device, Personal Medical Insurance, Schooling) for selection.
+- **FR-003**: The system MUST offer the basket catalog for selection, grouped for display into 5 categories (Health & protection, Wellbeing, Life & family, Personal growth, Lifestyle & flexibility) with the items ported from `benefitsselector_3.html`. The catalog is admin-configurable; the grouping and item set are not fixed at 4.
 - **FR-004**: The system MUST enforce that total allocation does not exceed the employee's pool ceiling.
 - **FR-005**: The system MUST enforce, for full-time employees, that no single non-medical benefit exceeds 50% of the pool.
 - **FR-006**: The system MUST enforce, for part-time employees, a maximum of 2 selected benefits.
@@ -150,7 +150,7 @@ HR / Super User configures the plan-year window (open/close), the pool ceilings 
 - **Plan Year**: a benefits cycle with an open/close window (status). Selections are only editable while open.
 - **Pool Ceiling**: the maximum basket budget for an (employment type × tenure band) — the confirmed EGP figures.
 - **Guaranteed Benefit**: a fixed benefit (marriage, summer, professional development, special events, loans) with amounts per (type × band); display-only.
-- **Benefit Catalog Item**: a selectable basket category (Gym, Mobile, Personal Medical Insurance, Schooling); medical is special (rate-card priced, cap-exempt).
+- **Benefit Catalog Item**: a selectable basket item with a display `category` (Health & protection, Wellbeing, Life & family, Personal growth, Lifestyle & flexibility); medical is special (rate-card priced, cap-exempt).
 - **Medical Rate Card**: the per-cover prices (self, spouse, child <18, child ≥18).
 - **Benefit Selection (basket)**: an employee's basket for a plan year — status (draft / submitted / reopened), and its lines.
 - **Selection Line**: one chosen benefit with its amount (or, for medical, its computed premium + the dependant configuration).
