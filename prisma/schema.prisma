@@ -1,0 +1,350 @@
+// HR_ERP — Prisma schema
+// Foundation module (spec 001): employee registry, roles, dependants, personal documents.
+// Later modules add their own models. Real employee PII is seeded via prisma/sql/ files
+// that are kept OUT of git (see .gitignore).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum Role {
+  EMPLOYEE
+  HR_ADMIN
+  SUPER_USER
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+}
+
+// Four confirmed tenure bands (drive Benefits pool ceilings)
+enum TenureBand {
+  BAND_6MO_2Y // 6 months – 2 years
+  BAND_2_4Y // 2 – 4 years
+  BAND_4_7Y // 4 – 7 years
+  BAND_7_10Y // 7 – 10 years
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  LEFT
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+/// The employee registry — the backbone every module reads from.
+model User {
+  id      String @id @default(cuid())
+  email   String @unique // login identity (Google, company domain)
+  name    String
+  photoUrl String?
+
+  // Public directory fields
+  phone      String?
+  department String?
+  title      String?
+
+  // Authorization
+  role Role @default(EMPLOYEE)
+
+  // HR-private employment fields (money-affecting: HR-set, authoritative)
+  employmentType EmploymentType?
+  tenureBand     TenureBand?
+  startDate      DateTime?
+  endDate        DateTime?
+  status         EmployeeStatus @default(ACTIVE)
+
+  // HR-private personal fields
+  dateOfBirth   DateTime?
+  maritalStatus MaritalStatus?
+
+  // Reporting line (org chart) — self relation
+  reportsToId String?
+  reportsTo   User?   @relation("Reports", fields: [reportsToId], references: [id], onDelete: SetNull)
+  reports     User[]  @relation("Reports")
+
+  dependants Dependant[]
+
+  // Personal documents owned by this user
+  documents         PersonalDocument[] @relation("DocOwner")
+  uploadedDocuments PersonalDocument[] @relation("DocUploader")
+
+  // Onboarding
+  onboardingCompletions ActivityCompletion[]
+
+  // Time-off
+  leaveRequests  LeaveRequest[] @relation("LeaveRequester")
+  leaveApprovals LeaveRequest[] @relation("LeaveApprover")
+
+  // Benefits
+  benefitSelections BenefitSelection[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([department])
+  @@index([status])
+  @@index([reportsToId])
+}
+
+/// A dependant (child) of an employee — name + DOB. Age is derived, never stored.
+model Dependant {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String?
+  dateOfBirth DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// A personal document owned by one employee (ID, certificate, contract, HR letter).
+/// Visible to the owner and HR/Super User only. Company-wide files live in Handbook & Resources.
+model PersonalDocument {
+  id           String   @id @default(cuid())
+  ownerId      String
+  owner        User     @relation("DocOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  title        String
+  blobUrl      String
+  contentType  String?
+  sizeBytes    Int?
+  uploadedById String?
+  uploadedBy   User?    @relation("DocUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+
+  @@index([ownerId])
+}
+
+// ─── Onboarding (spec 002) ──────────────────────────────────────────────
+
+enum ActivityType {
+  POLICY // read & acknowledge
+  ACTION // do & complete
+}
+
+enum OnboardingStage {
+  DAY_1
+  WEEK_1
+  FIRST_MONTH
+  CHECK_INS // 30 / 60 / 90
+}
+
+enum OnboardingTrackKey {
+  COMMON_CORE // everyone
+  CONSULTING // Consulting role track
+}
+
+/// An onboarding activity — the unit a joiner acknowledges (Policy) or completes (Action).
+model OnboardingActivity {
+  id          String             @id @default(cuid())
+  title       String
+  description String?
+  type        ActivityType
+  stage       OnboardingStage
+  track       OnboardingTrackKey @default(COMMON_CORE)
+  linkUrl     String? // deep link into another module or a resource
+  order       Int                @default(0)
+  active      Boolean            @default(true)
+  completions ActivityCompletion[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([track, stage, order])
+}
+
+/// A joiner's self-attested acknowledgement/completion of an activity.
+model ActivityCompletion {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityId  String
+  activity    OnboardingActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  completedAt DateTime           @default(now())
+
+  @@unique([userId, activityId])
+  @@index([userId])
+}
+
+// ─── Handbook & Resources (spec 004) ────────────────────────────────────
+
+/// A browsable, searchable handbook section (native content).
+model HandbookSection {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  summary   String?
+  body      String   @default("") // markdown/plain text
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+
+/// A downloadable company file (company profile, template, policy, …).
+model Resource {
+  id           String   @id @default(cuid())
+  title        String
+  category     String   @default("Other")
+  blobUrl      String
+  contentType  String?
+  sizeBytes    Int?
+  uploadedById String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([category])
+}
+
+// ─── Time-Off / Leave (spec 005) ────────────────────────────────────────
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+/// A time-off request (full days). Approved by the requester's direct manager
+/// (or a Super User when none exists). No balances/types in v1.
+model LeaveRequest {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation("LeaveRequester", fields: [userId], references: [id], onDelete: Cascade)
+  startDate       DateTime
+  endDate         DateTime
+  note            String?
+  status          LeaveStatus @default(PENDING)
+  approverId      String?
+  approver        User?       @relation("LeaveApprover", fields: [approverId], references: [id], onDelete: SetNull)
+  decisionComment String?
+  decidedAt       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([approverId, status])
+}
+
+// ─── Benefits (spec 007) ────────────────────────────────────────────────
+
+enum PlanYearStatus {
+  OPEN
+  CLOSED
+}
+
+enum SelectionStatus {
+  DRAFT
+  SUBMITTED
+}
+
+/// A benefits cycle. Employees can save/submit only while OPEN.
+model PlanYear {
+  id         String             @id @default(cuid())
+  name       String
+  status     PlanYearStatus     @default(OPEN)
+  createdAt  DateTime           @default(now())
+  selections BenefitSelection[]
+}
+
+/// Pool ceiling per (employment type × tenure band). Max claimable for the year.
+model PoolCeiling {
+  id             String         @id @default(cuid())
+  employmentType EmploymentType
+  tenureBand     TenureBand
+  amount         Int
+
+  @@unique([employmentType, tenureBand])
+}
+
+/// A fixed/guaranteed benefit (display-only), amounts per band, per employment type.
+model GuaranteedBenefit {
+  id             String         @id @default(cuid())
+  name           String
+  note           String?
+  employmentType EmploymentType
+  band6mo2y      Int?
+  band2to4y      Int?
+  band4to7y      Int?
+  band7to10y     Int?
+  order          Int            @default(0)
+}
+
+/// Medical insurance rate card (single tier). One row.
+model MedicalRateCard {
+  id           String @id @default(cuid())
+  self         Int
+  spouse       Int
+  childUnder18 Int
+  child18Plus  Int
+}
+
+/// A selectable flexible-basket category. Medical is special (rate-card priced, cap-exempt).
+model BenefitCatalogItem {
+  id          String          @id @default(cuid())
+  key         String          @unique
+  name        String
+  description String?
+  isMedical   Boolean         @default(false)
+  order       Int             @default(0)
+  active      Boolean         @default(true)
+  lines       SelectionLine[]
+}
+
+/// An employee's basket for a plan year.
+model BenefitSelection {
+  id                     String          @id @default(cuid())
+  userId                 String
+  user                   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planYearId             String
+  planYear               PlanYear        @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  status                 SelectionStatus @default(DRAFT)
+  medicalSpouse          Boolean         @default(false)
+  medicalChildrenUnder18 Int             @default(0)
+  medicalChildren18Plus  Int             @default(0)
+  submittedAt            DateTime?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  lines                  SelectionLine[]
+
+  @@unique([userId, planYearId])
+}
+
+// ─── Dashboard (spec 006) ───────────────────────────────────────────────
+
+/// A short company announcement shown on the dashboard (newest first).
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  authorId    String?
+  publishedAt DateTime @default(now())
+
+  @@index([publishedAt])
+}
+
+/// One chosen benefit line (amount; for medical, the computed premium).
+model SelectionLine {
+  id            String             @id @default(cuid())
+  selectionId   String
+  selection     BenefitSelection   @relation(fields: [selectionId], references: [id], onDelete: Cascade)
+  catalogItemId String
+  catalogItem   BenefitCatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  amount        Int
+
+  @@unique([selectionId, catalogItemId])
+}

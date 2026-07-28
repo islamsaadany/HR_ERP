@@ -1,0 +1,42 @@
+import type { Role } from "@prisma/client";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
+
+export const isAdmin = (role?: Role) =>
+  role === "HR_ADMIN" || role === "SUPER_USER";
+export const isSuperUser = (role?: Role) => role === "SUPER_USER";
+
+/** The signed-in session, or null. */
+export async function getSession() {
+  return auth();
+}
+
+/** Require a signed-in user; redirect to /signin otherwise. Returns the session user. */
+export async function requireUser() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/signin");
+  return session.user;
+}
+
+/** Require HR Admin or Super User; redirect home otherwise. */
+export async function requireAdmin() {
+  const user = await requireUser();
+  if (!isAdmin(user.role)) redirect("/dashboard");
+  return user;
+}
+
+/** Require Super User; redirect home otherwise. */
+export async function requireSuperUser() {
+  const user = await requireUser();
+  if (!isSuperUser(user.role)) redirect("/dashboard");
+  return user;
+}
+
+/** A "manager" is any active employee who has at least one direct report (org-chart derived). */
+export async function isManager(userId: string): Promise<boolean> {
+  const count = await prisma.user.count({
+    where: { reportsToId: userId, status: "ACTIVE" },
+  });
+  return count > 0;
+}
