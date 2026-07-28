@@ -67,9 +67,10 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Tenure bands (confirmed):** 6mo–2y · 2–4y · 4–7y · 7–10y.
 - **Pool ceiling (confirmed, EGP):** FT 20,000 / 30,000 / 45,000 / 65,000 · PT 14,000 / 21,000 / 30,000 / 42,000. (Note: real PT is ~65–70% of FT, not the policy's "50%" wording.)
 - **Fixed / guaranteed benefits:** Marriage allowance · Loans (after 1yr, 1-month salary) · Summer allowance · Professional development · Special events. Shown first, separate from the basket.
-- **Flexible basket:** 4 categories — **Gym · Mobile device · Personal medical insurance · Schooling**. FT: no single benefit > 50% of the pool (⇒ practically 2–4 picks). PT: **max 2** picks within the (smaller) budget. Amounts in steps of 1,000.
-- **Still pending:** per-benefit monetary limits/eligibility ("detailed benefit descriptions") and whether medical insurance keeps the HTML's rate-card tiers + 50%-exemption or a simpler limit.
-- **Placeholder note:** figures never presented as final until fully confirmed.
+- **Flexible basket:** 4 categories — **Gym · Mobile device · Personal medical insurance · Schooling**. FT: no single benefit > 50% of the pool (⇒ practically 2–4 picks). PT: **max 2** picks within the (smaller) budget. Amounts in steps of 1,000. No separate per-category caps or extra eligibility.
+- **Guaranteed amounts (confirmed, EGP by band):** FT — Marriage 18/24/30/36k · Summer 2.5/3.5/5/6k · Prof-Dev 5/9.5/18/21.5k · Special events 6/8.5/12/18k · Loans = 1-month salary from yr 1. PT — Marriage 9/12/15/18k · Prof-Dev 5/7/9/11k · Special events 6/8.5/12/18k (no summer/loans).
+- **Medical insurance (confirmed):** single tier — self 8,000 (always included), spouse 8,000, child <18 4,500, child ≥18 8,000; **exempt from the 50% cap**, capped at the pool ceiling; dependants entered manually for now.
+- **Claims/reimbursement:** Phase 2 (v1 ends at a submitted, locked selection).
 
 ## 6. Security & integrity notes
 - Domain lock enforced in NextAuth `signIn` callback.

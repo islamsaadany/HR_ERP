@@ -7,7 +7,7 @@
 ## Status at a glance
 | Phase | Status |
 |-------|--------|
-| 0 — Docs & specs | 🟡 In progress (spec-kit adopted; specs 001–006 done) |
+| 0 — Docs & specs | 🟡 In progress (spec-kit adopted; specs 001–007 done — all v1 modules specced) |
 | 1 — Foundation (+ My Documents) | ⬜ Not started |
 | 2 — Team Directory | ⬜ Not started |
 | 3 — Onboarding | ⬜ Not started |
@@ -40,16 +40,16 @@
 | 004 | Handbook & Resources | ✅ clarified, plan-ready |
 | 005 | Time-Off / Leave Management (V1) | ✅ complete, plan-ready |
 | 006 | Dashboard (Home) | ✅ complete, plan-ready |
+| 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
 
 ## Next up
-1. Formalize the last module spec: Benefits* — one at a time.
-   *Benefits still needs per-benefit limits + medical handling; ceilings already captured.
-   Note: personal document upload (My Documents) folded into Foundation spec 001; no standalone HR Documents module.
-2. Or begin `/speckit-plan` on Foundation to move toward the build.
+1. **All 7 v1 module specs are written and plan-ready.** Remaining open product decision: **Design language (A)** — paper/pine vs navy/gold — affects all UI.
+2. Begin the build: `/speckit-plan` on Foundation (001), then tasks → implement, module by module in the phase order.
+   Note: personal document upload (My Documents) is in Foundation spec 001; no standalone HR Documents module.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
-- Benefits figures throughout are placeholders until the real rate card / ceilings / tenure bands arrive.
+- Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 

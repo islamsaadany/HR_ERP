@@ -47,9 +47,11 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 - **2026-07-27 — Login vs directory:** login stays domain-locked to `@forefront.consulting`; people with placeholder external emails appear in the directory but can't sign in until they get a company address.
 - **2026-07-27 — Documents reshaped:** no standalone "HR Documents" module. Personal document upload becomes **My Documents** inside the employee Profile (Foundation, spec `001`). Company-wide content (policies, handbook, company profile, templates) lives in a **Handbook & Resources** module (structured handbook + a downloadable Resources area). Onboarding links updated accordingly.
 
+- **2026-07-27 — Benefits figures fully confirmed:** guaranteed amounts by band (FT & PT) = the real figures; medical rate card = single tier (self/spouse 8k, child <18 4.5k, child ≥18 8k), exempt from 50% cap, dependants entered manually for now; no per-category caps/eligibility. All 7 v1 module specs written (`specs/001`–`007`).
+
 ### Resolved earlier / Open
-- **A · Design language** — *default (unconfirmed):* benefits paper/pine palette product-wide. Alternative: reference navy/gold. **Still to confirm.**
-- **E · Real benefit figures** — ceilings now confirmed; per-benefit monetary limits + medical-insurance handling still pending.
+- **A · Design language** — *default (unconfirmed):* benefits paper/pine palette product-wide. Alternative: reference navy/gold. **Still to confirm** (last open product decision before build).
+- **E · Real benefit figures** — *resolved:* ceilings, guaranteed amounts, and medical rate card all confirmed (spec `007`).
 - **F · Learning Track timing** — *resolved:* stays Phase 2 (placeholder present in v1).
 
 ---
