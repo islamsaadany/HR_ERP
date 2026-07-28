@@ -16,6 +16,15 @@ CREATE TYPE "EmployeeStatus" AS ENUM ('ACTIVE', 'LEFT');
 -- CreateEnum
 CREATE TYPE "MaritalStatus" AS ENUM ('SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED');
 
+-- CreateEnum
+CREATE TYPE "ActivityType" AS ENUM ('POLICY', 'ACTION');
+
+-- CreateEnum
+CREATE TYPE "OnboardingStage" AS ENUM ('DAY_1', 'WEEK_1', 'FIRST_MONTH', 'CHECK_INS');
+
+-- CreateEnum
+CREATE TYPE "OnboardingTrackKey" AS ENUM ('COMMON_CORE', 'CONSULTING');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -65,6 +74,33 @@ CREATE TABLE "PersonalDocument" (
     CONSTRAINT "PersonalDocument_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "OnboardingActivity" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "type" "ActivityType" NOT NULL,
+    "stage" "OnboardingStage" NOT NULL,
+    "track" "OnboardingTrackKey" NOT NULL DEFAULT 'COMMON_CORE',
+    "linkUrl" TEXT,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "OnboardingActivity_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ActivityCompletion" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "activityId" TEXT NOT NULL,
+    "completedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ActivityCompletion_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -83,6 +119,15 @@ CREATE INDEX "Dependant_userId_idx" ON "Dependant"("userId");
 -- CreateIndex
 CREATE INDEX "PersonalDocument_ownerId_idx" ON "PersonalDocument"("ownerId");
 
+-- CreateIndex
+CREATE INDEX "OnboardingActivity_track_stage_order_idx" ON "OnboardingActivity"("track", "stage", "order");
+
+-- CreateIndex
+CREATE INDEX "ActivityCompletion_userId_idx" ON "ActivityCompletion"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ActivityCompletion_userId_activityId_key" ON "ActivityCompletion"("userId", "activityId");
+
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_reportsToId_fkey" FOREIGN KEY ("reportsToId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
@@ -94,4 +139,10 @@ ALTER TABLE "PersonalDocument" ADD CONSTRAINT "PersonalDocument_ownerId_fkey" FO
 
 -- AddForeignKey
 ALTER TABLE "PersonalDocument" ADD CONSTRAINT "PersonalDocument_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ActivityCompletion" ADD CONSTRAINT "ActivityCompletion_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ActivityCompletion" ADD CONSTRAINT "ActivityCompletion_activityId_fkey" FOREIGN KEY ("activityId") REFERENCES "OnboardingActivity"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

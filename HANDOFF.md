@@ -6,7 +6,8 @@
 ## 1. Database (Neon SQL editor)
 Paste these files from `prisma/sql/` into Neon, **in numeric order**:
 - [ ] `000_initial_schema.sql` — creates all tables/enums.
-- [ ] `seed_data_team.sql` — the 19 real employees + dependants (delivered separately; **gitignored**, contains PII). *(added when ready)*
+- [ ] `001_seed_onboarding.sql` — the onboarding activities (no PII; in the repo).
+- [ ] `seed_data_team.sql` — the 19 real employees + dependants (delivered separately; **gitignored**, contains PII).
 
 ## 2. Environment variables (Vercel → Project → Settings → Environment Variables)
 Set these (see `.env.example` for the shape):

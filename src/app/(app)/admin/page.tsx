@@ -10,7 +10,7 @@ const CARDS = [
     body: "Create and edit employee records, employment, reporting lines, and roles.",
     ready: true,
   },
-  { href: "/admin", title: "Onboarding Content", body: "Author onboarding stages and activities.", ready: false },
+  { href: "/admin/onboarding", title: "Onboarding Content", body: "Author onboarding stages and activities.", ready: true },
   { href: "/admin", title: "Benefits Configuration", body: "Plan-year window, ceilings, catalog, rate card.", ready: false },
   { href: "/admin", title: "Announcements", body: "Post company announcements.", ready: false },
 ];

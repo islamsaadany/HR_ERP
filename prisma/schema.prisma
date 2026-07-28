@@ -81,6 +81,9 @@ model User {
   documents         PersonalDocument[] @relation("DocOwner")
   uploadedDocuments PersonalDocument[] @relation("DocUploader")
 
+  // Onboarding
+  onboardingCompletions ActivityCompletion[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -116,4 +119,54 @@ model PersonalDocument {
   createdAt    DateTime @default(now())
 
   @@index([ownerId])
+}
+
+// ─── Onboarding (spec 002) ──────────────────────────────────────────────
+
+enum ActivityType {
+  POLICY // read & acknowledge
+  ACTION // do & complete
+}
+
+enum OnboardingStage {
+  DAY_1
+  WEEK_1
+  FIRST_MONTH
+  CHECK_INS // 30 / 60 / 90
+}
+
+enum OnboardingTrackKey {
+  COMMON_CORE // everyone
+  CONSULTING // Consulting role track
+}
+
+/// An onboarding activity — the unit a joiner acknowledges (Policy) or completes (Action).
+model OnboardingActivity {
+  id          String             @id @default(cuid())
+  title       String
+  description String?
+  type        ActivityType
+  stage       OnboardingStage
+  track       OnboardingTrackKey @default(COMMON_CORE)
+  linkUrl     String? // deep link into another module or a resource
+  order       Int                @default(0)
+  active      Boolean            @default(true)
+  completions ActivityCompletion[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([track, stage, order])
+}
+
+/// A joiner's self-attested acknowledgement/completion of an activity.
+model ActivityCompletion {
+  id          String             @id @default(cuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityId  String
+  activity    OnboardingActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  completedAt DateTime           @default(now())
+
+  @@unique([userId, activityId])
+  @@index([userId])
 }

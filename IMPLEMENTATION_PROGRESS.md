@@ -10,8 +10,8 @@
 | 0 — Docs & specs | 🟡 In progress (spec-kit adopted; specs 001–007 done — all v1 modules specced) |
 | 1 — Foundation (+ My Documents) | 🟢 Feature-complete (auth, registry CRUD, roles, profile, My Documents, seed) |
 | 2 — Team Directory | 🟢 Complete (V1) |
-| 3 — Onboarding | 🟡 In progress |
-| 4 — Handbook & Resources | ⬜ Not started |
+| 3 — Onboarding | 🟢 Complete |
+| 4 — Handbook & Resources | 🟡 In progress |
 | 5 — Time-Off / Leave | ⬜ Not started |
 | 6 — Benefits (admin config) | ⬜ Not started |
 | 7 — Benefits (employee selector) | ⬜ Not started |
@@ -61,6 +61,12 @@ Autonomous build to the approved specs, module by module in phase order (design 
   (`prisma/sql/seed_data_team.sql`, gitignored — 19 employees + dependants, delivered to user).
   Minor gap deferred: HR view/upload of another employee's personal docs from the admin record
   (FR-026 — download route already authorizes admins; admin upload UI to add later).
+
+- **2026-07-27 — Onboarding complete:** schema (OnboardingActivity/ActivityCompletion + enums);
+  employee journey (/onboarding) grouped by stage with live progress % and self-attested toggles;
+  track assignment (common core + Consulting by department); HR authoring (/admin/onboarding CRUD);
+  seeded 25 activities (`prisma/sql/001_seed_onboarding.sql`, committed) with cross-module deep links.
+  Build green.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
