@@ -23,7 +23,7 @@ export function AppShell({
   return (
     <div className="min-h-screen grid grid-cols-[240px_1fr] max-md:grid-cols-1">
       {/* Sidebar */}
-      <aside className="bg-navy-900 text-white flex flex-col max-md:hidden sticky top-0 h-screen overflow-y-auto">
+      <aside className="bg-navy-900 text-white flex flex-col max-md:hidden">
         <div className="px-6 py-6 border-b border-navy-700">
           <div className="text-gold-400 text-[10px] font-semibold tracking-[0.2em] uppercase">
             Forefront
