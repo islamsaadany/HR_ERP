@@ -60,3 +60,9 @@ export function formatDate(d: Date | null | undefined): string {
     year: "numeric",
   });
 }
+
+/** Date → "YYYY-MM-DD" for <input type="date">, or "" when null. */
+export function toDateInput(d: Date | null | undefined): string {
+  if (!d) return "";
+  return d.toISOString().slice(0, 10);
+}
