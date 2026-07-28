@@ -11,8 +11,8 @@
 | 1 — Foundation (+ My Documents) | 🟢 Feature-complete (auth, registry CRUD, roles, profile, My Documents, seed) |
 | 2 — Team Directory | 🟢 Complete (V1) |
 | 3 — Onboarding | 🟢 Complete |
-| 4 — Handbook & Resources | 🟡 In progress |
-| 5 — Time-Off / Leave | ⬜ Not started |
+| 4 — Handbook & Resources | 🟢 Complete |
+| 5 — Time-Off / Leave | 🟡 In progress |
 | 6 — Benefits (admin config) | ⬜ Not started |
 | 7 — Benefits (employee selector) | ⬜ Not started |
 | 8 — Dashboard + polish | ⬜ Not started |
@@ -43,8 +43,8 @@
 | 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
 
 ## Next up
-Autonomous build to the approved specs. Done: Foundation · Team Directory · Onboarding.
-1. **Handbook & Resources** (next) → Time-Off → Benefits (the big one) → Dashboard.
+Autonomous build to the approved specs. Done: Foundation · Team Directory · Onboarding · Handbook & Resources.
+1. **Time-Off** (next) → Benefits (the big one) → Dashboard.
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
@@ -66,6 +66,11 @@ Autonomous build to the approved specs. Done: Foundation · Team Directory · On
   track assignment (common core + Consulting by department); HR authoring (/admin/onboarding CRUD);
   seeded 25 activities (`prisma/sql/001_seed_onboarding.sql`, committed) with cross-module deep links.
   Build green.
+
+- **2026-07-27 — Handbook & Resources complete:** schema (HandbookSection, Resource); employee
+  /handbook (searchable native sections + downloadable resources) + /handbook/[slug] reader;
+  authorized resource download route; HR /admin/handbook (section CRUD + resource upload/delete
+  via Vercel Blob); seeded 10 sections from the kit (`prisma/sql/002_seed_handbook.sql`). Build green.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

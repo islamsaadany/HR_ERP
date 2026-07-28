@@ -101,6 +101,36 @@ CREATE TABLE "ActivityCompletion" (
     CONSTRAINT "ActivityCompletion_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "HandbookSection" (
+    "id" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "summary" TEXT,
+    "body" TEXT NOT NULL DEFAULT '',
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "HandbookSection_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Resource" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "category" TEXT NOT NULL DEFAULT 'Other',
+    "blobUrl" TEXT NOT NULL,
+    "contentType" TEXT,
+    "sizeBytes" INTEGER,
+    "uploadedById" TEXT,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Resource_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -127,6 +157,15 @@ CREATE INDEX "ActivityCompletion_userId_idx" ON "ActivityCompletion"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ActivityCompletion_userId_activityId_key" ON "ActivityCompletion"("userId", "activityId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "HandbookSection_slug_key" ON "HandbookSection"("slug");
+
+-- CreateIndex
+CREATE INDEX "HandbookSection_order_idx" ON "HandbookSection"("order");
+
+-- CreateIndex
+CREATE INDEX "Resource_category_idx" ON "Resource"("category");
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_reportsToId_fkey" FOREIGN KEY ("reportsToId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

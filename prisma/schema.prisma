@@ -170,3 +170,35 @@ model ActivityCompletion {
   @@unique([userId, activityId])
   @@index([userId])
 }
+
+// ─── Handbook & Resources (spec 004) ────────────────────────────────────
+
+/// A browsable, searchable handbook section (native content).
+model HandbookSection {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  summary   String?
+  body      String   @default("") // markdown/plain text
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+
+/// A downloadable company file (company profile, template, policy, …).
+model Resource {
+  id           String   @id @default(cuid())
+  title        String
+  category     String   @default("Other")
+  blobUrl      String
+  contentType  String?
+  sizeBytes    Int?
+  uploadedById String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([category])
+}
