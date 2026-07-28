@@ -43,10 +43,9 @@
 | 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
 
 ## Next up
-Autonomous build to the approved specs, module by module in phase order (design language = navy/gold; all 7 specs done).
-1. Finish Foundation: HR registry admin CRUD + role grants; My Documents upload (Vercel Blob); team-data seed SQL (PII, gitignored).
-2. Then Team Directory → Onboarding → Handbook & Resources → Time-Off → Benefits → Dashboard.
-3. Hand-off items for the user: run `prisma/sql/*` in Neon; set env vars + Google OAuth in Vercel.
+Autonomous build to the approved specs. Done: Foundation · Team Directory · Onboarding.
+1. **Handbook & Resources** (next) → Time-Off → Benefits (the big one) → Dashboard.
+2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
 - **2026-07-27 — Phase 1 Foundation scaffold:** Next.js 15.5 + React 19 + TS + Tailwind v4 +
