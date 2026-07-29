@@ -29,6 +29,16 @@ export default async function SectionPage({
       <div className="mt-6 whitespace-pre-wrap text-[15px] leading-relaxed text-ink">
         {section.body || "Content coming soon."}
       </div>
+      {section.actionHref && section.actionLabel ? (
+        <div className="mt-6">
+          <Link
+            href={section.actionHref}
+            className="inline-flex items-center gap-2 rounded-lg bg-navy-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-700"
+          >
+            {section.actionLabel} <span aria-hidden>→</span>
+          </Link>
+        </div>
+      ) : null}
     </article>
   );
 }

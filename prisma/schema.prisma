@@ -197,15 +197,17 @@ model KnowledgeArticle {
 
 /// A browsable, searchable handbook section (native content).
 model HandbookSection {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  title     String
-  summary   String?
-  body      String   @default("") // markdown/plain text
-  order     Int      @default(0)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  summary     String?
+  body        String   @default("") // markdown/plain text
+  actionLabel String? // optional CTA button (e.g. "Request time off")
+  actionHref  String? // …linking to the matching tool/module
+  order       Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([order])
 }

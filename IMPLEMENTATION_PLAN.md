@@ -57,6 +57,11 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   callouts, and mermaid diagrams. Handbook keeps the 7 operating sections; enriching those with the
   deck's full content is a later slice.
 
+- **2026-07-29 — Migrations automated + onboarding/handbook restructure:** added a deploy-time SQL
+  runner so schema/seed changes apply on deploy (no manual Neon). Onboarding moved to a **free-text
+  stage** model (8-week structure, no enum), with policy items linking to Handbook guidance and a
+  **policy→tool button** pattern on Handbook sections. New Handbook policy sections added.
+
 ### Resolved earlier / Open
 - **A · Design language** — *resolved 2026-07-27:* **navy/gold** (Forefront reference tool) product-wide. The benefits selector's layout/interaction is preserved but recolored to navy/gold (not paper/pine).
 - **E · Real benefit figures** — *resolved:* ceilings, guaranteed amounts, and medical rate card all confirmed (spec `007`).

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 export type SectionFull = {
@@ -7,6 +8,8 @@ export type SectionFull = {
   title: string;
   summary: string | null;
   body: string;
+  actionLabel: string | null;
+  actionHref: string | null;
 };
 export type ResourceItem = {
   id: string;
@@ -142,6 +145,16 @@ export function HandbookExplorer({
             <div className="mt-6 whitespace-pre-wrap text-[15px] leading-relaxed text-ink">
               {active.body || "Content coming soon."}
             </div>
+            {active.actionHref && active.actionLabel ? (
+              <div className="mt-6">
+                <Link
+                  href={active.actionHref}
+                  className="inline-flex items-center gap-2 rounded-lg bg-navy-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-700"
+                >
+                  {active.actionLabel} <span aria-hidden>→</span>
+                </Link>
+              </div>
+            ) : null}
           </>
         ) : (
           <p className="text-sm text-muted">Select a section to read it here.</p>

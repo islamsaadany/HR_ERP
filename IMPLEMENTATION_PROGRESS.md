@@ -131,10 +131,26 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
   `000`; 3 sections deactivated in `002`; `005_knowledge_base.sql` migrates existing DBs (table +
   deactivate + seed). Added deps: react-markdown, remark-gfm, mermaid. Build green.
 
+- **2026-07-29 — Migration runner + onboarding v2 + handbook policies:**
+  - **Deploy-time migration runner** (`scripts/apply-sql.mjs`, wired into `build`): applies pending
+    `prisma/sql/NNN_*.sql` on each deploy, tracked in `_sql_migrations`; baselines the hand-applied
+    000–005; no more pasting SQL into Neon. Skips cleanly when no DB URL (local builds).
+  - **Onboarding v2:** stage is now **free-text** (group order from `order`) — no more enum
+    migrations to add weeks. Redistributed into **Week 1–8 + Check-ins** (front-loaded foundation,
+    consulting from Week 1, Real Case Sessions Momen/Omar/Galal/Islam in Weeks 3–6, split 30/60/90).
+    New items: buddy, HR/Marketing/3× BU-head sessions, know-the-Time-Off-tool, 4 reading blocks,
+    read case studies, own a deliverable. Policy items now deep-link to Handbook sections; actions to
+    modules. (`006_onboarding_8week.sql`)
+  - **Handbook policies:** added Office & Workplace · Time Off · Expenses · Code of Conduct ·
+    Confidentiality · IT/Data-security sections (as points), plus optional **policy→tool buttons**
+    (`actionLabel`/`actionHref`) — Time Off → Time-Off tool, People Governance → Benefits, rendered in
+    both the reader and the explorer. (`007_handbook_policies.sql`)
+  - All verified on a local Postgres (fresh + existing paths); typecheck + build green.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-07-28.*
+*Last Updated: 2026-07-29.*

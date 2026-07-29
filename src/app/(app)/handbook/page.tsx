@@ -11,7 +11,7 @@ export default async function HandbookPage() {
     prisma.handbookSection.findMany({
       where: { active: true },
       orderBy: { order: "asc" },
-      select: { slug: true, title: true, summary: true, body: true },
+      select: { slug: true, title: true, summary: true, body: true, actionLabel: true, actionHref: true },
     }),
     prisma.resource.findMany({ orderBy: [{ category: "asc" }, { order: "asc" }] }),
   ]);
@@ -36,6 +36,8 @@ export default async function HandbookPage() {
               title: s.title,
               summary: s.summary,
               body: s.body ?? "",
+              actionLabel: s.actionLabel,
+              actionHref: s.actionHref,
             }))}
             resources={resources.map((r) => ({
               id: r.id,
