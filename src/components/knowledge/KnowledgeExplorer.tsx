@@ -51,6 +51,10 @@ export function KnowledgeExplorer({ articles }: { articles: ArticleFull[] }) {
 
   const active = articles.find((a) => a.slug === activeSlug) ?? filtered[0] ?? null;
 
+  // The next article in reading order (used by the "Next" button at the end of a read).
+  const activeIndex = active ? filtered.findIndex((a) => a.slug === active.slug) : -1;
+  const nextArticle = activeIndex >= 0 && activeIndex < filtered.length - 1 ? filtered[activeIndex + 1] : null;
+
   function toggle(cat: string) {
     setExpanded((prev) => {
       const next = new Set(prev);
@@ -60,9 +64,10 @@ export function KnowledgeExplorer({ articles }: { articles: ArticleFull[] }) {
     });
   }
 
-  function openArticle(a: ArticleFull) {
+  function openArticle(a: ArticleFull, scroll = false) {
     setActiveSlug(a.slug);
     setExpanded((prev) => new Set(prev).add(a.category));
+    if (scroll && typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const isOpen = (cat: string) => searching || expanded.has(cat);
@@ -85,15 +90,15 @@ export function KnowledgeExplorer({ articles }: { articles: ArticleFull[] }) {
               const open = isOpen(g.cat);
               return (
                 <div key={g.cat}>
-                  {/* Topic header (collapsible, understated label) */}
+                  {/* Topic header (collapsible, navy title) */}
                   <button
                     type="button"
                     onClick={() => toggle(g.cat)}
-                    className="flex w-full items-center gap-1.5 rounded-md py-2 text-left"
+                    className="flex w-full items-center gap-2 rounded-md py-2 text-left hover:bg-navy-50/60"
                   >
                     <svg
                       viewBox="0 0 24 24"
-                      className={"h-3.5 w-3.5 shrink-0 text-muted transition-transform " + (open ? "" : "-rotate-90")}
+                      className={"h-4 w-4 shrink-0 text-navy-400 transition-transform " + (open ? "" : "-rotate-90")}
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={2}
@@ -102,8 +107,8 @@ export function KnowledgeExplorer({ articles }: { articles: ArticleFull[] }) {
                     >
                       <path d="M6 9l6 6 6-6" />
                     </svg>
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">{g.cat}</span>
-                    <span className="ml-auto text-[11px] tabular-nums text-muted/70">{g.items.length}</span>
+                    <span className="text-sm font-semibold text-navy-800">{g.cat}</span>
+                    <span className="ml-auto text-xs tabular-nums text-muted">{g.items.length}</span>
                   </button>
 
                   {/* Topic elements */}
@@ -155,6 +160,27 @@ export function KnowledgeExplorer({ articles }: { articles: ArticleFull[] }) {
             <div className="mt-6">
               <ArticleRenderer body={active.body} />
             </div>
+
+            {nextArticle ? (
+              <div className="mt-10 border-t border-line pt-5">
+                <button
+                  type="button"
+                  onClick={() => openArticle(nextArticle, true)}
+                  className="group flex w-full items-center justify-between gap-4 rounded-xl border border-line bg-surface px-5 py-4 text-left transition hover:border-navy-300 sm:w-auto sm:min-w-[280px]"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-gold-600">
+                      Next
+                    </span>
+                    <span className="mt-0.5 block truncate text-sm font-medium text-ink">
+                      {nextArticle.title}
+                    </span>
+                    <span className="block truncate text-xs text-muted">{nextArticle.category}</span>
+                  </span>
+                  <span className="shrink-0 text-navy-400 transition-transform group-hover:translate-x-0.5">→</span>
+                </button>
+              </div>
+            ) : null}
           </>
         ) : (
           <p className="text-sm text-muted">Select an article to read it here.</p>
