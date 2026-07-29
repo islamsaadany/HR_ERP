@@ -15,7 +15,7 @@ An internal, English-language HR platform for **Forefront Consulting**. Google S
 | Language | TypeScript |
 | DB | PostgreSQL (Neon) + Prisma |
 | Auth | NextAuth v5, Google provider, domain-locked |
-| Styling | Tailwind CSS + ported design tokens (paper/pine, Fraunces + Hanken Grotesk) |
+| Styling | Tailwind v4, **navy/gold** tokens on subtly warm neutrals; **Fraunces** (display) + **Hanken Grotesk** (body) self-hosted via `next/font`; soft card elevation + staggered reveals; gold keyboard focus rings |
 | Files | Vercel Blob |
 | Deploy | Vercel |
 | Email | none (v1) |

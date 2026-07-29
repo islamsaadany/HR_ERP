@@ -152,34 +152,19 @@ export function AppShell({
               </button>
             </div>
             <nav className="flex-1 space-y-1 px-3 py-4">
-              {NAV.map((item) => {
-                const on = isActive(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-current={on ? "page" : undefined}
-                    className={
-                      "relative block rounded-lg px-3 py-2 text-sm transition " +
-                      (on
-                        ? "bg-navy-800 font-medium text-white before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                        : "text-navy-100 hover:bg-navy-800 hover:text-white")
-                    }
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
+              {NAV.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="block rounded-lg px-3 py-2 text-sm text-navy-100 transition hover:bg-navy-800 hover:text-white"
+                >
+                  {item.label}
+                </Link>
+              ))}
               {showAdmin ? (
                 <Link
                   href="/admin"
-                  aria-current={isActive("/admin") ? "page" : undefined}
-                  className={
-                    "relative mt-2 block rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/admin")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
+                  className="mt-2 block rounded-lg px-3 py-2 text-sm font-medium text-gold-300 transition hover:bg-navy-800"
                 >
                   Admin
                 </Link>

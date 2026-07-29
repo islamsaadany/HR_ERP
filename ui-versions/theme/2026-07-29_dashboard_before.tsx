@@ -18,7 +18,7 @@ const QUICK = [
 
 function Tile({ title, children, href }: { title: string; children: React.ReactNode; href: string }) {
   return (
-    <Link href={href} className="ff-card rounded-xl border border-line bg-surface p-5 hover:border-navy-300">
+    <Link href={href} className="rounded-xl border border-line bg-surface p-5 transition hover:border-navy-300">
       <div className="text-sm font-medium text-ink">{title}</div>
       <div className="mt-2 text-sm text-muted">{children}</div>
     </Link>
@@ -70,7 +70,7 @@ export default async function DashboardPage() {
       <h1 className="mt-1 font-serif text-3xl text-ink">Welcome, {firstName}</h1>
       <p className="mt-2 text-muted">Your Forefront HR home.</p>
 
-      <div className="ff-stagger mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {!onboardingDone ? (
           <Tile title="Onboarding" href="/onboarding">
             {completedCount} of {assignedCount} done · {onbPct}%
