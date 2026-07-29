@@ -61,6 +61,15 @@ the four steering files above track scope, decisions, and progress across featur
 - **Fix type errors across the outcome** — don't leave TypeScript errors unresolved.
 - **Test implications of changes** — ensure changes don't break existing functionality.
 
+### 3a. CRITICAL: Audit Fixes Before Asking the User to Test
+- **Never hand over a fix and ask the user to test it without auditing it yourself first.** The user's time is not a substitute for verification.
+- **Prove the fix works with the tools available**, not by reasoning alone:
+  - Always run `npx tsc --noEmit` and `npm run build`.
+  - For **DB/schema/seed changes**, apply the SQL to a **throwaway local Postgres** and query the exact rows/columns the pages read, confirming the real outcome (a local Postgres 16 is available: `initdb`/`pg_ctl` under `/usr/lib/postgresql/*/bin`, run as the `postgres` user, socket under `/tmp`). Do **not** assume seed SQL applied cleanly or produced the right data.
+  - For behavior changes, trace the actual code path end-to-end.
+- **State what you verified and how** when handing over. If something is genuinely un-testable from here (e.g. the user's live Neon DB), say so explicitly and explain the residual risk — don't present unverified work as done.
+- **When a symptom persists, re-audit from first principles** instead of repeating the same instruction. Find the proof (e.g. "the Handbook still lists section X, which only migration 005 removes") before concluding.
+
 ### 3b. Engineering Preferences (Overrides Defaults)
 - **DRY: flag repetition aggressively** — extract at 3+ repeats; flag at 2.
 - **Edge cases: handle more, not fewer** — nulls, empty states, unexpected input, boundaries.

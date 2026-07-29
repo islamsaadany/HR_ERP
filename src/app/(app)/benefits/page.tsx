@@ -1,8 +1,9 @@
-import { requireUser } from "@/lib/roles";
+import { requireUser, isAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { getActivePlanYear, getMedicalRate, amountForBand } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { BenefitsSelector } from "@/components/benefits/BenefitsSelector";
+import { SetupNotice } from "@/components/SetupNotice";
 
 export const dynamic = "force-dynamic";
 const egp = (n: number | null) => (n == null ? "Available" : "EGP " + n.toLocaleString());
@@ -30,22 +31,34 @@ export default async function BenefitsPage() {
     );
   }
 
-  const [planYear, ceilingRow, guaranteed, catalog, medicalRate] = await Promise.all([
-    getActivePlanYear(),
-    prisma.poolCeiling.findUnique({
-      where: { employmentType_tenureBand: { employmentType: user.employmentType, tenureBand: user.tenureBand } },
-    }),
-    prisma.guaranteedBenefit.findMany({ where: { employmentType: user.employmentType }, orderBy: { order: "asc" } }),
-    prisma.benefitCatalogItem.findMany({ where: { active: true }, orderBy: { order: "asc" } }),
-    getMedicalRate(),
-  ]);
+  let planYear, ceilingRow, guaranteed, catalog, medicalRate, existing;
+  try {
+    [planYear, ceilingRow, guaranteed, catalog, medicalRate] = await Promise.all([
+      getActivePlanYear(),
+      prisma.poolCeiling.findUnique({
+        where: { employmentType_tenureBand: { employmentType: user.employmentType, tenureBand: user.tenureBand } },
+      }),
+      prisma.guaranteedBenefit.findMany({ where: { employmentType: user.employmentType }, orderBy: { order: "asc" } }),
+      prisma.benefitCatalogItem.findMany({ where: { active: true }, orderBy: { order: "asc" } }),
+      getMedicalRate(),
+    ]);
 
-  const existing = planYear
-    ? await prisma.benefitSelection.findUnique({
-        where: { userId_planYearId: { userId: me.id, planYearId: planYear.id } },
-        include: { lines: { include: { catalogItem: true } } },
-      })
-    : null;
+    existing = planYear
+      ? await prisma.benefitSelection.findUnique({
+          where: { userId_planYearId: { userId: me.id, planYearId: planYear.id } },
+          include: { lines: { include: { catalogItem: true } } },
+        })
+      : null;
+  } catch {
+    // Most likely the benefits schema/seed (003 + 004) hasn't been applied yet.
+    return (
+      <div>
+        {eyebrow}
+        <h1 className="mt-1 font-serif text-3xl text-ink">Benefits</h1>
+        <SetupNotice module="Benefits" files="003_seed_benefits.sql + 004_benefits_categories.sql" isAdmin={isAdmin(me.role)} />
+      </div>
+    );
+  }
 
   const initialItems: Record<string, number> = {};
   for (const line of existing?.lines ?? []) {
