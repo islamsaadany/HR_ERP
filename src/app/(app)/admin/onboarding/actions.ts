@@ -13,7 +13,7 @@ const activitySchema = z.object({
     z.string().trim().nullable().optional()
   ),
   type: z.enum(["POLICY", "ACTION"]),
-  stage: z.enum(["DAY_1", "WEEK_1", "FIRST_MONTH", "CHECK_INS"]),
+  stage: z.string().trim().min(1, "Stage is required"),
   track: z.enum(["COMMON_CORE", "CONSULTING"]),
   linkUrl: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? null : v),

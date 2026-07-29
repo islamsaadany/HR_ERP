@@ -135,13 +135,6 @@ enum ActivityType {
   ACTION // do & complete
 }
 
-enum OnboardingStage {
-  DAY_1
-  WEEK_1
-  FIRST_MONTH
-  CHECK_INS // 30 / 60 / 90
-}
-
 enum OnboardingTrackKey {
   COMMON_CORE // everyone
   CONSULTING // Consulting role track
@@ -153,7 +146,7 @@ model OnboardingActivity {
   title       String
   description String?
   type        ActivityType
-  stage       OnboardingStage
+  stage       String             // free-text group label, e.g. "Week 1", "Check-ins"
   track       OnboardingTrackKey @default(COMMON_CORE)
   linkUrl     String? // deep link into another module or a resource
   order       Int                @default(0)
