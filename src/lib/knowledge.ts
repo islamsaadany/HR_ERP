@@ -2,11 +2,20 @@
 
 export type ParsedArticle = {
   title?: string;
+  cluster?: string;
   category?: string;
   summary?: string;
   readingMinutes?: number;
   body: string;
 };
+
+/** Suggested clusters for the admin form (free-text; any value is allowed). */
+export const CLUSTER_SUGGESTIONS = [
+  "Consulting",
+  "AI in Consulting",
+  "Managing Assignments",
+  "Personal Development",
+];
 
 /**
  * Parse a pasted article: an optional `--- key: value ---` front-matter block
@@ -26,7 +35,7 @@ export function parseArticleMarkdown(input: string): ParsedArticle {
     rest = text.slice(fenced[0].length);
   } else {
     const lines = text.split("\n");
-    const KEY = /^(title|category|summary|reading[_ ]?minutes|reading[_ ]?time)[ \t]*:/i;
+    const KEY = /^(title|cluster|category|topic|summary|reading[_ ]?minutes|reading[_ ]?time)[ \t]*:/i;
     let i = 0;
     const metaLines: string[] = [];
     while (i < lines.length && KEY.test(lines[i].trim())) {
@@ -55,7 +64,8 @@ export function parseArticleMarkdown(input: string): ParsedArticle {
 
   return {
     title: meta["title"] || undefined,
-    category: meta["category"] || undefined,
+    cluster: meta["cluster"] || undefined,
+    category: meta["category"] || meta["topic"] || undefined,
     summary: meta["summary"] || undefined,
     readingMinutes: Number.isFinite(rm) ? rm : undefined,
     body: rest.trim(),
@@ -84,7 +94,8 @@ Output ONLY the article in the EXACT format below - no preamble, and KEEP the --
 
 ---
 title: <SHORT and specific — 3 to 6 words, no colon-subtitle>
-category: <e.g. What is Strategy Consulting | The Consultant's Craft | AI-Strategy Consulting | Engagement Management | Change Management & Influence>
+cluster: <Consulting | AI in Consulting | Managing Assignments | Personal Development>
+category: <the topic within that cluster, e.g. The Consultant's Craft | Engagement Management | Stakeholder Management>
 summary: <one sentence, max 160 chars>
 reading_minutes: <integer>
 ---

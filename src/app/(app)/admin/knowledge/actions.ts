@@ -9,7 +9,11 @@ import { slugify, estimateReadingMinutes } from "@/lib/knowledge";
 
 const articleSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
-  category: z.string().trim().min(1, "Category is required"),
+  cluster: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+    z.string().trim().nullable().optional()
+  ),
+  category: z.string().trim().min(1, "Topic is required"),
   slug: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? null : v),
     z.string().trim().nullable().optional()
@@ -32,6 +36,7 @@ export type ArticleActionState = { error?: string } | null;
 function parse(formData: FormData) {
   return articleSchema.safeParse({
     title: formData.get("title"),
+    cluster: formData.get("cluster"),
     category: formData.get("category"),
     slug: formData.get("slug"),
     summary: formData.get("summary"),
@@ -58,6 +63,7 @@ export async function createArticle(
     data: {
       slug,
       title: d.title,
+      cluster: d.cluster ?? null,
       category: d.category,
       summary: d.summary ?? null,
       body: d.body,
@@ -90,6 +96,7 @@ export async function updateArticle(
     data: {
       slug,
       title: d.title,
+      cluster: d.cluster ?? null,
       category: d.category,
       summary: d.summary ?? null,
       body: d.body,
@@ -114,49 +121,65 @@ export async function deleteArticle(formData: FormData): Promise<void> {
 }
 
 /**
- * Reorder a topic (category) or an article within its topic, then renumber every
- * article's `order` canonically as topicIndex*1000 + articleIndex. Gap-free, no
- * ties — no schema change needed. `kind` is "topic" | "article", `dir` is "up" | "down".
+ * Reorder a cluster, a topic within its cluster, or an article within its topic,
+ * then renumber every article's `order` canonically as
+ * clusterIndex*10000 + topicIndex*100 + articleIndex. Gap-free, no ties.
+ * `kind` is "cluster" | "topic" | "article", `dir` is "up" | "down".
  */
 export async function reorderKnowledge(formData: FormData): Promise<void> {
   await requireAdmin();
   const kind = formData.get("kind") as string;
   const dir = formData.get("dir") as string;
   const id = formData.get("id") as string | null;
+  const cluster = formData.get("cluster") as string | null;
   const category = formData.get("category") as string | null;
 
   const all = await prisma.knowledgeArticle.findMany();
   const sorted = [...all].sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
 
-  const byCat = new Map<string, typeof all>();
-  const catOrder: string[] = [];
+  const key = (c: string | null) => c ?? "";
+  // cluster -> ordered topics -> ordered articles
+  const clusterOrder: string[] = [];
+  const clusters = new Map<string, { topicOrder: string[]; byTopic: Map<string, typeof all> }>();
   for (const a of sorted) {
-    if (!byCat.has(a.category)) {
-      byCat.set(a.category, []);
-      catOrder.push(a.category);
+    const ck = key(a.cluster);
+    if (!clusters.has(ck)) {
+      clusters.set(ck, { topicOrder: [], byTopic: new Map() });
+      clusterOrder.push(ck);
     }
-    byCat.get(a.category)!.push(a);
+    const grp = clusters.get(ck)!;
+    if (!grp.byTopic.has(a.category)) {
+      grp.byTopic.set(a.category, []);
+      grp.topicOrder.push(a.category);
+    }
+    grp.byTopic.get(a.category)!.push(a);
   }
 
-  if (kind === "topic" && category) {
-    const i = catOrder.indexOf(category);
-    const j = dir === "up" ? i - 1 : i + 1;
-    if (i >= 0 && j >= 0 && j < catOrder.length) [catOrder[i], catOrder[j]] = [catOrder[j], catOrder[i]];
+  const swap = <T,>(arr: T[], i: number, d: string) => {
+    const j = d === "up" ? i - 1 : i + 1;
+    if (i >= 0 && j >= 0 && j < arr.length) [arr[i], arr[j]] = [arr[j], arr[i]];
+  };
+
+  if (kind === "cluster" && cluster != null) {
+    swap(clusterOrder, clusterOrder.indexOf(key(cluster)), dir);
+  } else if (kind === "topic" && cluster != null && category) {
+    const grp = clusters.get(key(cluster));
+    if (grp) swap(grp.topicOrder, grp.topicOrder.indexOf(category), dir);
   } else if (kind === "article" && id) {
-    const cat = all.find((a) => a.id === id)?.category;
-    const list = cat ? byCat.get(cat) : undefined;
-    if (list) {
-      const i = list.findIndex((a) => a.id === id);
-      const j = dir === "up" ? i - 1 : i + 1;
-      if (i >= 0 && j >= 0 && j < list.length) [list[i], list[j]] = [list[j], list[i]];
-    }
+    const a = all.find((x) => x.id === id);
+    const grp = a ? clusters.get(key(a.cluster)) : undefined;
+    const list = a && grp ? grp.byTopic.get(a.category) : undefined;
+    if (list) swap(list, list.findIndex((x) => x.id === id), dir);
   }
 
   const targets: { id: string; order: number }[] = [];
-  catOrder.forEach((cat, ti) => {
-    byCat.get(cat)!.forEach((a, ai) => {
-      const newOrder = ti * 1000 + ai;
-      if (a.order !== newOrder) targets.push({ id: a.id, order: newOrder });
+  clusterOrder.forEach((ck, ci) => {
+    const grp = clusters.get(ck)!;
+    grp.topicOrder.forEach((t, ti) => {
+      grp.byTopic.get(t)!.forEach((a, ai) => {
+        const newOrder = ci * 10000 + ti * 100 + ai;
+        if (a.order !== newOrder) targets.push({ id: a.id, order: newOrder });
+      });
     });
   });
   if (targets.length) {

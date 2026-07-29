@@ -29,6 +29,7 @@ export default async function EditArticlePage({
           submitLabel="Save changes"
           initial={{
             title: a.title,
+            cluster: a.cluster ?? "",
             category: a.category,
             summary: a.summary ?? "",
             body: a.body,

@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 type Row = {
   id: string;
   title: string;
+  cluster: string | null;
   category: string;
   summary: string | null;
   published: boolean;
@@ -32,7 +33,7 @@ function ArrowButton({
         type="submit"
         disabled={disabled}
         aria-label={dir === "up" ? "Move up" : "Move down"}
-        className="grid h-6 w-6 place-items-center rounded border border-line text-muted hover:bg-navy-50 disabled:opacity-30"
+        className="grid h-5 w-5 place-items-center rounded border border-line text-xs text-muted hover:bg-navy-50 disabled:opacity-30"
       >
         {dir === "up" ? "↑" : "↓"}
       </button>
@@ -42,19 +43,26 @@ function ArrowButton({
 
 export default async function AdminKnowledgePage() {
   await requireAdmin();
-  const articles = await prisma.knowledgeArticle.findMany({
+  const articles: Row[] = await prisma.knowledgeArticle.findMany({
     orderBy: [{ order: "asc" }, { title: "asc" }],
+    select: { id: true, title: true, cluster: true, category: true, summary: true, published: true },
   });
 
-  // Group by category preserving order (topic order = its lowest-ordered article).
-  const order: string[] = [];
-  const byCat = new Map<string, Row[]>();
+  // Cluster -> Topic -> Articles, preserving order.
+  const clusterOrder: string[] = [];
+  const clusters = new Map<string, { topicOrder: string[]; byTopic: Map<string, Row[]> }>();
   for (const a of articles) {
-    if (!byCat.has(a.category)) {
-      byCat.set(a.category, []);
-      order.push(a.category);
+    const ck = a.cluster ?? "Other";
+    if (!clusters.has(ck)) {
+      clusters.set(ck, { topicOrder: [], byTopic: new Map() });
+      clusterOrder.push(ck);
     }
-    byCat.get(a.category)!.push(a);
+    const grp = clusters.get(ck)!;
+    if (!grp.byTopic.has(a.category)) {
+      grp.byTopic.set(a.category, []);
+      grp.topicOrder.push(a.category);
+    }
+    grp.byTopic.get(a.category)!.push(a);
   }
 
   return (
@@ -75,46 +83,63 @@ export default async function AdminKnowledgePage() {
         </div>
       ) : (
         <>
-          <p className="mt-4 text-xs text-muted">Use the arrows to arrange topics and the articles inside them. The order here is what employees see.</p>
+          <p className="mt-4 text-xs text-muted">Arrows arrange clusters, topics, and articles. This order is what employees see.</p>
           <div className="mt-3 space-y-6">
-            {order.map((cat, ti) => {
-              const list = byCat.get(cat)!;
+            {clusterOrder.map((ck, ci) => {
+              const grp = clusters.get(ck)!;
               return (
-                <section key={cat}>
+                <section key={ck} className="rounded-xl border border-line bg-surface p-4">
                   <div className="flex items-center gap-2 border-b border-line pb-2">
                     <div className="flex flex-col gap-0.5">
-                      <ArrowButton fields={{ kind: "topic", category: cat }} dir="up" disabled={ti === 0} />
-                      <ArrowButton fields={{ kind: "topic", category: cat }} dir="down" disabled={ti === order.length - 1} />
+                      <ArrowButton fields={{ kind: "cluster", cluster: ck }} dir="up" disabled={ci === 0} />
+                      <ArrowButton fields={{ kind: "cluster", cluster: ck }} dir="down" disabled={ci === clusterOrder.length - 1} />
                     </div>
-                    <h2 className="text-sm font-semibold text-navy-800">{cat}</h2>
-                    <span className="text-xs text-muted">· {list.length}</span>
+                    <h2 className="text-sm font-semibold text-navy-900">{ck}</h2>
                   </div>
-                  <ul className="mt-2 divide-y divide-line rounded-xl border border-line bg-surface">
-                    {list.map((a, ai) => (
-                      <li key={a.id} className="flex items-center gap-3 px-4 py-3">
-                        <div className="flex flex-col gap-0.5">
-                          <ArrowButton fields={{ kind: "article", id: a.id }} dir="up" disabled={ai === 0} />
-                          <ArrowButton fields={{ kind: "article", id: a.id }} dir="down" disabled={ai === list.length - 1} />
-                        </div>
-                        <div className="min-w-0 flex-1">
+
+                  <div className="mt-3 space-y-4">
+                    {grp.topicOrder.map((topic, ti) => {
+                      const list = grp.byTopic.get(topic)!;
+                      return (
+                        <div key={topic}>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-ink">{a.title}</span>
-                            {!a.published ? (
-                              <span className="rounded-full bg-gold-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-gold-800">Draft</span>
-                            ) : null}
+                            <div className="flex flex-col gap-0.5">
+                              <ArrowButton fields={{ kind: "topic", cluster: ck, category: topic }} dir="up" disabled={ti === 0} />
+                              <ArrowButton fields={{ kind: "topic", cluster: ck, category: topic }} dir="down" disabled={ti === grp.topicOrder.length - 1} />
+                            </div>
+                            <h3 className="text-[13px] font-medium text-navy-700">{topic}</h3>
+                            <span className="text-xs text-muted">· {list.length}</span>
                           </div>
-                          {a.summary ? <div className="truncate text-xs text-muted">{a.summary}</div> : null}
+                          <ul className="mt-2 ml-1 divide-y divide-line border-l border-line pl-3">
+                            {list.map((a, ai) => (
+                              <li key={a.id} className="flex items-center gap-3 py-2">
+                                <div className="flex flex-col gap-0.5">
+                                  <ArrowButton fields={{ kind: "article", id: a.id }} dir="up" disabled={ai === 0} />
+                                  <ArrowButton fields={{ kind: "article", id: a.id }} dir="down" disabled={ai === list.length - 1} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-ink">{a.title}</span>
+                                    {!a.published ? (
+                                      <span className="rounded-full bg-gold-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-gold-800">Draft</span>
+                                    ) : null}
+                                  </div>
+                                  {a.summary ? <div className="truncate text-xs text-muted">{a.summary}</div> : null}
+                                </div>
+                                <div className="flex shrink-0 items-center gap-3">
+                                  <Link href={`/admin/knowledge/${a.id}`} className="text-sm font-medium text-navy-700 hover:text-navy-900">Edit</Link>
+                                  <form action={deleteArticle}>
+                                    <input type="hidden" name="id" value={a.id} />
+                                    <button className="text-sm text-muted hover:text-red-600">Delete</button>
+                                  </form>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                        <div className="flex shrink-0 items-center gap-3">
-                          <Link href={`/admin/knowledge/${a.id}`} className="text-sm font-medium text-navy-700 hover:text-navy-900">Edit</Link>
-                          <form action={deleteArticle}>
-                            <input type="hidden" name="id" value={a.id} />
-                            <button className="text-sm text-muted hover:text-red-600">Delete</button>
-                          </form>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                      );
+                    })}
+                  </div>
                 </section>
               );
             })}

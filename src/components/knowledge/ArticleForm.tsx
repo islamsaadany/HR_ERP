@@ -2,12 +2,13 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { ARTICLE_PROMPT, parseArticleMarkdown } from "@/lib/knowledge";
+import { ARTICLE_PROMPT, CLUSTER_SUGGESTIONS, parseArticleMarkdown } from "@/lib/knowledge";
 import { ArticleRenderer } from "./ArticleRenderer";
 import type { ArticleActionState } from "@/app/(app)/admin/knowledge/actions";
 
 type Initial = {
   title: string;
+  cluster: string;
   category: string;
   summary: string;
   body: string;
@@ -18,6 +19,7 @@ type Initial = {
 
 const EMPTY: Initial = {
   title: "",
+  cluster: "",
   category: "",
   summary: "",
   body: "",
@@ -40,6 +42,7 @@ export function ArticleForm({
 
   const [paste, setPaste] = useState("");
   const [title, setTitle] = useState(start.title);
+  const [cluster, setCluster] = useState(start.cluster);
   const [category, setCategory] = useState(start.category);
   const [summary, setSummary] = useState(start.summary);
   const [body, setBody] = useState(start.body);
@@ -53,6 +56,7 @@ export function ArticleForm({
   function applyParse() {
     const p = parseArticleMarkdown(paste);
     if (p.title) setTitle(p.title);
+    if (p.cluster) setCluster(p.cluster);
     if (p.category) setCategory(p.category);
     if (p.summary) setSummary(p.summary);
     if (typeof p.readingMinutes === "number") setReadingMinutes(String(p.readingMinutes));
@@ -121,8 +125,17 @@ export function ArticleForm({
             <input name="title" value={title} onChange={(e) => setTitle(e.target.value)} className={input} />
           </div>
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Category</label>
-            <input name="category" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Strategy Consulting" className={input} />
+            <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Cluster</label>
+            <input name="cluster" value={cluster} onChange={(e) => setCluster(e.target.value)} list="cluster-suggestions" placeholder="e.g. Consulting" className={input} />
+            <datalist id="cluster-suggestions">
+              {CLUSTER_SUGGESTIONS.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Topic</label>
+            <input name="category" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. The Consultant's Craft" className={input} />
           </div>
           <div>
             <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Summary</label>

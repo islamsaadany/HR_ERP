@@ -16,6 +16,7 @@ export default async function KnowledgePage() {
       select: {
         slug: true,
         title: true,
+        cluster: true,
         category: true,
         summary: true,
         body: true,

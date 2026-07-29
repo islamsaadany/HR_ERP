@@ -179,6 +179,7 @@ model KnowledgeArticle {
   id             String   @id @default(cuid())
   slug           String   @unique
   title          String
+  cluster        String? // top-level grouping (e.g. "Consulting"); category = topic within it
   category       String
   summary        String?
   body           String   @default("") // markdown (front-matter stripped)
