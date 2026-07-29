@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArticleRenderer } from "@/components/knowledge/ArticleRenderer";
 
 export type SectionFull = {
   slug: string;
@@ -143,12 +142,8 @@ export function HandbookExplorer({
             {active.summary ? (
               <p className="mt-2 text-lg text-muted">{active.summary}</p>
             ) : null}
-            <div className="mt-6">
-              {active.body ? (
-                <ArticleRenderer body={active.body} />
-              ) : (
-                <p className="text-[15px] text-muted">Content coming soon.</p>
-              )}
+            <div className="mt-6 whitespace-pre-wrap text-[15px] leading-relaxed text-ink">
+              {active.body || "Content coming soon."}
             </div>
             {active.actionHref && active.actionLabel ? (
               <div className="mt-6">

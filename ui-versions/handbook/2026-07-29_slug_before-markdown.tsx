@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
-import { ArticleRenderer } from "@/components/knowledge/ArticleRenderer";
 
 export const dynamic = "force-dynamic";
 
@@ -27,12 +26,8 @@ export default async function SectionPage({
       {section.summary ? (
         <p className="mt-2 text-lg text-muted">{section.summary}</p>
       ) : null}
-      <div className="mt-6">
-        {section.body ? (
-          <ArticleRenderer body={section.body} />
-        ) : (
-          <p className="text-[15px] text-muted">Content coming soon.</p>
-        )}
+      <div className="mt-6 whitespace-pre-wrap text-[15px] leading-relaxed text-ink">
+        {section.body || "Content coming soon."}
       </div>
       {section.actionHref && section.actionLabel ? (
         <div className="mt-6">
