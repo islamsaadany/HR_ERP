@@ -12,7 +12,7 @@ export default async function KnowledgePage() {
   try {
     articles = await prisma.knowledgeArticle.findMany({
       where: { published: true },
-      orderBy: [{ category: "asc" }, { order: "asc" }, { title: "asc" }],
+      orderBy: [{ order: "asc" }, { title: "asc" }],
       select: {
         slug: true,
         title: true,

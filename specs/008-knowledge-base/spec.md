@@ -39,6 +39,8 @@ library of bite-sized reads.
 - **FR-005**: The admin MUST show a copyable authoring prompt and parse pasted front-matter
   (title, category, summary, reading_minutes) into fields; body is the remaining Markdown.
 - **FR-006**: `category` is free-text so new topics need no code change.
+- **FR-006a**: Admins MUST be able to **arrange** the order of topics and of articles within a topic (up/down); the employee view reflects that order. Topic order derives from its lowest-ordered article; moves renumber `order` canonically (no schema change).
+- **FR-006b**: The employee left nav presents topics as **collapsible** groups with a distinct (navy) topic title, so it stays compact as topics grow; the active article's topic is expanded by default and search expands all matches.
 - **FR-007**: The 3 former handbook sections (Strategy Consulting, AI-Strategy Consulting,
   Assignment Phases) MUST move to the Knowledge Base and no longer appear in the Handbook.
 - **FR-008**: Money/PII rules are not involved; standard admin gating applies (HR/Super User).
