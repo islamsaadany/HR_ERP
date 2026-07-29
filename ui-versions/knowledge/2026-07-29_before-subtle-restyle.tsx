@@ -85,15 +85,15 @@ export function KnowledgeExplorer({ articles }: { articles: ArticleFull[] }) {
               const open = isOpen(g.cat);
               return (
                 <div key={g.cat}>
-                  {/* Topic header (collapsible, understated label) */}
+                  {/* Topic header (collapsible, distinct color) */}
                   <button
                     type="button"
                     onClick={() => toggle(g.cat)}
-                    className="flex w-full items-center gap-1.5 rounded-md py-2 text-left"
+                    className="flex w-full items-center gap-2 rounded-md py-2 text-left hover:bg-navy-50/60"
                   >
                     <svg
                       viewBox="0 0 24 24"
-                      className={"h-3.5 w-3.5 shrink-0 text-muted transition-transform " + (open ? "" : "-rotate-90")}
+                      className={"h-4 w-4 shrink-0 text-navy-400 transition-transform " + (open ? "" : "-rotate-90")}
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={2}
@@ -102,8 +102,8 @@ export function KnowledgeExplorer({ articles }: { articles: ArticleFull[] }) {
                     >
                       <path d="M6 9l6 6 6-6" />
                     </svg>
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">{g.cat}</span>
-                    <span className="ml-auto text-[11px] tabular-nums text-muted/70">{g.items.length}</span>
+                    <span className="text-sm font-semibold text-navy-800">{g.cat}</span>
+                    <span className="ml-auto text-xs tabular-nums text-muted">{g.items.length}</span>
                   </button>
 
                   {/* Topic elements */}
@@ -121,7 +121,7 @@ export function KnowledgeExplorer({ articles }: { articles: ArticleFull[] }) {
                               <span
                                 className={
                                   on
-                                    ? "text-ink underline underline-offset-4"
+                                    ? "font-semibold text-navy-800 underline decoration-navy-700 decoration-2 underline-offset-4"
                                     : "text-muted hover:text-ink"
                                 }
                               >
