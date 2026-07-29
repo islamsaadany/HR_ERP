@@ -43,7 +43,7 @@ Build your basket in the Benefits module.
 POLICIES
 - Data privacy: treat all client information as confidential unless marked public; share on a need-to-know basis; never repurpose client data without consent; never put confidential data into external AI tools.
 - Document sharing: grant least-privilege access; classify Public / Internal / Confidential; avoid public sharing; revoke access when people leave a project.',6,true,now(),now()) ON CONFLICT (slug) DO NOTHING;
-INSERT INTO "HandbookSection" (id,slug,title,summary,body,"order",active,"createdAt","updatedAt") VALUES ('hb_strategy_consulting','strategy-consulting','Strategy Consulting','Why clients hire us, scopes, domains, skills, and golden rules.','Why clients hire consultants, consulting scope types and domains, essential consultant skills, the 6 core pillars, and our golden rules for questions & answers. See the source deck under Resources for the full detail.',7,true,now(),now()) ON CONFLICT (slug) DO NOTHING;
+INSERT INTO "HandbookSection" (id,slug,title,summary,body,"order",active,"createdAt","updatedAt") VALUES ('hb_strategy_consulting','strategy-consulting','Strategy Consulting','Why clients hire us, scopes, domains, skills, and golden rules.','Why clients hire consultants, consulting scope types and domains, essential consultant skills, the 6 core pillars, and our golden rules for questions & answers. See the source deck under Resources for the full detail.',7,false,now(),now()) ON CONFLICT (slug) DO NOTHING;
 INSERT INTO "HandbookSection" (id,slug,title,summary,body,"order",active,"createdAt","updatedAt") VALUES ('hb_ai_strategy_consulting','ai-strategy-consulting','AI-Strategy Consulting','How we use AI across an assignment.','How we apply AI across the assignment lifecycle:
 1. Market & industry intelligence
 2. Data organization and compilation
@@ -52,6 +52,6 @@ INSERT INTO "HandbookSection" (id,slug,title,summary,body,"order",active,"create
 5. Application of frameworks
 6. Frameworks refinement
 7. Business-case creation
-8. Proposal development',8,true,now(),now()) ON CONFLICT (slug) DO NOTHING;
-INSERT INTO "HandbookSection" (id,slug,title,summary,body,"order",active,"createdAt","updatedAt") VALUES ('hb_assignment_phases','assignment-phases','Assignment Phases','The phases of a strategy assignment.','The ideal phases for a strategy assignment — each with its description, objectives, outcomes, and deliverables. See Documentation System and the source deck under Resources for detail.',9,true,now(),now()) ON CONFLICT (slug) DO NOTHING;
+8. Proposal development',8,false,now(),now()) ON CONFLICT (slug) DO NOTHING;
+INSERT INTO "HandbookSection" (id,slug,title,summary,body,"order",active,"createdAt","updatedAt") VALUES ('hb_assignment_phases','assignment-phases','Assignment Phases','The phases of a strategy assignment.','The ideal phases for a strategy assignment — each with its description, objectives, outcomes, and deliverables. See Documentation System and the source deck under Resources for detail.',9,false,now(),now()) ON CONFLICT (slug) DO NOTHING;
 COMMIT;

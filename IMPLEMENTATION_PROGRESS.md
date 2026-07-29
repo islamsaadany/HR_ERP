@@ -41,6 +41,7 @@
 | 005 | Time-Off / Leave Management (V1) | ✅ complete, plan-ready |
 | 006 | Dashboard (Home) | ✅ complete, plan-ready |
 | 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
+| 008 | Knowledge Base — Consulting References & Reads | ✅ implemented (V1) |
 
 ## Next up
 Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Directory · Onboarding · Handbook · Time-Off · Benefits · Dashboard).
@@ -119,6 +120,16 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     content opens on the right, active item bold + navy underline, search retained. Removed the old
     card `HandbookBrowser`. Excluded `ui-versions/` snapshots from `tsc`.
   - Build green (typecheck + next build). UI snapshots saved before each edit.
+
+- **2026-07-28 — Knowledge Base module (spec 008):** split the Handbook. The 3 consulting sections
+  (Strategy Consulting, AI-Strategy Consulting, Assignment Phases) moved into a new **Knowledge Base**
+  of admin-authored "reads." New `KnowledgeArticle` model; `/knowledge` employee master–detail
+  (Vercel-style, search) with a Markdown renderer supporting GFM **tables**, `[!KEY/TIP/NOTE/WARNING]`
+  **callouts**, and **mermaid** diagrams; `/admin/knowledge` CRUD with a **copyable Claude prompt** +
+  paste-to-parse front-matter authoring flow. Nav gains "Knowledge Base" (auto-collapses the sidebar
+  like Handbook). Seeded 9 starter articles mined from the Onboarding Kit PDF. DB: table added to
+  `000`; 3 sections deactivated in `002`; `005_knowledge_base.sql` migrates existing DBs (table +
+  deactivate + seed). Added deps: react-markdown, remark-gfm, mermaid. Build green.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

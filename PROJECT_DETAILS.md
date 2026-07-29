@@ -47,8 +47,15 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Data:** read model over `User` (public projection).
 
 ### Handbook & Resources
-- The structured handbook content (sections from the 118-page Onboarding Kit: strategic foundation, structure & roles, brand, meetings, tools, documentation, people governance, consulting, AI consulting, assignment phases) **plus a Resources area** for downloadable company files (company profile, templates, policies).
+- The **operating** handbook content (7 sections from the Onboarding Kit: strategic foundation, structure & roles, brand, meetings, tools, documentation, people governance) **plus a Resources area** for downloadable company files (company profile, templates, policies). Presented as a Vercel-style master–detail (left list, right reader).
 - Employee: browse/read sections; download resources. Admin: author sections + upload resources.
+- The consulting-craft sections moved to the **Knowledge Base** (below) per spec 008.
+
+### Knowledge Base (spec 008)
+- Admin-authored **"reads"** for the consulting craft (Strategy Consulting, AI-Strategy Consulting, Assignment Phases, and new topics like Change Management & Influence). Free-text `category`; small standalone articles ("bites").
+- **Authoring workflow:** the admin (`/admin/knowledge`) shows a **copyable Claude prompt**; the author runs it in Claude with a topic + source, pastes the Markdown result, the app parses front-matter (`title/category/summary/reading_minutes`) into fields, and it renders on save. Faster/consistent vs a rich-text editor.
+- **Rendering:** Markdown body → GFM **tables**, `[!KEY]/[!TIP]/[!NOTE]/[!WARNING]` **callout boxes**, and **mermaid** diagrams (navy/gold). Employee `/knowledge` is a searchable master–detail like the Handbook.
+- **Data:** `KnowledgeArticle { slug, title, category, summary?, body(markdown), readingMinutes?, published, order, authorId? }`. Deps: `react-markdown`, `remark-gfm`, `mermaid`.
 
 ### Time-Off / Leave Management
 - Employee: request time off. **Direct manager** (from the org chart) approves/declines. Balance tracking.

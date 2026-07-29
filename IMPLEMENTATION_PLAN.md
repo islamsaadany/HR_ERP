@@ -50,6 +50,13 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 - **2026-07-27 — Benefits figures fully confirmed:** guaranteed amounts by band (FT & PT) = the real figures; medical rate card = single tier (self/spouse 8k, child <18 4.5k, child ≥18 8k), exempt from 50% cap, dependants entered manually for now; no per-category caps/eligibility. All 7 v1 module specs written (`specs/001`–`007`).
 - **2026-07-28 — Basket catalog expanded to the reference set (supersedes the earlier "4 categories"):** per the product owner, the flexible-basket catalog now follows `benefitsselector_3.html` faithfully — 5 display categories (Health & protection · Wellbeing · Life & family · Personal growth · Lifestyle & flexibility) with their items (Personal medical insurance, Annual health check-up, Gym, Coaching/therapy, Sports, Schooling, Childcare, Caregiver, Personal learning, Mobile, Home-office). Personal medical insurance = employee only; spouse/children stay separate priced options in the medical modal. Money rules unchanged (pool ceiling, FT 50% cap, FT max-4 / PT max-2, medical exempt — all server-side). Added a `category` field to `BenefitCatalogItem` (`prisma/sql/004_benefits_categories.sql`).
 
+- **2026-07-28 — Handbook split → Knowledge Base (spec 008):** the consulting-craft sections
+  (Strategy Consulting, AI-Strategy Consulting, Assignment Phases) move out of the Handbook into a new
+  **Knowledge Base** of admin-authored Markdown "reads" (own `KnowledgeArticle` model, free-text
+  categories). Authoring is a **shared Claude prompt → paste → parse** flow; bodies render tables,
+  callouts, and mermaid diagrams. Handbook keeps the 7 operating sections; enriching those with the
+  deck's full content is a later slice.
+
 ### Resolved earlier / Open
 - **A · Design language** — *resolved 2026-07-27:* **navy/gold** (Forefront reference tool) product-wide. The benefits selector's layout/interaction is preserved but recolored to navy/gold (not paper/pine).
 - **E · Real benefit figures** — *resolved:* ceilings, guaranteed amounts, and medical rate card all confirmed (spec `007`).

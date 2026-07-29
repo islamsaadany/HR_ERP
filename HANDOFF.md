@@ -9,6 +9,8 @@ Paste these files from `prisma/sql/` into Neon, **in numeric order**:
 - [ ] `001_seed_onboarding.sql` — the onboarding activities (no PII; in the repo).
 - [ ] `002_seed_handbook.sql` — the 10 handbook sections (company-internal; in the repo).
 - [ ] `003_seed_benefits.sql` — benefits config: ceilings, guaranteed amounts, medical rate card, catalog, open plan year (in the repo).
+- [ ] `004_benefits_categories.sql` — adds the basket `category` column + the full categorized catalog (run after 003).
+- [ ] `005_knowledge_base.sql` — creates the Knowledge Base table, moves the 3 consulting sections out of the Handbook, and seeds the first articles (run after 002).
 
 **Team members (employees):** you no longer need a PII SQL seed. Sign in (see §1a),
 open **Admin → Employees → Import CSV**, and upload your employee spreadsheet saved as

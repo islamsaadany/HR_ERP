@@ -178,6 +178,28 @@ model ActivityCompletion {
   @@index([userId])
 }
 
+// ─── Knowledge Base (spec 008) ──────────────────────────────────────────
+
+/// A knowledge-base article ("read") authored in Markdown. Grouped by a
+/// free-text category; body supports GFM + [!CALLOUT] blocks + mermaid.
+model KnowledgeArticle {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  category       String
+  summary        String?
+  body           String   @default("") // markdown (front-matter stripped)
+  readingMinutes Int?
+  published      Boolean  @default(true)
+  order          Int      @default(0)
+  authorId       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category])
+  @@index([published])
+}
+
 // ─── Handbook & Resources (spec 004) ────────────────────────────────────
 
 /// A browsable, searchable handbook section (native content).

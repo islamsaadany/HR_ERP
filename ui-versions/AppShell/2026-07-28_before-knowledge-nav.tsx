@@ -11,16 +11,11 @@ const NAV = [
   { href: "/benefits", label: "Benefits", icon: "benefits" },
   { href: "/directory", label: "Team Directory", icon: "directory" },
   { href: "/handbook", label: "Handbook & Resources", icon: "handbook" },
-  { href: "/knowledge", label: "Knowledge Base", icon: "knowledge" },
   { href: "/time-off", label: "Time-Off", icon: "timeoff" },
   { href: "/profile", label: "My Profile", icon: "profile" },
 ];
 
 const STORAGE_KEY = "ff-sidebar-collapsed";
-
-/** Routes whose wide master–detail layout auto-collapses the sidebar. */
-const isWideRoute = (path: string) =>
-  path.startsWith("/handbook") || path.startsWith("/knowledge");
 
 export function AppShell({
   name,
@@ -44,7 +39,7 @@ export function AppShell({
 
   // Handbook auto-collapses the panel; elsewhere we honour the saved preference.
   useEffect(() => {
-    if (isWideRoute(pathname)) setCollapsed(true);
+    if (pathname.startsWith("/handbook")) setCollapsed(true);
     else setCollapsed(pref);
   }, [pathname, pref]);
 
@@ -52,7 +47,7 @@ export function AppShell({
     const next = !collapsed;
     setCollapsed(next);
     // Persist as the preference only when the auto-collapse route isn't in charge.
-    if (!isWideRoute(pathname)) {
+    if (!pathname.startsWith("/handbook")) {
       setPref(next);
       localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
     }
@@ -240,10 +235,6 @@ function NavIcon({ name }: { name: string }) {
     case "handbook":
       return (
         <svg {...common}><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z" /><path d="M5 18a2 2 0 0 1 2-2h11" /></svg>
-      );
-    case "knowledge":
-      return (
-        <svg {...common}><path d="M9 18h6" /><path d="M10 21h4" /><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.2 1 2.5h6c0-1.3.3-1.8 1-2.5A6 6 0 0 0 12 3z" /></svg>
       );
     case "timeoff":
       return (
