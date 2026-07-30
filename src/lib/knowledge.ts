@@ -126,3 +126,30 @@ diagram exists in the source, reproduce it as valid mermaid or a table.
 
 TOPIC: <what this article covers>
 SOURCE: <paste the relevant slides / text here>`;
+
+/**
+ * A lighter prompt for topics whose real content is an attached slide deck.
+ * It produces only a short landing blurb (summary + "What you'll learn"), in the
+ * SAME front-matter format ARTICLE_PROMPT uses, so the existing Parse button fills
+ * the fields. The deck itself carries the detail — this is just the orientation.
+ */
+export const DECK_BLURB_PROMPT = `You are writing a SHORT landing blurb for a Forefront Consulting Knowledge Base
+topic whose real content is an ATTACHED SLIDE DECK. Do NOT summarise the whole
+deck — just orient the reader on what it covers before they open it.
+Output ONLY the block below and KEEP the --- fences.
+
+---
+title: <the topic name — 2 to 5 words>
+cluster: <Consulting | AI in Consulting | Managing Assignments | Personal Development>
+category: <the topic name (same as title)>
+summary: <ONE sentence, max 160 chars — what this topic is about>
+reading_minutes: <integer estimate to go through the deck>
+---
+
+## What you'll learn
+- <2 to 4 bullets, each a concrete thing the reader takes away from the deck>
+
+Keep it tight — no extra sections, no restating the slides.
+
+TOPIC: <the topic name>
+SOURCE: <paste the deck's outline / section titles / key text here>`;
