@@ -72,6 +72,22 @@ async function resolveDeck(
   return { keep: true };
 }
 
+/**
+ * Turn a thrown save error (Blob upload or DB write) into a readable message for
+ * the admin, instead of letting it bubble up as an opaque 500 page. Maps the two
+ * expected deployment gaps to plain-language guidance.
+ */
+function explainSaveError(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e);
+  if (/attachment(Url|Name|Type|Size)|column .* does not exist/i.test(msg)) {
+    return "Couldn't save: the database is missing the deck columns. Migration 012 hasn't been applied to this deployment yet — redeploy with the database env vars set (so the build runs it), or apply 012_knowledge_attachments.sql once.";
+  }
+  if (/BLOB_READ_WRITE_TOKEN|No token|blob/i.test(msg)) {
+    return "Couldn't upload the deck: file storage isn't configured. Add a Vercel Blob store and set BLOB_READ_WRITE_TOKEN, then try again.";
+  }
+  return `Couldn't save: ${msg}`;
+}
+
 const articleSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
   cluster: z.preprocess(
@@ -122,26 +138,30 @@ export async function createArticle(
   const d = parsed.data;
   const slug = slugify(d.slug || d.title);
   if (!slug) return { error: "Could not derive a slug from the title." };
-  const clash = await prisma.knowledgeArticle.findUnique({ where: { slug } });
+  const clash = await prisma.knowledgeArticle.findUnique({ where: { slug }, select: { id: true } });
   if (clash) return { error: "An article with that slug already exists." };
-  const deck = await resolveDeck(formData, slug);
-  if ("error" in deck) return { error: deck.error };
-  const deckFields = "fields" in deck ? deck.fields : {};
-  await prisma.knowledgeArticle.create({
-    data: {
-      slug,
-      title: d.title,
-      cluster: d.cluster ?? null,
-      category: d.category,
-      summary: d.summary ?? null,
-      body: d.body,
-      readingMinutes: d.readingMinutes ?? estimateReadingMinutes(d.body),
-      order: d.order,
-      published: d.published,
-      authorId: admin.id,
-      ...deckFields,
-    },
-  });
+  try {
+    const deck = await resolveDeck(formData, slug);
+    if ("error" in deck) return { error: deck.error };
+    const deckFields = "fields" in deck ? deck.fields : {};
+    await prisma.knowledgeArticle.create({
+      data: {
+        slug,
+        title: d.title,
+        cluster: d.cluster ?? null,
+        category: d.category,
+        summary: d.summary ?? null,
+        body: d.body,
+        readingMinutes: d.readingMinutes ?? estimateReadingMinutes(d.body),
+        order: d.order,
+        published: d.published,
+        authorId: admin.id,
+        ...deckFields,
+      },
+    });
+  } catch (e) {
+    return { error: explainSaveError(e) };
+  }
   revalidatePath("/admin/knowledge");
   revalidatePath("/knowledge");
   redirect("/admin/knowledge");
@@ -158,31 +178,35 @@ export async function updateArticle(
   const d = parsed.data;
   const slug = slugify(d.slug || d.title);
   if (!slug) return { error: "Could not derive a slug from the title." };
-  const existing = await prisma.knowledgeArticle.findUnique({
-    where: { id },
-    select: { attachmentUrl: true },
-  });
-  if (!existing) return { error: "Article not found." };
-  const clash = await prisma.knowledgeArticle.findFirst({ where: { slug, NOT: { id } } });
+  const clash = await prisma.knowledgeArticle.findFirst({ where: { slug, NOT: { id } }, select: { id: true } });
   if (clash) return { error: "Another article already uses that slug." };
-  const deck = await resolveDeck(formData, slug, existing);
-  if ("error" in deck) return { error: deck.error };
-  const deckFields = "fields" in deck ? deck.fields : {};
-  await prisma.knowledgeArticle.update({
-    where: { id },
-    data: {
-      slug,
-      title: d.title,
-      cluster: d.cluster ?? null,
-      category: d.category,
-      summary: d.summary ?? null,
-      body: d.body,
-      readingMinutes: d.readingMinutes ?? estimateReadingMinutes(d.body),
-      order: d.order,
-      published: d.published,
-      ...deckFields,
-    },
-  });
+  try {
+    const existing = await prisma.knowledgeArticle.findUnique({
+      where: { id },
+      select: { attachmentUrl: true },
+    });
+    if (!existing) return { error: "Article not found." };
+    const deck = await resolveDeck(formData, slug, existing);
+    if ("error" in deck) return { error: deck.error };
+    const deckFields = "fields" in deck ? deck.fields : {};
+    await prisma.knowledgeArticle.update({
+      where: { id },
+      data: {
+        slug,
+        title: d.title,
+        cluster: d.cluster ?? null,
+        category: d.category,
+        summary: d.summary ?? null,
+        body: d.body,
+        readingMinutes: d.readingMinutes ?? estimateReadingMinutes(d.body),
+        order: d.order,
+        published: d.published,
+        ...deckFields,
+      },
+    });
+  } catch (e) {
+    return { error: explainSaveError(e) };
+  }
   revalidatePath("/admin/knowledge");
   revalidatePath("/knowledge");
   redirect("/admin/knowledge");
@@ -192,14 +216,20 @@ export async function deleteArticle(formData: FormData): Promise<void> {
   await requireAdmin();
   const id = formData.get("id") as string;
   if (id) {
-    const existing = await prisma.knowledgeArticle.findUnique({
-      where: { id },
-      select: { attachmentUrl: true },
-    });
+    let deckUrl: string | null = null;
+    try {
+      const existing = await prisma.knowledgeArticle.findUnique({
+        where: { id },
+        select: { attachmentUrl: true },
+      });
+      deckUrl = existing?.attachmentUrl ?? null;
+    } catch {
+      /* attachment columns may not exist yet (migration 012 not applied) — delete still proceeds */
+    }
     await prisma.knowledgeArticle.delete({ where: { id } });
-    if (existing?.attachmentUrl) {
+    if (deckUrl) {
       try {
-        await del(existing.attachmentUrl);
+        await del(deckUrl);
       } catch {
         /* best-effort cleanup of the article's deck */
       }
@@ -223,7 +253,9 @@ export async function reorderKnowledge(formData: FormData): Promise<void> {
   const cluster = formData.get("cluster") as string | null;
   const category = formData.get("category") as string | null;
 
-  const all = await prisma.knowledgeArticle.findMany();
+  const all = await prisma.knowledgeArticle.findMany({
+    select: { id: true, title: true, cluster: true, category: true, order: true },
+  });
   const sorted = [...all].sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
 
   const key = (c: string | null) => c ?? "";
