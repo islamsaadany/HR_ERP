@@ -21,8 +21,10 @@ library of bite-sized reads.
   admin), paste the result, the app parses front-matter into fields, and it renders on save. Faster
   and more consistent than a rich-text editor.
 - **Visuals:** the Markdown body renders GFM **tables**, `[!KEY]/[!TIP]/[!NOTE]/[!WARNING]`
-  **callout boxes**, and **mermaid** diagrams. Photographs/branded graphics are out of scope for V1
-  (attachments can come later).
+  **callout boxes**, and **mermaid** diagrams. Photographs/branded graphics are out of scope for V1.
+- **Deck attachment:** a topic MAY attach a single **slide deck (PDF)**. The employee reader shows the
+  written blurb first, then the deck embedded inline (with a download link) — so slide-heavy training
+  topics keep a short, searchable landing page without re-typing the deck into Markdown.
 
 ## User scenarios
 1. **Employee** opens Knowledge Base → sees articles grouped by category on the left (Vercel-style),
@@ -44,9 +46,13 @@ library of bite-sized reads.
 - **FR-007**: The 3 former handbook sections (Strategy Consulting, AI-Strategy Consulting,
   Assignment Phases) MUST move to the Knowledge Base and no longer appear in the Handbook.
 - **FR-008**: Money/PII rules are not involved; standard admin gating applies (HR/Super User).
+- **FR-009**: Admins MAY attach one **PDF deck** to an article (upload/replace/remove); it is stored in
+  Vercel Blob and validated server-side (PDF only, ≤25MB). The employee reader renders the blurb, then
+  embeds the deck below it with a download link. Replacing or deleting an article cleans up the old blob.
 
 ## Key entities
 - **KnowledgeArticle**: id, slug (unique), title, category, summary?, body (Markdown), readingMinutes?,
+  attachmentUrl?/attachmentName?/attachmentType?/attachmentSize? (optional PDF deck),
   published, order, authorId?, timestamps.
 
 ## Success criteria

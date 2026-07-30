@@ -11,8 +11,6 @@ export type ArticleFull = {
   summary: string | null;
   body: string;
   readingMinutes: number | null;
-  attachmentUrl: string | null;
-  attachmentName: string | null;
 };
 
 function Chevron({ open, className = "" }: { open: boolean; className?: string }) {
@@ -196,41 +194,6 @@ export function KnowledgeExplorer({ articles }: { articles: ArticleFull[] }) {
             <div className="mt-6">
               <ArticleRenderer body={active.body} />
             </div>
-
-            {active.attachmentUrl ? (
-              <div className="mt-8 rounded-2xl border border-line bg-surface p-4 sm:p-5">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gold-600">Deck</div>
-                    <div className="mt-0.5 truncate text-sm font-medium text-ink">
-                      {active.attachmentName || "Slides"}
-                    </div>
-                  </div>
-                  <a
-                    href={active.attachmentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700"
-                  >
-                    Download ↓
-                  </a>
-                </div>
-                <object
-                  data={active.attachmentUrl}
-                  type="application/pdf"
-                  className="h-[75vh] w-full rounded-lg border border-line"
-                  aria-label={`${active.title} deck`}
-                >
-                  <div className="p-6 text-center text-sm text-muted">
-                    Your browser can&apos;t display the deck inline.{" "}
-                    <a href={active.attachmentUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-navy-700 hover:underline">
-                      Open it in a new tab
-                    </a>
-                    .
-                  </div>
-                </object>
-              </div>
-            ) : null}
 
             {nextArticle ? (
               <div className="mt-10 border-t border-line pt-5">

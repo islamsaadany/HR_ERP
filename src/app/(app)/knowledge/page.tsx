@@ -21,6 +21,8 @@ export default async function KnowledgePage() {
         summary: true,
         body: true,
         readingMinutes: true,
+        attachmentUrl: true,
+        attachmentName: true,
       },
     });
   } catch {

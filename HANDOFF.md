@@ -20,6 +20,11 @@ The files below are kept for reference / manual fallback (paste in numeric order
 - [ ] `005_knowledge_base.sql` — creates the Knowledge Base table, moves the 3 consulting sections out of the Handbook, and seeds the first articles (run after 002).
 - [ ] `006_onboarding_8week.sql` — onboarding v2 (stage → free text, 8-week structure + check-ins). *(auto-applied)*
 - [ ] `007_handbook_policies.sql` — Handbook policy sections (Office & Workplace, Time Off, Expenses, Conduct, Confidentiality, IT) + policy→tool buttons. *(auto-applied)*
+- [ ] `008_handbook_bullets.sql` — reformat handbook operating sections to bullets. *(auto-applied)*
+- [ ] `009_knowledge_topics.sql` — recluster KB into topics + placeholder "coming soon" topics. *(auto-applied)*
+- [ ] `010_handbook_enrich.sql` — enrich Brand/Structure/Docs handbook content. *(auto-applied)*
+- [ ] `011_knowledge_clusters.sql` — add the KB cluster level (Cluster → Topic → Article). *(auto-applied)*
+- [ ] `012_knowledge_attachments.sql` — add the optional PDF-deck attachment columns to KB articles. *(auto-applied)*
 
 **Team members (employees):** you no longer need a PII SQL seed. Sign in (see §1a),
 open **Admin → Employees → Import CSV**, and upload your employee spreadsheet saved as

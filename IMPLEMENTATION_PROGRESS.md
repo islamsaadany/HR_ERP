@@ -106,6 +106,16 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     kids → dependants when a DOB parses. Per-row on-screen review report. Verified against the
     real 19-row sheet. Replaces the gitignored `seed_data_team.sql` handoff. Build green.
 
+- **2026-07-30 — Knowledge Base deck attachments (spec 008 FR-009):** a KB topic can now carry one
+  **PDF deck** so slide-heavy training topics keep a short, searchable blurb + the real deck instead of
+  re-typing it as Markdown. Added `attachmentUrl/Name/Type/Size` to `KnowledgeArticle`
+  (`012_knowledge_attachments.sql`, idempotent, auto-applied). Admin editor gains an "Attach deck (PDF)"
+  field (upload / replace / remove), reusing the existing Vercel Blob `put()` pattern; server validates
+  PDF-only ≤25MB and cleans up the old blob on replace/remove/delete. Employee reader renders the blurb
+  first, then embeds the deck (`<object>`) with a Download link. Build green (typecheck + next build);
+  migration `012` applied to a throwaway local Postgres and verified (columns added, idempotent, deck
+  row reads back). UI snapshots saved before editing `KnowledgeExplorer`/`ArticleForm`.
+
 - **2026-07-28 — Benefits catalog + shell polish:**
   - **Benefits selector rebuilt to `benefitsselector_3.html`:** catalog grouped into 5 display
     categories (Health & protection · Wellbeing · Life & family · Personal growth · Lifestyle &

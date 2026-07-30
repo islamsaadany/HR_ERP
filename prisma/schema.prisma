@@ -184,6 +184,10 @@ model KnowledgeArticle {
   summary        String?
   body           String   @default("") // markdown (front-matter stripped)
   readingMinutes Int?
+  attachmentUrl  String? // optional deck (PDF) shown/embedded under the article body
+  attachmentName String? // original filename, used as the download label
+  attachmentType String? // MIME type (v1: application/pdf)
+  attachmentSize Int? // bytes
   published      Boolean  @default(true)
   order          Int      @default(0)
   authorId       String?

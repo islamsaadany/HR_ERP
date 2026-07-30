@@ -2,10 +2,75 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { put, del } from "@vercel/blob";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
 import { slugify, estimateReadingMinutes } from "@/lib/knowledge";
+
+const MAX_DECK_BYTES = 25 * 1024 * 1024;
+
+type DeckFields = {
+  attachmentUrl: string | null;
+  attachmentName: string | null;
+  attachmentType: string | null;
+  attachmentSize: number | null;
+};
+
+/**
+ * Resolve the deck (PDF) attachment for a save.
+ * - new file present  -> validate (PDF, ≤25MB), upload to Blob, delete the old blob, set fields
+ * - "removeDeck" flag  -> delete the existing blob, clear the fields
+ * - otherwise          -> keep whatever is stored (`{ keep: true }` — no change)
+ * `existing` is the currently-stored deck (edit flow) so we can clean up the old blob.
+ */
+async function resolveDeck(
+  formData: FormData,
+  slug: string,
+  existing?: { attachmentUrl: string | null }
+): Promise<{ fields: DeckFields } | { keep: true } | { error: string }> {
+  const file = formData.get("deck");
+  const remove = formData.get("removeDeck");
+
+  if (file instanceof File && file.size > 0) {
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) return { error: "The deck must be a PDF file." };
+    if (file.size > MAX_DECK_BYTES) return { error: "The deck is too large (max 25MB)." };
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const blob = await put(`knowledge/${slug}/${safeName}`, file, {
+      access: "public",
+      addRandomSuffix: true,
+    });
+    if (existing?.attachmentUrl) {
+      try {
+        await del(existing.attachmentUrl);
+      } catch {
+        /* best-effort cleanup of the replaced deck */
+      }
+    }
+    return {
+      fields: {
+        attachmentUrl: blob.url,
+        attachmentName: file.name,
+        attachmentType: file.type || "application/pdf",
+        attachmentSize: file.size,
+      },
+    };
+  }
+
+  if (remove === "on" || remove === "true") {
+    if (existing?.attachmentUrl) {
+      try {
+        await del(existing.attachmentUrl);
+      } catch {
+        /* best-effort cleanup */
+      }
+    }
+    return { fields: { attachmentUrl: null, attachmentName: null, attachmentType: null, attachmentSize: null } };
+  }
+
+  return { keep: true };
+}
 
 const articleSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
@@ -59,6 +124,9 @@ export async function createArticle(
   if (!slug) return { error: "Could not derive a slug from the title." };
   const clash = await prisma.knowledgeArticle.findUnique({ where: { slug } });
   if (clash) return { error: "An article with that slug already exists." };
+  const deck = await resolveDeck(formData, slug);
+  if ("error" in deck) return { error: deck.error };
+  const deckFields = "fields" in deck ? deck.fields : {};
   await prisma.knowledgeArticle.create({
     data: {
       slug,
@@ -71,6 +139,7 @@ export async function createArticle(
       order: d.order,
       published: d.published,
       authorId: admin.id,
+      ...deckFields,
     },
   });
   revalidatePath("/admin/knowledge");
@@ -89,8 +158,16 @@ export async function updateArticle(
   const d = parsed.data;
   const slug = slugify(d.slug || d.title);
   if (!slug) return { error: "Could not derive a slug from the title." };
+  const existing = await prisma.knowledgeArticle.findUnique({
+    where: { id },
+    select: { attachmentUrl: true },
+  });
+  if (!existing) return { error: "Article not found." };
   const clash = await prisma.knowledgeArticle.findFirst({ where: { slug, NOT: { id } } });
   if (clash) return { error: "Another article already uses that slug." };
+  const deck = await resolveDeck(formData, slug, existing);
+  if ("error" in deck) return { error: deck.error };
+  const deckFields = "fields" in deck ? deck.fields : {};
   await prisma.knowledgeArticle.update({
     where: { id },
     data: {
@@ -103,6 +180,7 @@ export async function updateArticle(
       readingMinutes: d.readingMinutes ?? estimateReadingMinutes(d.body),
       order: d.order,
       published: d.published,
+      ...deckFields,
     },
   });
   revalidatePath("/admin/knowledge");
@@ -114,7 +192,18 @@ export async function deleteArticle(formData: FormData): Promise<void> {
   await requireAdmin();
   const id = formData.get("id") as string;
   if (id) {
+    const existing = await prisma.knowledgeArticle.findUnique({
+      where: { id },
+      select: { attachmentUrl: true },
+    });
     await prisma.knowledgeArticle.delete({ where: { id } });
+    if (existing?.attachmentUrl) {
+      try {
+        await del(existing.attachmentUrl);
+      } catch {
+        /* best-effort cleanup of the article's deck */
+      }
+    }
     revalidatePath("/admin/knowledge");
     revalidatePath("/knowledge");
   }

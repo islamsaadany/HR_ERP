@@ -55,7 +55,8 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - Admin-authored **"reads"** for the consulting craft (Strategy Consulting, AI-Strategy Consulting, Assignment Phases, and new topics like Change Management & Influence). Free-text `category`; small standalone articles ("bites").
 - **Authoring workflow:** the admin (`/admin/knowledge`) shows a **copyable Claude prompt**; the author runs it in Claude with a topic + source, pastes the Markdown result, the app parses front-matter (`title/category/summary/reading_minutes`) into fields, and it renders on save. Faster/consistent vs a rich-text editor.
 - **Rendering:** Markdown body → GFM **tables**, `[!KEY]/[!TIP]/[!NOTE]/[!WARNING]` **callout boxes**, and **mermaid** diagrams (navy/gold). Employee `/knowledge` is a searchable master–detail like the Handbook.
-- **Data:** `KnowledgeArticle { slug, title, category, summary?, body(markdown), readingMinutes?, published, order, authorId? }`. Deps: `react-markdown`, `remark-gfm`, `mermaid`.
+- **Deck attachment (spec 008 FR-009):** a topic can carry one **PDF deck**. Admin uploads/replaces/removes it in the article editor; stored in Vercel Blob under `knowledge/<slug>/…`, validated server-side (PDF only, ≤25MB). The reader shows the blurb, then embeds the deck (`<object>`) below it with a Download link. Old blobs are cleaned up on replace/remove/delete. Migration `012_knowledge_attachments.sql`.
+- **Data:** `KnowledgeArticle { slug, title, category, summary?, body(markdown), readingMinutes?, attachmentUrl?, attachmentName?, attachmentType?, attachmentSize?, published, order, authorId? }`. Deps: `react-markdown`, `remark-gfm`, `mermaid`, `@vercel/blob`.
 
 ### Time-Off / Leave Management
 - Employee: request time off. **Direct manager** (from the org chart) approves/declines. Balance tracking.
