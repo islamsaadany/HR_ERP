@@ -3,12 +3,23 @@
 > Claude Code sessions can't reach your Neon DB, Vercel, or Google Cloud. This file collects
 > everything you need to do to run the app. It grows as the build proceeds; do it all at the end.
 
-## 1. Database (Neon SQL editor)
-Paste these files from `prisma/sql/` into Neon, **in numeric order**:
+## 1. Database (now automatic)
+**As of the migration runner, you no longer paste SQL into Neon.** On every Vercel
+deploy, `scripts/apply-sql.mjs` runs (in the `build` step) and applies any not-yet-applied
+`prisma/sql/NNN_*.sql` files in order, tracked in a `_sql_migrations` table so each runs once.
+It uses `DATABASE_URL_UNPOOLED` (set in Vercel). Files 000–005 that you applied by hand are
+auto-baselined on first run; everything new (006+) applies on deploy. You can also run it
+locally with `npm run db:apply` (needs a DB URL in the env).
+
+The files below are kept for reference / manual fallback (paste in numeric order if ever needed):
 - [ ] `000_initial_schema.sql` — creates all tables/enums.
 - [ ] `001_seed_onboarding.sql` — the onboarding activities (no PII; in the repo).
 - [ ] `002_seed_handbook.sql` — the 10 handbook sections (company-internal; in the repo).
 - [ ] `003_seed_benefits.sql` — benefits config: ceilings, guaranteed amounts, medical rate card, catalog, open plan year (in the repo).
+- [ ] `004_benefits_categories.sql` — adds the basket `category` column + the full categorized catalog (run after 003).
+- [ ] `005_knowledge_base.sql` — creates the Knowledge Base table, moves the 3 consulting sections out of the Handbook, and seeds the first articles (run after 002).
+- [ ] `006_onboarding_8week.sql` — onboarding v2 (stage → free text, 8-week structure + check-ins). *(auto-applied)*
+- [ ] `007_handbook_policies.sql` — Handbook policy sections (Office & Workplace, Time Off, Expenses, Conduct, Confidentiality, IT) + policy→tool buttons. *(auto-applied)*
 
 **Team members (employees):** you no longer need a PII SQL seed. Sign in (see §1a),
 open **Admin → Employees → Import CSV**, and upload your employee spreadsheet saved as

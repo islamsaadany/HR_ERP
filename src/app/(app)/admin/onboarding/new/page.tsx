@@ -13,7 +13,7 @@ export default async function NewActivityPage() {
       <ActivityForm
         action={createActivity}
         submitLabel="Create activity"
-        values={{ title: "", description: null, type: "ACTION", stage: "DAY_1", track: "COMMON_CORE", linkUrl: null, order: 0, active: true }}
+        values={{ title: "", description: null, type: "ACTION", stage: "Week 1", track: "COMMON_CORE", linkUrl: null, order: 0, active: true }}
       />
     </div>
   );

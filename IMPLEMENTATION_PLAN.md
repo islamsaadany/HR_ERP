@@ -48,6 +48,19 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 - **2026-07-27 — Documents reshaped:** no standalone "HR Documents" module. Personal document upload becomes **My Documents** inside the employee Profile (Foundation, spec `001`). Company-wide content (policies, handbook, company profile, templates) lives in a **Handbook & Resources** module (structured handbook + a downloadable Resources area). Onboarding links updated accordingly.
 
 - **2026-07-27 — Benefits figures fully confirmed:** guaranteed amounts by band (FT & PT) = the real figures; medical rate card = single tier (self/spouse 8k, child <18 4.5k, child ≥18 8k), exempt from 50% cap, dependants entered manually for now; no per-category caps/eligibility. All 7 v1 module specs written (`specs/001`–`007`).
+- **2026-07-28 — Basket catalog expanded to the reference set (supersedes the earlier "4 categories"):** per the product owner, the flexible-basket catalog now follows `benefitsselector_3.html` faithfully — 5 display categories (Health & protection · Wellbeing · Life & family · Personal growth · Lifestyle & flexibility) with their items (Personal medical insurance, Annual health check-up, Gym, Coaching/therapy, Sports, Schooling, Childcare, Caregiver, Personal learning, Mobile, Home-office). Personal medical insurance = employee only; spouse/children stay separate priced options in the medical modal. Money rules unchanged (pool ceiling, FT 50% cap, FT max-4 / PT max-2, medical exempt — all server-side). Added a `category` field to `BenefitCatalogItem` (`prisma/sql/004_benefits_categories.sql`).
+
+- **2026-07-28 — Handbook split → Knowledge Base (spec 008):** the consulting-craft sections
+  (Strategy Consulting, AI-Strategy Consulting, Assignment Phases) move out of the Handbook into a new
+  **Knowledge Base** of admin-authored Markdown "reads" (own `KnowledgeArticle` model, free-text
+  categories). Authoring is a **shared Claude prompt → paste → parse** flow; bodies render tables,
+  callouts, and mermaid diagrams. Handbook keeps the 7 operating sections; enriching those with the
+  deck's full content is a later slice.
+
+- **2026-07-29 — Migrations automated + onboarding/handbook restructure:** added a deploy-time SQL
+  runner so schema/seed changes apply on deploy (no manual Neon). Onboarding moved to a **free-text
+  stage** model (8-week structure, no enum), with policy items linking to Handbook guidance and a
+  **policy→tool button** pattern on Handbook sections. New Handbook policy sections added.
 
 ### Resolved earlier / Open
 - **A · Design language** — *resolved 2026-07-27:* **navy/gold** (Forefront reference tool) product-wide. The benefits selector's layout/interaction is preserved but recolored to navy/gold (not paper/pine).

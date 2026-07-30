@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import type { ActivityActionState } from "@/app/(app)/admin/onboarding/actions";
+import { STAGE_SUGGESTIONS } from "@/lib/onboarding";
 
 export type ActivityValues = {
   title: string;
@@ -66,12 +67,13 @@ export function ActivityForm({
         </div>
         <div>
           <label className={L}>Stage</label>
-          <select name="stage" defaultValue={values.stage} className={I}>
-            <option value="DAY_1">Day 1</option>
-            <option value="WEEK_1">Week 1</option>
-            <option value="FIRST_MONTH">First month</option>
-            <option value="CHECK_INS">30 / 60 / 90</option>
-          </select>
+          <input name="stage" defaultValue={values.stage} list="stage-suggestions" placeholder="e.g. Week 1" className={I} />
+          <datalist id="stage-suggestions">
+            {STAGE_SUGGESTIONS.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
+          <p className="mt-1 text-xs text-muted">Free text — activities group by stage, ordered by the Order field.</p>
         </div>
         <div>
           <label className={L}>Track</label>

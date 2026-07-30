@@ -19,7 +19,7 @@
 
 ### User Story 1 - Look something up in the Handbook (Priority: P1)
 
-An employee opens the Handbook and browses by section (Strategic Foundation, Structure & Roles, Brand, Internal Meetings, Management Tools, Documentation System, People Governance, Strategy Consulting, AI-Strategy Consulting, Assignment Phases) to read company information anytime — during onboarding and long after.
+An employee opens the Handbook and browses by section (Strategic Foundation, Structure & Roles, Brand, Internal Meetings, Management Tools, Documentation System, People Governance) to read company information anytime — during onboarding and long after. *(As of spec 008, the consulting-craft sections — Strategy Consulting, AI-Strategy Consulting, Assignment Phases — moved out of the Handbook into the **Knowledge Base**; the Handbook is now the 7 operating sections.)*
 
 **Why this priority**: The whole point of the module — a durable, always-available reference that replaces a losable presentation.
 
@@ -27,7 +27,7 @@ An employee opens the Handbook and browses by section (Strategic Foundation, Str
 
 **Acceptance Scenarios**:
 
-1. **Given** a signed-in employee, **When** they open the Handbook, **Then** they see the list of sections and can open any one to read it.
+1. **Given** a signed-in employee, **When** they open the Handbook, **Then** they see the list of sections and can open any one to read it. *(Presentation: a Vercel-style master–detail — a left list of sections + a Resources group, content opens on the right, the active item bold with a navy underline; the app sidebar auto-collapses to a rail here.)*
 2. **Given** a section, **When** it contains subsections, **Then** the employee can navigate within it.
 3. **Given** the Handbook, **When** an employee returns later, **Then** the same reference content is available (persistent, not tied to onboarding state).
 

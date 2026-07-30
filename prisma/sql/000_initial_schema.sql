@@ -126,6 +126,27 @@ CREATE TABLE "HandbookSection" (
 );
 
 -- CreateTable
+CREATE TABLE "KnowledgeArticle" (
+    "id" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "summary" TEXT,
+    "body" TEXT NOT NULL DEFAULT '',
+    "readingMinutes" INTEGER,
+    "published" BOOLEAN NOT NULL DEFAULT true,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "authorId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "KnowledgeArticle_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "KnowledgeArticle_slug_key" ON "KnowledgeArticle"("slug");
+CREATE INDEX "KnowledgeArticle_category_idx" ON "KnowledgeArticle"("category");
+CREATE INDEX "KnowledgeArticle_published_idx" ON "KnowledgeArticle"("published");
+
+-- CreateTable
 CREATE TABLE "Resource" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -209,6 +230,7 @@ CREATE TABLE "BenefitCatalogItem" (
     "key" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
+    "category" TEXT,
     "isMedical" BOOLEAN NOT NULL DEFAULT false,
     "order" INTEGER NOT NULL DEFAULT 0,
     "active" BOOLEAN NOT NULL DEFAULT true,

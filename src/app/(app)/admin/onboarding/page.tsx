@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
-import { STAGE_ORDER, STAGE_LABEL, TRACK_LABEL } from "@/lib/onboarding";
+import { groupByStage, TRACK_LABEL } from "@/lib/onboarding";
 import { deleteActivity } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -28,12 +28,10 @@ export default async function AdminOnboardingPage() {
       </div>
 
       <div className="mt-8 space-y-8">
-        {STAGE_ORDER.map((stage) => {
-          const items = activities.filter((a) => a.stage === stage);
-          if (items.length === 0) return null;
+        {groupByStage(activities).map(({ stage, items }) => {
           return (
             <section key={stage}>
-              <h2 className="font-serif text-lg text-ink">{STAGE_LABEL[stage]}</h2>
+              <h2 className="font-serif text-lg text-ink">{stage}</h2>
               <ul className="mt-2 divide-y divide-line rounded-xl border border-line bg-surface">
                 {items.map((a) => (
                   <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">

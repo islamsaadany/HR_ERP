@@ -13,6 +13,7 @@ type CatalogItem = {
   key: string;
   name: string;
   description: string | null;
+  category: string | null;
   isMedical: boolean;
 };
 type Rate = {
@@ -51,6 +52,21 @@ export function BenefitsSelector({
   const locked = status === "SUBMITTED";
   const medicalItem = catalog.find((c) => c.isMedical);
   const nonMedical = catalog.filter((c) => !c.isMedical);
+
+  // Group the whole catalog (medical + non-medical) by category, preserving order.
+  const groups = useMemo(() => {
+    const order: string[] = [];
+    const map = new Map<string, CatalogItem[]>();
+    for (const c of catalog) {
+      const cat = c.category ?? "Other";
+      if (!map.has(cat)) {
+        map.set(cat, []);
+        order.push(cat);
+      }
+      map.get(cat)!.push(c);
+    }
+    return order.map((cat) => ({ cat, items: map.get(cat)! }));
+  }, [catalog]);
 
   const result = useMemo(
     () =>
@@ -96,6 +112,20 @@ export function BenefitsSelector({
 
   const medicalPreview = computeMedicalPremium(medicalRate, { ...medical, selected: true });
 
+  // Rows for the "Selected" summary panel.
+  const selectedRows: { name: string; amount: number; over: boolean }[] = [
+    ...nonMedical
+      .filter((c) => (amounts[c.key] ?? 0) > 0)
+      .map((c) => ({
+        name: c.name,
+        amount: amounts[c.key] ?? 0,
+        over: employmentType === "FULL_TIME" && (amounts[c.key] ?? 0) > result.cap,
+      })),
+    ...(medical.selected && medicalItem
+      ? [{ name: medicalItem.name, amount: result.medicalAmount, over: false }]
+      : []),
+  ];
+
   return (
     <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
       {/* Basket */}
@@ -106,108 +136,120 @@ export function BenefitsSelector({
           </div>
         ) : null}
 
-        <div className="space-y-2">
-          {nonMedical.map((item) => {
-            const amt = amounts[item.key] ?? 0;
-            const on = amt > 0;
-            const over =
-              employmentType === "FULL_TIME" && amt > result.cap;
-            return (
-              <div
-                key={item.key}
-                className={
-                  "flex items-center gap-3 rounded-xl border bg-surface p-4 " +
-                  (over ? "border-red-300" : "border-line")
-                }
-              >
-                <button
-                  type="button"
-                  onClick={() => toggleItem(item.key)}
-                  disabled={locked}
-                  className={
-                    "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
-                    (on ? "border-navy-700 bg-navy-700 text-white" : "border-line text-transparent")
-                  }
-                >
-                  ✓
-                </button>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-ink">{item.name}</div>
-                  {item.description ? (
-                    <div className="text-xs text-muted">{item.description}</div>
-                  ) : null}
-                  {over ? (
-                    <div className="text-xs font-medium text-red-600">
-                      Over the 50% cap (max {egp(result.cap)})
-                    </div>
-                  ) : null}
-                </div>
-                {on ? (
-                  <div className="flex items-center gap-1">
-                    <button type="button" disabled={locked} onClick={() => setAmount(item.key, amt - STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50">−</button>
-                    <input
-                      value={amt.toLocaleString()}
-                      onChange={(e) =>
-                        setAmount(item.key, parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0)
-                      }
+        {groups.map((group) => (
+          <div key={group.cat}>
+            {/* Category header with divider line */}
+            <div className="flex items-center gap-3 pb-1 pt-5 first:pt-0">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gold-600">
+                {group.cat}
+              </span>
+              <span className="h-px flex-1 bg-line" />
+            </div>
+
+            <div className="space-y-2">
+              {group.items.map((item) =>
+                item.isMedical ? (
+                  <div key={item.key} className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (locked) return;
+                        if (medical.selected) setMedical({ ...medical, selected: false });
+                        else setModalOpen(true);
+                      }}
                       disabled={locked}
-                      className="w-24 rounded-lg border border-line px-2 py-1.5 text-right text-sm tabular-nums"
-                    />
-                    <button type="button" disabled={locked} onClick={() => setAmount(item.key, amt + STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50">+</button>
+                      className={
+                        "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
+                        (medical.selected ? "border-navy-700 bg-navy-700 text-white" : "border-line text-transparent")
+                      }
+                    >
+                      ✓
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-ink">{item.name}</span>
+                        <span className="rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gold-800">
+                          50% exempt
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted">
+                        {medical.selected
+                          ? `You${medical.spouse ? " + spouse" : ""}${
+                              medical.childrenUnder18 + medical.children18Plus > 0
+                                ? ` + ${medical.childrenUnder18 + medical.children18Plus} child(ren)`
+                                : ""
+                            }`
+                          : item_desc(item)}
+                      </div>
+                    </div>
+                    {medical.selected ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-navy-800">{egp(result.medicalAmount)}</span>
+                        <button type="button" disabled={locked} onClick={() => setModalOpen(true)} className="rounded-lg border border-line px-3 py-1.5 text-xs hover:bg-navy-50">Edit</button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted">Configure cover</span>
+                    )}
                   </div>
                 ) : (
-                  <span className="text-xs text-muted">Select to allocate</span>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Medical */}
-          {medicalItem ? (
-            <div className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4">
-              <button
-                type="button"
-                onClick={() => {
-                  if (locked) return;
-                  if (medical.selected) setMedical({ ...medical, selected: false });
-                  else setModalOpen(true);
-                }}
-                disabled={locked}
-                className={
-                  "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
-                  (medical.selected ? "border-navy-700 bg-navy-700 text-white" : "border-line text-transparent")
-                }
-              >
-                ✓
-              </button>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-ink">{medicalItem.name}</span>
-                  <span className="rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gold-800">
-                    50% exempt
-                  </span>
-                </div>
-                <div className="text-xs text-muted">
-                  {medical.selected
-                    ? `You${medical.spouse ? " + spouse" : ""}${
-                        medical.childrenUnder18 + medical.children18Plus > 0
-                          ? ` + ${medical.childrenUnder18 + medical.children18Plus} child(ren)`
-                          : ""
-                      }`
-                    : item_desc(medicalItem)}
-                </div>
-              </div>
-              {medical.selected ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-navy-800">{egp(result.medicalAmount)}</span>
-                  <button type="button" disabled={locked} onClick={() => setModalOpen(true)} className="rounded-lg border border-line px-3 py-1.5 text-xs hover:bg-navy-50">Edit</button>
-                </div>
-              ) : (
-                <span className="text-xs text-muted">Configure cover</span>
+                  (() => {
+                    const amt = amounts[item.key] ?? 0;
+                    const on = amt > 0;
+                    const over = employmentType === "FULL_TIME" && amt > result.cap;
+                    return (
+                      <div
+                        key={item.key}
+                        className={
+                          "flex items-center gap-3 rounded-xl border bg-surface p-4 " +
+                          (over ? "border-red-300" : "border-line")
+                        }
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleItem(item.key)}
+                          disabled={locked}
+                          className={
+                            "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
+                            (on ? "border-navy-700 bg-navy-700 text-white" : "border-line text-transparent")
+                          }
+                        >
+                          ✓
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-ink">{item.name}</div>
+                          {item.description ? (
+                            <div className="text-xs text-muted">{item.description}</div>
+                          ) : null}
+                          {over ? (
+                            <div className="text-xs font-medium text-red-600">
+                              Over the 50% cap (max {egp(result.cap)})
+                            </div>
+                          ) : null}
+                        </div>
+                        {on ? (
+                          <div className="flex items-center gap-1">
+                            <button type="button" disabled={locked} onClick={() => setAmount(item.key, amt - STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50">−</button>
+                            <input
+                              value={amt.toLocaleString()}
+                              onChange={(e) =>
+                                setAmount(item.key, parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0)
+                              }
+                              disabled={locked}
+                              className="w-24 rounded-lg border border-line px-2 py-1.5 text-right text-sm tabular-nums"
+                            />
+                            <button type="button" disabled={locked} onClick={() => setAmount(item.key, amt + STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50">+</button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted">Select to allocate</span>
+                        )}
+                      </div>
+                    );
+                  })()
+                )
               )}
             </div>
-          ) : null}
-        </div>
+          </div>
+        ))}
 
         {/* Server messages */}
         {serverMsg?.errors.length ? (
@@ -222,53 +264,108 @@ export function BenefitsSelector({
         ) : null}
       </div>
 
-      {/* Meter / actions */}
-      <aside className="lg:sticky lg:top-6 h-fit rounded-xl border border-line bg-surface p-5">
-        <div className="text-3xl font-serif text-ink tabular-nums">{egp(result.total)}</div>
-        <div className="text-sm text-muted">allocated of {egp(ceiling)} pool</div>
-        <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
-          <div
-            className={"h-full rounded-full " + (result.total > ceiling ? "bg-red-500" : "bg-gold-500")}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <div className="mt-3 flex justify-between text-sm">
-          <span className="text-muted">{result.remaining < 0 ? "Over by" : "Remaining"}</span>
-          <span className={result.remaining < 0 ? "font-semibold text-red-600" : "font-semibold text-navy-700"}>
-            {egp(Math.abs(result.remaining))}
-          </span>
-        </div>
-        <div className="mt-1 flex justify-between text-sm">
-          <span className="text-muted">Benefits chosen</span>
-          <span className="font-semibold text-ink">{result.selectionCount} of {result.maxSelect}</span>
-        </div>
-        <p className="mt-3 text-xs text-muted">
-          No single benefit may exceed 50% of the pool ({egp(result.cap)}). Medical insurance is exempt.
-        </p>
-
-        {!locked ? (
-          <div className="mt-5 space-y-2">
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => persist(false)}
-              className="w-full rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50 disabled:opacity-60"
-            >
-              {pending ? "Saving…" : "Save draft"}
-            </button>
-            <button
-              type="button"
-              disabled={pending || result.errors.length > 0}
-              onClick={() => persist(true)}
-              className="w-full rounded-lg bg-navy-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50"
-            >
-              Submit basket
-            </button>
-            {result.errors.length > 0 ? (
-              <p className="text-xs text-muted">Resolve the highlighted issues to submit.</p>
-            ) : null}
+      {/* Right column: meter + selected + terms */}
+      <aside className="h-fit space-y-4 lg:sticky lg:top-6">
+        {/* Meter / actions */}
+        <div className="rounded-xl border border-line bg-surface p-5">
+          <div className="text-3xl font-serif text-ink tabular-nums">{egp(result.total)}</div>
+          <div className="text-sm text-muted">allocated of {egp(ceiling)} pool</div>
+          <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
+            <div
+              className={"h-full rounded-full " + (result.total > ceiling ? "bg-red-500" : "bg-gold-500")}
+              style={{ width: `${pct}%` }}
+            />
           </div>
-        ) : null}
+          <div className="mt-3 flex justify-between text-sm">
+            <span className="text-muted">{result.remaining < 0 ? "Over by" : "Remaining"}</span>
+            <span className={result.remaining < 0 ? "font-semibold text-red-600" : "font-semibold text-navy-700"}>
+              {egp(Math.abs(result.remaining))}
+            </span>
+          </div>
+          <div className="mt-1 flex justify-between text-sm">
+            <span className="text-muted">Benefits chosen</span>
+            <span className="font-semibold text-ink">{result.selectionCount} of {result.maxSelect}</span>
+          </div>
+          <p className="mt-3 text-xs text-muted">
+            No single benefit may exceed 50% of the pool ({egp(result.cap)}). Medical insurance is exempt.
+          </p>
+
+          {!locked ? (
+            <div className="mt-5 space-y-2">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => persist(false)}
+                className="w-full rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50 disabled:opacity-60"
+              >
+                {pending ? "Saving…" : "Save draft"}
+              </button>
+              <button
+                type="button"
+                disabled={pending || result.errors.length > 0}
+                onClick={() => persist(true)}
+                className="w-full rounded-lg bg-navy-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50"
+              >
+                Submit basket
+              </button>
+              {result.errors.length > 0 ? (
+                <p className="text-xs text-muted">Resolve the highlighted issues to submit.</p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        {/* Selected summary */}
+        <div className="overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="border-b border-line px-5 py-3">
+            <h3 className="font-serif text-lg text-ink">Selected</h3>
+            <p className="text-xs text-muted">Your basket so far.</p>
+          </div>
+          <div className="px-5 py-3">
+            {selectedRows.length === 0 ? (
+              <p className="py-1 text-sm italic text-muted">Nothing selected yet.</p>
+            ) : (
+              <div className="divide-y divide-line">
+                {selectedRows.map((r) => (
+                  <div key={r.name} className="flex justify-between py-2 text-sm">
+                    <span className="text-muted">{r.name}</span>
+                    <span className={"font-semibold tabular-nums " + (r.over ? "text-red-600" : "text-ink")}>
+                      {egp(r.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Terms & conditions */}
+        <div className="overflow-hidden rounded-xl border border-line bg-surface">
+          <div className="border-b border-line px-5 py-3">
+            <h3 className="font-serif text-lg text-ink">Terms &amp; conditions</h3>
+            <p className="text-xs text-muted">How the flexible basket works.</p>
+          </div>
+          <ol className="divide-y divide-line px-5 py-1">
+            {[
+              `You may select a maximum of ${result.maxSelect} benefits from the menu each year.`,
+              ...(employmentType === "FULL_TIME"
+                ? ["No single benefit may exceed 50% of your pool — in practice you'll choose at least two."]
+                : []),
+              "Medical insurance is exempt from the 50% rule — it may exceed half your pool, but never your pool ceiling. Premiums follow the company rate card.",
+              "Your pool is set by your employment type and tenure band, and is the maximum claimable for the year.",
+              "Benefits are reimbursed against actual spend — submit an invoice, receipt, or proof of payment to Finance for every claim.",
+              "Any amount not claimed does not carry over to the following year, and is not paid out as cash.",
+              "Guaranteed benefits are separate from the basket and are not affected by your choices.",
+            ].map((t, i) => (
+              <li key={i} className="flex gap-2.5 py-2.5 text-xs leading-relaxed text-muted">
+                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-navy-50 text-[10px] font-semibold text-navy-700">
+                  {i + 1}
+                </span>
+                <span>{t}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
       </aside>
 
       {/* Medical modal */}
@@ -320,7 +417,7 @@ export function BenefitsSelector({
 }
 
 function item_desc(i: { description: string | null }) {
-  return i.description ?? "Health cover for you and your dependants.";
+  return i.description ?? "Health cover for you.";
 }
 
 function Counter({

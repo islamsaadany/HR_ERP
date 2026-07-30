@@ -15,7 +15,7 @@ An internal, English-language HR platform for **Forefront Consulting**. Google S
 | Language | TypeScript |
 | DB | PostgreSQL (Neon) + Prisma |
 | Auth | NextAuth v5, Google provider, domain-locked |
-| Styling | Tailwind CSS + ported design tokens (paper/pine, Fraunces + Hanken Grotesk) |
+| Styling | Tailwind v4, **navy/gold** tokens on subtly warm neutrals; **Fraunces** (display) + **Hanken Grotesk** (body) self-hosted via `next/font`; soft card elevation + staggered reveals; gold keyboard focus rings |
 | Files | Vercel Blob |
 | Deploy | Vercel |
 | Email | none (v1) |
@@ -47,8 +47,15 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Data:** read model over `User` (public projection).
 
 ### Handbook & Resources
-- The structured handbook content (sections from the 118-page Onboarding Kit: strategic foundation, structure & roles, brand, meetings, tools, documentation, people governance, consulting, AI consulting, assignment phases) **plus a Resources area** for downloadable company files (company profile, templates, policies).
+- The **operating** handbook content (7 sections from the Onboarding Kit: strategic foundation, structure & roles, brand, meetings, tools, documentation, people governance) **plus a Resources area** for downloadable company files (company profile, templates, policies). Presented as a Vercel-style master–detail (left list, right reader).
 - Employee: browse/read sections; download resources. Admin: author sections + upload resources.
+- The consulting-craft sections moved to the **Knowledge Base** (below) per spec 008.
+
+### Knowledge Base (spec 008)
+- Admin-authored **"reads"** for the consulting craft (Strategy Consulting, AI-Strategy Consulting, Assignment Phases, and new topics like Change Management & Influence). Free-text `category`; small standalone articles ("bites").
+- **Authoring workflow:** the admin (`/admin/knowledge`) shows a **copyable Claude prompt**; the author runs it in Claude with a topic + source, pastes the Markdown result, the app parses front-matter (`title/category/summary/reading_minutes`) into fields, and it renders on save. Faster/consistent vs a rich-text editor.
+- **Rendering:** Markdown body → GFM **tables**, `[!KEY]/[!TIP]/[!NOTE]/[!WARNING]` **callout boxes**, and **mermaid** diagrams (navy/gold). Employee `/knowledge` is a searchable master–detail like the Handbook.
+- **Data:** `KnowledgeArticle { slug, title, category, summary?, body(markdown), readingMinutes?, published, order, authorId? }`. Deps: `react-markdown`, `remark-gfm`, `mermaid`.
 
 ### Time-Off / Leave Management
 - Employee: request time off. **Direct manager** (from the org chart) approves/declines. Balance tracking.
@@ -69,7 +76,7 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Tenure bands (confirmed):** 6mo–2y · 2–4y · 4–7y · 7–10y.
 - **Pool ceiling (confirmed, EGP):** FT 20,000 / 30,000 / 45,000 / 65,000 · PT 14,000 / 21,000 / 30,000 / 42,000. (Note: real PT is ~65–70% of FT, not the policy's "50%" wording.)
 - **Fixed / guaranteed benefits:** Marriage allowance · Loans (after 1yr, 1-month salary) · Summer allowance · Professional development · Special events. Shown first, separate from the basket.
-- **Flexible basket:** 4 categories — **Gym · Mobile device · Personal medical insurance · Schooling**. FT: no single benefit > 50% of the pool (⇒ practically 2–4 picks). PT: **max 2** picks within the (smaller) budget. Amounts in steps of 1,000. No separate per-category caps or extra eligibility.
+- **Flexible basket:** catalog grouped into 5 display categories (ported from `benefitsselector_3.html`) — **Health & protection** (Personal medical insurance, Annual health check-up) · **Wellbeing** (Gym, Coaching / therapy, Sports) · **Life & family** (Schooling / education, Childcare / nursery, Caregiver support) · **Personal growth** (Personal learning) · **Lifestyle & flexibility** (Mobile device, Home-office setup). Personal medical insurance covers the employee only; spouse/children are separate priced options in the medical modal. FT: no single benefit > 50% of the pool (⇒ practically 2–4 picks). PT: **max 2** picks within the (smaller) budget. Amounts in steps of 1,000. No separate per-category caps or extra eligibility. Catalog rows carry a `category` field.
 - **Guaranteed amounts (confirmed, EGP by band):** FT — Marriage 18/24/30/36k · Summer 2.5/3.5/5/6k · Prof-Dev 5/9.5/18/21.5k · Special events 6/8.5/12/18k · Loans = 1-month salary from yr 1. PT — Marriage 9/12/15/18k · Prof-Dev 5/7/9/11k · Special events 6/8.5/12/18k (no summer/loans).
 - **Medical insurance (confirmed):** single tier — self 8,000 (always included), spouse 8,000, child <18 4,500, child ≥18 8,000; **exempt from the 50% cap**, capped at the pool ceiling; dependants entered manually for now.
 - **Claims/reimbursement:** Phase 2 (v1 ends at a submitted, locked selection).

@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
-import { STAGE_ORDER, STAGE_LABEL, tracksForUser } from "@/lib/onboarding";
+import { groupByStage, tracksForUser } from "@/lib/onboarding";
 import { OnboardingJourney, type JourneyStage } from "@/components/OnboardingJourney";
 
 export const dynamic = "force-dynamic";
@@ -27,20 +27,18 @@ export default async function OnboardingPage() {
 
   const doneIds = new Set(completions.map((c) => c.activityId));
 
-  const stages: JourneyStage[] = STAGE_ORDER.map((stage) => ({
+  const stages: JourneyStage[] = groupByStage(activities).map(({ stage, items }) => ({
     key: stage,
-    label: STAGE_LABEL[stage],
-    items: activities
-      .filter((a) => a.stage === stage)
-      .map((a) => ({
-        id: a.id,
-        title: a.title,
-        description: a.description,
-        type: a.type,
-        linkUrl: a.linkUrl,
-        track: a.track,
-        done: doneIds.has(a.id),
-      })),
+    label: stage,
+    items: items.map((a) => ({
+      id: a.id,
+      title: a.title,
+      description: a.description,
+      type: a.type,
+      linkUrl: a.linkUrl,
+      track: a.track,
+      done: doneIds.has(a.id),
+    })),
   }));
 
   const hasContent = activities.length > 0;

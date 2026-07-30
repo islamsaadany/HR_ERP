@@ -12,6 +12,7 @@ const CARDS = [
   },
   { href: "/admin/onboarding", title: "Onboarding Content", body: "Author onboarding stages and activities.", ready: true },
   { href: "/admin/handbook", title: "Handbook & Resources", body: "Author handbook sections and upload resources.", ready: true },
+  { href: "/admin/knowledge", title: "Knowledge Base", body: "Author consulting reads & references (paste from the Claude prompt).", ready: true },
   { href: "/admin/benefits", title: "Benefits Configuration", body: "Plan-year window and submissions.", ready: true },
   { href: "/admin/announcements", title: "Announcements", body: "Post company announcements.", ready: true },
 ];
@@ -23,13 +24,13 @@ export default async function AdminPage() {
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin</p>
       <h1 className="mt-1 font-serif text-3xl text-ink">HR Admin</h1>
       <p className="mt-2 text-muted">Manage the platform.</p>
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="ff-stagger mt-8 grid gap-4 sm:grid-cols-2">
         {CARDS.map((c) => (
           <Link
             key={c.title}
             href={c.href}
             className={
-              "rounded-xl border border-line bg-surface p-5 transition hover:border-navy-300" +
+              "ff-card rounded-xl border border-line bg-surface p-5 hover:border-navy-300" +
               (c.ready ? "" : " pointer-events-none opacity-60")
             }
           >

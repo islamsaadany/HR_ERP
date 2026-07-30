@@ -41,6 +41,7 @@
 | 005 | Time-Off / Leave Management (V1) | ✅ complete, plan-ready |
 | 006 | Dashboard (Home) | ✅ complete, plan-ready |
 | 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
+| 008 | Knowledge Base — Consulting References & Reads | ✅ implemented (V1) |
 
 ## Next up
 Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Directory · Onboarding · Handbook · Time-Off · Benefits · Dashboard).
@@ -105,10 +106,51 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     kids → dependants when a DOB parses. Per-row on-screen review report. Verified against the
     real 19-row sheet. Replaces the gitignored `seed_data_team.sql` handoff. Build green.
 
+- **2026-07-28 — Benefits catalog + shell polish:**
+  - **Benefits selector rebuilt to `benefitsselector_3.html`:** catalog grouped into 5 display
+    categories (Health & protection · Wellbeing · Life & family · Personal growth · Lifestyle &
+    flexibility) with their items; category headers + "Selected" + "Terms & conditions" panels,
+    navy/gold. Added `category` to `BenefitCatalogItem`; reseeded (`003`) + migration
+    (`004_benefits_categories.sql`). Medical unchanged (Personal = self only; dependants separate
+    in the modal). All money rules still server-side. Also fixed the `003` apostrophe bug.
+  - **Collapsible sidebar:** chevron collapse → narrow icon rail with reopen; remembered in
+    localStorage; **Handbook auto-collapses** it. Shell is now a client component; sign-out moved to
+    a server action.
+  - **Handbook & Resources → Vercel-style master–detail:** left list of sections + Resources group,
+    content opens on the right, active item bold + navy underline, search retained. Removed the old
+    card `HandbookBrowser`. Excluded `ui-versions/` snapshots from `tsc`.
+  - Build green (typecheck + next build). UI snapshots saved before each edit.
+
+- **2026-07-28 — Knowledge Base module (spec 008):** split the Handbook. The 3 consulting sections
+  (Strategy Consulting, AI-Strategy Consulting, Assignment Phases) moved into a new **Knowledge Base**
+  of admin-authored "reads." New `KnowledgeArticle` model; `/knowledge` employee master–detail
+  (Vercel-style, search) with a Markdown renderer supporting GFM **tables**, `[!KEY/TIP/NOTE/WARNING]`
+  **callouts**, and **mermaid** diagrams; `/admin/knowledge` CRUD with a **copyable Claude prompt** +
+  paste-to-parse front-matter authoring flow. Nav gains "Knowledge Base" (auto-collapses the sidebar
+  like Handbook). Seeded 9 starter articles mined from the Onboarding Kit PDF. DB: table added to
+  `000`; 3 sections deactivated in `002`; `005_knowledge_base.sql` migrates existing DBs (table +
+  deactivate + seed). Added deps: react-markdown, remark-gfm, mermaid. Build green.
+
+- **2026-07-29 — Migration runner + onboarding v2 + handbook policies:**
+  - **Deploy-time migration runner** (`scripts/apply-sql.mjs`, wired into `build`): applies pending
+    `prisma/sql/NNN_*.sql` on each deploy, tracked in `_sql_migrations`; baselines the hand-applied
+    000–005; no more pasting SQL into Neon. Skips cleanly when no DB URL (local builds).
+  - **Onboarding v2:** stage is now **free-text** (group order from `order`) — no more enum
+    migrations to add weeks. Redistributed into **Week 1–8 + Check-ins** (front-loaded foundation,
+    consulting from Week 1, Real Case Sessions Momen/Omar/Galal/Islam in Weeks 3–6, split 30/60/90).
+    New items: buddy, HR/Marketing/3× BU-head sessions, know-the-Time-Off-tool, 4 reading blocks,
+    read case studies, own a deliverable. Policy items now deep-link to Handbook sections; actions to
+    modules. (`006_onboarding_8week.sql`)
+  - **Handbook policies:** added Office & Workplace · Time Off · Expenses · Code of Conduct ·
+    Confidentiality · IT/Data-security sections (as points), plus optional **policy→tool buttons**
+    (`actionLabel`/`actionHref`) — Time Off → Time-Off tool, People Governance → Benefits, rendered in
+    both the reader and the explorer. (`007_handbook_policies.sql`)
+  - All verified on a local Postgres (fresh + existing paths); typecheck + build green.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-07-27.*
+*Last Updated: 2026-07-29.*
