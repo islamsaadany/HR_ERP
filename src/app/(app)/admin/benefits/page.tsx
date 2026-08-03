@@ -57,7 +57,17 @@ export default async function AdminBenefitsPage() {
 
       {/* Submissions */}
       <section className="mt-6 rounded-xl border border-line bg-surface p-6">
-        <h2 className="mb-4 font-serif text-lg text-ink">Submissions {active ? `· ${active.name}` : ""}</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-serif text-lg text-ink">Submissions {active ? `· ${active.name}` : ""}</h2>
+          {active && selections.length > 0 ? (
+            <a
+              href={`/api/admin/benefits/export?planYearId=${active.id}`}
+              className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+            >
+              Export CSV
+            </a>
+          ) : null}
+        </div>
         {selections.length === 0 ? (
           <p className="text-sm text-muted">No baskets yet.</p>
         ) : (

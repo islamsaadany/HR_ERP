@@ -39,7 +39,7 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 
 ### Benefits (the money module)
 - Employee: employment type + tenure come from their profile (not self-selected); view fixed/guaranteed benefits (**one line each**); build the flexible basket (server-enforced rules), save (autosave) and submit for the plan year. The live summary stays visible while scrolling — **sticky panel on desktop, pinned floating bar on mobile**.
-- Admin: configure plan-year window, pool ceilings (type × tenure), fixed benefits, basket catalog, medical handling; view submissions.
+- Admin: configure plan-year window, pool ceilings (type × tenure), fixed benefits, basket catalog, medical handling; view submissions and **export them to CSV for Finance** (`/api/admin/benefits/export`, one row per selected benefit line).
 - **Server-authoritative rules:** pool ceiling, 50% single-benefit cap, selection-count limit (FT practical 2–4 / PT max 2), medical handling. See §5 for the confirmed figures.
 
 ### Team Directory — spec `003`

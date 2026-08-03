@@ -49,6 +49,12 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-03 — Benefits: submissions CSV export (release scope #2):** `Export CSV` on
+  Admin → Benefits downloads the open plan year's submissions via `/api/admin/benefits/export`
+  (HR/Super-User only), one row per selected benefit line (employee · email · status · submitted ·
+  benefit · category · medical · amount). Verified on a throwaway Postgres with a seeded submission:
+  authenticated fetch returns HTTP 200 `text/csv` attachment with correct rows; `tsc` + build green.
+
 - **2026-08-03 — Time-Off release additions (spec 005 · branch `claude/hr-erp-directory-benefits`):**
   - **HR central leave view** (FR-013): `/admin/time-off` lists every request (status filter);
     HR/Super User can approve or decline a pending request as a fallback. Admin card added.
