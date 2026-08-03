@@ -75,14 +75,11 @@ export default async function BenefitsPage() {
 
   return (
     <div>
-      {/* Sticky header — keeps "Your benefits" + type·tenure in view while scrolling (F3). */}
-      <div className="sticky top-0 z-20 -mx-6 bg-paper/95 px-6 pb-3 pt-1 backdrop-blur md:-mx-10 md:px-10">
-        {eyebrow}
-        <h1 className="mt-1 font-serif text-3xl text-ink">Your benefits</h1>
-        <p className="mt-1 text-muted">
-          {EMPLOYMENT_TYPE_LABEL[user.employmentType]} · {TENURE_BAND_LABEL[user.tenureBand]}
-        </p>
-      </div>
+      {eyebrow}
+      <h1 className="mt-1 font-serif text-3xl text-ink">Your benefits</h1>
+      <p className="mt-1 text-muted">
+        {EMPLOYMENT_TYPE_LABEL[user.employmentType]} · {TENURE_BAND_LABEL[user.tenureBand]}
+      </p>
 
       {/* Guaranteed */}
       <section className="mt-6 overflow-hidden rounded-xl border border-line">
@@ -90,18 +87,18 @@ export default async function BenefitsPage() {
           <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-300">You receive automatically</div>
           <h2 className="font-serif text-xl">Guaranteed benefits</h2>
         </div>
-        {/* Cards sit side by side on one row (auto-fit). Each is a flex column with a
-            reserved 2-line subtitle and the amount pinned to the bottom, so all amounts
-            (and "Available") align on the same baseline regardless of subtitle length (F4). */}
+        {/* Original cards, squeezed to fit side by side on one row (auto-fit narrows
+            each card so all guaranteed benefits sit beside each other; wraps only when
+            the screen is too narrow). */}
         <div
           className="grid gap-px bg-line"
           style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}
         >
           {guaranteed.map((g) => (
-            <div key={g.id} className="flex flex-col bg-surface p-4">
+            <div key={g.id} className="bg-surface p-4">
               <div className="text-sm font-medium text-ink">{g.name}</div>
-              <div className="mt-0.5 line-clamp-2 min-h-[2rem] text-xs text-muted">{g.note ?? ""}</div>
-              <div className="mt-auto pt-2 font-serif text-lg text-navy-800">
+              {g.note ? <div className="text-xs text-muted">{g.note}</div> : null}
+              <div className="mt-1 font-serif text-lg text-navy-800">
                 {egp(amountForBand(user.tenureBand!, g))}
               </div>
             </div>

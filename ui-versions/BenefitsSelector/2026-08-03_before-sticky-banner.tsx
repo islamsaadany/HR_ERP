@@ -127,23 +127,15 @@ export function BenefitsSelector({
   ];
 
   return (
-    <>
-      {/* Submission confirmation banner (F1) */}
-      {status === "SUBMITTED" ? (
-        <div className="mt-6 flex items-start gap-3 rounded-xl border border-navy-200 bg-navy-50 px-5 py-4">
-          <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-navy-700 text-sm font-bold text-white">✓</span>
-          <div>
-            <div className="font-semibold text-navy-800">Your benefits basket is submitted.</div>
-            <p className="mt-0.5 text-sm text-navy-700">
-              It&apos;s locked for the plan year. Ask HR to reopen it if you need to change your choices.
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="mt-6 grid gap-6 pb-28 lg:grid-cols-[1fr_320px] lg:pb-0">
+    <div className="mt-6 grid gap-6 pb-28 lg:grid-cols-[1fr_320px] lg:pb-0">
       {/* Basket */}
       <div>
+        {locked ? (
+          <div className="mb-4 rounded-lg bg-navy-50 px-4 py-3 text-sm text-navy-700">
+            Your basket is <strong>submitted and locked</strong>. Ask HR to reopen it to make changes.
+          </div>
+        ) : null}
+
         {groups.map((group) => (
           <div key={group.cat}>
             {/* Category header with divider line */}
@@ -273,12 +265,9 @@ export function BenefitsSelector({
       </div>
 
       {/* Right column: meter + selected + terms */}
-      <aside className="space-y-4">
-        {/* Meter / actions — sticky on desktop so the running calculation follows you
-            while you scroll the basket (F2). Only the compact meter is sticky (the whole
-            aside was taller than the viewport, so nothing pinned). top-24 clears the
-            sticky page header. */}
-        <div className="rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-24 lg:z-10">
+      <aside className="h-fit space-y-4 lg:sticky lg:top-6">
+        {/* Meter / actions */}
+        <div className="rounded-xl border border-line bg-surface p-5">
           <div className="text-3xl font-serif text-ink tabular-nums">{egp(result.total)}</div>
           <div className="text-sm text-muted">allocated of {egp(ceiling)} pool</div>
           <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
@@ -476,8 +465,7 @@ export function BenefitsSelector({
           </div>
         </div>
       ) : null}
-      </div>
-    </>
+    </div>
   );
 }
 
