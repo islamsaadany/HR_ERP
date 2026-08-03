@@ -5,6 +5,7 @@ import { getActivePlanYear, getMedicalRate, amountForBand } from "@/lib/benefits
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { BenefitsSelector } from "@/components/benefits/BenefitsSelector";
 import { BenefitClaims, type ClaimableBenefit, type ClaimRow } from "@/components/benefits/BenefitClaims";
+import { BenefitsTabs } from "@/components/benefits/BenefitsTabs";
 import { SetupNotice } from "@/components/SetupNotice";
 
 export const dynamic = "force-dynamic";
@@ -170,21 +171,42 @@ export default async function BenefitsPage({
         </div>
       </section>
 
-      {/* Basket */}
-      <h2 className="mt-10 font-serif text-2xl text-ink">Your flexible basket</h2>
+      {/* Flexible basket — draft shows the editable selector; once submitted it splits
+          into two tabs (read-only benefits summary + claims & reimbursement). */}
       {!planYear ? (
-        <div className="mt-4 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
-          Benefits selection isn&apos;t open right now. You can view your guaranteed benefits above.
-        </div>
+        <>
+          <h2 className="mt-10 font-serif text-2xl text-ink">Your flexible basket</h2>
+          <div className="mt-4 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
+            Benefits selection isn&apos;t open right now. You can view your guaranteed benefits above.
+          </div>
+        </>
       ) : !ceilingRow || !medicalRate || catalog.length === 0 ? (
-        <div className="mt-4 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
-          Benefits aren&apos;t fully configured yet. Please check back soon.
-        </div>
+        <>
+          <h2 className="mt-10 font-serif text-2xl text-ink">Your flexible basket</h2>
+          <div className="mt-4 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
+            Benefits aren&apos;t fully configured yet. Please check back soon.
+          </div>
+        </>
+      ) : submitted ? (
+        <BenefitsTabs
+          claimCount={claimable.reduce((n, b) => n + b.claims.filter((c) => c.status === "PENDING").length, 0)}
+          benefitsPanel={
+            <BenefitsSelector
+              employmentType={user.employmentType}
+              ceiling={ceilingRow.amount}
+              catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical }))}
+              medicalRate={{ self: medicalRate.self, spouse: medicalRate.spouse, childUnder18: medicalRate.childUnder18, child18Plus: medicalRate.child18Plus }}
+              initialItems={initialItems}
+              initialMedical={initialMedical}
+              initialStatus={existing?.status ?? "NONE"}
+            />
+          }
+          claimsPanel={<BenefitClaims claimable={claimable} automatic={automatic} error={claimError} />}
+        />
       ) : (
         <>
-          {existing?.status === "SUBMITTED" ? null : (
-            <p className="mt-1 text-sm text-muted">Select benefits, set amounts, then submit for {planYear.name}.</p>
-          )}
+          <h2 className="mt-10 font-serif text-2xl text-ink">Your flexible basket</h2>
+          <p className="mt-1 text-sm text-muted">Select benefits, set amounts, then submit for {planYear.name}.</p>
           <BenefitsSelector
             employmentType={user.employmentType}
             ceiling={ceilingRow.amount}
@@ -196,11 +218,6 @@ export default async function BenefitsPage({
           />
         </>
       )}
-
-      {/* Claims & reimbursement (after submission) */}
-      {submitted ? (
-        <BenefitClaims claimable={claimable} automatic={automatic} error={claimError} />
-      ) : null}
     </div>
   );
 }

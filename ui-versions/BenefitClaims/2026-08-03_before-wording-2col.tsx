@@ -36,8 +36,8 @@ export function BenefitClaims({
     <section className="mt-10">
       <h2 className="font-serif text-2xl text-ink">Your benefits &amp; claims</h2>
       <p className="mt-1 text-sm text-muted">
-        Put your benefits to use. Some are paid automatically; a few just need a quick note, and the rest
-        need a receipt we&apos;ll review before paying you back.
+        Request reimbursement for the benefits you selected. Some are paid automatically; others need a
+        note or a proof of payment that HR reviews before releasing the payment.
       </p>
 
       {error ? (
@@ -50,18 +50,15 @@ export function BenefitClaims({
         </p>
       ) : null}
 
-      <div className="mt-4 grid items-start gap-4 lg:grid-cols-2">
+      <div className="mt-4 space-y-4">
         {claimable.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-line bg-surface p-6 text-center text-sm text-muted lg:col-span-2">
+          <p className="rounded-xl border border-dashed border-line bg-surface p-6 text-center text-sm text-muted">
             No claimable benefits yet.
           </p>
         ) : (
           claimable.map((b) => {
             const t = tracker(b.allocated, b.claims);
             const fullyClaimed = t.remaining != null && t.remaining <= 0;
-            const isProof = b.claimType === "PROOF";
-            const openLabel = isProof ? "Request a reimbursement" : "Request this benefit";
-            const submitLabel = isProof ? "Submit for reimbursement" : "Send request";
             return (
               <div key={`${b.kind}:${b.id}`} className="overflow-hidden rounded-xl border border-line bg-surface">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-3">
@@ -121,7 +118,7 @@ export function BenefitClaims({
                   <p className="px-5 py-3 text-sm text-muted">Fully claimed.</p>
                 ) : (
                   <details className="px-5 py-3">
-                    <summary className="cursor-pointer text-sm font-semibold text-navy-700">{openLabel}</summary>
+                    <summary className="cursor-pointer text-sm font-semibold text-navy-700">File a claim</summary>
                     <form action={createClaim} encType="multipart/form-data" className="mt-3 grid gap-3 sm:grid-cols-2">
                       <input type="hidden" name="kind" value={b.kind} />
                       <input type="hidden" name="benefitId" value={b.id} />
@@ -162,7 +159,7 @@ export function BenefitClaims({
                       ) : null}
                       <div className="sm:col-span-2">
                         <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">
-                          {submitLabel}
+                          Submit claim
                         </button>
                       </div>
                     </form>
