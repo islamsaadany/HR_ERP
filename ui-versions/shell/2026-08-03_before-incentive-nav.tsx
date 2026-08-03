@@ -26,18 +26,13 @@ export function AppShell({
   name,
   email,
   showAdmin,
-  showIncentive,
-  hiddenNav = [],
   children,
 }: {
   name?: string | null;
   email?: string | null;
   showAdmin: boolean;
-  showIncentive: boolean;
-  hiddenNav?: string[];
   children: React.ReactNode;
 }) {
-  const nav = NAV.filter((item) => !hiddenNav.includes(item.href));
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [pref, setPref] = useState(false); // the user's manual preference
@@ -92,7 +87,7 @@ export function AppShell({
               </button>
             </div>
             <nav className="flex flex-1 flex-col items-center gap-1 py-4">
-              {nav.map((item) => (
+              {NAV.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -108,21 +103,6 @@ export function AppShell({
                   <NavIcon name={item.icon} />
                 </Link>
               ))}
-              {showIncentive ? (
-                <Link
-                  href="/incentive"
-                  title="Incentive Scheme"
-                  aria-label="Incentive Scheme"
-                  className={
-                    "mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive("/incentive")
-                      ? "bg-navy-800 text-gold-300"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  <NavIcon name="benefits" />
-                </Link>
-              ) : null}
               {showAdmin ? (
                 <Link
                   href="/admin"
@@ -172,7 +152,7 @@ export function AppShell({
               </button>
             </div>
             <nav className="flex-1 space-y-1 px-3 py-4">
-              {nav.map((item) => {
+              {NAV.map((item) => {
                 const on = isActive(item.href);
                 return (
                   <Link
@@ -190,20 +170,6 @@ export function AppShell({
                   </Link>
                 );
               })}
-              {showIncentive ? (
-                <Link
-                  href="/incentive"
-                  aria-current={isActive("/incentive") ? "page" : undefined}
-                  className={
-                    "relative mt-2 block rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/incentive")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  Incentive Scheme
-                </Link>
-              ) : null}
               {showAdmin ? (
                 <Link
                   href="/admin"

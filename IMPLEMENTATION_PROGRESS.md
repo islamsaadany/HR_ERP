@@ -106,6 +106,33 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     kids → dependants when a DOB parses. Per-row on-screen review report. Verified against the
     real 19-row sheet. Replaces the gitignored `seed_data_team.sql` handoff. Build green.
 
+- **2026-08-03 — Incentive Scheme (spec 009), super-user only:** a hidden partner-compensation
+  engine implementing "Team Benefits System v1.5" — Business Partner Fee, Commission, Profit
+  Share (proposed), 70% gate, `eligible_to_lead` utilisation gate, contributor tiers/floor/cap,
+  firm P&L, cost recovery, watch list. Pure engine in `src/lib/incentive/` (banker's rounding),
+  per-cycle model (`013`), CSV upload with downloadable templates + flag-and-block validation,
+  reports at `/incentive` (requireSuperUser; nav entry for super users only). Proven against
+  Appendix A: `scripts/verify-incentive.ts` 27/27 and `scripts/verify-incentive-cycle.ts` 16/16.
+
+- **2026-08-03 — Email + password sign-in + admin/self-service (auth):** employees sign in with
+  their Forefront email + password or Google, both to the dashboard. `passwordHash` (scrypt, no
+  new dep; migration `014`); admin set/reset per employee (temp password shown once); self-service
+  change on Profile. Bootstrap admin retained as fallback.
+
+- **2026-08-03 — Module release switch (super user):** Admin → Modules toggles each module on/off
+  (`ModuleFlag`, migration `015`); off = hidden from nav + route redirects home. Guards on all six
+  module root pages; nav filtered via `AppShell.hiddenNav`.
+
+- **2026-07-30 — Knowledge Base deck attachments (spec 008 FR-009):** a KB topic can now carry one
+  **PDF deck** so slide-heavy training topics keep a short, searchable blurb + the real deck instead of
+  re-typing it as Markdown. Added `attachmentUrl/Name/Type/Size` to `KnowledgeArticle`
+  (`012_knowledge_attachments.sql`, idempotent, auto-applied). Admin editor gains an "Attach deck (PDF)"
+  field (upload / replace / remove), reusing the existing Vercel Blob `put()` pattern; server validates
+  PDF-only ≤25MB and cleans up the old blob on replace/remove/delete. Employee reader renders the blurb
+  first, then embeds the deck (`<object>`) with a Download link. Build green (typecheck + next build);
+  migration `012` applied to a throwaway local Postgres and verified (columns added, idempotent, deck
+  row reads back). UI snapshots saved before editing `KnowledgeExplorer`/`ArticleForm`.
+
 - **2026-07-28 — Benefits catalog + shell polish:**
   - **Benefits selector rebuilt to `benefitsselector_3.html`:** catalog grouped into 5 display
     categories (Health & protection · Wellbeing · Life & family · Personal growth · Lifestyle &

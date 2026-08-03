@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { ARTICLE_PROMPT, DECK_BLURB_PROMPT, CLUSTER_SUGGESTIONS, parseArticleMarkdown } from "@/lib/knowledge";
+import { ARTICLE_PROMPT, CLUSTER_SUGGESTIONS, parseArticleMarkdown } from "@/lib/knowledge";
 import { ArticleRenderer } from "./ArticleRenderer";
 import type { ArticleActionState } from "@/app/(app)/admin/knowledge/actions";
 
@@ -58,20 +58,8 @@ export function ArticleForm({
   const [copied, setCopied] = useState(false);
   const [deckName, setDeckName] = useState<string | null>(null);
   const [removeDeck, setRemoveDeck] = useState(false);
-  const [showBlurbPrompt, setShowBlurbPrompt] = useState(false);
-  const [copiedBlurb, setCopiedBlurb] = useState(false);
 
   const hasStoredDeck = Boolean(start.attachmentUrl);
-
-  async function copyBlurbPrompt() {
-    try {
-      await navigator.clipboard.writeText(DECK_BLURB_PROMPT);
-      setCopiedBlurb(true);
-      setTimeout(() => setCopiedBlurb(false), 1500);
-    } catch {
-      /* ignore */
-    }
-  }
 
   function applyParse() {
     const p = parseArticleMarkdown(paste);
@@ -208,29 +196,6 @@ export function ArticleForm({
                   ? "Choose a file to replace the current deck, or tick Remove."
                   : "Optional. Attach the topic's slide deck (PDF, max 25MB); it renders under the article."}
             </p>
-
-            {/* Blurb helper: a light prompt to generate the summary + "What you'll learn" for a deck topic */}
-            <div className="mt-3 rounded-lg border border-line bg-navy-50/40 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-xs font-semibold text-ink">Need a blurb for this deck?</div>
-                <div className="flex gap-2">
-                  <button type="button" onClick={copyBlurbPrompt} className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-navy-700 hover:bg-navy-50">
-                    {copiedBlurb ? "Copied ✓" : "Copy blurb prompt"}
-                  </button>
-                  <button type="button" onClick={() => setShowBlurbPrompt((s) => !s)} className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs text-muted hover:bg-navy-50">
-                    {showBlurbPrompt ? "Hide" : "Show"}
-                  </button>
-                </div>
-              </div>
-              <p className="mt-1 text-xs text-muted">
-                Generates just the summary + &ldquo;What you&apos;ll learn&rdquo;. Run it in Claude with your deck outline, paste the result into step 2 above, and press Parse.
-              </p>
-              {showBlurbPrompt ? (
-                <pre className="mt-2 max-h-56 overflow-auto rounded-lg border border-line bg-surface p-3 text-[11px] leading-relaxed text-navy-900 whitespace-pre-wrap">
-                  {DECK_BLURB_PROMPT}
-                </pre>
-              ) : null}
-            </div>
           </div>
 
           {state?.error ? (

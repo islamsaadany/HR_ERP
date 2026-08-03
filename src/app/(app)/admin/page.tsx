@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/roles";
+import { requireAdmin, isSuperUser } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -18,14 +18,25 @@ const CARDS = [
 ];
 
 export default async function AdminPage() {
-  await requireAdmin();
+  const actor = await requireAdmin();
+  const cards = isSuperUser(actor.role)
+    ? [
+        ...CARDS,
+        {
+          href: "/admin/modules",
+          title: "Modules",
+          body: "Switch platform modules on or off to release when ready.",
+          ready: true,
+        },
+      ]
+    : CARDS;
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin</p>
       <h1 className="mt-1 font-serif text-3xl text-ink">HR Admin</h1>
       <p className="mt-2 text-muted">Manage the platform.</p>
       <div className="ff-stagger mt-8 grid gap-4 sm:grid-cols-2">
-        {CARDS.map((c) => (
+        {cards.map((c) => (
           <Link
             key={c.title}
             href={c.href}

@@ -2,10 +2,91 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { put, del } from "@vercel/blob";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
 import { slugify, estimateReadingMinutes } from "@/lib/knowledge";
+
+const MAX_DECK_BYTES = 25 * 1024 * 1024;
+
+type DeckFields = {
+  attachmentUrl: string | null;
+  attachmentName: string | null;
+  attachmentType: string | null;
+  attachmentSize: number | null;
+};
+
+/**
+ * Resolve the deck (PDF) attachment for a save.
+ * - new file present  -> validate (PDF, ≤25MB), upload to Blob, delete the old blob, set fields
+ * - "removeDeck" flag  -> delete the existing blob, clear the fields
+ * - otherwise          -> keep whatever is stored (`{ keep: true }` — no change)
+ * `existing` is the currently-stored deck (edit flow) so we can clean up the old blob.
+ */
+async function resolveDeck(
+  formData: FormData,
+  slug: string,
+  existing?: { attachmentUrl: string | null }
+): Promise<{ fields: DeckFields } | { keep: true } | { error: string }> {
+  const file = formData.get("deck");
+  const remove = formData.get("removeDeck");
+
+  if (file instanceof File && file.size > 0) {
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) return { error: "The deck must be a PDF file." };
+    if (file.size > MAX_DECK_BYTES) return { error: "The deck is too large (max 25MB)." };
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const blob = await put(`knowledge/${slug}/${safeName}`, file, {
+      access: "public",
+      addRandomSuffix: true,
+    });
+    if (existing?.attachmentUrl) {
+      try {
+        await del(existing.attachmentUrl);
+      } catch {
+        /* best-effort cleanup of the replaced deck */
+      }
+    }
+    return {
+      fields: {
+        attachmentUrl: blob.url,
+        attachmentName: file.name,
+        attachmentType: file.type || "application/pdf",
+        attachmentSize: file.size,
+      },
+    };
+  }
+
+  if (remove === "on" || remove === "true") {
+    if (existing?.attachmentUrl) {
+      try {
+        await del(existing.attachmentUrl);
+      } catch {
+        /* best-effort cleanup */
+      }
+    }
+    return { fields: { attachmentUrl: null, attachmentName: null, attachmentType: null, attachmentSize: null } };
+  }
+
+  return { keep: true };
+}
+
+/**
+ * Turn a thrown save error (Blob upload or DB write) into a readable message for
+ * the admin, instead of letting it bubble up as an opaque 500 page. Maps the two
+ * expected deployment gaps to plain-language guidance.
+ */
+function explainSaveError(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e);
+  if (/attachment(Url|Name|Type|Size)|column .* does not exist/i.test(msg)) {
+    return "Couldn't save: the database is missing the deck columns. Migration 012 hasn't been applied to this deployment yet — redeploy with the database env vars set (so the build runs it), or apply 012_knowledge_attachments.sql once.";
+  }
+  if (/BLOB_READ_WRITE_TOKEN|No token|blob/i.test(msg)) {
+    return "Couldn't upload the deck: file storage isn't configured. Add a Vercel Blob store and set BLOB_READ_WRITE_TOKEN, then try again.";
+  }
+  return `Couldn't save: ${msg}`;
+}
 
 const articleSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
@@ -57,22 +138,30 @@ export async function createArticle(
   const d = parsed.data;
   const slug = slugify(d.slug || d.title);
   if (!slug) return { error: "Could not derive a slug from the title." };
-  const clash = await prisma.knowledgeArticle.findUnique({ where: { slug } });
+  const clash = await prisma.knowledgeArticle.findUnique({ where: { slug }, select: { id: true } });
   if (clash) return { error: "An article with that slug already exists." };
-  await prisma.knowledgeArticle.create({
-    data: {
-      slug,
-      title: d.title,
-      cluster: d.cluster ?? null,
-      category: d.category,
-      summary: d.summary ?? null,
-      body: d.body,
-      readingMinutes: d.readingMinutes ?? estimateReadingMinutes(d.body),
-      order: d.order,
-      published: d.published,
-      authorId: admin.id,
-    },
-  });
+  try {
+    const deck = await resolveDeck(formData, slug);
+    if ("error" in deck) return { error: deck.error };
+    const deckFields = "fields" in deck ? deck.fields : {};
+    await prisma.knowledgeArticle.create({
+      data: {
+        slug,
+        title: d.title,
+        cluster: d.cluster ?? null,
+        category: d.category,
+        summary: d.summary ?? null,
+        body: d.body,
+        readingMinutes: d.readingMinutes ?? estimateReadingMinutes(d.body),
+        order: d.order,
+        published: d.published,
+        authorId: admin.id,
+        ...deckFields,
+      },
+    });
+  } catch (e) {
+    return { error: explainSaveError(e) };
+  }
   revalidatePath("/admin/knowledge");
   revalidatePath("/knowledge");
   redirect("/admin/knowledge");
@@ -89,22 +178,35 @@ export async function updateArticle(
   const d = parsed.data;
   const slug = slugify(d.slug || d.title);
   if (!slug) return { error: "Could not derive a slug from the title." };
-  const clash = await prisma.knowledgeArticle.findFirst({ where: { slug, NOT: { id } } });
+  const clash = await prisma.knowledgeArticle.findFirst({ where: { slug, NOT: { id } }, select: { id: true } });
   if (clash) return { error: "Another article already uses that slug." };
-  await prisma.knowledgeArticle.update({
-    where: { id },
-    data: {
-      slug,
-      title: d.title,
-      cluster: d.cluster ?? null,
-      category: d.category,
-      summary: d.summary ?? null,
-      body: d.body,
-      readingMinutes: d.readingMinutes ?? estimateReadingMinutes(d.body),
-      order: d.order,
-      published: d.published,
-    },
-  });
+  try {
+    const existing = await prisma.knowledgeArticle.findUnique({
+      where: { id },
+      select: { attachmentUrl: true },
+    });
+    if (!existing) return { error: "Article not found." };
+    const deck = await resolveDeck(formData, slug, existing);
+    if ("error" in deck) return { error: deck.error };
+    const deckFields = "fields" in deck ? deck.fields : {};
+    await prisma.knowledgeArticle.update({
+      where: { id },
+      data: {
+        slug,
+        title: d.title,
+        cluster: d.cluster ?? null,
+        category: d.category,
+        summary: d.summary ?? null,
+        body: d.body,
+        readingMinutes: d.readingMinutes ?? estimateReadingMinutes(d.body),
+        order: d.order,
+        published: d.published,
+        ...deckFields,
+      },
+    });
+  } catch (e) {
+    return { error: explainSaveError(e) };
+  }
   revalidatePath("/admin/knowledge");
   revalidatePath("/knowledge");
   redirect("/admin/knowledge");
@@ -114,7 +216,24 @@ export async function deleteArticle(formData: FormData): Promise<void> {
   await requireAdmin();
   const id = formData.get("id") as string;
   if (id) {
+    let deckUrl: string | null = null;
+    try {
+      const existing = await prisma.knowledgeArticle.findUnique({
+        where: { id },
+        select: { attachmentUrl: true },
+      });
+      deckUrl = existing?.attachmentUrl ?? null;
+    } catch {
+      /* attachment columns may not exist yet (migration 012 not applied) — delete still proceeds */
+    }
     await prisma.knowledgeArticle.delete({ where: { id } });
+    if (deckUrl) {
+      try {
+        await del(deckUrl);
+      } catch {
+        /* best-effort cleanup of the article's deck */
+      }
+    }
     revalidatePath("/admin/knowledge");
     revalidatePath("/knowledge");
   }
@@ -134,7 +253,9 @@ export async function reorderKnowledge(formData: FormData): Promise<void> {
   const cluster = formData.get("cluster") as string | null;
   const category = formData.get("category") as string | null;
 
-  const all = await prisma.knowledgeArticle.findMany();
+  const all = await prisma.knowledgeArticle.findMany({
+    select: { id: true, title: true, cluster: true, category: true, order: true },
+  });
   const sorted = [...all].sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
 
   const key = (c: string | null) => c ?? "";

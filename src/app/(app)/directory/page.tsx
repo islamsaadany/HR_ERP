@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/roles";
+import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
 import { DirectoryBrowser } from "@/components/DirectoryBrowser";
 
@@ -6,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DirectoryPage() {
   await requireUser();
+  await requireModuleEnabled("directory");
   const people = await prisma.user.findMany({
     where: { status: "ACTIVE" },
     orderBy: { name: "asc" },

@@ -36,6 +36,8 @@ export default async function EditArticlePage({
             readingMinutes: a.readingMinutes != null ? String(a.readingMinutes) : "",
             order: a.order,
             published: a.published,
+            attachmentUrl: a.attachmentUrl ?? "",
+            attachmentName: a.attachmentName ?? "",
           }}
         />
       </div>

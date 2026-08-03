@@ -51,7 +51,7 @@ export default async function SignInPage({
           {error ? (
             <p className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
               {error === "Credentials"
-                ? "Incorrect email or password. Please try again."
+                ? "Incorrect username or password. Please try again."
                 : error === "AccessDenied"
                 ? "That account isn't allowed. Use your @forefront.consulting email, or ask HR to add you."
                 : "Something went wrong signing in. Please try again."}
@@ -61,15 +61,13 @@ export default async function SignInPage({
           <form action={credentialsSignIn} className="space-y-4">
             <div>
               <label htmlFor="username" className={L}>
-                Email
+                Username
               </label>
               <input
                 id="username"
                 name="username"
                 type="text"
-                inputMode="email"
                 autoComplete="username"
-                placeholder="you@forefront.consulting"
                 required
                 className={I}
               />

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { EmployeeForm } from "@/components/admin/EmployeeForm";
+import { AdminPasswordCard } from "@/components/admin/AdminPasswordCard";
 import { updateEmployee } from "../actions";
 import { toDateInput } from "@/lib/labels";
 
@@ -65,6 +66,10 @@ export default async function EditEmployeePage({
           })),
         }}
       />
+
+      <div className="mt-8">
+        <AdminPasswordCard userId={employee.id} name={employee.name} />
+      </div>
     </div>
   );
 }

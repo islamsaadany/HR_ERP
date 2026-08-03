@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/roles";
+import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/labels";
 import { LEAVE_STATUS_LABEL, LEAVE_STATUS_CLASS, dayCount } from "@/lib/leave";
@@ -12,6 +13,7 @@ export default async function TimeOffPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const me = await requireUser();
+  await requireModuleEnabled("timeoff");
   const { error } = await searchParams;
 
   const [myRequests, approvals] = await Promise.all([
