@@ -30,6 +30,7 @@ The files below are kept for reference / manual fallback (paste in numeric order
 - [ ] `015_module_flags.sql` — module on/off release switch. *(auto-applied)*
 - [ ] `016_leave_decision_seen.sql` — Time-Off: `decisionSeenAt` for the in-app decision badge. *(auto-applied)*
 - [ ] `017_brand_settings.sql` — Branding: single-row `BrandSettings` (name, logo, colors). *(auto-applied)*
+- [ ] `018_benefit_claims.sql` — Benefits: claim policy + `BenefitClaim` (reimbursement flow). *(auto-applied)*
 
 **Team members (employees):** you no longer need a PII SQL seed. Sign in (see §1a),
 open **Admin → Employees → Import CSV**, and upload your employee spreadsheet saved as

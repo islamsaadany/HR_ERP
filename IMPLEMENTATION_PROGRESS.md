@@ -49,6 +49,20 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-03 — Benefits claims & reimbursement + page polish (spec 007, branch `claude/hr-erp-dashboard-pwa`):**
+  - **Page fixes:** submit confirmation banner (F1); the running-total meter now sticks on desktop
+    while scrolling (F2, was broken — the whole aside was sticky but taller than the viewport); sticky
+    page header (F3); guaranteed cards aligned on one baseline with reserved 2-line subtitles (F4).
+  - **Claims/reimbursement (Phase-2, now built):** migration `018` adds a per-benefit `claimType`
+    (None/Note/Proof) + a `BenefitClaim` model. Employees file **multiple partial claims** up to a
+    benefit's allocation (note or mandatory proof-upload to Blob); a per-benefit tracker shows
+    allocated / reimbursed / pending / left. Admin → Benefits gains a **Claims to review** queue
+    (Release / Reject-with-reason), a **Claim requirements** editor (per benefit), and a full **Reset**
+    (blocked when claims exist) beside Reopen. All server-authoritative.
+  - Verified on a throwaway Postgres: migration 018 applied + idempotent with correct defaults;
+    full Playwright flow — employee filed a claim → Pending → admin review queue (·1) → Release →
+    tracker showed Reimbursed 4,000 / Left 6,000; Reset blocked when claims exist. `tsc` + build green.
+
 - **2026-08-03 — Branding / white-label (spec 011, branch `claude/hr-erp-dashboard-pwa`):**
   - Single-row `BrandSettings` (migration `017`): company name, short name, logo, primary + accent
     colors. Super-User **Admin → Brand** screen (name, logo upload to Blob, two color pickers, reset).

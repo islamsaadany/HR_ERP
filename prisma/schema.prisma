@@ -93,6 +93,8 @@ model User {
 
   // Benefits
   benefitSelections BenefitSelection[]
+  benefitClaims     BenefitClaim[] @relation("ClaimOwner")
+  reviewedClaims    BenefitClaim[] @relation("ClaimReviewer")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -280,6 +282,19 @@ enum SelectionStatus {
   SUBMITTED
 }
 
+/// What an employee must provide to claim/reimburse a benefit.
+enum ClaimType {
+  NONE // paid automatically — no request needed
+  NOTE // request with an optional note/description
+  PROOF // mandatory proof-of-payment upload, reviewed before release
+}
+
+enum ClaimStatus {
+  PENDING // submitted, awaiting HR review
+  RELEASED // approved — payment released / reimbursed
+  REJECTED // declined (with a reason)
+}
+
 /// A benefits cycle. Employees can save/submit only while OPEN.
 model PlanYear {
   id         String             @id @default(cuid())
@@ -287,6 +302,7 @@ model PlanYear {
   status     PlanYearStatus     @default(OPEN)
   createdAt  DateTime           @default(now())
   selections BenefitSelection[]
+  claims     BenefitClaim[]
 }
 
 /// Pool ceiling per (employment type × tenure band). Max claimable for the year.
@@ -310,6 +326,8 @@ model GuaranteedBenefit {
   band4to7y      Int?
   band7to10y     Int?
   order          Int            @default(0)
+  claimType      ClaimType      @default(NONE)
+  claims         BenefitClaim[]
 }
 
 /// Medical insurance rate card (single tier). One row.
@@ -331,7 +349,9 @@ model BenefitCatalogItem {
   isMedical   Boolean         @default(false)
   order       Int             @default(0)
   active      Boolean         @default(true)
+  claimType   ClaimType       @default(PROOF)
   lines       SelectionLine[]
+  claims      BenefitClaim[]
 }
 
 /// An employee's basket for a plan year.
@@ -376,6 +396,34 @@ model SelectionLine {
   amount        Int
 
   @@unique([selectionId, catalogItemId])
+}
+
+/// A reimbursement claim against a benefit (guaranteed or basket) for a plan year.
+/// Multiple partial claims can be filed against one benefit, up to its allocation.
+model BenefitClaim {
+  id                  String             @id @default(cuid())
+  userId              String
+  user                User               @relation("ClaimOwner", fields: [userId], references: [id], onDelete: Cascade)
+  planYearId          String
+  planYear            PlanYear           @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  // Exactly one of these is set — the benefit being claimed.
+  guaranteedBenefitId String?
+  guaranteedBenefit   GuaranteedBenefit? @relation(fields: [guaranteedBenefitId], references: [id], onDelete: Cascade)
+  catalogItemId       String?
+  catalogItem         BenefitCatalogItem? @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  amount              Int
+  note                String?
+  proofUrl            String?
+  proofName           String?
+  status              ClaimStatus        @default(PENDING)
+  decisionNote        String?
+  reviewedById        String?
+  reviewedBy          User?              @relation("ClaimReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt           DateTime           @default(now())
+  decidedAt           DateTime?
+
+  @@index([userId, planYearId])
+  @@index([status])
 }
 
 // ─── Incentive Scheme (super-user only; Team Benefits System v1.5) ──────────

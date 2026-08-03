@@ -4,14 +4,20 @@ import { prisma } from "@/lib/prisma";
 import { getActivePlanYear, getMedicalRate, amountForBand } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { BenefitsSelector } from "@/components/benefits/BenefitsSelector";
+import { BenefitClaims, type ClaimableBenefit, type ClaimRow } from "@/components/benefits/BenefitClaims";
 import { SetupNotice } from "@/components/SetupNotice";
 
 export const dynamic = "force-dynamic";
 const egp = (n: number | null) => (n == null ? "Available" : "EGP " + n.toLocaleString());
 
-export default async function BenefitsPage() {
+export default async function BenefitsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ claimError?: string; claimOk?: string }>;
+}) {
   const me = await requireUser();
   await requireModuleEnabled("benefits");
+  const { claimError } = await searchParams;
   const user = await prisma.user.findUnique({
     where: { id: me.id },
     select: { employmentType: true, tenureBand: true },
@@ -72,6 +78,60 @@ export default async function BenefitsPage() {
     childrenUnder18: existing?.medicalChildrenUnder18 ?? 0,
     children18Plus: existing?.medicalChildren18Plus ?? 0,
   };
+
+  // Claims (Phase-2): once submitted, assemble the claimable + automatic benefits.
+  const submitted = existing?.status === "SUBMITTED";
+  const claimable: ClaimableBenefit[] = [];
+  const automatic: string[] = [];
+  if (submitted && planYear) {
+    const claims = await prisma.benefitClaim.findMany({
+      where: { userId: me.id, planYearId: planYear.id },
+      orderBy: { createdAt: "desc" },
+    });
+    const byG = new Map<string, ClaimRow[]>();
+    const byC = new Map<string, ClaimRow[]>();
+    for (const c of claims) {
+      const row: ClaimRow = {
+        amount: c.amount,
+        status: c.status,
+        note: c.note,
+        proofName: c.proofName,
+        proofUrl: c.proofUrl,
+        decisionNote: c.decisionNote,
+        createdAt: c.createdAt,
+      };
+      const map = c.guaranteedBenefitId ? byG : byC;
+      const key = c.guaranteedBenefitId ?? c.catalogItemId ?? "";
+      const arr = map.get(key) ?? [];
+      arr.push(row);
+      map.set(key, arr);
+    }
+    for (const g of guaranteed ?? []) {
+      if (g.claimType === "NONE") automatic.push(g.name);
+      else
+        claimable.push({
+          kind: "guaranteed",
+          id: g.id,
+          name: g.name,
+          claimType: g.claimType,
+          allocated: amountForBand(user.tenureBand!, g),
+          claims: byG.get(g.id) ?? [],
+        });
+    }
+    for (const line of existing?.lines ?? []) {
+      if (line.catalogItem.isMedical) continue;
+      if (line.catalogItem.claimType === "NONE") automatic.push(line.catalogItem.name);
+      else
+        claimable.push({
+          kind: "catalog",
+          id: line.catalogItem.id,
+          name: line.catalogItem.name,
+          claimType: line.catalogItem.claimType,
+          allocated: line.amount,
+          claims: byC.get(line.catalogItem.id) ?? [],
+        });
+    }
+  }
 
   return (
     <div>
@@ -135,6 +195,11 @@ export default async function BenefitsPage() {
           />
         </>
       )}
+
+      {/* Claims & reimbursement (after submission) */}
+      {submitted ? (
+        <BenefitClaims claimable={claimable} automatic={automatic} error={claimError} />
+      ) : null}
     </div>
   );
 }
