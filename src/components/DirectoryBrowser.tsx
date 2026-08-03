@@ -1,8 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
+
+type ViewMode = "cards" | "list";
+const VIEW_KEY = "directory:view";
 
 export type DirEntry = {
   id: string;
@@ -17,6 +20,17 @@ export type DirEntry = {
 export function DirectoryBrowser({ people }: { people: DirEntry[] }) {
   const [q, setQ] = useState("");
   const [dept, setDept] = useState("");
+  const [view, setView] = useState<ViewMode>("cards");
+
+  // Remember the chosen view across visits (read-only preference, client-only).
+  useEffect(() => {
+    const saved = window.localStorage.getItem(VIEW_KEY);
+    if (saved === "cards" || saved === "list") setView(saved);
+  }, []);
+  function chooseView(v: ViewMode) {
+    setView(v);
+    window.localStorage.setItem(VIEW_KEY, v);
+  }
 
   const departments = useMemo(
     () =>
@@ -54,6 +68,26 @@ export function DirectoryBrowser({ people }: { people: DirEntry[] }) {
             </option>
           ))}
         </select>
+
+        {/* View toggle — cards or list (read-only) */}
+        <div className="inline-flex overflow-hidden rounded-lg border border-line">
+          {(["cards", "list"] as ViewMode[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => chooseView(v)}
+              aria-pressed={view === v}
+              className={
+                "px-3 py-2 text-sm font-medium capitalize transition " +
+                (view === v
+                  ? "bg-navy-800 text-white"
+                  : "bg-surface text-navy-700 hover:bg-navy-50")
+              }
+            >
+              {v}
+            </button>
+          ))}
+        </div>
       </div>
 
       <p className="mt-3 text-xs text-muted">
@@ -64,7 +98,7 @@ export function DirectoryBrowser({ people }: { people: DirEntry[] }) {
         <div className="mt-6 rounded-xl border border-dashed border-line bg-surface p-10 text-center text-sm text-muted">
           No one matches that search.
         </div>
-      ) : (
+      ) : view === "cards" ? (
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((p) => (
             <Link
@@ -80,6 +114,40 @@ export function DirectoryBrowser({ people }: { people: DirEntry[] }) {
               </div>
             </Link>
           ))}
+        </div>
+      ) : (
+        <div className="mt-4 overflow-x-auto rounded-xl border border-line bg-surface">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
+                <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Title</th>
+                <th className="px-4 py-3 font-medium">Department</th>
+                <th className="px-4 py-3 font-medium">Email</th>
+                <th className="px-4 py-3 font-medium">Phone</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((p) => (
+                <tr key={p.id} className="border-b border-line last:border-b-0 hover:bg-navy-50/40">
+                  <td className="px-4 py-3">
+                    <Link href={`/directory/${p.id}`} className="flex items-center gap-3">
+                      <Avatar name={p.name} photoUrl={p.photoUrl} />
+                      <span className="font-medium text-navy-700 hover:text-navy-900">{p.name}</span>
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-muted">{p.title ?? "—"}</td>
+                  <td className="px-4 py-3 text-muted">{p.department ?? "—"}</td>
+                  <td className="px-4 py-3 text-muted">
+                    <a href={`mailto:${p.email}`} className="hover:text-navy-700">{p.email}</a>
+                  </td>
+                  <td className="px-4 py-3 text-muted">
+                    {p.phone ? <a href={`tel:${p.phone}`} className="hover:text-navy-700">{p.phone}</a> : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
