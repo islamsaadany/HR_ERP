@@ -459,3 +459,17 @@ model ModuleFlag {
   enabled   Boolean  @default(true)
   updatedAt DateTime @updatedAt @default(now())
 }
+
+// ─── Branding (white-label per deployment, super-user) ──────────────────────
+/// Single-row brand identity for this deployment: company name, logo, and the two
+/// base colors (primary + accent) that re-theme the whole UI. Defaults to Forefront
+/// navy/gold; when unchanged, no theme override is injected (identical look).
+model BrandSettings {
+  id           String   @id @default("singleton")
+  companyName  String   @default("Forefront HR")
+  shortName    String   @default("Forefront")
+  logoUrl      String?
+  primaryColor String   @default("#0f2444") // navy-800
+  accentColor  String   @default("#c9a227") // gold-500
+  updatedAt    DateTime @updatedAt @default(now())
+}

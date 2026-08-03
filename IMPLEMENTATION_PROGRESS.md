@@ -49,6 +49,19 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-03 — Branding / white-label (spec 011, branch `claude/hr-erp-dashboard-pwa`):**
+  - Single-row `BrandSettings` (migration `017`): company name, short name, logo, primary + accent
+    colors. Super-User **Admin → Brand** screen (name, logo upload to Blob, two color pickers, reset).
+  - The two base colors are expanded into full tint/shade scales and injected as a `:root` override of
+    the theme CSS variables — **re-themes the entire UI with no per-component changes**. When colors
+    equal the Forefront defaults, **no override is injected** (byte-for-byte identical to today).
+  - Company name/logo applied to the sidebar, mobile header, sign-in, browser title, and the PWA
+    manifest (name + theme color follow the brand). Data stays single-tenant per deployment.
+  - Verified on a throwaway Postgres: a maroon/teal brand re-themed the whole app (styled screenshot);
+    admin save changed the name to "Globex Inc" and reset restored "Forefront HR"; manifest + `<title>`
+    reflect the brand. `tsc` + `next build` green. (Full multi-tenant data isolation is a separate,
+    future spec — this is branding only.)
+
 - **2026-08-03 — Home + PWA + grid polish (branch `claude/hr-erp-dashboard-pwa`):**
   - **Admin grid filters persist** (spec 001 · FR-020): the employees grid now remembers the filter
     selections (search, department, type, status, role) in localStorage, like it already did for

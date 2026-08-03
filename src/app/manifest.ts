@@ -1,20 +1,25 @@
 import type { MetadataRoute } from "next";
+import { getBrand } from "@/lib/brand";
+
+export const dynamic = "force-dynamic";
 
 /**
- * Web app manifest — makes Forefront HR installable as a PWA ("Add to Home Screen").
- * Next serves this at /manifest.webmanifest and links it automatically.
+ * Web app manifest — makes the app installable as a PWA ("Add to Home Screen").
+ * Name + theme color follow the configured brand. Next serves this at
+ * /manifest.webmanifest and links it automatically.
  */
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const brand = await getBrand();
   return {
-    name: "Forefront HR",
-    short_name: "Forefront HR",
-    description: "Forefront Consulting — internal HR platform",
+    name: brand.companyName,
+    short_name: brand.shortName,
+    description: `${brand.shortName} — internal HR platform`,
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#16223c",
-    theme_color: "#16223c",
+    background_color: brand.primaryColor,
+    theme_color: brand.primaryColor,
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

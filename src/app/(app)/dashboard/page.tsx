@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { tracksForUser } from "@/lib/onboarding";
 import { getActivePlanYear } from "@/lib/benefits/config";
 import { getDisabledModules, getDisabledHrefs } from "@/lib/modules";
+import { getBrand } from "@/lib/brand";
 import { formatDate } from "@/lib/labels";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,7 @@ export default async function DashboardPage() {
   const me = await requireUser();
   const firstName = me.name?.split(" ")[0] ?? "there";
 
+  const brand = await getBrand();
   const dbUser = await prisma.user.findUnique({
     where: { id: me.id },
     select: { department: true, employmentType: true, tenureBand: true },
@@ -83,7 +85,7 @@ export default async function DashboardPage() {
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Dashboard</p>
       <h1 className="mt-1 font-serif text-3xl text-ink">Welcome, {firstName}</h1>
-      <p className="mt-2 text-muted">Your Forefront HR home.</p>
+      <p className="mt-2 text-muted">Your {brand.companyName} home.</p>
 
       <div className="ff-stagger mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {/* Primary, always-on cards (the most-used) */}

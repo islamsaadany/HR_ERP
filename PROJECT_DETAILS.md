@@ -68,9 +68,27 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Data:** `LeaveRequest { userId, startDate, endDate, note, status, approverId, decisionComment, decidedAt, decisionSeenAt }`.
 
 ### Dashboard
-- Employee home: onboarding progress, benefits status, quick links, announcements.
+- Employee home: **module-aware** tiles + quick links (a switched-off module contributes neither).
+  **Time-Off + Team Directory** are the always-on primary cards; the Benefits tile hides once submitted;
+  Onboarding hides on completion. Plus announcements.
 - Admin: post announcements.
 - **Data:** `Announcement { id, title, body, authorId, publishedAt }`
+
+### Branding / white-label (spec 011) — super user
+- `BrandSettings` singleton (migration `017`): company name, short name, logo, **primary + accent** colors.
+  Admin → **Brand** (super-user): edit name, upload a logo (Blob), pick two colors, or reset to Forefront.
+- The two base colors are expanded to full tint/shade scales (`src/lib/brand.ts`) and injected as a
+  `:root` override of the Tailwind theme variables — **re-themes the whole UI, no per-component edits**.
+  Colors equal to the Forefront defaults inject nothing (identical look preserved).
+- Name/logo flow into the sidebar, mobile header, sign-in, `<title>`, and the PWA manifest (name +
+  `theme_color`). Root layout + manifest are `force-dynamic` so brand changes apply immediately.
+- **Scope:** branding only; data stays single-tenant per deployment (one DB per company). Full
+  multi-tenant data isolation (an `orgId` on every model) is a separate future spec.
+
+### PWA (spec 010)
+- Installable "Add to Home Screen": web manifest (`app/manifest.ts`), navy/gold "F" icons
+  (`public/icons/*`), a minimal registration-only service worker (`public/sw.js`, no auth-content
+  caching), and head meta (theme-color, apple-touch-icon, mobile-web-app-capable). No push (v1).
 
 ### Incentive Scheme (spec 009) — super-user only, hidden
 - A **partner-compensation** engine implementing "Team Benefits System v1.5" (Business Partner Fee, Commission, Profit Share proposed, 70% margin gate, `eligible_to_lead` utilisation gate, contributor tiers/floor/cap, firm P&L, cost recovery, watch list). **Distinct from the employee Benefits module.**

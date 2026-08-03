@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/roles";
 import { isAdmin, isSuperUser } from "@/lib/roles";
 import { getDisabledHrefs } from "@/lib/modules";
+import { getBrand } from "@/lib/brand";
 import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/AppShell";
 
@@ -13,6 +14,7 @@ export default async function AppLayout({
 }) {
   const user = await requireUser();
   const hiddenNav = await getDisabledHrefs();
+  const brand = await getBrand();
 
   // In-app cue (FR-014): count the user's decided-but-unseen time-off requests.
   // Guarded so a pre-migration DB (no decisionSeenAt column) never breaks the shell.
@@ -37,6 +39,9 @@ export default async function AppLayout({
       showIncentive={isSuperUser(user.role)}
       hiddenNav={hiddenNav}
       navBadges={{ "/time-off": timeoffBadge }}
+      companyName={brand.companyName}
+      shortName={brand.shortName}
+      logoUrl={brand.logoUrl}
     >
       {children}
     </AppShell>

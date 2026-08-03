@@ -29,9 +29,6 @@ export function AppShell({
   showIncentive,
   hiddenNav = [],
   navBadges = {},
-  companyName = "Forefront HR",
-  shortName = "Forefront",
-  logoUrl = null,
   children,
 }: {
   name?: string | null;
@@ -40,9 +37,6 @@ export function AppShell({
   showIncentive: boolean;
   hiddenNav?: string[];
   navBadges?: Record<string, number>;
-  companyName?: string;
-  shortName?: string;
-  logoUrl?: string | null;
   children: React.ReactNode;
 }) {
   const nav = NAV.filter((item) => !hiddenNav.includes(item.href));
@@ -86,14 +80,9 @@ export function AppShell({
         {collapsed ? (
           <>
             <div className="flex flex-col items-center gap-3 border-b border-navy-700 px-2 py-5">
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoUrl} alt={companyName} className="h-8 w-8 rounded-md object-contain" />
-              ) : (
-                <div className="grid h-8 w-8 place-items-center rounded-md bg-navy-800 font-serif text-lg text-gold-400">
-                  {shortName.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <div className="grid h-8 w-8 place-items-center rounded-md bg-navy-800 font-serif text-lg text-gold-400">
+                F
+              </div>
               <button
                 type="button"
                 onClick={toggle}
@@ -176,17 +165,12 @@ export function AppShell({
         ) : (
           <>
             <div className="flex items-start justify-between border-b border-navy-700 px-6 py-6">
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoUrl} alt={companyName} className="h-9 max-w-[150px] object-contain" />
-              ) : (
-                <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-400">
-                    {shortName}
-                  </div>
-                  <div className="font-serif text-xl">{companyName}</div>
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-400">
+                  Forefront
                 </div>
-              )}
+                <div className="font-serif text-xl">Forefront HR</div>
+              </div>
               <button
                 type="button"
                 onClick={toggle}
@@ -273,7 +257,7 @@ export function AppShell({
       {/* Main */}
       <div className="flex min-w-0 flex-col">
         <header className="flex items-center justify-between bg-navy-900 px-4 py-3 text-white md:hidden">
-          <span className="font-serif text-lg">{companyName}</span>
+          <span className="font-serif text-lg">Forefront HR</span>
           <form action={signOutAction}>
             <button type="submit" className="text-xs text-navy-200 underline">
               Sign out
