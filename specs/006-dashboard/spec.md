@@ -89,7 +89,8 @@ A manager sees a tile for their team's pending time-off approvals; HR / Super Us
 - **FR-001**: The system MUST present a home dashboard as the landing screen after sign-in.
 - **FR-002**: The dashboard MUST show the employee's onboarding progress (percentage) with a link to Onboarding when onboarding is incomplete, and a complete/hidden state otherwise.
 - **FR-003**: The dashboard MUST show the employee's time-off status (e.g., pending/upcoming requests) with a link to Time-Off.
-- **FR-004**: The dashboard MUST show the employee's benefits status (window open/closed; draft/submitted) with a link to Benefits.
+- **FR-004**: The dashboard MUST show the employee's benefits status (window open/closed; draft) with a link to Benefits **while action is still needed, and MUST hide the Benefits tile once the basket is submitted for the year**.
+- **FR-004a**: The dashboard MUST respect the module release switch — a **disabled module contributes no tile and no quick link**. Time-Off and Team Directory are the always-on **primary cards** (shown first) whenever their modules are enabled.
 - **FR-005**: The dashboard MUST provide quick links to the main modules the employee can access.
 - **FR-006**: The dashboard MUST show recent company announcements (newest first).
 - **FR-007**: HR / Super User MUST be able to post, edit, and remove announcements.
