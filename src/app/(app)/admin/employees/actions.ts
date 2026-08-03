@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/roles";
+import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { employeeSchema } from "@/lib/validation";
 
 function parseForm(formData: FormData) {
@@ -155,4 +156,90 @@ export async function updateEmployee(
   revalidatePath("/admin/employees");
   revalidatePath(`/admin/employees/${id}`);
   redirect("/admin/employees");
+}
+
+/**
+ * Inline single-field update from the editable employees grid.
+ * Validates the one field, enforces the same governance as the full form
+ * (Super-User-only role, email uniqueness, reporting-line self/cycle guards),
+ * and returns a plain result (no redirect) for the grid to apply optimistically.
+ */
+export type FieldResult = { ok: true } | { ok: false; error: string };
+
+// Fields the grid may edit, each reusing the full-form schema's per-field rules.
+const FIELD_SCHEMAS = {
+  name: employeeSchema.shape.name,
+  email: employeeSchema.shape.email,
+  phone: employeeSchema.shape.phone,
+  department: employeeSchema.shape.department,
+  title: employeeSchema.shape.title,
+  role: employeeSchema.shape.role,
+  employmentType: employeeSchema.shape.employmentType,
+  tenureBand: employeeSchema.shape.tenureBand,
+  startDate: employeeSchema.shape.startDate,
+  endDate: employeeSchema.shape.endDate,
+  status: employeeSchema.shape.status,
+  dateOfBirth: employeeSchema.shape.dateOfBirth,
+  maritalStatus: employeeSchema.shape.maritalStatus,
+  reportsToId: employeeSchema.shape.reportsToId,
+} as const;
+
+type EditableField = keyof typeof FIELD_SCHEMAS;
+
+export async function updateEmployeeField(
+  id: string,
+  field: string,
+  value: string | null
+): Promise<FieldResult> {
+  const actor = await requireAdmin();
+
+  if (!Object.prototype.hasOwnProperty.call(FIELD_SCHEMAS, field)) {
+    return { ok: false, error: "That field can't be edited here." };
+  }
+  const key = field as EditableField;
+
+  // Role is Super-User-only, matching the full form.
+  if (key === "role" && !isSuperUser(actor.role)) {
+    return { ok: false, error: "Only a Super User can change roles." };
+  }
+  // Guard against locking yourself out via a stray inline edit.
+  if (id === actor.id && (key === "role" || key === "status")) {
+    return { ok: false, error: "You can't change your own role or status here." };
+  }
+
+  const parsed = FIELD_SCHEMAS[key].safeParse(value);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid value." };
+  }
+  const next = parsed.data as unknown;
+
+  const current = await prisma.user.findUnique({ where: { id } });
+  if (!current) return { ok: false, error: "Employee not found." };
+
+  if (key === "email") {
+    const email = next as string;
+    if (email !== current.email) {
+      const clash = await prisma.user.findUnique({ where: { email } });
+      if (clash) return { ok: false, error: "Another employee already uses that email." };
+    }
+  }
+
+  if (key === "reportsToId") {
+    const managerId = (next as string | null) ?? null;
+    if (managerId) {
+      if (managerId === id)
+        return { ok: false, error: "An employee cannot report to themselves." };
+      if (await wouldCycle(id, managerId))
+        return { ok: false, error: "That reporting line would create a cycle." };
+    }
+  }
+
+  await prisma.user.update({
+    where: { id },
+    data: { [key]: next ?? null } as Prisma.UserUpdateInput,
+  });
+
+  revalidatePath("/admin/employees");
+  revalidatePath(`/admin/employees/${id}`);
+  return { ok: true };
 }
