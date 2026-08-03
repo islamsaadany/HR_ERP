@@ -27,14 +27,17 @@ export function AppShell({
   email,
   showAdmin,
   showIncentive,
+  hiddenNav = [],
   children,
 }: {
   name?: string | null;
   email?: string | null;
   showAdmin: boolean;
   showIncentive: boolean;
+  hiddenNav?: string[];
   children: React.ReactNode;
 }) {
+  const nav = NAV.filter((item) => !hiddenNav.includes(item.href));
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [pref, setPref] = useState(false); // the user's manual preference
@@ -89,7 +92,7 @@ export function AppShell({
               </button>
             </div>
             <nav className="flex flex-1 flex-col items-center gap-1 py-4">
-              {NAV.map((item) => (
+              {nav.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -169,7 +172,7 @@ export function AppShell({
               </button>
             </div>
             <nav className="flex-1 space-y-1 px-3 py-4">
-              {NAV.map((item) => {
+              {nav.map((item) => {
                 const on = isActive(item.href);
                 return (
                   <Link

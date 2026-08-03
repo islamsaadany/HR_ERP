@@ -447,3 +447,12 @@ model IncentiveContribution {
   @@unique([cycleId, client, person])
   @@index([cycleId])
 }
+
+// ─── Module release switch (super-user) ─────────────────────────────────────
+/// On/off flag per platform module, so a super user can build in the background
+/// and release modules when ready. Absent row = enabled (default on).
+model ModuleFlag {
+  key       String   @id // e.g. "benefits", "knowledge"
+  enabled   Boolean  @default(true)
+  updatedAt DateTime @updatedAt @default(now())
+}

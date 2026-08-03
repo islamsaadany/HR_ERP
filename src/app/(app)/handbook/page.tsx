@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/roles";
+import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/labels";
 import { HandbookExplorer } from "@/components/HandbookExplorer";
@@ -7,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HandbookPage() {
   await requireUser();
+  await requireModuleEnabled("handbook");
   const [sections, resources] = await Promise.all([
     prisma.handbookSection.findMany({
       where: { active: true },

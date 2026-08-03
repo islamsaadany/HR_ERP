@@ -1,4 +1,5 @@
 import { requireUser, isAdmin } from "@/lib/roles";
+import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
 import { getActivePlanYear, getMedicalRate, amountForBand } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
@@ -10,6 +11,7 @@ const egp = (n: number | null) => (n == null ? "Available" : "EGP " + n.toLocale
 
 export default async function BenefitsPage() {
   const me = await requireUser();
+  await requireModuleEnabled("benefits");
   const user = await prisma.user.findUnique({
     where: { id: me.id },
     select: { employmentType: true, tenureBand: true },

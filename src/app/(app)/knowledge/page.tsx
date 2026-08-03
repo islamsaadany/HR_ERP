@@ -1,4 +1,5 @@
 import { requireUser, isAdmin } from "@/lib/roles";
+import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
 import { KnowledgeExplorer } from "@/components/knowledge/KnowledgeExplorer";
 import { SetupNotice } from "@/components/SetupNotice";
@@ -7,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function KnowledgePage() {
   const me = await requireUser();
+  await requireModuleEnabled("knowledge");
 
   let articles;
   try {

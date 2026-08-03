@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/roles";
+import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
 import { groupByStage, tracksForUser } from "@/lib/onboarding";
 import { OnboardingJourney, type JourneyStage } from "@/components/OnboardingJourney";
@@ -7,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
   const sessionUser = await requireUser();
+  await requireModuleEnabled("onboarding");
   const me = await prisma.user.findUnique({
     where: { id: sessionUser.id },
     select: { department: true },
