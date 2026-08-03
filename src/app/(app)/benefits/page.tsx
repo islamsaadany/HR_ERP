@@ -135,6 +135,27 @@ export default async function BenefitsPage({
     }
   }
 
+  const guaranteedSection = (
+    <section className="mt-6 overflow-hidden rounded-xl border border-line">
+      <div className="bg-navy-800 px-6 py-4 text-white">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-300">You receive automatically</div>
+        <h2 className="font-serif text-xl">Guaranteed benefits</h2>
+      </div>
+      {/* Cards side by side on one row; amount pinned to the bottom so all align (F4). */}
+      <div className="grid gap-px bg-line" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
+        {guaranteed.map((g) => (
+          <div key={g.id} className="flex flex-col bg-surface p-4">
+            <div className="text-sm font-medium text-ink">{g.name}</div>
+            <div className="mt-0.5 line-clamp-2 min-h-[2rem] text-xs text-muted">{g.note ?? ""}</div>
+            <div className="mt-auto pt-2 font-serif text-lg text-navy-800">
+              {egp(amountForBand(user.tenureBand!, g) ?? user.monthlySalary ?? null)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+
   return (
     <div>
       {/* Sticky header — keeps "Your benefits" + type·tenure in view while scrolling (F3). */}
@@ -146,76 +167,53 @@ export default async function BenefitsPage({
         </p>
       </div>
 
-      {/* Guaranteed */}
-      <section className="mt-6 overflow-hidden rounded-xl border border-line">
-        <div className="bg-navy-800 px-6 py-4 text-white">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-300">You receive automatically</div>
-          <h2 className="font-serif text-xl">Guaranteed benefits</h2>
-        </div>
-        {/* Cards sit side by side on one row (auto-fit). Each is a flex column with a
-            reserved 2-line subtitle and the amount pinned to the bottom, so all amounts
-            (and "Available") align on the same baseline regardless of subtitle length (F4). */}
-        <div
-          className="grid gap-px bg-line"
-          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}
-        >
-          {guaranteed.map((g) => (
-            <div key={g.id} className="flex flex-col bg-surface p-4">
-              <div className="text-sm font-medium text-ink">{g.name}</div>
-              <div className="mt-0.5 line-clamp-2 min-h-[2rem] text-xs text-muted">{g.note ?? ""}</div>
-              <div className="mt-auto pt-2 font-serif text-lg text-navy-800">
-                {egp(amountForBand(user.tenureBand!, g) ?? user.monthlySalary ?? null)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Flexible basket — draft shows the editable selector; once submitted it splits
-          into two tabs (read-only benefits summary + claims & reimbursement). */}
-      {!planYear ? (
-        <>
-          <h2 className="mt-10 font-serif text-2xl text-ink">Your flexible basket</h2>
-          <div className="mt-4 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
-            Benefits selection isn&apos;t open right now. You can view your guaranteed benefits above.
-          </div>
-        </>
-      ) : !ceilingRow || !medicalRate || catalog.length === 0 ? (
-        <>
-          <h2 className="mt-10 font-serif text-2xl text-ink">Your flexible basket</h2>
-          <div className="mt-4 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
-            Benefits aren&apos;t fully configured yet. Please check back soon.
-          </div>
-        </>
-      ) : submitted ? (
+      {/* Once submitted: tabs sit above everything (guaranteed benefits live inside the
+          "Your benefits" tab). Draft/other states: guaranteed band, then the basket. */}
+      {planYear && ceilingRow && medicalRate && catalog.length > 0 && submitted ? (
         <BenefitsTabs
           claimCount={claimable.reduce((n, b) => n + b.claims.filter((c) => c.status === "PENDING").length, 0)}
           benefitsPanel={
-            <BenefitsSelector
-              employmentType={user.employmentType}
-              ceiling={ceilingRow.amount}
-              catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical }))}
-              medicalRate={{ self: medicalRate.self, spouse: medicalRate.spouse, childUnder18: medicalRate.childUnder18, child18Plus: medicalRate.child18Plus }}
-              initialItems={initialItems}
-              initialMedical={initialMedical}
-              initialStatus={existing?.status ?? "NONE"}
-            />
+            <>
+              {guaranteedSection}
+              <BenefitsSelector
+                employmentType={user.employmentType}
+                ceiling={ceilingRow.amount}
+                catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical }))}
+                medicalRate={{ self: medicalRate.self, spouse: medicalRate.spouse, childUnder18: medicalRate.childUnder18, child18Plus: medicalRate.child18Plus }}
+                initialItems={initialItems}
+                initialMedical={initialMedical}
+                initialStatus={existing?.status ?? "NONE"}
+              />
+            </>
           }
           claimsPanel={<BenefitClaims claimable={claimable} automatic={automatic} error={claimError} />}
         />
       ) : (
         <>
+          {guaranteedSection}
           <h2 className="mt-10 font-serif text-2xl text-ink">Your flexible basket</h2>
-          <p className="mt-1 text-sm text-muted">Select benefits, set amounts, then submit for {planYear.name}.</p>
-          <BenefitsSelector
-            employmentType={user.employmentType}
-            ceiling={ceilingRow.amount}
-            catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical }))}
-            medicalRate={{ self: medicalRate.self, spouse: medicalRate.spouse, childUnder18: medicalRate.childUnder18, child18Plus: medicalRate.child18Plus }}
-            initialItems={initialItems}
-            initialMedical={initialMedical}
-            initialStatus={existing?.status ?? "NONE"}
-          />
+          {!planYear ? (
+            <div className="mt-4 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
+              Benefits selection isn&apos;t open right now. You can view your guaranteed benefits above.
+            </div>
+          ) : !ceilingRow || !medicalRate || catalog.length === 0 ? (
+            <div className="mt-4 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
+              Benefits aren&apos;t fully configured yet. Please check back soon.
+            </div>
+          ) : (
+            <>
+              <p className="mt-1 text-sm text-muted">Select benefits, set amounts, then submit for {planYear.name}.</p>
+              <BenefitsSelector
+                employmentType={user.employmentType}
+                ceiling={ceilingRow.amount}
+                catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical }))}
+                medicalRate={{ self: medicalRate.self, spouse: medicalRate.spouse, childUnder18: medicalRate.childUnder18, child18Plus: medicalRate.child18Plus }}
+                initialItems={initialItems}
+                initialMedical={initialMedical}
+                initialStatus={existing?.status ?? "NONE"}
+              />
+            </>
+          )}
         </>
       )}
     </div>
