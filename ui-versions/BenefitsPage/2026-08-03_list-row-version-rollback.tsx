@@ -87,23 +87,19 @@ export default async function BenefitsPage() {
           <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-300">You receive automatically</div>
           <h2 className="font-serif text-xl">Guaranteed benefits</h2>
         </div>
-        {/* Original cards, squeezed to fit side by side on one row (auto-fit narrows
-            each card so all guaranteed benefits sit beside each other; wraps only when
-            the screen is too narrow). */}
-        <div
-          className="grid gap-px bg-line"
-          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}
-        >
+        <ul className="divide-y divide-line bg-surface">
           {guaranteed.map((g) => (
-            <div key={g.id} className="bg-surface p-4">
-              <div className="text-sm font-medium text-ink">{g.name}</div>
-              {g.note ? <div className="text-xs text-muted">{g.note}</div> : null}
-              <div className="mt-1 font-serif text-lg text-navy-800">
-                {egp(amountForBand(user.tenureBand!, g))}
+            <li key={g.id} className="flex items-center justify-between gap-4 px-6 py-3">
+              <div className="min-w-0">
+                <span className="text-sm font-medium text-ink">{g.name}</span>
+                {g.note ? <span className="ml-2 text-xs text-muted">{g.note}</span> : null}
               </div>
-            </div>
+              <span className="shrink-0 font-serif text-lg text-navy-800">
+                {egp(amountForBand(user.tenureBand!, g))}
+              </span>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       {/* Basket */}
