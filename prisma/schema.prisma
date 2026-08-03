@@ -371,3 +371,76 @@ model SelectionLine {
 
   @@unique([selectionId, catalogItemId])
 }
+
+// ─── Incentive Scheme (super-user only; Team Benefits System v1.5) ──────────
+// A hidden partner-compensation engine. Inputs are uploaded per cycle as four
+// sheets (people / assignments / contributions / firm P&L); all money rules are
+// computed server-side in src/lib/incentive. Distinct from the employee Benefits
+// module. Sensitive salary/compensation data — SUPER_USER access only.
+
+/// One compensation cycle (a half-year, e.g. "H1-2026") + firm-level P&L inputs.
+model IncentiveCycle {
+  id            String   @id @default(cuid())
+  label         String   @unique // e.g. "H1-2026"
+  status        String   @default("draft") // draft | final
+  revenue       Float? // firm P&L: total revenue for the half
+  deliveryCost  Float? // firm P&L: direct delivery cost
+  totalExpenses Float? // firm P&L: total expenses
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  people        IncentivePerson[]
+  assignments   IncentiveAssignment[]
+  contributions IncentiveContribution[]
+}
+
+/// A person in a cycle (from people.csv). Salary is sensitive.
+model IncentivePerson {
+  id               String    @id @default(cuid())
+  cycleId          String
+  cycle            IncentiveCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  name             String
+  role             String?
+  netMonthlySalary Float
+  startDate        DateTime?
+  eligibleToLead   Boolean   @default(true) // stands in for the 50% utilisation gate
+  utilization      Float? // overall/logged utilisation as a fraction 0..1
+
+  @@unique([cycleId, name])
+  @@index([cycleId])
+}
+
+/// An assignment in a cycle (from assignments.csv).
+model IncentiveAssignment {
+  id         String    @id @default(cuid())
+  cycleId    String
+  cycle      IncentiveCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  client     String
+  type       String // PRJ | RET
+  lead       String
+  bd         String // business developer (commission earner)
+  leadSource String? // bd === leadSource ⇒ self-generated (5%), else referred (3%)
+  revenue    Float?
+  directCost Float? // null when "Pending" (in-progress)
+  vendorCost Float     @default(0)
+  markupPct  Float     @default(0)
+  startDate  DateTime?
+  closeDate  DateTime?
+  status     String // closed | ongoing | in_progress | pending (derived at import)
+
+  @@unique([cycleId, client])
+  @@index([cycleId])
+}
+
+/// One person's contribution share on one assignment (from the contributions matrix).
+model IncentiveContribution {
+  id      String @id @default(cuid())
+  cycleId String
+  cycle   IncentiveCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  client  String
+  person  String
+  share   Float // fraction 0..1 as entered; validated to total ~1 per client
+
+  @@unique([cycleId, client, person])
+  @@index([cycleId])
+}
