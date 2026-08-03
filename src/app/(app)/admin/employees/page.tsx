@@ -77,6 +77,12 @@ export default async function EmployeesPage() {
           <p className="mt-1 text-muted">{employees.length} records</p>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="/api/admin/employees/export"
+            className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-paper"
+          >
+            Export CSV
+          </a>
           <Link
             href="/admin/employees/import"
             className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-paper"

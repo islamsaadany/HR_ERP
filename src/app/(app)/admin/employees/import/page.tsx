@@ -45,6 +45,23 @@ export default async function ImportEmployeesPage() {
         </ul>
       </div>
 
+      <div className="mt-6 rounded-xl border border-line bg-surface p-5">
+        <p className="font-medium text-ink">Start from your current data</p>
+        <p className="mt-1 text-sm text-muted">
+          Download a sheet pre-filled with everyone you have now (in this exact format), fix the blank
+          or wrong cells, and re-upload below to update all entries. Rows are matched by email.
+        </p>
+        <a
+          href="/api/admin/employees/export"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+        >
+          ⬇ Download current employees (CSV)
+        </a>
+        <p className="mt-2 text-xs text-muted">
+          Note: role, status, and salary aren&rsquo;t changed by import — set those in a person&rsquo;s profile.
+        </p>
+      </div>
+
       <EmployeeImportForm />
 
       <div className="mt-8">
