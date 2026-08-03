@@ -85,7 +85,8 @@ An employee opens a colleague's person view to see their public details and cont
 - **FR-011**: The system MUST render gracefully when optional fields are missing (photo, phone, placeholder email).
 - **FR-012**: The Directory MUST be available to every signed-in employee.
 - **FR-013**: The system MUST read employee data from the Foundation registry as the single source of truth (no separate directory data store).
-- **FR-014**: The system MAY offer a read-only list (table) view alongside the default card view, switchable by the employee and remembered across visits. Both views show only the public fields (name, title, department, email, phone), remain read-only (FR-009), and honor the same search + department filter. Editing employee records stays an HR-only capability in the admin registry (see spec 001, FR-020).
+- **FR-014**: The Directory MUST present employees as a read-only **list (table)** — the sole view (the earlier card view and card/list toggle were retired per product owner, 2026-08-03). It shows only the public fields (name, title, department, email, phone), remains read-only (FR-009), and honors the search + department filter. Editing employee records stays an HR-only capability in the admin registry (see spec 001, FR-020).
+- **FR-015**: The list MUST let the employee sort **alphabetically** by the **Title** or **Department** column (clickable header, A→Z then Z→A), with blanks sorting last. Sorting is a read-only client convenience layered on top of the active search + department filter; the default order is by name.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -99,7 +100,7 @@ An employee opens a colleague's person view to see their public details and cont
 - **SC-001**: A signed-in employee can open the Directory and see the active team within 3 seconds.
 - **SC-002**: An employee can locate a specific colleague using name search or department filter in under 15 seconds.
 - **SC-003**: 100% of "Left" employees are absent from the Directory.
-- **SC-004**: 0 HR-private fields of other employees are ever exposed through the Directory (verified across card, list, person view, and direct data requests).
+- **SC-004**: 0 HR-private fields of other employees are ever exposed through the Directory (verified across the list, person view, and direct data requests).
 - **SC-005**: Contact actions initiate the correct email/phone for the selected colleague in 100% of cases where that contact info exists.
 - **SC-006**: The full active team (19 people at launch) renders correctly, including those with placeholder emails or missing photos.
 

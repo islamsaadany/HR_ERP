@@ -1,8 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
+
+type ViewMode = "cards" | "list";
+const VIEW_KEY = "directory:view";
 
 export type DirEntry = {
   id: string;
@@ -14,24 +17,19 @@ export type DirEntry = {
   photoUrl: string | null;
 };
 
-type SortKey = "title" | "department";
-type SortDir = "asc" | "desc";
-
 export function DirectoryBrowser({ people }: { people: DirEntry[] }) {
   const [q, setQ] = useState("");
   const [dept, setDept] = useState("");
-  // Alphabetical sort on the Title / Department columns (click a header to toggle).
-  // Null = natural order (as delivered by the server: by name).
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [view, setView] = useState<ViewMode>("cards");
 
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
+  // Remember the chosen view across visits (read-only preference, client-only).
+  useEffect(() => {
+    const saved = window.localStorage.getItem(VIEW_KEY);
+    if (saved === "cards" || saved === "list") setView(saved);
+  }, []);
+  function chooseView(v: ViewMode) {
+    setView(v);
+    window.localStorage.setItem(VIEW_KEY, v);
   }
 
   const departments = useMemo(
@@ -42,25 +40,12 @@ export function DirectoryBrowser({ people }: { people: DirEntry[] }) {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    const rows = people.filter((p) => {
+    return people.filter((p) => {
       if (dept && p.department !== dept) return false;
       if (needle && !p.name.toLowerCase().includes(needle)) return false;
       return true;
     });
-
-    if (!sortKey) return rows;
-
-    // Alphabetical A→Z / Z→A on the chosen column; blanks always sort last.
-    const dir = sortDir === "asc" ? 1 : -1;
-    return [...rows].sort((a, b) => {
-      const av = (a[sortKey] ?? "").trim();
-      const bv = (b[sortKey] ?? "").trim();
-      if (!av && !bv) return 0;
-      if (!av) return 1;
-      if (!bv) return -1;
-      return av.localeCompare(bv, undefined, { sensitivity: "base" }) * dir;
-    });
-  }, [people, q, dept, sortKey, sortDir]);
+  }, [people, q, dept]);
 
   return (
     <div>
@@ -83,6 +68,26 @@ export function DirectoryBrowser({ people }: { people: DirEntry[] }) {
             </option>
           ))}
         </select>
+
+        {/* View toggle — cards or list (read-only) */}
+        <div className="inline-flex overflow-hidden rounded-lg border border-line">
+          {(["cards", "list"] as ViewMode[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => chooseView(v)}
+              aria-pressed={view === v}
+              className={
+                "px-3 py-2 text-sm font-medium capitalize transition " +
+                (view === v
+                  ? "bg-navy-800 text-white"
+                  : "bg-surface text-navy-700 hover:bg-navy-50")
+              }
+            >
+              {v}
+            </button>
+          ))}
+        </div>
       </div>
 
       <p className="mt-3 text-xs text-muted">
@@ -93,24 +98,31 @@ export function DirectoryBrowser({ people }: { people: DirEntry[] }) {
         <div className="mt-6 rounded-xl border border-dashed border-line bg-surface p-10 text-center text-sm text-muted">
           No one matches that search.
         </div>
+      ) : view === "cards" ? (
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((p) => (
+            <Link
+              key={p.id}
+              href={`/directory/${p.id}`}
+              className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4 transition hover:border-navy-300"
+            >
+              <Avatar name={p.name} photoUrl={p.photoUrl} />
+              <div className="min-w-0">
+                <div className="truncate font-medium text-ink">{p.name}</div>
+                <div className="truncate text-sm text-muted">{p.title ?? "—"}</div>
+                <div className="truncate text-xs text-muted">{p.department ?? ""}</div>
+              </div>
+            </Link>
+          ))}
+        </div>
       ) : (
         <div className="mt-4 overflow-x-auto rounded-xl border border-line bg-surface">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
                 <th className="px-4 py-3 font-medium">Name</th>
-                <SortableHeader
-                  label="Title"
-                  active={sortKey === "title"}
-                  dir={sortDir}
-                  onClick={() => toggleSort("title")}
-                />
-                <SortableHeader
-                  label="Department"
-                  active={sortKey === "department"}
-                  dir={sortDir}
-                  onClick={() => toggleSort("department")}
-                />
+                <th className="px-4 py-3 font-medium">Title</th>
+                <th className="px-4 py-3 font-medium">Department</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Phone</th>
               </tr>
@@ -139,37 +151,5 @@ export function DirectoryBrowser({ people }: { people: DirEntry[] }) {
         </div>
       )}
     </div>
-  );
-}
-
-/** A clickable column header that sorts the table alphabetically (A→Z / Z→A). */
-function SortableHeader({
-  label,
-  active,
-  dir,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  dir: SortDir;
-  onClick: () => void;
-}) {
-  return (
-    <th className="px-4 py-3 font-medium">
-      <button
-        type="button"
-        onClick={onClick}
-        aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
-        className={
-          "-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 uppercase tracking-wide transition hover:text-navy-700 " +
-          (active ? "text-navy-700" : "text-muted")
-        }
-      >
-        {label}
-        <span className={active ? "text-gold-600" : "text-line"} aria-hidden="true">
-          {active ? (dir === "asc" ? "▲" : "▼") : "↕"}
-        </span>
-      </button>
-    </th>
   );
 }

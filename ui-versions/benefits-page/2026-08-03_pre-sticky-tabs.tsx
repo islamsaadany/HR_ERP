@@ -158,9 +158,8 @@ export default async function BenefitsPage({
 
   return (
     <div>
-      {/* Sticky header — keeps "Your benefits" + type·tenure in view while scrolling (F3).
-          id lets the tab bar measure this header's height and pin flush beneath it. */}
-      <div id="benefits-header" className="sticky top-0 z-20 -mx-6 bg-paper/95 px-6 pb-3 pt-1 backdrop-blur md:-mx-10 md:px-10">
+      {/* Sticky header — keeps "Your benefits" + type·tenure in view while scrolling (F3). */}
+      <div className="sticky top-0 z-20 -mx-6 bg-paper/95 px-6 pb-3 pt-1 backdrop-blur md:-mx-10 md:px-10">
         {eyebrow}
         <h1 className="mt-1 font-serif text-3xl text-ink">Your benefits</h1>
         <p className="mt-1 text-muted">
