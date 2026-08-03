@@ -49,6 +49,18 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-03 — Home + PWA + grid polish (branch `claude/hr-erp-dashboard-pwa`):**
+  - **Admin grid filters persist** (spec 001 · FR-020): the employees grid now remembers the filter
+    selections (search, department, type, status, role) in localStorage, like it already did for
+    column show/hide + order. Proven: set a filter + hid a column, reloaded → both restored.
+  - **Module-aware dashboard** (spec 006 · FR-004/FR-004a): disabled modules contribute no tile and
+    no quick link (fixes Onboarding showing after being switched off); the Benefits tile hides once
+    submitted; Time-Off + Team Directory are the always-on primary cards (added a Directory card).
+  - **PWA / installable** (spec 010): web manifest, navy/gold "F" icons (192/512/maskable + Apple),
+    a minimal service worker (no auth-content caching), and head meta (theme-color, manifest,
+    apple-touch-icon, mobile-web-app-capable). SW registered+activated in a real browser; installable
+    on the HTTPS deploy. `tsc` + `next build` green.
+
 - **2026-08-03 — Benefits: submissions CSV export (release scope #2):** `Export CSV` on
   Admin → Benefits downloads the open plan year's submissions via `/api/admin/benefits/export`
   (HR/Super-User only), one row per selected benefit line (employee · email · status · submitted ·
