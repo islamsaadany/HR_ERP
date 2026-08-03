@@ -60,8 +60,8 @@ export function BenefitClaims({
             const t = tracker(b.allocated, b.claims);
             const fullyClaimed = t.remaining != null && t.remaining <= 0;
             const isProof = b.claimType === "PROOF";
-            const openLabel = isProof ? "Request a reimbursement" : "Request this benefit";
-            const submitLabel = isProof ? "Submit for reimbursement" : "Send request";
+            const openLabel = isProof ? "Request your payback" : "Request your benefit";
+            const submitLabel = isProof ? "Submit request" : "Confirm request";
             return (
               <div key={`${b.kind}:${b.id}`} className="overflow-hidden rounded-xl border border-line bg-surface">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-3">
