@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/roles";
-import { isAdmin } from "@/lib/roles";
+import { isAdmin, isSuperUser } from "@/lib/roles";
 import { AppShell } from "@/components/AppShell";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +15,7 @@ export default async function AppLayout({
       name={user.name}
       email={user.email}
       showAdmin={isAdmin(user.role)}
+      showIncentive={isSuperUser(user.role)}
     >
       {children}
     </AppShell>

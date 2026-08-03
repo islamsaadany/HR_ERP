@@ -26,13 +26,11 @@ export function AppShell({
   name,
   email,
   showAdmin,
-  showIncentive,
   children,
 }: {
   name?: string | null;
   email?: string | null;
   showAdmin: boolean;
-  showIncentive: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -105,21 +103,6 @@ export function AppShell({
                   <NavIcon name={item.icon} />
                 </Link>
               ))}
-              {showIncentive ? (
-                <Link
-                  href="/incentive"
-                  title="Incentive Scheme"
-                  aria-label="Incentive Scheme"
-                  className={
-                    "mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive("/incentive")
-                      ? "bg-navy-800 text-gold-300"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  <NavIcon name="benefits" />
-                </Link>
-              ) : null}
               {showAdmin ? (
                 <Link
                   href="/admin"
@@ -187,20 +170,6 @@ export function AppShell({
                   </Link>
                 );
               })}
-              {showIncentive ? (
-                <Link
-                  href="/incentive"
-                  aria-current={isActive("/incentive") ? "page" : undefined}
-                  className={
-                    "relative mt-2 block rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/incentive")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  Incentive Scheme
-                </Link>
-              ) : null}
               {showAdmin ? (
                 <Link
                   href="/admin"
