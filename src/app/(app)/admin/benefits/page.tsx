@@ -53,7 +53,14 @@ export default async function AdminBenefitsPage({
     <form action={setClaimType} className="flex items-center gap-1.5">
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="id" value={id} />
-      <select name="claimType" defaultValue={current} className="rounded-lg border border-line bg-surface px-2 py-1 text-sm">
+      {/* key includes `current` so the dropdown re-mounts with the saved value after a
+          save — otherwise React resets the uncontrolled field and it appears to revert. */}
+      <select
+        key={`${id}-${current}`}
+        name="claimType"
+        defaultValue={current}
+        className="rounded-lg border border-line bg-surface px-2 py-1 text-sm"
+      >
         {CLAIM_TYPES.map((t) => (
           <option key={t} value={t}>{CLAIM_TYPE_LABEL[t]}</option>
         ))}
