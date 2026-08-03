@@ -49,6 +49,23 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-03 — Directory grid + benefits polish (branch `claude/hr-erp-directory-benefits`):**
+  - **Admin editable employees grid** (spec 001 · FR-020): `/admin/employees` is now an
+    inline-editable power-grid — typed cells (text/email, date pickers, enum + Manager dropdowns),
+    column show/hide + drag-reorder (localStorage), and filters (search + department/type/status/role).
+    New server action `updateEmployeeField` validates one field with the full-form's per-field rules
+    and enforces the same governance (Super-User-only role, email uniqueness, self/cycle guards, no
+    self role/status change); optimistic UI with revert-on-error. The employee `/directory` is unchanged.
+  - **Directory card/list toggle** (spec 003 · FR-014): read-only list (table) view alongside the
+    cards, remembered per user; public fields only, same filters.
+  - **Benefits polish** (spec 007): guaranteed benefits render as single-line rows; a pinned mobile
+    floating summary bar keeps the running total/actions visible while scrolling (desktop keeps the
+    sticky panel).
+  - Verified: `tsc` + `next build` green; `scripts/verify-grid-writes.mts` 16/16 against a throwaway
+    Postgres (text, enum→null, date coerce/clear, status, email-uniqueness, self/cycle guards); live
+    Playwright pass — bootstrap login, inline title edit persisted through reload, Columns toggle,
+    and screenshots of the grid, directory list, and benefits desktop + mobile. UI snapshots saved.
+
 - **2026-07-27 — Phase 1 Foundation scaffold:** Next.js 15.5 + React 19 + TS + Tailwind v4 +
   Prisma + NextAuth v5 (Google, domain-locked, JWT, no auto-provision). Prisma schema for the
   registry (User/Dependant/PersonalDocument + enums). App shell (navy/gold), /signin, /dashboard,

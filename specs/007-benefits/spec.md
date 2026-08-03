@@ -114,7 +114,7 @@ HR / Super User configures the plan-year window (open/close), the pool ceilings 
 
 **Inputs from the profile**
 - **FR-001**: The system MUST derive the employee's pool ceiling and guaranteed amounts from their employment type and tenure band (from the registry); employees MUST NOT choose these.
-- **FR-002**: The system MUST show the guaranteed/fixed benefits (display-only) with the amounts for the employee's type × band.
+- **FR-002**: The system MUST show the guaranteed/fixed benefits (display-only) with the amounts for the employee's type × band, presented compactly as one line each (label + amount).
 
 **Flexible basket & rules (server-authoritative)**
 - **FR-003**: The system MUST offer the basket catalog for selection, grouped for display into 5 categories (Health & protection, Wellbeing, Life & family, Personal growth, Lifestyle & flexibility) with the items ported from `benefitsselector_3.html`. The catalog is admin-configurable; the grouping and item set are not fixed at 4.
@@ -126,7 +126,7 @@ HR / Super User configures the plan-year window (open/close), the pool ceilings 
 - **FR-009**: The system MUST count the medical premium toward the pool total while excluding it from the 50% single-benefit check.
 - **FR-010**: The system MUST let the employee configure medical dependants manually (spouse toggle; children counts by under-18 / 18-plus bracket) for now.
 - **FR-011**: The system MUST validate the entire basket against all rules on the server at save and submit; client-side checks are for UX only and are never trusted.
-- **FR-012**: The system MUST show a live summary (allocated vs. ceiling, remaining headroom, selection count, rule warnings).
+- **FR-012**: The system MUST show a live summary (allocated vs. ceiling, remaining headroom, selection count, rule warnings), and MUST keep this summary visible while the employee scrolls the basket — a sticky side panel on wide screens and a pinned floating bar (total · remaining · save/submit) on small screens.
 
 **Lifecycle & window**
 - **FR-013**: The system MUST autosave the basket as a draft so an employee can leave and return.
