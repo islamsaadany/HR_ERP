@@ -49,6 +49,18 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-03 — Benefits claims refinement + employee salary (spec 007, branch `claude/hr-erp-dashboard-pwa`):**
+  - Fixed the admin claim-type dropdown appearing to revert after **Set** (it saved; the uncontrolled
+    field reset — keyed it by value).
+  - Refined claim policy (migration `019`): **Medical = Automatic**; all guaranteed = **Request** except
+    **Professional development = Proof**; basket = Proof. **Request** claims are **note-only** (no amount)
+    and take the full allocation; **Proof** claims keep amount + upload.
+  - Added `User.monthlySalary` (HR-private; employee form + grid): the **Loans** benefit now shows the
+    employee's salary as its figure instead of "Available". Medical shows under "Paid automatically".
+  - Verified on a throwaway Postgres: migration 019 applied + idempotent with correct defaults; Loans
+    showed EGP 50,000; a note-only Request claim on Marriage auto-claimed the full 30,000 (Pending →
+    fully claimed); Professional development = proof-required. `tsc` + build green.
+
 - **2026-08-03 — Benefits claims & reimbursement + page polish (spec 007, branch `claude/hr-erp-dashboard-pwa`):**
   - **Page fixes:** submit confirmation banner (F1); the running-total meter now sticks on desktop
     while scrolling (F2, was broken — the whole aside was sticky but taller than the viewport); sticky

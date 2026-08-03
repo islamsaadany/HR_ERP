@@ -152,6 +152,8 @@ HR / Super User configures the plan-year window (open/close), the pool ceilings 
 - **FR-027**: The employee MUST be able to file **multiple partial claims** against a benefit up to its allocation; the server MUST reject a claim that exceeds the remaining allocation (pending + released count against it).
 - **FR-028**: The employee MUST see a per-benefit reimbursement tracker — allocated, reimbursed, pending, and left-to-claim — plus their claim history and statuses.
 - **FR-029**: HR MUST be able to **Reopen** a submitted basket (edit) and fully **Reset** it (clear to start fresh); Reset MUST be blocked when the employee has any claims for the plan year, so nothing is lost.
+- **FR-030**: Default policy: **Medical = Automatic**; every guaranteed benefit = **Request** (note only, claims the full allocated amount in one go) **except Professional development = Proof**; flexible-basket items = **Proof**. A **Request** claim MUST NOT ask for an amount (it takes the full allocation); only **Proof** claims take an amount + file.
+- **FR-031**: The **Loans** benefit's ceiling MUST be the employee's **monthly salary** (`User.monthlySalary`, HR-set) — shown as a figure rather than "Available"; falls back to no fixed cap when unset.
 
 ### Key Entities *(include if feature involves data)*
 

@@ -31,7 +31,7 @@ export async function createClaim(formData: FormData): Promise<void> {
 
   const user = await prisma.user.findUnique({
     where: { id: me.id },
-    select: { employmentType: true, tenureBand: true },
+    select: { employmentType: true, tenureBand: true, monthlySalary: true },
   });
   if (!user?.employmentType || !user?.tenureBand) fail("Your profile isn't set — contact HR.");
 
@@ -44,7 +44,7 @@ export async function createClaim(formData: FormData): Promise<void> {
     const gb = await prisma.guaranteedBenefit.findUnique({ where: { id: benefitId } });
     if (!gb || gb.employmentType !== user.employmentType) fail("That benefit isn't available to you.");
     claimType = gb.claimType;
-    allocated = amountForBand(user.tenureBand, gb);
+    allocated = amountForBand(user.tenureBand, gb) ?? user.monthlySalary ?? null;
     link.guaranteedBenefitId = gb.id;
   } else if (kind === "catalog") {
     // Must be in the employee's submitted basket for this plan year.
@@ -65,9 +65,8 @@ export async function createClaim(formData: FormData): Promise<void> {
   }
 
   if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
-  if (!Number.isFinite(amount) || amount <= 0) fail("Enter a valid amount.");
 
-  // Cap at the remaining allocation (pending + released count against it).
+  // Amount already claimed (pending + released count against the allocation).
   const existing = await prisma.benefitClaim.findMany({
     where: {
       userId: me.id,
@@ -79,8 +78,19 @@ export async function createClaim(formData: FormData): Promise<void> {
     select: { amount: true, status: true },
   });
   const t = tracker(allocated, existing);
-  if (t.remaining != null && amount > t.remaining) {
-    fail(`That exceeds the amount left to claim (EGP ${t.remaining.toLocaleString()}).`);
+
+  // Request (NOTE) claims take the full remaining allocation — no amount entered.
+  // Proof claims are partial: use the entered amount, capped at the remainder.
+  let claimAmount: number;
+  if (claimType === "NOTE") {
+    if (t.remaining != null && t.remaining <= 0) fail("You've already requested this benefit.");
+    claimAmount = t.remaining ?? allocated ?? 0;
+  } else {
+    if (!Number.isFinite(amount) || amount <= 0) fail("Enter a valid amount.");
+    if (t.remaining != null && amount > t.remaining) {
+      fail(`That exceeds the amount left to claim (EGP ${t.remaining.toLocaleString()}).`);
+    }
+    claimAmount = amount;
   }
 
   // Proof upload (mandatory for PROOF benefits).
@@ -105,7 +115,7 @@ export async function createClaim(formData: FormData): Promise<void> {
       planYearId: planYear!.id,
       guaranteedBenefitId: link.guaranteedBenefitId ?? null,
       catalogItemId: link.catalogItemId ?? null,
-      amount,
+      amount: claimAmount,
       note,
       proofUrl,
       proofName,

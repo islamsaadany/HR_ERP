@@ -68,6 +68,7 @@ model User {
   startDate      DateTime?
   endDate        DateTime?
   status         EmployeeStatus @default(ACTIVE)
+  monthlySalary  Int? // HR-private; used for the Loans benefit ceiling (up to one month)
 
   // HR-private personal fields
   dateOfBirth   DateTime?
@@ -326,7 +327,7 @@ model GuaranteedBenefit {
   band4to7y      Int?
   band7to10y     Int?
   order          Int            @default(0)
-  claimType      ClaimType      @default(NONE)
+  claimType      ClaimType      @default(NOTE)
   claims         BenefitClaim[]
 }
 

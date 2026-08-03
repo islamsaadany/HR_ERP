@@ -17,6 +17,7 @@ export type EmployeeFormValues = {
   tenureBand: string | null;
   startDate: string | null; // YYYY-MM-DD
   endDate: string | null;
+  monthlySalary: string | null;
   status: string;
   dateOfBirth: string | null;
   maritalStatus: string | null;
@@ -118,6 +119,10 @@ export function EmployeeForm({
           <div>
             <label className={L}>End date</label>
             <input name="endDate" type="date" defaultValue={values.endDate ?? ""} className={I} />
+          </div>
+          <div>
+            <label className={L}>Monthly salary (EGP)</label>
+            <input name="monthlySalary" inputMode="numeric" defaultValue={values.monthlySalary ?? ""} className={I} />
           </div>
           <div>
             <label className={L}>Status</label>

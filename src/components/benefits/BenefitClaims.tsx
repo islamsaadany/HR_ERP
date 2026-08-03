@@ -122,20 +122,26 @@ export function BenefitClaims({
                     <form action={createClaim} encType="multipart/form-data" className="mt-3 grid gap-3 sm:grid-cols-2">
                       <input type="hidden" name="kind" value={b.kind} />
                       <input type="hidden" name="benefitId" value={b.id} />
-                      <div>
-                        <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Amount (EGP)</label>
-                        <input
-                          name="amount"
-                          inputMode="numeric"
-                          placeholder={t.remaining != null ? String(t.remaining) : "Amount"}
-                          required
-                          className="w-full rounded-lg border border-line px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs uppercase tracking-wide text-muted">
-                          Note {b.claimType === "NOTE" ? "(optional)" : "(optional)"}
-                        </label>
+                      {/* Request (NOTE) claims take the full allocated amount — no amount box.
+                          Proof claims are reimbursed against spend, so they ask for an amount. */}
+                      {b.claimType === "PROOF" ? (
+                        <div>
+                          <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Amount (EGP)</label>
+                          <input
+                            name="amount"
+                            inputMode="numeric"
+                            placeholder={t.remaining != null ? String(t.remaining) : "Amount"}
+                            required
+                            className="w-full rounded-lg border border-line px-3 py-2 text-sm"
+                          />
+                        </div>
+                      ) : (
+                        <p className="self-end text-xs text-muted sm:col-span-2">
+                          Requests the full amount{b.allocated != null ? ` (${egp(b.allocated)})` : ""}. Add a note if useful.
+                        </p>
+                      )}
+                      <div className={b.claimType === "PROOF" ? "" : "sm:col-span-2"}>
+                        <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Note (optional)</label>
                         <input name="note" className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
                       </div>
                       {b.claimType === "PROOF" ? (

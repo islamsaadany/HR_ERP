@@ -38,6 +38,10 @@ export const employeeSchema = z.object({
   ),
   startDate: dateOrNull,
   endDate: dateOrNull,
+  monthlySalary: z.preprocess(
+    emptyToNull,
+    z.coerce.number().int().min(0).nullable().optional()
+  ),
   status: z.enum(["ACTIVE", "LEFT"]),
   dateOfBirth: dateOrNull,
   maritalStatus: z.preprocess(

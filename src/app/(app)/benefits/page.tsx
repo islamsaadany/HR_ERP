@@ -20,7 +20,7 @@ export default async function BenefitsPage({
   const { claimError } = await searchParams;
   const user = await prisma.user.findUnique({
     where: { id: me.id },
-    select: { employmentType: true, tenureBand: true },
+    select: { employmentType: true, tenureBand: true, monthlySalary: true },
   });
 
   const eyebrow = (
@@ -114,14 +114,15 @@ export default async function BenefitsPage({
           id: g.id,
           name: g.name,
           claimType: g.claimType,
-          allocated: amountForBand(user.tenureBand!, g),
+          allocated: amountForBand(user.tenureBand!, g) ?? user.monthlySalary ?? null,
           claims: byG.get(g.id) ?? [],
         });
     }
     for (const line of existing?.lines ?? []) {
-      if (line.catalogItem.isMedical) continue;
-      if (line.catalogItem.claimType === "NONE") automatic.push(line.catalogItem.name);
-      else
+      // Medical is active cover / automatic — list it as no-action, not claimable.
+      if (line.catalogItem.isMedical || line.catalogItem.claimType === "NONE") {
+        automatic.push(line.catalogItem.name);
+      } else
         claimable.push({
           kind: "catalog",
           id: line.catalogItem.id,
@@ -162,7 +163,7 @@ export default async function BenefitsPage({
               <div className="text-sm font-medium text-ink">{g.name}</div>
               <div className="mt-0.5 line-clamp-2 min-h-[2rem] text-xs text-muted">{g.note ?? ""}</div>
               <div className="mt-auto pt-2 font-serif text-lg text-navy-800">
-                {egp(amountForBand(user.tenureBand!, g))}
+                {egp(amountForBand(user.tenureBand!, g) ?? user.monthlySalary ?? null)}
               </div>
             </div>
           ))}

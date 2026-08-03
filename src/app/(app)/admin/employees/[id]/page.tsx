@@ -56,6 +56,7 @@ export default async function EditEmployeePage({
           tenureBand: employee.tenureBand,
           startDate: toDateInput(employee.startDate),
           endDate: toDateInput(employee.endDate),
+          monthlySalary: employee.monthlySalary != null ? String(employee.monthlySalary) : null,
           status: employee.status,
           dateOfBirth: toDateInput(employee.dateOfBirth),
           maritalStatus: employee.maritalStatus,

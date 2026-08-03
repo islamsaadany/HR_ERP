@@ -24,6 +24,7 @@ export type GridRow = {
   tenureBand: "" | "BAND_6MO_2Y" | "BAND_2_4Y" | "BAND_4_7Y" | "BAND_7_10Y";
   startDate: string;
   endDate: string;
+  monthlySalary: string;
   dateOfBirth: string;
   maritalStatus: "" | "SINGLE" | "MARRIED" | "DIVORCED" | "WIDOWED";
   status: "ACTIVE" | "LEFT";
@@ -112,6 +113,7 @@ export function EmployeeGrid({
       },
       { key: "startDate", label: "Start date", type: "date", editable: true, hideable: true },
       { key: "endDate", label: "End date", type: "date", editable: true, hideable: true },
+      { key: "monthlySalary", label: "Monthly salary", type: "text", editable: true, hideable: true },
       { key: "dateOfBirth", label: "Date of birth", type: "date", editable: true, hideable: true },
       {
         key: "maritalStatus",
