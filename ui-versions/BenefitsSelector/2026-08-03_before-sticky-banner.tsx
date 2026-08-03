@@ -126,102 +126,16 @@ export function BenefitsSelector({
       : []),
   ];
 
-  // Terms — shared by the draft aside and the submitted full-width band.
-  const terms: string[] = [
-    `You may select a maximum of ${result.maxSelect} benefits from the menu each year.`,
-    ...(employmentType === "FULL_TIME"
-      ? ["No single benefit may exceed 50% of your pool — in practice you'll choose at least two."]
-      : []),
-    "Medical insurance is exempt from the 50% rule — it may exceed half your pool, but never your pool ceiling. Premiums follow the company rate card.",
-    "Your pool is set by your employment type and tenure band, and is the maximum claimable for the year.",
-    "Benefits are reimbursed against actual spend — submit an invoice, receipt, or proof of payment to Finance for every claim.",
-    "Any amount not claimed does not carry over to the following year, and is not paid out as cash.",
-    "Guaranteed benefits are separate from the basket and are not affected by your choices.",
-  ];
-
-  // ── Submitted (locked) view: read-only summary + sticky total + terms below ──
-  if (locked) {
-    return (
-      <>
-        {/* Confirmation banner */}
-        <div className="mt-6 flex items-start gap-3 rounded-xl border border-navy-200 bg-navy-50 px-5 py-4">
-          <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-navy-700 text-sm font-bold text-white">✓</span>
-          <div>
-            <div className="font-semibold text-navy-800">Your benefits basket is submitted.</div>
-            <p className="mt-0.5 text-sm text-navy-700">
-              It&apos;s locked for the plan year — here&apos;s what you chose. Ask HR to reopen it to make changes.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 grid items-start gap-6 lg:grid-cols-[1fr_320px]">
-          {/* Left: read-only selections */}
-          <div className="overflow-hidden rounded-xl border border-line bg-surface">
-            <div className="border-b border-line px-5 py-3">
-              <h3 className="font-serif text-lg text-ink">Your selections</h3>
-              <p className="text-xs text-muted">The flexible benefits you chose for this year.</p>
-            </div>
-            {selectedRows.length === 0 ? (
-              <p className="px-5 py-4 text-sm italic text-muted">No flexible benefits selected.</p>
-            ) : (
-              <div className="divide-y divide-line px-5">
-                {selectedRows.map((r) => (
-                  <div key={r.name} className="flex items-center justify-between gap-3 py-3">
-                    <span className="text-sm font-medium text-ink">{r.name}</span>
-                    <span className="font-serif text-navy-800 tabular-nums">{egp(r.amount)}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Right: total box (sticky, read-only) */}
-          <aside>
-            <div className="rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-24">
-              <div className="text-3xl font-serif text-ink tabular-nums">{egp(result.total)}</div>
-              <div className="text-sm text-muted">allocated of {egp(ceiling)} pool</div>
-              <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
-                <div className="h-full rounded-full bg-gold-500" style={{ width: `${pct}%` }} />
-              </div>
-              <div className="mt-3 flex justify-between text-sm">
-                <span className="text-muted">Remaining</span>
-                <span className="font-semibold text-navy-700">{egp(Math.max(0, result.remaining))}</span>
-              </div>
-              <div className="mt-1 flex justify-between text-sm">
-                <span className="text-muted">Benefits chosen</span>
-                <span className="font-semibold text-ink">{result.selectionCount} of {result.maxSelect}</span>
-              </div>
-              <p className="mt-3 text-xs text-muted">To change these, ask HR to reopen your basket.</p>
-            </div>
-          </aside>
-        </div>
-
-        {/* Terms — full width, multi-column, below the selection */}
-        <div className="mt-6 overflow-hidden rounded-xl border border-line bg-surface">
-          <div className="border-b border-line px-5 py-3">
-            <h3 className="font-serif text-lg text-ink">Terms &amp; conditions</h3>
-            <p className="text-xs text-muted">How the flexible basket works.</p>
-          </div>
-          <ol className="grid gap-x-8 px-5 py-1 sm:grid-cols-2">
-            {terms.map((t, i) => (
-              <li key={i} className="flex gap-2.5 py-2.5 text-xs leading-relaxed text-muted">
-                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-navy-50 text-[10px] font-semibold text-navy-700">
-                  {i + 1}
-                </span>
-                <span>{t}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </>
-    );
-  }
-
   return (
-    <>
-      <div className="mt-6 grid gap-6 pb-28 lg:grid-cols-[1fr_320px] lg:pb-0">
+    <div className="mt-6 grid gap-6 pb-28 lg:grid-cols-[1fr_320px] lg:pb-0">
       {/* Basket */}
       <div>
+        {locked ? (
+          <div className="mb-4 rounded-lg bg-navy-50 px-4 py-3 text-sm text-navy-700">
+            Your basket is <strong>submitted and locked</strong>. Ask HR to reopen it to make changes.
+          </div>
+        ) : null}
+
         {groups.map((group) => (
           <div key={group.cat}>
             {/* Category header with divider line */}
@@ -351,12 +265,9 @@ export function BenefitsSelector({
       </div>
 
       {/* Right column: meter + selected + terms */}
-      <aside className="space-y-4">
-        {/* Meter / actions — sticky on desktop so the running calculation follows you
-            while you scroll the basket (F2). Only the compact meter is sticky (the whole
-            aside was taller than the viewport, so nothing pinned). top-24 clears the
-            sticky page header. */}
-        <div className="rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-24 lg:z-10">
+      <aside className="h-fit space-y-4 lg:sticky lg:top-6">
+        {/* Meter / actions */}
+        <div className="rounded-xl border border-line bg-surface p-5">
           <div className="text-3xl font-serif text-ink tabular-nums">{egp(result.total)}</div>
           <div className="text-sm text-muted">allocated of {egp(ceiling)} pool</div>
           <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
@@ -435,7 +346,17 @@ export function BenefitsSelector({
             <p className="text-xs text-muted">How the flexible basket works.</p>
           </div>
           <ol className="divide-y divide-line px-5 py-1">
-            {terms.map((t, i) => (
+            {[
+              `You may select a maximum of ${result.maxSelect} benefits from the menu each year.`,
+              ...(employmentType === "FULL_TIME"
+                ? ["No single benefit may exceed 50% of your pool — in practice you'll choose at least two."]
+                : []),
+              "Medical insurance is exempt from the 50% rule — it may exceed half your pool, but never your pool ceiling. Premiums follow the company rate card.",
+              "Your pool is set by your employment type and tenure band, and is the maximum claimable for the year.",
+              "Benefits are reimbursed against actual spend — submit an invoice, receipt, or proof of payment to Finance for every claim.",
+              "Any amount not claimed does not carry over to the following year, and is not paid out as cash.",
+              "Guaranteed benefits are separate from the basket and are not affected by your choices.",
+            ].map((t, i) => (
               <li key={i} className="flex gap-2.5 py-2.5 text-xs leading-relaxed text-muted">
                 <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-navy-50 text-[10px] font-semibold text-navy-700">
                   {i + 1}
@@ -544,8 +465,7 @@ export function BenefitsSelector({
           </div>
         </div>
       ) : null}
-      </div>
-    </>
+    </div>
   );
 }
 

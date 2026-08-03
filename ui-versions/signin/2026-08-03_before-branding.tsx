@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { auth, signIn, googleAuthEnabled } from "@/lib/auth";
-import { getBrand } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +17,6 @@ export default async function SignInPage({
   if (session?.user?.id) redirect("/dashboard");
 
   const { error } = await searchParams;
-  const brand = await getBrand();
 
   async function credentialsSignIn(formData: FormData) {
     "use server";
@@ -40,15 +38,10 @@ export default async function SignInPage({
     <main className="min-h-screen grid place-items-center bg-navy-900 px-4">
       <div className="w-full max-w-md rounded-2xl bg-surface shadow-xl overflow-hidden">
         <div className="bg-navy-800 px-8 py-10 text-center">
-          {brand.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={brand.logoUrl} alt={brand.companyName} className="mx-auto h-12 max-w-[220px] object-contain" />
-          ) : (
-            <div className="text-gold-400 text-xs font-semibold tracking-[0.2em] uppercase">
-              {brand.shortName}
-            </div>
-          )}
-          <h1 className="mt-2 font-serif text-3xl text-white">{brand.companyName}</h1>
+          <div className="text-gold-400 text-xs font-semibold tracking-[0.2em] uppercase">
+            Forefront Consulting
+          </div>
+          <h1 className="mt-2 font-serif text-3xl text-white">Forefront HR</h1>
           <p className="mt-2 text-sm text-navy-100">
             Sign in to your account.
           </p>
@@ -126,7 +119,7 @@ export default async function SignInPage({
           ) : null}
 
           <p className="mt-6 text-center text-xs text-muted">
-            Access is restricted to {brand.shortName} employees.
+            Access is restricted to Forefront Consulting employees.
           </p>
         </div>
       </div>

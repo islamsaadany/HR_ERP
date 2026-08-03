@@ -29,6 +29,12 @@ export default async function AdminPage() {
           body: "Switch platform modules on or off to release when ready.",
           ready: true,
         },
+        {
+          href: "/admin/brand",
+          title: "Brand",
+          body: "Company name, logo, and brand colors for this deployment.",
+          ready: true,
+        },
       ]
     : CARDS;
   return (

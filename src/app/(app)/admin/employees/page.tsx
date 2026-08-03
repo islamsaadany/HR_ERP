@@ -22,6 +22,7 @@ export default async function EmployeesPage() {
         tenureBand: true,
         startDate: true,
         endDate: true,
+        monthlySalary: true,
         dateOfBirth: true,
         maritalStatus: true,
         status: true,
@@ -48,6 +49,7 @@ export default async function EmployeesPage() {
     tenureBand: e.tenureBand ?? "",
     startDate: toDateInput(e.startDate),
     endDate: toDateInput(e.endDate),
+    monthlySalary: e.monthlySalary != null ? String(e.monthlySalary) : "",
     dateOfBirth: toDateInput(e.dateOfBirth),
     maritalStatus: e.maritalStatus ?? "",
     status: e.status,
@@ -75,6 +77,12 @@ export default async function EmployeesPage() {
           <p className="mt-1 text-muted">{employees.length} records</p>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href="/api/admin/employees/export"
+            className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-paper"
+          >
+            Export CSV
+          </a>
           <Link
             href="/admin/employees/import"
             className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-paper"

@@ -29,8 +29,9 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - Google SSO (domain-locked), app shell + left nav, My Profile, and **My Documents** (personal uploads).
 - **Auth bridge (temporary):** while Google OAuth is being set up, sign-in is username/password (NextAuth Credentials) against a single bootstrap admin (`BOOTSTRAP_ADMIN_*`, defaults `Islam`/`1234`), upserted as an active Super User on first login. Google is shown only when `AUTH_GOOGLE_ID`/`_SECRET` are configured.
 - **Bulk employee import:** Admin → Employees → **Import CSV** uploads the HR spreadsheet (upsert by email; tolerant date parsing with day-first for ambiguous dates; tenure band derived from hire date; per-row review report). Replaces a hand-written PII SQL seed.
+- **Export → edit → re-import round-trip:** Admin → Employees → **Export CSV** (`/api/admin/employees/export`) downloads all employees pre-filled in the exact import format (Name, Email, Department, Title, Contract Type, Date of Hiring, Phone, DOB, Marital Status, Manager Email, Number of Kids, Kid N DOB). HR fixes blanks/mistakes and re-uploads to update everyone by email. Round-trip verified (parses back with no errors). Role, status, and salary are intentionally NOT in the CSV (set in-app; import never overwrites them).
 - Roles: `EMPLOYEE`, `HR_ADMIN`, `SUPER_USER` (superset). Manager is a capability derived from the org chart. Bootstrap via `ADMIN_EMAILS`; Super User promotes in-app.
-- Registry fields (public: name, email, department, title, phone) + HR-private (employment type, tenure band, start/end date, status Active/Left, DOB, marital status, dependants {name, dob}, reportsTo). Age / years-of-service / dependant ages are **derived, not stored**. Employees self-edit contact only.
+- Registry fields (public: name, email, department, title, phone) + HR-private (employment type, tenure band, start/end date, **monthly salary**, status Active/Left, DOB, marital status, dependants {name, dob}, reportsTo). Age / years-of-service / dependant ages are **derived, not stored**. Employees self-edit contact only. Monthly salary drives the Loans benefit ceiling.
 - **My Documents:** each employee uploads/views their own files (ID, certificate, contract, HR letters); visible to owner + HR/Super User only. (Company-wide files live in Handbook & Resources, not here.)
 
 ### Onboarding — spec `002`
@@ -41,6 +42,7 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - Employee: employment type + tenure come from their profile (not self-selected); view fixed/guaranteed benefits (**one line each**); build the flexible basket (server-enforced rules), save (autosave) and submit for the plan year. The live summary stays visible while scrolling — **sticky panel on desktop, pinned floating bar on mobile**.
 - Admin: configure plan-year window, pool ceilings (type × tenure), fixed benefits, basket catalog, medical handling; view submissions and **export them to CSV for Finance** (`/api/admin/benefits/export`, one row per selected benefit line).
 - **Server-authoritative rules:** pool ceiling, 50% single-benefit cap, selection-count limit (FT practical 2–4 / PT max 2), medical handling. See §5 for the confirmed figures.
+- **Claims & reimbursement** (migration `018`): each benefit has an HR-set **claim policy** — `NONE` (auto), `NOTE` (optional note), `PROOF` (mandatory proof upload). After submitting, the employee files claims (`BenefitClaim`) on the "Your benefits & claims" section: **multiple partial claims** up to the allocation, proof to Vercel Blob for PROOF items. Each claim is `PENDING` → HR **Release** (reimbursed) or **Reject** (reason). Per-benefit tracker (allocated / reimbursed / pending / left). **Default policy (migration `019`):** Medical = Automatic; guaranteed = Request (note only, full amount) except Professional development = Proof; basket = Proof. **Loans** ceiling = the employee's monthly salary. Admin → Benefits gains a **Claims to review** queue, a **Claim requirements** editor, and **Reset** (blocked if claims exist) alongside Reopen. The submit banner (F1), floating meter (F2), sticky header (F3), and aligned guaranteed cards (F4) round out the page.
 
 ### Team Directory — spec `003`
 - Employee: browse **active** employees (cards: photo, name, title, department, email, phone); **name search + department filter**; a **read-only card/list view toggle** (remembered per user); person view with public fields + contact actions. View-only. **No org chart in V1.**
@@ -68,9 +70,27 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Data:** `LeaveRequest { userId, startDate, endDate, note, status, approverId, decisionComment, decidedAt, decisionSeenAt }`.
 
 ### Dashboard
-- Employee home: onboarding progress, benefits status, quick links, announcements.
+- Employee home: **module-aware** tiles + quick links (a switched-off module contributes neither).
+  **Time-Off + Team Directory** are the always-on primary cards; the Benefits tile hides once submitted;
+  Onboarding hides on completion. Plus announcements.
 - Admin: post announcements.
 - **Data:** `Announcement { id, title, body, authorId, publishedAt }`
+
+### Branding / white-label (spec 011) — super user
+- `BrandSettings` singleton (migration `017`): company name, short name, logo, **primary + accent** colors.
+  Admin → **Brand** (super-user): edit name, upload a logo (Blob), pick two colors, or reset to Forefront.
+- The two base colors are expanded to full tint/shade scales (`src/lib/brand.ts`) and injected as a
+  `:root` override of the Tailwind theme variables — **re-themes the whole UI, no per-component edits**.
+  Colors equal to the Forefront defaults inject nothing (identical look preserved).
+- Name/logo flow into the sidebar, mobile header, sign-in, `<title>`, and the PWA manifest (name +
+  `theme_color`). Root layout + manifest are `force-dynamic` so brand changes apply immediately.
+- **Scope:** branding only; data stays single-tenant per deployment (one DB per company). Full
+  multi-tenant data isolation (an `orgId` on every model) is a separate future spec.
+
+### PWA (spec 010)
+- Installable "Add to Home Screen": web manifest (`app/manifest.ts`), navy/gold "F" icons
+  (`public/icons/*`), a minimal registration-only service worker (`public/sw.js`, no auth-content
+  caching), and head meta (theme-color, apple-touch-icon, mobile-web-app-capable). No push (v1).
 
 ### Incentive Scheme (spec 009) — super-user only, hidden
 - A **partner-compensation** engine implementing "Team Benefits System v1.5" (Business Partner Fee, Commission, Profit Share proposed, 70% margin gate, `eligible_to_lead` utilisation gate, contributor tiers/floor/cap, firm P&L, cost recovery, watch list). **Distinct from the employee Benefits module.**

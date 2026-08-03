@@ -24,6 +24,7 @@ export type GridRow = {
   tenureBand: "" | "BAND_6MO_2Y" | "BAND_2_4Y" | "BAND_4_7Y" | "BAND_7_10Y";
   startDate: string;
   endDate: string;
+  monthlySalary: string;
   dateOfBirth: string;
   maritalStatus: "" | "SINGLE" | "MARRIED" | "DIVORCED" | "WIDOWED";
   status: "ACTIVE" | "LEFT";
@@ -44,6 +45,7 @@ type Col = {
 };
 
 const COL_STORAGE_KEY = "employees:grid:columns:v1";
+const FILTERS_STORAGE_KEY = "employees:grid:filters:v1";
 
 // Default column order + which start visible (the rest are toggled on via "Columns").
 const DEFAULT_VISIBLE = new Set([
@@ -111,6 +113,7 @@ export function EmployeeGrid({
       },
       { key: "startDate", label: "Start date", type: "date", editable: true, hideable: true },
       { key: "endDate", label: "End date", type: "date", editable: true, hideable: true },
+      { key: "monthlySalary", label: "Monthly salary", type: "text", editable: true, hideable: true },
       { key: "dateOfBirth", label: "Date of birth", type: "date", editable: true, hideable: true },
       {
         key: "maritalStatus",
@@ -184,6 +187,39 @@ export function EmployeeGrid({
   const [fStatus, setFStatus] = useState("");
   const [fType, setFType] = useState("");
   const [fRole, setFRole] = useState("");
+
+  // Load persisted filter selections once on mount (loaded in an effect, not a
+  // useState initializer, to avoid a server/client hydration mismatch).
+  useEffect(() => {
+    const saved = window.localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (!saved) return;
+    try {
+      const f = JSON.parse(saved) as Record<string, string>;
+      if (f.q) setQ(f.q);
+      if (f.fDept) setFDept(f.fDept);
+      if (f.fStatus) setFStatus(f.fStatus);
+      if (f.fType) setFType(f.fType);
+      if (f.fRole) setFRole(f.fRole);
+    } catch {
+      /* ignore malformed filters */
+    }
+  }, []);
+
+  // Persist on each change (write the full set so one localStorage key holds it all).
+  function persistFilters(next: {
+    q: string;
+    fDept: string;
+    fStatus: string;
+    fType: string;
+    fRole: string;
+  }) {
+    window.localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(next));
+  }
+  const onQ = (v: string) => { setQ(v); persistFilters({ q: v, fDept, fStatus, fType, fRole }); };
+  const onDept = (v: string) => { setFDept(v); persistFilters({ q, fDept: v, fStatus, fType, fRole }); };
+  const onStatus = (v: string) => { setFStatus(v); persistFilters({ q, fDept, fStatus: v, fType, fRole }); };
+  const onType = (v: string) => { setFType(v); persistFilters({ q, fDept, fStatus, fType: v, fRole }); };
+  const onRole = (v: string) => { setFRole(v); persistFilters({ q, fDept, fStatus, fType, fRole: v }); };
 
   // Load persisted column config, merging in any columns added since it was saved.
   useEffect(() => {
@@ -278,24 +314,24 @@ export function EmployeeGrid({
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => onQ(e.target.value)}
           placeholder="Search name, email, title…"
           className="min-w-[200px] flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm focus:border-navy-500 focus:outline-none"
         />
-        <FilterSelect value={fDept} onChange={setFDept} allLabel="All departments">
+        <FilterSelect value={fDept} onChange={onDept} allLabel="All departments">
           {departments.map((d) => (
             <option key={d} value={d}>{d}</option>
           ))}
         </FilterSelect>
-        <FilterSelect value={fType} onChange={setFType} allLabel="All types">
+        <FilterSelect value={fType} onChange={onType} allLabel="All types">
           <option value="FULL_TIME">{EMPLOYMENT_TYPE_LABEL.FULL_TIME}</option>
           <option value="PART_TIME">{EMPLOYMENT_TYPE_LABEL.PART_TIME}</option>
         </FilterSelect>
-        <FilterSelect value={fStatus} onChange={setFStatus} allLabel="All statuses">
+        <FilterSelect value={fStatus} onChange={onStatus} allLabel="All statuses">
           <option value="ACTIVE">{STATUS_LABEL.ACTIVE}</option>
           <option value="LEFT">{STATUS_LABEL.LEFT}</option>
         </FilterSelect>
-        <FilterSelect value={fRole} onChange={setFRole} allLabel="All roles">
+        <FilterSelect value={fRole} onChange={onRole} allLabel="All roles">
           <option value="EMPLOYEE">{ROLE_LABEL.EMPLOYEE}</option>
           <option value="HR_ADMIN">{ROLE_LABEL.HR_ADMIN}</option>
           <option value="SUPER_USER">{ROLE_LABEL.SUPER_USER}</option>

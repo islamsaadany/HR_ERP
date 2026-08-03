@@ -154,9 +154,9 @@ An employee, from their Profile, uploads and views their own personal documents 
 
 **Visibility**
 - **FR-017**: The system MUST expose only public fields (name, email, department, title, phone) of one employee to another employee.
-- **FR-018**: The system MUST restrict HR-private fields (employment type, tenure band, start/end date, status, date of birth, marital status, dependants, detailed reporting data) to HR Admin / Super User, enforced server-side.
+- **FR-018**: The system MUST restrict HR-private fields (employment type, tenure band, start/end date, **monthly salary**, status, date of birth, marital status, dependants, detailed reporting data) to HR Admin / Super User, enforced server-side.
 - **FR-019**: The system MUST allow an employee to view their own full record (including their own private fields) in read-only form for money-affecting fields.
-- **FR-020**: The system MUST provide HR Admin / Super User an editable registry grid on the admin Employees list — inline cells typed to each field (text/email, date pickers, dropdowns for enums and the reporting line) with per-field save. Each inline update MUST enforce the same server-side governance as the full form: Super-User-only role changes, email uniqueness, reporting-line self/cycle guards (FR-014), and required-field validation (FR-013); an actor MUST NOT change their own role or status inline. Column visibility/order is a per-user client preference and MUST NOT affect what data the server exposes (FR-018).
+- **FR-020**: The system MUST provide HR Admin / Super User an editable registry grid on the admin Employees list — inline cells typed to each field (text/email, date pickers, dropdowns for enums and the reporting line) with per-field save. Each inline update MUST enforce the same server-side governance as the full form: Super-User-only role changes, email uniqueness, reporting-line self/cycle guards (FR-014), and required-field validation (FR-013); an actor MUST NOT change their own role or status inline. Column visibility/order **and the filter selections** are per-user client preferences that MUST persist across visits (browser-local) and MUST NOT affect what data the server exposes (FR-018).
 
 **Personal documents (My Documents)**
 - **FR-024**: The system MUST let an employee upload and view their own personal documents from their Profile.

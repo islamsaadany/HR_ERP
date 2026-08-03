@@ -35,6 +35,7 @@ export default async function NewEmployeePage() {
           tenureBand: null,
           startDate: null,
           endDate: null,
+          monthlySalary: null,
           status: "ACTIVE",
           dateOfBirth: null,
           maritalStatus: null,

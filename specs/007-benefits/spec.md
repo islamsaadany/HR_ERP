@@ -145,6 +145,18 @@ HR / Super User configures the plan-year window (open/close), the pool ceilings 
 **Design fidelity**
 - **FR-023**: The employee selection experience MUST faithfully port the **layout & interaction model** of `benefitsselector_3.html` (the guaranteed panel, the basket list, the live meter, and the medical modal) without redesigning its structure, **recolored into the product's navy/gold palette** (not the original paper/pine).
 
+**Claims & reimbursement (Phase-2, built)**
+- **FR-024**: On submission the employee MUST see a clear confirmation banner, after which a "Your benefits & claims" area lets them request/claim the benefits they're entitled to.
+- **FR-025**: Every benefit (guaranteed + basket) MUST carry an HR-configurable **claim policy**: **None** (paid automatically, no claim), **Note** (request with an optional note), or **Proof** (mandatory proof-of-payment upload). Editable in Admin → Benefits.
+- **FR-026**: For Proof benefits the employee MUST upload a proof file (Vercel Blob); the claim enters **Pending review**. HR/Super User MUST review and either **Release** (reimbursed) or **Reject** (with a reason), enforced server-side.
+- **FR-027**: The employee MUST be able to file **multiple partial claims** against a benefit up to its allocation; the server MUST reject a claim that exceeds the remaining allocation (pending + released count against it).
+- **FR-028**: The employee MUST see a per-benefit reimbursement tracker — allocated, reimbursed, pending, and left-to-claim — plus their claim history and statuses.
+- **FR-029**: HR MUST be able to **Reopen** a submitted basket (edit) and fully **Reset** it (clear to start fresh); Reset MUST be blocked when the employee has any claims for the plan year, so nothing is lost.
+- **FR-030**: Default policy: **Medical = Automatic**; every guaranteed benefit = **Request** (note only, claims the full allocated amount in one go) **except Professional development = Proof**; flexible-basket items = **Proof**. A **Request** claim MUST NOT ask for an amount (it takes the full allocation); only **Proof** claims take an amount + file.
+- **FR-031**: The **Loans** benefit's ceiling MUST be the employee's **monthly salary** (`User.monthlySalary`, HR-set) — shown as a figure rather than "Available"; falls back to no fixed cap when unset.
+- **FR-032**: Once submitted, the page MUST replace the editable selector with a **read-only "Your selections" summary** (chosen benefits + amounts), keep the running-total box on the right (sticky), and move **Terms & conditions to a full-width band below** (guaranteed band stays at top). The editable selector returns only if HR reopens the basket (draft state).
+- **FR-033**: In the submitted state the page MUST split into two **tabs** — "Your benefits" (the summary) and "Claims & reimbursement" — rather than one long scroll; the claims cards lay out in **two columns**. Claim actions read by type: **Request** benefits use "Request your benefit" / "Confirm request"; **Proof** benefits use "Request your payback" / "Submit request".
+
 ### Key Entities *(include if feature involves data)*
 
 - **Plan Year**: a benefits cycle with an open/close window (status). Selections are only editable while open.
