@@ -155,6 +155,7 @@ HR / Super User configures the plan-year window (open/close), the pool ceilings 
 - **FR-030**: Default policy: **Medical = Automatic**; every guaranteed benefit = **Request** (note only, claims the full allocated amount in one go) **except Professional development = Proof**; flexible-basket items = **Proof**. A **Request** claim MUST NOT ask for an amount (it takes the full allocation); only **Proof** claims take an amount + file.
 - **FR-031**: The **Loans** benefit's ceiling MUST be the employee's **monthly salary** (`User.monthlySalary`, HR-set) — shown as a figure rather than "Available"; falls back to no fixed cap when unset.
 - **FR-032**: Once submitted, the page MUST replace the editable selector with a **read-only "Your selections" summary** (chosen benefits + amounts), keep the running-total box on the right (sticky), and move **Terms & conditions to a full-width band below** (guaranteed band stays at top). The editable selector returns only if HR reopens the basket (draft state).
+- **FR-033**: In the submitted state the page MUST split into two **tabs** — "Your benefits" (the summary) and "Claims & reimbursement" — rather than one long scroll; the claims cards lay out in **two columns**. Claim actions read by type: **Request** benefits use "Request your benefit" / "Confirm request"; **Proof** benefits use "Request your payback" / "Submit request".
 
 ### Key Entities *(include if feature involves data)*
 

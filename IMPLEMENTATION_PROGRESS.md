@@ -49,6 +49,12 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-03 — Benefits claims: tabs + 2-column + human wording (spec 007 · FR-033):** the submitted
+  benefits page splits into two tabs ("Your benefits" summary / "Claims & reimbursement", the latter
+  badged with the pending-claim count) instead of one long scroll; claim cards lay out in two columns.
+  Claim actions read by type — Request: "Request your benefit" / "Confirm request"; Proof: "Request
+  your payback" / "Submit request". Verified in-browser (both tabs, 2-col, per-type wording); tsc green.
+
 - **2026-08-03 — Benefits submitted-state view (spec 007 · FR-032):** once the basket is submitted the
   editable selector is replaced by a read-only **"Your selections"** summary (chosen benefits + amounts);
   the running-total box stays on the right (sticky, read-only); **Terms & conditions** move to a
