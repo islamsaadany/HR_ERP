@@ -28,6 +28,7 @@ The files below are kept for reference / manual fallback (paste in numeric order
 - [ ] `013_incentive_scheme.sql` — Incentive Scheme tables (cycles/people/assignments/contributions). *(auto-applied)*
 - [ ] `014_user_password.sql` — add `passwordHash` for email + password sign-in. *(auto-applied)*
 - [ ] `015_module_flags.sql` — module on/off release switch. *(auto-applied)*
+- [ ] `016_leave_decision_seen.sql` — Time-Off: `decisionSeenAt` for the in-app decision badge. *(auto-applied)*
 
 **Team members (employees):** you no longer need a PII SQL seed. Sign in (see §1a),
 open **Admin → Employees → Import CSV**, and upload your employee spreadsheet saved as

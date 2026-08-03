@@ -49,6 +49,20 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-03 — Time-Off release additions (spec 005 · branch `claude/hr-erp-directory-benefits`):**
+  - **HR central leave view** (FR-013): `/admin/time-off` lists every request (status filter);
+    HR/Super User can approve or decline a pending request as a fallback. Admin card added.
+  - **In-app decision badge** (FR-014): gold nav badge counts decided-but-unseen requests, cleared
+    when the employee opens Time-Off (`decisionSeenAt`, migration `016`, idempotent). No email.
+  - **Overlap warning** (FR-011, previously unimplemented): manager queue + HR view flag date
+    clashes with a teammate's approved/pending leave (wires the existing `overlaps()` helper).
+  - **Bug fixed:** decisions were carried on a submit-button `value`, which React/Next does not
+    reliably include in a server action's FormData (manager approve/decline was silently no-op).
+    Reworked to dedicated `approveLeaveRequest`/`declineLeaveRequest` actions via `formAction`.
+  - Verified: `tsc` + `next build` green; migration `016` applied + idempotent on a throwaway
+    Postgres; live Playwright — badge shows `1` and clears after viewing, both overlap warnings
+    render, and an admin approve flipped a request to APPROVED in the DB. UI snapshot saved.
+
 - **2026-08-03 — Directory grid + benefits polish (branch `claude/hr-erp-directory-benefits`):**
   - **Admin editable employees grid** (spec 001 · FR-020): `/admin/employees` is now an
     inline-editable power-grid — typed cells (text/email, date pickers, enum + Manager dropdowns),

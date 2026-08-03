@@ -60,8 +60,12 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Data:** `KnowledgeArticle { slug, title, category, summary?, body(markdown), readingMinutes?, attachmentUrl?, attachmentName?, attachmentType?, attachmentSize?, published, order, authorId? }`. Deps: `react-markdown`, `remark-gfm`, `mermaid`, `@vercel/blob`.
 
 ### Time-Off / Leave Management
-- Employee: request time off. **Direct manager** (from the org chart) approves/declines. Balance tracking.
-- **Data (sketch):** `LeaveRequest { userId, type, startDate, endDate, status, approverId }`.
+- Employee: request time off. **Direct manager** (from the org chart) approves/declines (single generic type, full days, no balances in v1).
+- **In-app decision cue** (FR-014): a gold badge on the Time-Off nav item counts the employee's approved/declined-but-unseen requests; it clears once they open the Time-Off page (`decisionSeenAt`, migration `016`). No email.
+- **Overlap warning** (FR-011): the manager queue and the HR view flag when a request's dates clash with another teammate's approved/pending leave.
+- **HR central view** (FR-013): `/admin/time-off` lists **all** requests (filter by status) and lets HR/Super User approve or decline a pending one as a fallback when the manager is unavailable.
+- Decisions are applied via dedicated `approveLeaveRequest`/`declineLeaveRequest` form actions (the decision rides the button's `formAction`, not a submit-button value — which React/Next doesn't reliably include).
+- **Data:** `LeaveRequest { userId, startDate, endDate, note, status, approverId, decisionComment, decidedAt, decisionSeenAt }`.
 
 ### Dashboard
 - Employee home: onboarding progress, benefits status, quick links, announcements.

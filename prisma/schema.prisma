@@ -258,6 +258,9 @@ model LeaveRequest {
   approver        User?       @relation("LeaveApprover", fields: [approverId], references: [id], onDelete: SetNull)
   decisionComment String?
   decidedAt       DateTime?
+  // Null once a decision (approve/decline) is made and not yet seen by the requester;
+  // set when the requester views their Time-Off page. Drives the nav badge (FR-014).
+  decisionSeenAt  DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 

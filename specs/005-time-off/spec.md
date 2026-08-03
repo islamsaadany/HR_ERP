@@ -91,6 +91,8 @@ An employee views the history of their own time-off requests and current statuse
 - **FR-010**: Employees MUST be able to view the history and current status of their own requests.
 - **FR-011**: The system MUST warn (not hard-block) when a new request overlaps an existing pending/approved one.
 - **FR-012**: The system MUST NOT track balances or allowances in v1 (no deduction math), and MUST use a single generic "Time off" type.
+- **FR-013**: HR Admin / Super User MUST have a central view of **all** time-off requests across the company (requester, dates, day count, status, approver), filterable by status, and MUST be able to approve or decline a still-pending request as a fallback when the assigned manager is unavailable. This overrides FR-008 for HR/Super User only; a non-admin manager remains limited to their direct reports.
+- **FR-014**: The system MUST give the requester an **in-app cue** (a badge on the Time-Off navigation item) when their request has been approved or declined but not yet seen, and MUST clear the cue once the requester views their Time-Off page. No email is sent (v1).
 
 ### Key Entities *(include if feature involves data)*
 

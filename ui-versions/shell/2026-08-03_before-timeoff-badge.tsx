@@ -28,7 +28,6 @@ export function AppShell({
   showAdmin,
   showIncentive,
   hiddenNav = [],
-  navBadges = {},
   children,
 }: {
   name?: string | null;
@@ -36,7 +35,6 @@ export function AppShell({
   showAdmin: boolean;
   showIncentive: boolean;
   hiddenNav?: string[];
-  navBadges?: Record<string, number>;
   children: React.ReactNode;
 }) {
   const nav = NAV.filter((item) => !hiddenNav.includes(item.href));
@@ -94,30 +92,22 @@ export function AppShell({
               </button>
             </div>
             <nav className="flex flex-1 flex-col items-center gap-1 py-4">
-              {nav.map((item) => {
-                const badge = navBadges[item.href] ?? 0;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    title={badge > 0 ? `${item.label} (${badge})` : item.label}
-                    aria-label={badge > 0 ? `${item.label}, ${badge} new` : item.label}
-                    className={
-                      "relative grid h-10 w-10 place-items-center rounded-lg transition " +
-                      (isActive(item.href)
-                        ? "bg-navy-800 text-white"
-                        : "text-navy-100 hover:bg-navy-800 hover:text-white")
-                    }
-                  >
-                    <NavIcon name={item.icon} />
-                    {badge > 0 ? (
-                      <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                        {badge}
-                      </span>
-                    ) : null}
-                  </Link>
-                );
-              })}
+              {nav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={item.label}
+                  aria-label={item.label}
+                  className={
+                    "grid h-10 w-10 place-items-center rounded-lg transition " +
+                    (isActive(item.href)
+                      ? "bg-navy-800 text-white"
+                      : "text-navy-100 hover:bg-navy-800 hover:text-white")
+                  }
+                >
+                  <NavIcon name={item.icon} />
+                </Link>
+              ))}
               {showIncentive ? (
                 <Link
                   href="/incentive"
@@ -184,28 +174,19 @@ export function AppShell({
             <nav className="flex-1 space-y-1 px-3 py-4">
               {nav.map((item) => {
                 const on = isActive(item.href);
-                const badge = navBadges[item.href] ?? 0;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
                     aria-current={on ? "page" : undefined}
                     className={
-                      "relative flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm transition " +
+                      "relative block rounded-lg px-3 py-2 text-sm transition " +
                       (on
                         ? "bg-navy-800 font-medium text-white before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
                         : "text-navy-100 hover:bg-navy-800 hover:text-white")
                     }
                   >
-                    <span>{item.label}</span>
-                    {badge > 0 ? (
-                      <span
-                        aria-label={`${badge} new`}
-                        className="grid h-5 min-w-5 place-items-center rounded-full bg-gold-500 px-1.5 text-[11px] font-bold text-navy-900"
-                      >
-                        {badge}
-                      </span>
-                    ) : null}
+                    {item.label}
                   </Link>
                 );
               })}

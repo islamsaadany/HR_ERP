@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/roles";
+import { requireUser, isAdmin } from "@/lib/roles";
 
 const requestSchema = z
   .object({
@@ -85,17 +85,22 @@ export async function cancelLeaveRequest(formData: FormData): Promise<void> {
   revalidatePath("/dashboard");
 }
 
-export async function decideLeaveRequest(formData: FormData): Promise<void> {
+/**
+ * Apply a decision to a pending request. The assigned approver (direct manager /
+ * fallback) may decide; HR Admin / Super User may also decide as a fallback (FR-013).
+ * Exposed as two form actions (approve/decline) so the decision is carried by the
+ * button's formAction, never by a submit-button value (which React/Next does not
+ * reliably include in the server action's FormData).
+ */
+async function applyDecision(
+  id: string,
+  decision: "APPROVED" | "DECLINED",
+  comment: string | null
+): Promise<void> {
   const me = await requireUser();
-  const id = formData.get("id") as string;
-  const decision = formData.get("decision") as string; // "APPROVED" | "DECLINED"
-  const comment = (formData.get("comment") as string | null)?.trim() || null;
-  if (!id || (decision !== "APPROVED" && decision !== "DECLINED")) return;
-
   const req = await prisma.leaveRequest.findUnique({ where: { id } });
   if (!req || req.status !== "PENDING") return;
-  // Only the assigned approver (the requester's direct manager / fallback) may decide.
-  if (req.approverId !== me.id) return;
+  if (req.approverId !== me.id && !isAdmin(me.role)) return;
 
   await prisma.leaveRequest.update({
     where: { id },
@@ -103,7 +108,41 @@ export async function decideLeaveRequest(formData: FormData): Promise<void> {
       status: decision,
       decisionComment: comment,
       decidedAt: new Date(),
+      decisionSeenAt: null, // fresh decision — badge the requester until they view it
     },
+  });
+  revalidatePath("/time-off");
+  revalidatePath("/admin/time-off");
+  revalidatePath("/dashboard");
+}
+
+function readIdComment(formData: FormData): { id: string; comment: string | null } {
+  return {
+    id: (formData.get("id") as string) ?? "",
+    comment: (formData.get("comment") as string | null)?.trim() || null,
+  };
+}
+
+export async function approveLeaveRequest(formData: FormData): Promise<void> {
+  const { id, comment } = readIdComment(formData);
+  if (id) await applyDecision(id, "APPROVED", comment);
+}
+
+export async function declineLeaveRequest(formData: FormData): Promise<void> {
+  const { id, comment } = readIdComment(formData);
+  if (id) await applyDecision(id, "DECLINED", comment);
+}
+
+/** Mark the current user's decided-but-unseen requests as seen — clears the nav badge (FR-014). */
+export async function markLeaveDecisionsSeen(): Promise<void> {
+  const me = await requireUser();
+  await prisma.leaveRequest.updateMany({
+    where: {
+      userId: me.id,
+      status: { in: ["APPROVED", "DECLINED"] },
+      decisionSeenAt: null,
+    },
+    data: { decisionSeenAt: new Date() },
   });
   revalidatePath("/time-off");
   revalidatePath("/dashboard");
