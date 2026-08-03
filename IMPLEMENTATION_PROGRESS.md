@@ -49,6 +49,13 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-03 — Benefits submitted-state view (spec 007 · FR-032):** once the basket is submitted the
+  editable selector is replaced by a read-only **"Your selections"** summary (chosen benefits + amounts);
+  the running-total box stays on the right (sticky, read-only); **Terms & conditions** move to a
+  full-width two-column band below; the guaranteed band stays at top and the claims section follows.
+  Draft state is unchanged (full editable selector). Verified in-browser: summary card renders, editable
+  toggles gone. UI snapshot saved; `tsc` green.
+
 - **2026-08-03 — Benefits claims refinement + employee salary (spec 007, branch `claude/hr-erp-dashboard-pwa`):**
   - Fixed the admin claim-type dropdown appearing to revert after **Set** (it saved; the uncontrolled
     field reset — keyed it by value).
