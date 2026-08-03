@@ -49,6 +49,24 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-03 — Benefits sticky tabs + claims table + Directory list-only sort (branch `claude/hr-erp-benefits-directory-ux`):**
+  - **Benefits sticky tab bar (spec 007 · FR-034):** the "Your benefits / Claims & reimbursement" tab bar
+    now stays pinned just beneath the sticky page header while scrolling either tab. `BenefitsTabs` measures
+    the header (`#benefits-header`, via `ResizeObserver`) so the two frosted bands sit flush on every width;
+    the header's own compact-on-scroll behavior is untouched.
+  - **Benefits claims redesigned to a table (spec 007 · FR-033, supersedes the 2-column cards):** the claims
+    tab is a table — **# · Benefit · Allocated · Reimbursed · Pending · Left to claim · Status**, one row per
+    benefit with an at-a-glance status pill (Not started / Pending review / Partially reimbursed / Fully
+    claimed / Rejected). Each row expands to its claim history + the file-a-claim form (Proof: amount + note
+    + mandatory upload; Request: full-amount request + optional note). All prior capability preserved
+    (multiple partial claims, notes, proof upload, tracker). `BenefitClaims` is now a client component.
+  - **Directory list-only + sortable columns (spec 003 · FR-014/FR-015):** the card view + card/list toggle
+    were retired; the Directory is the list/table alone, with **clickable Title / Department headers** that
+    sort A→Z / Z→A (blanks last), layered on the existing search + department filter.
+  - A clickable HTML mockup of the claims table was approved before implementing. UI snapshots saved for
+    `DirectoryBrowser`, `BenefitsTabs`, `BenefitClaims`, and the benefits page. `tsc --noEmit` + `next build`
+    both green. (Specs 003/007 + PROJECT_DETAILS updated in the same commit.)
+
 - **2026-08-03 — Benefits claims: tabs + 2-column + human wording (spec 007 · FR-033):** the submitted
   benefits page splits into two tabs ("Your benefits" summary / "Claims & reimbursement", the latter
   badged with the pending-claim count) instead of one long scroll; claim cards lay out in two columns.
@@ -281,4 +299,4 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 
 ---
 
-*Last Updated: 2026-07-29.*
+*Last Updated: 2026-08-03.*
