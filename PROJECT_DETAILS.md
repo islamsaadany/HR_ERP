@@ -67,6 +67,19 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - Admin: post announcements.
 - **Data:** `Announcement { id, title, body, authorId, publishedAt }`
 
+### Incentive Scheme (spec 009) — super-user only, hidden
+- A **partner-compensation** engine implementing "Team Benefits System v1.5" (Business Partner Fee, Commission, Profit Share proposed, 70% margin gate, `eligible_to_lead` utilisation gate, contributor tiers/floor/cap, firm P&L, cost recovery, watch list). **Distinct from the employee Benefits module.**
+- **Server-authoritative & pure:** all rules live in `src/lib/incentive/rules.ts` (final constants, **banker's rounding**). `import.ts` parses the CSV sheets; `compute.ts` turns a stored cycle into the report model with **flag-and-block** validation (contributions must total ~100%).
+- **Per-cycle inputs uploaded as CSV** (people / assignments / contributions) + a firm-P&L form; downloadable templates. `bd == lead_source` ⇒ 5% commission else 3%. Per-hour metrics (Appendix B) are out until an hours column is added.
+- **Access:** `/incentive` + template route are `requireSuperUser`; nav entry shows for super users only. Migration `013_incentive_scheme.sql`.
+- **Proof:** `scripts/verify-incentive.ts` (Appendix A, 27/27) and `scripts/verify-incentive-cycle.ts` (sample sheets, 16/16).
+
+### Authentication — email + password and Google
+- Sign-in offers **email + password** and **Google** (domain-locked), both matching the same employee by email. `User.passwordHash` (scrypt via Node crypto, no dependency; migration `014`). Admin set/reset per employee (temp password shown once); self-service change on Profile. Bootstrap admin bridge retained as a fallback.
+
+### Module release switch (super user)
+- `ModuleFlag { key, enabled }` (migration `015`) + Admin → **Modules**. A module switched off is hidden from everyone's nav (`AppShell.hiddenNav`) and its pages redirect home (`requireModuleEnabled`). Lets a super user build in the background and release when ready.
+
 ## 4. Phase-2 (designed-for, not built in v1)
 - **Learning Track** — courses → lessons → quizzes → certificate.
 - **Case Studies** — shared knowledge library.
