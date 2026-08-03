@@ -127,7 +127,7 @@ export function BenefitsSelector({
   ];
 
   return (
-    <div className="mt-6 grid gap-6 pb-28 lg:grid-cols-[1fr_320px] lg:pb-0">
+    <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
       {/* Basket */}
       <div>
         {locked ? (
@@ -367,59 +367,6 @@ export function BenefitsSelector({
           </ol>
         </div>
       </aside>
-
-      {/* Mobile floating summary — keeps the running total/actions visible while scrolling the list.
-          Desktop keeps the sticky right-hand panel above; this only shows below lg. */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="font-serif text-lg text-ink tabular-nums">{egp(result.total)}</span>
-              <span className="text-xs text-muted">of {egp(ceiling)} pool</span>
-            </div>
-            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-navy-50">
-              <div
-                className={"h-full rounded-full " + (result.total > ceiling ? "bg-red-500" : "bg-gold-500")}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            <div className="mt-1 flex justify-between text-[11px]">
-              <span className={result.remaining < 0 ? "font-semibold text-red-600" : "text-muted"}>
-                {result.remaining < 0
-                  ? `Over by ${egp(Math.abs(result.remaining))}`
-                  : `${egp(result.remaining)} left`}
-              </span>
-              <span className="text-muted">
-                {result.selectionCount} of {result.maxSelect}
-              </span>
-            </div>
-          </div>
-          {locked ? (
-            <span className="shrink-0 rounded-lg bg-navy-50 px-3 py-2 text-xs font-semibold text-navy-700">
-              Locked
-            </span>
-          ) : (
-            <div className="flex shrink-0 flex-col gap-1.5">
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => persist(false)}
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-navy-700 disabled:opacity-60"
-              >
-                {pending ? "Saving…" : "Save"}
-              </button>
-              <button
-                type="button"
-                disabled={pending || result.errors.length > 0}
-                onClick={() => persist(true)}
-                className="rounded-lg bg-navy-800 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-              >
-                Submit
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Medical modal */}
       {modalOpen ? (
