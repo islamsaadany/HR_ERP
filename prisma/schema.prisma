@@ -59,6 +59,9 @@ model User {
   // Authorization
   role Role @default(EMPLOYEE)
 
+  // Email + password sign-in (scrypt hash; null = password not set, Google-only).
+  passwordHash String?
+
   // HR-private employment fields (money-affecting: HR-set, authoritative)
   employmentType EmploymentType?
   tenureBand     TenureBand?

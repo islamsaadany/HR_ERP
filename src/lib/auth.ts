@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
+import { verifyPassword } from "@/lib/password";
 import type { Role } from "@prisma/client";
 
 /**
@@ -51,29 +52,47 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(creds) {
-        const username = String(creds?.username ?? "")
+        const identifier = String(creds?.username ?? "")
           .trim()
           .toLowerCase();
         const password = String(creds?.password ?? "");
-        if (!username || !password) return null;
+        if (!identifier || !password) return null;
 
-        // Only the single bootstrap admin may use the password bridge.
+        const domainOk = (email: string) =>
+          !allowedDomain || email.endsWith(`@${allowedDomain}`);
+
+        // 1) Real per-employee login: match by email, must be an ACTIVE employee
+        //    on the allowed domain with a set password that verifies.
+        if (identifier.includes("@") && domainOk(identifier)) {
+          const dbUser = await prisma.user.findUnique({ where: { email: identifier } });
+          if (
+            dbUser &&
+            dbUser.status === "ACTIVE" &&
+            verifyPassword(password, dbUser.passwordHash)
+          ) {
+            return { id: dbUser.id, email: dbUser.email, name: dbUser.name };
+          }
+        }
+
+        // 2) Bootstrap admin bridge (username or email + env password) — kept so
+        //    the first admin is never locked out before passwords are set.
         const usernameMatches =
-          username === bootstrapUsername || username === bootstrapEmail;
-        if (!usernameMatches || password !== bootstrapPassword) return null;
+          identifier === bootstrapUsername || identifier === bootstrapEmail;
+        if (usernameMatches && password === bootstrapPassword) {
+          const dbUser = await prisma.user.upsert({
+            where: { email: bootstrapEmail },
+            update: { role: "SUPER_USER", status: "ACTIVE" },
+            create: {
+              email: bootstrapEmail,
+              name: bootstrapName,
+              role: "SUPER_USER",
+              status: "ACTIVE",
+            },
+          });
+          return { id: dbUser.id, email: dbUser.email, name: dbUser.name };
+        }
 
-        // Ensure the admin exists (and stays an active SUPER_USER) — no seed required.
-        const dbUser = await prisma.user.upsert({
-          where: { email: bootstrapEmail },
-          update: { role: "SUPER_USER", status: "ACTIVE" },
-          create: {
-            email: bootstrapEmail,
-            name: bootstrapName,
-            role: "SUPER_USER",
-            status: "ACTIVE",
-          },
-        });
-        return { id: dbUser.id, email: dbUser.email, name: dbUser.name };
+        return null;
       },
     }),
     ...(googleAuthEnabled ? [Google] : []),

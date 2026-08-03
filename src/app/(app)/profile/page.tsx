@@ -9,6 +9,7 @@ import {
   formatDate,
 } from "@/lib/labels";
 import { uploadMyDocument, deleteMyDocument } from "./documents-actions";
+import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 
 export const dynamic = "force-dynamic";
 
@@ -193,6 +194,11 @@ export default async function ProfilePage({
             ))
           )}
         </ul>
+      </section>
+
+      {/* Sign-in password (self-service) */}
+      <section className="mt-6">
+        <ChangePasswordCard hasPassword={Boolean(me.passwordHash)} />
       </section>
     </div>
   );
