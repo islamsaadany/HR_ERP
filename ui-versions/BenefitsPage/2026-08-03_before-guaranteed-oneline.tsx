@@ -87,13 +87,7 @@ export default async function BenefitsPage() {
           <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-300">You receive automatically</div>
           <h2 className="font-serif text-xl">Guaranteed benefits</h2>
         </div>
-        {/* Original cards, squeezed to fit side by side on one row (auto-fit narrows
-            each card so all guaranteed benefits sit beside each other; wraps only when
-            the screen is too narrow). */}
-        <div
-          className="grid gap-px bg-line"
-          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}
-        >
+        <div className="grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-3">
           {guaranteed.map((g) => (
             <div key={g.id} className="bg-surface p-4">
               <div className="text-sm font-medium text-ink">{g.name}</div>

@@ -38,13 +38,14 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - Admin: author stages/activities, types, links, track membership; view completion overview.
 
 ### Benefits (the money module)
-- Employee: employment type + tenure come from their profile (not self-selected); view fixed/guaranteed benefits; build the flexible basket (server-enforced rules), save (autosave) and submit for the plan year.
-- Admin: configure plan-year window, pool ceilings (type × tenure), fixed benefits, basket catalog, medical handling; view submissions.
+- Employee: employment type + tenure come from their profile (not self-selected); view fixed/guaranteed benefits (**one line each**); build the flexible basket (server-enforced rules), save (autosave) and submit for the plan year. The live summary stays visible while scrolling — **sticky panel on desktop, pinned floating bar on mobile**.
+- Admin: configure plan-year window, pool ceilings (type × tenure), fixed benefits, basket catalog, medical handling; view submissions and **export them to CSV for Finance** (`/api/admin/benefits/export`, one row per selected benefit line).
 - **Server-authoritative rules:** pool ceiling, 50% single-benefit cap, selection-count limit (FT practical 2–4 / PT max 2), medical handling. See §5 for the confirmed figures.
 
 ### Team Directory — spec `003`
-- Employee: browse **active** employees (cards: photo, name, title, department, email, phone); **name search + department filter**; person view with public fields + contact actions. View-only. **No org chart in V1.**
+- Employee: browse **active** employees (cards: photo, name, title, department, email, phone); **name search + department filter**; a **read-only card/list view toggle** (remembered per user); person view with public fields + contact actions. View-only. **No org chart in V1.**
 - **Data:** read model over `User` (public projection).
+- **Admin editable registry grid** (spec `001` FR-020): `/admin/employees` is an inline-editable power-grid — cells typed to the field (text/email, date pickers, enum + reporting-line dropdowns), column show/hide + drag-reorder (client preference), and filters (search + department/type/status/role). Per-field saves via `updateEmployeeField`, enforcing the same governance as the full form (Super-User-only role, email uniqueness, self/cycle guards, no self role/status change). Editing stays HR-only; the employee `/directory` is unchanged.
 
 ### Handbook & Resources
 - The **operating** handbook content (7 sections from the Onboarding Kit: strategic foundation, structure & roles, brand, meetings, tools, documentation, people governance) **plus a Resources area** for downloadable company files (company profile, templates, policies). Presented as a Vercel-style master–detail (left list, right reader).
@@ -59,8 +60,12 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Data:** `KnowledgeArticle { slug, title, category, summary?, body(markdown), readingMinutes?, attachmentUrl?, attachmentName?, attachmentType?, attachmentSize?, published, order, authorId? }`. Deps: `react-markdown`, `remark-gfm`, `mermaid`, `@vercel/blob`.
 
 ### Time-Off / Leave Management
-- Employee: request time off. **Direct manager** (from the org chart) approves/declines. Balance tracking.
-- **Data (sketch):** `LeaveRequest { userId, type, startDate, endDate, status, approverId }`.
+- Employee: request time off. **Direct manager** (from the org chart) approves/declines (single generic type, full days, no balances in v1).
+- **In-app decision cue** (FR-014): a gold badge on the Time-Off nav item counts the employee's approved/declined-but-unseen requests; it clears once they open the Time-Off page (`decisionSeenAt`, migration `016`). No email.
+- **Overlap warning** (FR-011): the manager queue and the HR view flag when a request's dates clash with another teammate's approved/pending leave.
+- **HR central view** (FR-013): `/admin/time-off` lists **all** requests (filter by status) and lets HR/Super User approve or decline a pending one as a fallback when the manager is unavailable.
+- Decisions are applied via dedicated `approveLeaveRequest`/`declineLeaveRequest` form actions (the decision rides the button's `formAction`, not a submit-button value — which React/Next doesn't reliably include).
+- **Data:** `LeaveRequest { userId, startDate, endDate, note, status, approverId, decisionComment, decidedAt, decisionSeenAt }`.
 
 ### Dashboard
 - Employee home: onboarding progress, benefits status, quick links, announcements.

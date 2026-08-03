@@ -49,6 +49,43 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-03 — Benefits: submissions CSV export (release scope #2):** `Export CSV` on
+  Admin → Benefits downloads the open plan year's submissions via `/api/admin/benefits/export`
+  (HR/Super-User only), one row per selected benefit line (employee · email · status · submitted ·
+  benefit · category · medical · amount). Verified on a throwaway Postgres with a seeded submission:
+  authenticated fetch returns HTTP 200 `text/csv` attachment with correct rows; `tsc` + build green.
+
+- **2026-08-03 — Time-Off release additions (spec 005 · branch `claude/hr-erp-directory-benefits`):**
+  - **HR central leave view** (FR-013): `/admin/time-off` lists every request (status filter);
+    HR/Super User can approve or decline a pending request as a fallback. Admin card added.
+  - **In-app decision badge** (FR-014): gold nav badge counts decided-but-unseen requests, cleared
+    when the employee opens Time-Off (`decisionSeenAt`, migration `016`, idempotent). No email.
+  - **Overlap warning** (FR-011, previously unimplemented): manager queue + HR view flag date
+    clashes with a teammate's approved/pending leave (wires the existing `overlaps()` helper).
+  - **Bug fixed:** decisions were carried on a submit-button `value`, which React/Next does not
+    reliably include in a server action's FormData (manager approve/decline was silently no-op).
+    Reworked to dedicated `approveLeaveRequest`/`declineLeaveRequest` actions via `formAction`.
+  - Verified: `tsc` + `next build` green; migration `016` applied + idempotent on a throwaway
+    Postgres; live Playwright — badge shows `1` and clears after viewing, both overlap warnings
+    render, and an admin approve flipped a request to APPROVED in the DB. UI snapshot saved.
+
+- **2026-08-03 — Directory grid + benefits polish (branch `claude/hr-erp-directory-benefits`):**
+  - **Admin editable employees grid** (spec 001 · FR-020): `/admin/employees` is now an
+    inline-editable power-grid — typed cells (text/email, date pickers, enum + Manager dropdowns),
+    column show/hide + drag-reorder (localStorage), and filters (search + department/type/status/role).
+    New server action `updateEmployeeField` validates one field with the full-form's per-field rules
+    and enforces the same governance (Super-User-only role, email uniqueness, self/cycle guards, no
+    self role/status change); optimistic UI with revert-on-error. The employee `/directory` is unchanged.
+  - **Directory card/list toggle** (spec 003 · FR-014): read-only list (table) view alongside the
+    cards, remembered per user; public fields only, same filters.
+  - **Benefits polish** (spec 007): guaranteed benefits render as single-line rows; a pinned mobile
+    floating summary bar keeps the running total/actions visible while scrolling (desktop keeps the
+    sticky panel).
+  - Verified: `tsc` + `next build` green; `scripts/verify-grid-writes.mts` 16/16 against a throwaway
+    Postgres (text, enum→null, date coerce/clear, status, email-uniqueness, self/cycle guards); live
+    Playwright pass — bootstrap login, inline title edit persisted through reload, Columns toggle,
+    and screenshots of the grid, directory list, and benefits desktop + mobile. UI snapshots saved.
+
 - **2026-07-27 — Phase 1 Foundation scaffold:** Next.js 15.5 + React 19 + TS + Tailwind v4 +
   Prisma + NextAuth v5 (Google, domain-locked, JWT, no auto-provision). Prisma schema for the
   registry (User/Dependant/PersonalDocument + enums). App shell (navy/gold), /signin, /dashboard,

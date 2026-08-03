@@ -85,6 +85,7 @@ An employee opens a colleague's person view to see their public details and cont
 - **FR-011**: The system MUST render gracefully when optional fields are missing (photo, phone, placeholder email).
 - **FR-012**: The Directory MUST be available to every signed-in employee.
 - **FR-013**: The system MUST read employee data from the Foundation registry as the single source of truth (no separate directory data store).
+- **FR-014**: The system MAY offer a read-only list (table) view alongside the default card view, switchable by the employee and remembered across visits. Both views show only the public fields (name, title, department, email, phone), remain read-only (FR-009), and honor the same search + department filter. Editing employee records stays an HR-only capability in the admin registry (see spec 001, FR-020).
 
 ### Key Entities *(include if feature involves data)*
 

@@ -25,6 +25,30 @@ This project uses **spec-kit** for feature work. The governing document is
 → `/speckit-implement`, honoring "Align Before Building" at every gate. Specs live in `specs/`;
 the four steering files above track scope, decisions, and progress across features.
 
+#### Spec-kit skills — use them, don't freehand
+The `/speckit-*` steps are **installed skills**; invoke them via the Skill tool (or the
+matching `/speckit-…` slash command) rather than improvising the equivalent by hand. Use
+the right one for the moment:
+
+| Skill | When to use it |
+|-------|----------------|
+| `speckit-specify` | Start or rewrite a feature's `spec.md` from a plain-language description. |
+| `speckit-clarify` | The spec is ambiguous — ask up to 5 targeted questions and fold answers back in. |
+| `speckit-plan` | Turn an agreed spec into design artifacts (the implementation plan). |
+| `speckit-tasks` | Generate the dependency-ordered `tasks.md` from the plan. |
+| `speckit-analyze` | Non-destructive consistency check across spec ↔ plan ↔ tasks after tasks exist. |
+| `speckit-checklist` | Produce a focused review checklist for a feature. |
+| `speckit-implement` | Execute `tasks.md` in order. |
+| `speckit-converge` | Assess built code vs. the spec/plan/tasks and append any unbuilt work as tasks. |
+| `speckit-constitution` | Create/update `.specify/memory/constitution.md` and keep templates in sync. |
+| `speckit-taskstoissues` | Convert tasks into GitHub issues (only when we've decided to track on GitHub). |
+
+**Rules of use:** always **align before running** a step that writes artifacts (specify/plan/
+tasks/implement) — the constitution's "Align Before Building" applies to spec-kit itself. When
+touching an existing v1 module, prefer **`speckit-converge`/`speckit-analyze`** to surface gaps
+before adding tasks. Whatever a skill writes into `specs/` must stay in sync with the code and the
+four steering files (same commit).
+
 ---
 
 ## Working Guidelines
