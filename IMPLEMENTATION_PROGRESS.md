@@ -49,6 +49,20 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-04 — Admin Benefits restructure, slice 1 (branch `claude/hr-erp-benefits-admin-config`):**
+  `/admin/benefits` moved from a long scroll to **three tabs** (`AdminBenefitsTabs`, mirroring the
+  employee `BenefitsTabs`): **Configuration · Submissions & claims · Claim requirements**. Plan-year
+  management moved into a **top-right popup** (`PlanYearDialog`) — the year list with open/close toggles +
+  create-new-year, all server-action forms (revalidate, popup stays open). The **Configuration** tab ships
+  its first editable section — the **pool-ceilings grid** (type × band, `updatePoolCeilings`, one Save).
+  No behaviour change to claims/submissions/requirements (markup relocated into panels). Verified on a
+  throwaway Postgres (6/6: update, blank-skip, negative-clamp, create-missing, rounding, untouched).
+  `tsc` + `build` green. UI snapshot saved. **Next slices:** guaranteed amounts (FT/PT), basket catalog +
+  flat medical rate-card editors, then the live "How the benefits basket works" policy page (Print/PDF).
+  Reference `benefitsselector_3.html` checked against seed: ceilings, guaranteed amounts, and catalog match
+  exactly; the medical rate card is the only real gap (HTML is tiered Standard/Silver/Gold, ours is a single
+  flat card — kept flat per decision, made editable in a later slice).
+
 - **2026-08-03 — Benefits sticky tabs + claims table + Directory list-only sort (branch `claude/hr-erp-benefits-directory-ux`):**
   - **Benefits sticky tab bar (spec 007 · FR-034):** the "Your benefits / Claims & reimbursement" tab bar
     now stays pinned just beneath the sticky page header while scrolling either tab. `BenefitsTabs` measures
