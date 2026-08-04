@@ -457,7 +457,15 @@ export default async function AdminBenefitsPage({
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin · Benefits</p>
           <h1 className="mt-1 font-serif text-3xl text-ink">Benefits configuration</h1>
         </div>
-        <PlanYearDialog planYears={planYears} activeName={active?.name} />
+        <div className="flex items-center gap-2">
+          <a
+            href="/benefits/policy"
+            className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+          >
+            Policy page
+          </a>
+          <PlanYearDialog planYears={planYears} activeName={active?.name} />
+        </div>
       </div>
 
       {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}

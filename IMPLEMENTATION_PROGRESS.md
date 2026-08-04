@@ -64,8 +64,14 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
   **flat medical rate card** (self · spouse · child<18 · child18+). New actions in `config-actions.ts`.
   Verified on a throwaway Postgres (10/10: per-field guaranteed save with FT/PT isolation + salary-driven
   untouched; catalog edit/hide/create-unique/order; rate-card create + partial update). `tsc` + `build`
-  green. **Next slice:** the live "How the benefits basket works" policy page (Print/PDF), linked from
-  Benefits + admin.
+  green.
+- **2026-08-04 — Admin Benefits, slice 3 (policy page):** new **`/benefits/policy`** — a read-only
+  "How the benefits basket works" explainer generated from the **live config** (rules, pool ceilings,
+  guaranteed amounts, active catalog by category, rate card, worked example) with a **Print / Save-as-PDF**
+  button (`PrintButton` + `@media print` isolation so only the doc prints). Readable by any employee; linked
+  from the employee Benefits page ("How the benefits basket works →") and the admin Benefits header
+  ("Policy page"). `tsc` + `build` green; UI snapshots saved. **Benefits-admin restructure complete** across
+  the 3 slices.
   Reference `benefitsselector_3.html` checked against seed: ceilings, guaranteed amounts, and catalog match
   exactly; the medical rate card is the only real gap (HTML is tiered Standard/Silver/Gold, ours is a single
   flat card — kept flat per decision, made editable in a later slice).
