@@ -15,7 +15,14 @@ import {
   releaseClaim,
   rejectClaim,
 } from "./actions";
-import { updatePoolCeilings } from "./config-actions";
+import {
+  updatePoolCeilings,
+  updateGuaranteedAmounts,
+  updateCatalogItem,
+  toggleCatalogItem,
+  createCatalogItem,
+  updateMedicalRateCard,
+} from "./config-actions";
 import { PlanYearDialog } from "@/components/admin/PlanYearDialog";
 import { AdminBenefitsTabs } from "@/components/admin/AdminBenefitsTabs";
 
@@ -56,9 +63,77 @@ export default async function AdminBenefitsPage({
     prisma.benefitCatalogItem.findMany({ orderBy: { order: "asc" } }),
     prisma.poolCeiling.findMany(),
   ]);
+  const rateCard = await prisma.medicalRateCard.findFirst();
 
   const ceilOf = (t: EmploymentType, b: TenureBand) =>
     poolCeilings.find((c) => c.employmentType === t && c.tenureBand === b)?.amount ?? "";
+
+  const GB_BAND_COLS = [
+    { key: "band6mo2y", band: "BAND_6MO_2Y" },
+    { key: "band2to4y", band: "BAND_2_4Y" },
+    { key: "band4to7y", band: "BAND_4_7Y" },
+    { key: "band7to10y", band: "BAND_7_10Y" },
+  ] as const;
+
+  const guaranteedTable = (t: EmploymentType) => {
+    const rows = guaranteedBenefits.filter((g) => g.employmentType === t);
+    return (
+      <form action={updateGuaranteedAmounts} className="mt-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+          {EMPLOYMENT_TYPE_LABEL[t]}
+        </h3>
+        <div className="mt-2 overflow-x-auto">
+          <table className="text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-muted">
+                <th className="py-2 pr-6 font-medium">Benefit</th>
+                {GB_BAND_COLS.map((c) => (
+                  <th key={c.key} className="py-2 pr-4 font-medium">{TENURE_BAND_LABEL[c.band]}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((g) => {
+                const salaryDriven =
+                  g.band6mo2y == null && g.band2to4y == null && g.band4to7y == null && g.band7to10y == null;
+                return (
+                  <tr key={g.id} className="border-t border-line align-top">
+                    <td className="py-2 pr-6">
+                      <div className="text-ink">{g.name}</div>
+                      {g.note ? <div className="text-xs text-muted">{g.note}</div> : null}
+                    </td>
+                    {salaryDriven ? (
+                      <td colSpan={4} className="py-2 text-xs text-muted">Salary-driven — 1 month salary (not a fixed amount)</td>
+                    ) : (
+                      GB_BAND_COLS.map((c) => {
+                        const v = g[c.key] ?? "";
+                        return (
+                          <td key={c.key} className="py-2 pr-4">
+                            <input
+                              key={`${g.id}_${c.key}-${v}`}
+                              type="number"
+                              name={`gb_${g.id}_${c.key}`}
+                              defaultValue={v}
+                              min={0}
+                              step={500}
+                              className="w-24 rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums focus:border-navy-500 focus:outline-none"
+                            />
+                          </td>
+                        );
+                      })
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <button className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">
+          Save {EMPLOYMENT_TYPE_LABEL[t].toLowerCase()} amounts
+        </button>
+      </form>
+    );
+  };
 
   const typeSelect = (kind: string, id: string, current: string) => (
     <form action={setClaimType} className="flex items-center gap-1.5">
@@ -82,7 +157,8 @@ export default async function AdminBenefitsPage({
 
   // ── Configuration panel ───────────────────────────────────────────────
   const configPanel = (
-    <section className="rounded-xl border border-line bg-surface p-6">
+    <div className="space-y-6">
+      <section className="rounded-xl border border-line bg-surface p-6">
       <h2 className="font-serif text-lg text-ink">Pool ceilings</h2>
       <p className="mt-1 text-sm text-muted">
         The annual pool (EGP) each employee can allocate, by employment type and tenure band. This is the
@@ -130,11 +206,102 @@ export default async function AdminBenefitsPage({
           Save ceilings
         </button>
       </form>
-      <p className="mt-6 text-xs text-muted">
-        Guaranteed amounts, the basket catalog, and the medical rate card are edited in the next sections
-        (coming in this module) — until then they follow the seeded configuration.
-      </p>
     </section>
+
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="font-serif text-lg text-ink">Guaranteed amounts</h2>
+        <p className="mt-1 text-sm text-muted">
+          The fixed entitlements each employee receives automatically, by tenure band — separate from the
+          flexible basket. Loans are salary-driven, not a fixed figure.
+        </p>
+        {guaranteedTable("FULL_TIME")}
+        <div className="mt-6">{guaranteedTable("PART_TIME")}</div>
+      </section>
+
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="font-serif text-lg text-ink">Basket catalog</h2>
+        <p className="mt-1 text-sm text-muted">
+          The flexible benefits employees can pick. Hidden items stay out of the basket but are never deleted,
+          so existing selections keep working.
+        </p>
+        <div className="mt-4 space-y-2">
+          {catalogItems.map((c) => (
+            <div key={c.id} className={"rounded-lg border border-line p-3 " + (c.active ? "" : "opacity-60")}>
+              <form action={updateCatalogItem} className="flex flex-wrap items-end gap-2">
+                <input type="hidden" name="id" value={c.id} />
+                <div className="min-w-[160px] flex-1">
+                  <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Name</label>
+                  <input name="name" defaultValue={c.name} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
+                </div>
+                <div className="min-w-[150px]">
+                  <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Category</label>
+                  <input name="category" defaultValue={c.category ?? ""} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
+                </div>
+                <div className="w-20">
+                  <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Order</label>
+                  <input name="order" type="number" min={0} defaultValue={c.order} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums" />
+                </div>
+                <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">Save</button>
+              </form>
+              <div className="mt-2 flex items-center gap-3">
+                {c.isMedical ? <span className="rounded-full bg-navy-50 px-2 py-0.5 text-[11px] font-semibold text-navy-700">Medical</span> : null}
+                <span className="text-xs text-muted">{c.active ? "Visible" : "Hidden"}</span>
+                <form action={toggleCatalogItem}>
+                  <input type="hidden" name="id" value={c.id} />
+                  <input type="hidden" name="active" value={c.active ? "false" : "true"} />
+                  <button className="text-xs font-semibold text-navy-600 hover:text-navy-800">
+                    {c.active ? "Hide" : "Show"}
+                  </button>
+                </form>
+              </div>
+            </div>
+          ))}
+        </div>
+        <form action={createCatalogItem} className="mt-4 flex flex-wrap items-end gap-2 border-t border-line pt-4">
+          <div className="min-w-[160px] flex-1">
+            <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">New item name</label>
+            <input name="name" placeholder="e.g. Eyewear allowance" className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
+          </div>
+          <div className="min-w-[150px]">
+            <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Category</label>
+            <input name="category" placeholder="e.g. Wellbeing" className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
+          </div>
+          <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">Add item</button>
+        </form>
+      </section>
+
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <h2 className="font-serif text-lg text-ink">Medical rate card</h2>
+        <p className="mt-1 text-sm text-muted">
+          Annual premiums (EGP) used to price medical cover, from the insurer&apos;s figures. Medical is exempt
+          from the 50% cap but never exceeds the pool ceiling.
+        </p>
+        <form action={updateMedicalRateCard} className="mt-4 flex flex-wrap items-end gap-3">
+          {(
+            [
+              { name: "self", label: "Self", v: rateCard?.self },
+              { name: "spouse", label: "Spouse", v: rateCard?.spouse },
+              { name: "childUnder18", label: "Child < 18", v: rateCard?.childUnder18 },
+              { name: "child18Plus", label: "Child 18+", v: rateCard?.child18Plus },
+            ] as const
+          ).map((f) => (
+            <div key={f.name} className="w-32">
+              <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">{f.label}</label>
+              <input
+                key={`${f.name}-${f.v ?? ""}`}
+                name={f.name}
+                type="number"
+                min={0}
+                step={500}
+                defaultValue={f.v ?? ""}
+                className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums focus:border-navy-500 focus:outline-none"
+              />
+            </div>
+          ))}
+          <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">Save rate card</button>
+        </form>
+      </section>
+    </div>
   );
 
   // ── Submissions & claims panel ────────────────────────────────────────

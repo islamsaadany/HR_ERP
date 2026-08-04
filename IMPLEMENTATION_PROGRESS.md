@@ -57,8 +57,15 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
   its first editable section — the **pool-ceilings grid** (type × band, `updatePoolCeilings`, one Save).
   No behaviour change to claims/submissions/requirements (markup relocated into panels). Verified on a
   throwaway Postgres (6/6: update, blank-skip, negative-clamp, create-missing, rounding, untouched).
-  `tsc` + `build` green. UI snapshot saved. **Next slices:** guaranteed amounts (FT/PT), basket catalog +
-  flat medical rate-card editors, then the live "How the benefits basket works" policy page (Print/PDF).
+  `tsc` + `build` green. UI snapshot saved.
+- **2026-08-04 — Admin Benefits, slice 2 (Configuration editors):** the Configuration tab now also edits
+  **guaranteed amounts** (FT/PT tables per band; Loans stays salary-driven/null), the **basket catalog**
+  (edit name/category/order, **hide instead of delete**, add item with a derived unique key), and the
+  **flat medical rate card** (self · spouse · child<18 · child18+). New actions in `config-actions.ts`.
+  Verified on a throwaway Postgres (10/10: per-field guaranteed save with FT/PT isolation + salary-driven
+  untouched; catalog edit/hide/create-unique/order; rate-card create + partial update). `tsc` + `build`
+  green. **Next slice:** the live "How the benefits basket works" policy page (Print/PDF), linked from
+  Benefits + admin.
   Reference `benefitsselector_3.html` checked against seed: ceilings, guaranteed amounts, and catalog match
   exactly; the medical rate card is the only real gap (HTML is tiered Standard/Silver/Gold, ours is a single
   flat card — kept flat per decision, made editable in a later slice).
