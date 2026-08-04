@@ -168,12 +168,6 @@ export default async function BenefitsPage({
         </p>
       </div>
 
-      <div className="mt-2">
-        <a href="/benefits/policy" className="text-sm font-medium text-navy-600 hover:text-navy-800">
-          How the benefits basket works →
-        </a>
-      </div>
-
       {/* Once submitted: tabs sit above everything (guaranteed benefits live inside the
           "Your benefits" tab). Draft/other states: guaranteed band, then the basket. */}
       {planYear && ceilingRow && medicalRate && catalog.length > 0 && submitted ? (

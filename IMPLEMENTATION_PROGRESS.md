@@ -49,6 +49,33 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-04 — Admin Benefits restructure, slice 1 (branch `claude/hr-erp-benefits-admin-config`):**
+  `/admin/benefits` moved from a long scroll to **three tabs** (`AdminBenefitsTabs`, mirroring the
+  employee `BenefitsTabs`): **Configuration · Submissions & claims · Claim requirements**. Plan-year
+  management moved into a **top-right popup** (`PlanYearDialog`) — the year list with open/close toggles +
+  create-new-year, all server-action forms (revalidate, popup stays open). The **Configuration** tab ships
+  its first editable section — the **pool-ceilings grid** (type × band, `updatePoolCeilings`, one Save).
+  No behaviour change to claims/submissions/requirements (markup relocated into panels). Verified on a
+  throwaway Postgres (6/6: update, blank-skip, negative-clamp, create-missing, rounding, untouched).
+  `tsc` + `build` green. UI snapshot saved.
+- **2026-08-04 — Admin Benefits, slice 2 (Configuration editors):** the Configuration tab now also edits
+  **guaranteed amounts** (FT/PT tables per band; Loans stays salary-driven/null), the **basket catalog**
+  (edit name/category/order, **hide instead of delete**, add item with a derived unique key), and the
+  **flat medical rate card** (self · spouse · child<18 · child18+). New actions in `config-actions.ts`.
+  Verified on a throwaway Postgres (10/10: per-field guaranteed save with FT/PT isolation + salary-driven
+  untouched; catalog edit/hide/create-unique/order; rate-card create + partial update). `tsc` + `build`
+  green.
+- **2026-08-04 — Admin Benefits, slice 3 (policy page):** new **`/benefits/policy`** — a read-only
+  "How the benefits basket works" explainer generated from the **live config** (rules, pool ceilings,
+  guaranteed amounts, active catalog by category, rate card, worked example) with a **Print / Save-as-PDF**
+  button (`PrintButton` + `@media print` isolation so only the doc prints). Readable by any employee; linked
+  from the employee Benefits page ("How the benefits basket works →") and the admin Benefits header
+  ("Policy page"). `tsc` + `build` green; UI snapshots saved. **Benefits-admin restructure complete** across
+  the 3 slices.
+  Reference `benefitsselector_3.html` checked against seed: ceilings, guaranteed amounts, and catalog match
+  exactly; the medical rate card is the only real gap (HTML is tiered Standard/Silver/Gold, ours is a single
+  flat card — kept flat per decision, made editable in a later slice).
+
 - **2026-08-03 — Benefits sticky tabs + claims table + Directory list-only sort (branch `claude/hr-erp-benefits-directory-ux`):**
   - **Benefits sticky tab bar (spec 007 · FR-034):** the "Your benefits / Claims & reimbursement" tab bar
     now stays pinned just beneath the sticky page header while scrolling either tab. `BenefitsTabs` measures
