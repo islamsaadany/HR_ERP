@@ -25,7 +25,6 @@ export function EmployeeImportForm() {
     <div className="mt-8 space-y-6">
       <form
         action={formAction}
-        encType="multipart/form-data"
         className="rounded-xl border border-line bg-surface p-6"
       >
         <label className="block text-xs font-medium uppercase tracking-wide text-muted mb-1">
