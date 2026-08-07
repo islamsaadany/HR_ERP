@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-07
 
-**Status**: Draft
+**Status**: Implemented (2026-08-07, no schema change)
 
 **Input**: Reorganize the HR/Super-User Benefits admin into three clearer tabs (Submissions & Claims · Benefits Catalogue · Amounts), make the config tables view-first (read-only until Edit), fold Claim requirements + coverage % into a single Catalogue table, and add HR/Super-User **manual entry** of an already-approved claim or release (with its approval date). Layers on specs 007 (benefits admin), 013 (bulk release), and 012 (coverage rates).
 

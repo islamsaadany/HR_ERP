@@ -46,6 +46,7 @@
 | 013 | Benefits — HR Bulk-Release + configurable sheet | ✅ implemented (in `main`) |
 | 014 | HR-Managed Departments (add/rename/remove) | ✅ implemented (branch — migration `022`) |
 | 015 | Consistent Admin Back Navigation | ✅ implemented (branch) |
+| 016 | Admin Benefits redesign + manual claim/release | ✅ implemented (branch) |
 
 ## Next up
 Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Directory · Onboarding · Handbook · Time-Off · Benefits · Dashboard).
@@ -53,6 +54,21 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-07 — Admin Benefits redesign + manual claim/release (spec 016, branch `claude/hr-erp-benefits-coverage-rates-hnaox1`):**
+  `/admin/benefits` recomposed into **three tabs** — **Submissions & Claims** (default) · **Benefits
+  Catalogue** · **Amounts** — retiring the old Configuration + Claim-requirements tabs. **Catalogue** is
+  one table (Name · Category · Order · Claim requirement · Coverage %) + hide/show/add, absorbing the
+  per-item claim-requirement and coverage-% editing. **Amounts** groups ceilings, guaranteed amounts,
+  guaranteed claim-requirements, and the rate card. All config tables are **view-first** via a shared
+  `EditableSection` (read-only → Edit → Done), toggling independently. **Manual entry** (`manual-actions.ts`
+  `recordManualRelease` + `ManualReleaseForm`): HR/Super User back-fills an already-approved claim as a
+  **RELEASED** `BenefitClaim` with the entered approval date + actor, not queued, counted against the
+  allocation; server-guarded (future date, allocation target required, amount ≤ remaining, covered terms).
+  **No schema change.** Verified: `tsc` + `build` green; throwaway Postgres **9/9**
+  (`scripts/verify-manual-release.mts`: released state + back-dated decision + reviewer, allocation cap for
+  guaranteed & catalog, future-date + no-target rejection). UI snapshots saved. Preserves plan-year popup,
+  submissions, claims queue, CSV export, reopen/reset. Future: everyone × benefits filterable master view.
+
 - **2026-08-07 — Benefits company coverage rates / co-funding (spec 012, branch `claude/hr-erp-benefits-coverage-rates-hnaox1`, migration `023`):**
   Each flexible benefit now carries a **coverage rate**. The employee enters the **full cost**; the
   **covered (company) share = cost × rate/100** draws from the pool, and they pay the rest. **All money
