@@ -80,6 +80,28 @@ export default async function BenefitsPage({
     children18Plus: existing?.medicalChildren18Plus ?? 0,
   };
 
+  // Claimed-benefit locks: a basket item with an active claim (pending or reimbursed) can't be
+  // deselected or reduced below what's already claimed once HR reopens the basket. Keyed by
+  // catalog key → total active-claimed amount. Computed whenever a plan year exists (claims
+  // only exist post-submission, so this is empty for first-time drafts).
+  const claimedByKey: Record<string, number> = {};
+  if (planYear) {
+    const activeClaims = await prisma.benefitClaim.findMany({
+      where: {
+        userId: me.id,
+        planYearId: planYear.id,
+        status: { in: ["PENDING", "RELEASED"] },
+        catalogItemId: { not: null },
+      },
+      select: { catalogItemId: true, amount: true },
+    });
+    const idToKey = new Map(catalog.map((c) => [c.id, c.key]));
+    for (const c of activeClaims) {
+      const key = c.catalogItemId ? idToKey.get(c.catalogItemId) : undefined;
+      if (key) claimedByKey[key] = (claimedByKey[key] ?? 0) + c.amount;
+    }
+  }
+
   // Claims (Phase-2): once submitted, assemble the claimable + automatic benefits.
   const submitted = existing?.status === "SUBMITTED";
   const claimable: ClaimableBenefit[] = [];
@@ -190,6 +212,7 @@ export default async function BenefitsPage({
                 initialItems={initialItems}
                 initialMedical={initialMedical}
                 initialStatus={existing?.status ?? "NONE"}
+                lockedClaimed={claimedByKey}
               />
             </>
           }
@@ -218,6 +241,7 @@ export default async function BenefitsPage({
                 initialItems={initialItems}
                 initialMedical={initialMedical}
                 initialStatus={existing?.status ?? "NONE"}
+                lockedClaimed={claimedByKey}
               />
             </>
           )}

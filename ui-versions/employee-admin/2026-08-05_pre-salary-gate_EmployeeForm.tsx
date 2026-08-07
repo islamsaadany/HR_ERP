@@ -34,15 +34,12 @@ export function EmployeeForm({
   values,
   managers,
   canEditRole,
-  canSeeSalary,
   submitLabel,
 }: {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   values: EmployeeFormValues;
   managers: { id: string; name: string }[];
   canEditRole: boolean;
-  /** Salary is confidential — the field is omitted entirely unless the actor is a Super User. */
-  canSeeSalary: boolean;
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
@@ -123,12 +120,10 @@ export function EmployeeForm({
             <label className={L}>End date</label>
             <input name="endDate" type="date" defaultValue={values.endDate ?? ""} className={I} />
           </div>
-          {canSeeSalary ? (
-            <div>
-              <label className={L}>Monthly salary (EGP)</label>
-              <input name="monthlySalary" inputMode="numeric" defaultValue={values.monthlySalary ?? ""} className={I} />
-            </div>
-          ) : null}
+          <div>
+            <label className={L}>Monthly salary (EGP)</label>
+            <input name="monthlySalary" inputMode="numeric" defaultValue={values.monthlySalary ?? ""} className={I} />
+          </div>
           <div>
             <label className={L}>Status</label>
             <select name="status" defaultValue={values.status} className={I}>

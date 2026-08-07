@@ -67,21 +67,18 @@ export function EmployeeGrid({
   managers,
   departments,
   canEditRole,
-  canSeeSalary,
 }: {
   rows: GridRow[];
   managers: { id: string; name: string }[];
   departments: string[];
   canEditRole: boolean;
-  /** Salary is confidential — hidden entirely (column + inline edit) unless the actor is a Super User. */
-  canSeeSalary: boolean;
 }) {
   const columns: Col[] = useMemo(() => {
     const managerOptions: Option[] = [
       blank("— none —"),
       ...managers.map((m) => ({ value: m.id, label: m.name })),
     ];
-    return ([
+    return [
       { key: "name", label: "Name", type: "text", editable: true, hideable: false },
       { key: "email", label: "Email", type: "email", editable: true, hideable: true },
       { key: "title", label: "Title", type: "text", editable: true, hideable: true },
@@ -163,8 +160,8 @@ export function EmployeeGrid({
         editable: true,
         hideable: true,
       },
-    ] as Col[]).filter((c) => canSeeSalary || c.key !== "monthlySalary");
-  }, [departments, managers, canEditRole, canSeeSalary]);
+    ];
+  }, [departments, managers, canEditRole]);
 
   const colByKey = useMemo(
     () => new Map<string, Col>(columns.map((c) => [c.key, c])),

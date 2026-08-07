@@ -7,6 +7,9 @@ export const isAdmin = (role?: Role) =>
   role === "HR_ADMIN" || role === "SUPER_USER";
 export const isSuperUser = (role?: Role) => role === "SUPER_USER";
 
+/** Salary is confidential — only a Super User may see or edit monthly salary. HR Admin cannot. */
+export const canSeeSalary = (role?: Role) => isSuperUser(role);
+
 /** The signed-in session, or null. */
 export async function getSession() {
   return auth();

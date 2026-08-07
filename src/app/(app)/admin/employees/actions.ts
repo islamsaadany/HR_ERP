@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, isSuperUser } from "@/lib/roles";
+import { requireAdmin, isSuperUser, canSeeSalary } from "@/lib/roles";
 import { employeeSchema } from "@/lib/validation";
 
 function parseForm(formData: FormData) {
@@ -75,7 +75,8 @@ export async function createEmployee(
       tenureBand: data.tenureBand ?? null,
       startDate: data.startDate ?? null,
       endDate: data.endDate ?? null,
-      monthlySalary: data.monthlySalary ?? null,
+      // Salary is confidential — only a Super User may set it; HR-created records start with none.
+      monthlySalary: canSeeSalary(actor.role) ? (data.monthlySalary ?? null) : null,
       status: data.status,
       dateOfBirth: data.dateOfBirth ?? null,
       maritalStatus: data.maritalStatus ?? null,
@@ -203,6 +204,10 @@ export async function updateEmployeeField(
   // Role is Super-User-only, matching the full form.
   if (key === "role" && !isSuperUser(actor.role)) {
     return { ok: false, error: "Only a Super User can change roles." };
+  }
+  // Salary is confidential — only a Super User may view or change it.
+  if (key === "monthlySalary" && !canSeeSalary(actor.role)) {
+    return { ok: false, error: "Only a Super User can view or change salary." };
   }
   // Guard against locking yourself out via a stray inline edit.
   if (id === actor.id && (key === "role" || key === "status")) {

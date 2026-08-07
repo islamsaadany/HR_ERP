@@ -42,7 +42,8 @@
 | 006 | Dashboard (Home) | ✅ complete, plan-ready |
 | 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
 | 008 | Knowledge Base — Consulting References & Reads | ✅ implemented (V1) |
-| 013 | Benefits — HR Bulk-Release + configurable sheet | ✅ implemented (branch `claude/hr-erp-benefits-bulk-release`) |
+| 012 | Benefits — Company Coverage Rates (co-funding) | 📝 clarified, plan-ready (not built — next up) |
+| 013 | Benefits — HR Bulk-Release + configurable sheet | ✅ implemented (in `main`) |
 
 ## Next up
 Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Directory · Onboarding · Handbook · Time-Off · Benefits · Dashboard).
@@ -50,7 +51,21 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
-- **2026-08-05 — Spec 013 IMPLEMENTED: HR bulk-release + configurable sheet (branch `claude/hr-erp-benefits-bulk-release`):**
+- **2026-08-05 — Consolidation branch `claude/hr-erp-benefits-consolidation`:** compiled the separate benefits
+  branches into one mergeable unit off `main` (which already had spec 013). Bundles, verified together (`tsc` +
+  `build` green):
+  - **Selection guards (spec 007 FR-035/036, code):** over-selection prevented at the max (4 FT / 2 PT — unselected
+    items dim); claimed benefits locked on reopen (can't deselect/under-fund below what's claimed); enforced in
+    `saveBasket`. Verified earlier on Postgres (claimed-lock 6/6).
+  - **Self-service reopen (FR-038, code):** employee reopens their own submitted basket ("Update my basket" →
+    `reopenOwnSelection`), guarded to own+open+submitted. Verified earlier (reopen 5/5).
+  - **Benefits guide de-confidentialized (FR-037, code):** `/benefits/policy` no longer exposes the pool-ceiling
+    matrix / guaranteed amounts / rate card; rules-in-words + how-to-claim only.
+  - **Salary confidential (spec 001 FR-018, code):** monthly salary is Super-User-only — hidden from HR Admin in
+    the employee grid/form/inline-edit and never sent to a non-Super-User client (`canSeeSalary`).
+  - **Spec 012 (Company Coverage Rates)** authored + clarified (docs only; **not built** — the next task).
+  - Note: FR-035 caps FT at **4** today; spec 012 raises it to **5** when built (planned-vs-built, not a conflict).
+
   New **`/admin/benefits/release`** (linked "Release a benefit" from admin Benefits). `ReleaseManager` (client):
   benefit picker (fixed-allowance only — **Loans/salary-driven excluded**), employee table with **per-person
   release** (checkbox + **Select all/none** → `setReleased`), a **Status** column, a **column picker** (default

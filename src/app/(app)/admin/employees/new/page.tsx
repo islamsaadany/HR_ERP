@@ -22,6 +22,7 @@ export default async function NewEmployeePage() {
       <EmployeeForm
         action={createEmployee}
         canEditRole={isSuperUser(actor.role)}
+        canSeeSalary={isSuperUser(actor.role)}
         managers={managers}
         submitLabel="Create employee"
         values={{

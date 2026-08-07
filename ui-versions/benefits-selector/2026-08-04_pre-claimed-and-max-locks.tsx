@@ -7,7 +7,7 @@ import {
   computeMedicalPremium,
   type MedicalConfig,
 } from "@/lib/benefits/rules";
-import { saveBasket, reopenOwnSelection, type SelectionPayload } from "@/app/(app)/benefits/actions";
+import { saveBasket, type SelectionPayload } from "@/app/(app)/benefits/actions";
 
 type CatalogItem = {
   key: string;
@@ -33,7 +33,6 @@ export function BenefitsSelector({
   initialItems,
   initialMedical,
   initialStatus,
-  lockedClaimed = {},
 }: {
   employmentType: "FULL_TIME" | "PART_TIME";
   ceiling: number;
@@ -42,8 +41,6 @@ export function BenefitsSelector({
   initialItems: Record<string, number>;
   initialMedical: MedicalConfig;
   initialStatus: "DRAFT" | "SUBMITTED" | "NONE";
-  /** catalog key → amount already claimed (pending or reimbursed); these can't be deselected or reduced below it. */
-  lockedClaimed?: Record<string, number>;
 }) {
   const [amounts, setAmounts] = useState<Record<string, number>>(initialItems);
   const [medical, setMedical] = useState<MedicalConfig>(initialMedical);
@@ -87,27 +84,16 @@ export function BenefitsSelector({
 
   const pct = Math.min(100, ceiling > 0 ? (result.total / ceiling) * 100 : 0);
 
-  // Once the max is reached, unselected items can't be added until one is deselected.
-  const atMax = result.selectionCount >= result.maxSelect;
-  const claimedFloor = (key: string) => lockedClaimed[key] ?? 0;
-  const medicalClaimed = medicalItem ? claimedFloor(medicalItem.key) : 0;
-
   function setAmount(key: string, val: number) {
     if (locked) return;
-    // A claimed benefit can be raised but never dropped below what's already been claimed.
-    const floor = claimedFloor(key);
-    setAmounts((a) => ({ ...a, [key]: Math.max(floor, Math.max(0, val)) }));
+    setAmounts((a) => ({ ...a, [key]: Math.max(0, val) }));
   }
   function toggleItem(key: string) {
     if (locked) return;
-    const on = (amounts[key] ?? 0) > 0;
-    // Can't deselect a claimed benefit; can't add past the max.
-    if (on && claimedFloor(key) > 0) return;
-    if (!on && atMax) return;
     setAmounts((a) => {
       const next = { ...a };
       if ((next[key] ?? 0) > 0) delete next[key];
-      else next[key] = Math.max(STEP, claimedFloor(key));
+      else next[key] = STEP;
       return next;
     });
   }
@@ -121,21 +107,6 @@ export function BenefitsSelector({
       const res = await saveBasket(payload, submit);
       setServerMsg({ errors: res.errors, warnings: res.warnings });
       if (res.ok && res.status) setStatus(res.status);
-    });
-  }
-
-  // Self-service reopen: unlock this employee's own submitted basket back to an editable draft so
-  // they can allocate the rest of their pool and re-submit — no HR needed. On success we flip the
-  // local status to DRAFT (mirrors persist()), and the server revalidate refreshes the page data.
-  function reopen() {
-    startTransition(async () => {
-      const res = await reopenOwnSelection();
-      if (res.ok && res.status) {
-        setServerMsg(null);
-        setStatus(res.status);
-      } else if (res.error) {
-        setServerMsg({ errors: [res.error], warnings: [] });
-      }
     });
   }
 
@@ -172,34 +143,16 @@ export function BenefitsSelector({
   if (locked) {
     return (
       <>
-        {/* Confirmation banner — with self-service "Update my basket" (reopen). */}
-        <div className="mt-6 flex flex-col gap-3 rounded-xl border border-navy-200 bg-navy-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-navy-700 text-sm font-bold text-white">✓</span>
-            <div>
-              <div className="font-semibold text-navy-800">Your benefits basket is submitted.</div>
-              <p className="mt-0.5 text-sm text-navy-700">
-                Here&apos;s what you chose. You can update it any time while selection is open — the benefits you&apos;ve
-                already claimed stay locked.
-              </p>
-            </div>
+        {/* Confirmation banner */}
+        <div className="mt-6 flex items-start gap-3 rounded-xl border border-navy-200 bg-navy-50 px-5 py-4">
+          <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-navy-700 text-sm font-bold text-white">✓</span>
+          <div>
+            <div className="font-semibold text-navy-800">Your benefits basket is submitted.</div>
+            <p className="mt-0.5 text-sm text-navy-700">
+              It&apos;s locked for the plan year — here&apos;s what you chose. Ask HR to reopen it to make changes.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={reopen}
-            disabled={pending}
-            className="shrink-0 rounded-lg border border-navy-300 bg-white px-4 py-2 text-sm font-semibold text-navy-800 hover:bg-navy-100 disabled:opacity-60"
-          >
-            {pending ? "Opening…" : "Update my basket"}
-          </button>
         </div>
-
-        {/* Reopen error (e.g. the window closed in the meantime). */}
-        {serverMsg?.errors.length ? (
-          <div className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-            <ul className="list-disc pl-4">{serverMsg.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>
-          </div>
-        ) : null}
 
         <div className="mt-6 grid items-start gap-6 lg:grid-cols-[1fr_320px]">
           {/* Left: read-only selections */}
@@ -238,7 +191,7 @@ export function BenefitsSelector({
                 <span className="text-muted">Benefits chosen</span>
                 <span className="font-semibold text-ink">{result.selectionCount} of {result.maxSelect}</span>
               </div>
-              <p className="mt-3 text-xs text-muted">Use “Update my basket” above to change these while selection is open.</p>
+              <p className="mt-3 text-xs text-muted">To change these, ask HR to reopen your basket.</p>
             </div>
           </aside>
         </div>
@@ -282,26 +235,15 @@ export function BenefitsSelector({
             <div className="space-y-2">
               {group.items.map((item) =>
                 item.isMedical ? (
-                  <div
-                    key={item.key}
-                    className={
-                      "flex items-center gap-3 rounded-xl border border-line bg-surface p-4 " +
-                      (!medical.selected && atMax ? "opacity-50" : "")
-                    }
-                  >
+                  <div key={item.key} className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4">
                     <button
                       type="button"
                       onClick={() => {
                         if (locked) return;
-                        if (medical.selected) {
-                          if (medicalClaimed > 0) return; // claimed — can't deselect
-                          setMedical({ ...medical, selected: false });
-                        } else {
-                          if (atMax) return; // max reached — deselect one first
-                          setModalOpen(true);
-                        }
+                        if (medical.selected) setMedical({ ...medical, selected: false });
+                        else setModalOpen(true);
                       }}
-                      disabled={locked || (medical.selected && medicalClaimed > 0) || (!medical.selected && atMax)}
+                      disabled={locked}
                       className={
                         "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
                         (medical.selected ? "border-navy-700 bg-navy-700 text-white" : "border-line text-transparent")
@@ -315,9 +257,6 @@ export function BenefitsSelector({
                         <span className="rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gold-800">
                           50% exempt
                         </span>
-                        {medical.selected && medicalClaimed > 0 ? (
-                          <span className="rounded bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-navy-700">Claimed</span>
-                        ) : null}
                       </div>
                       <div className="text-xs text-muted">
                         {medical.selected
@@ -343,48 +282,31 @@ export function BenefitsSelector({
                     const amt = amounts[item.key] ?? 0;
                     const on = amt > 0;
                     const over = employmentType === "FULL_TIME" && amt > result.cap;
-                    const claimed = claimedFloor(item.key);
-                    const claimLocked = claimed > 0;
-                    const blockedByMax = !on && atMax;
-                    const selectDisabled = locked || claimLocked || blockedByMax;
                     return (
                       <div
                         key={item.key}
                         className={
                           "flex items-center gap-3 rounded-xl border bg-surface p-4 " +
-                          (over ? "border-red-300 " : "border-line ") +
-                          (blockedByMax ? "opacity-50 " : "") +
-                          (claimLocked ? "opacity-70 " : "")
+                          (over ? "border-red-300" : "border-line")
                         }
                       >
                         <button
                           type="button"
                           onClick={() => toggleItem(item.key)}
-                          disabled={selectDisabled}
-                          aria-label={claimLocked ? "Claimed — can't remove" : blockedByMax ? "Maximum benefits reached" : "Select"}
+                          disabled={locked}
                           className={
                             "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
-                            (on ? "border-navy-700 bg-navy-700 text-white" : "border-line text-transparent") +
-                            (selectDisabled ? " cursor-not-allowed" : "")
+                            (on ? "border-navy-700 bg-navy-700 text-white" : "border-line text-transparent")
                           }
                         >
                           ✓
                         </button>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-ink">{item.name}</span>
-                            {claimLocked ? (
-                              <span className="rounded bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-navy-700">Claimed</span>
-                            ) : null}
-                          </div>
+                          <div className="text-sm font-medium text-ink">{item.name}</div>
                           {item.description ? (
                             <div className="text-xs text-muted">{item.description}</div>
                           ) : null}
-                          {claimLocked ? (
-                            <div className="text-xs text-muted">Claimed {egp(claimed)} — can’t remove or reduce below this.</div>
-                          ) : blockedByMax ? (
-                            <div className="text-xs text-muted">Max {result.maxSelect} reached — deselect one to add this.</div>
-                          ) : over ? (
+                          {over ? (
                             <div className="text-xs font-medium text-red-600">
                               Over the 50% cap (max {egp(result.cap)})
                             </div>
@@ -392,7 +314,7 @@ export function BenefitsSelector({
                         </div>
                         {on ? (
                           <div className="flex items-center gap-1">
-                            <button type="button" disabled={locked || amt <= claimed} onClick={() => setAmount(item.key, amt - STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50 disabled:opacity-40">−</button>
+                            <button type="button" disabled={locked} onClick={() => setAmount(item.key, amt - STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50">−</button>
                             <input
                               value={amt.toLocaleString()}
                               onChange={(e) =>
@@ -404,7 +326,7 @@ export function BenefitsSelector({
                             <button type="button" disabled={locked} onClick={() => setAmount(item.key, amt + STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50">+</button>
                           </div>
                         ) : (
-                          <span className="text-xs text-muted">{blockedByMax ? "Max reached" : "Select to allocate"}</span>
+                          <span className="text-xs text-muted">Select to allocate</span>
                         )}
                       </div>
                     );
@@ -453,11 +375,6 @@ export function BenefitsSelector({
             <span className="text-muted">Benefits chosen</span>
             <span className="font-semibold text-ink">{result.selectionCount} of {result.maxSelect}</span>
           </div>
-          {atMax ? (
-            <p className="mt-1 text-xs font-medium text-gold-700">
-              Max reached — deselect one to choose a different benefit.
-            </p>
-          ) : null}
           <p className="mt-3 text-xs text-muted">
             No single benefit may exceed 50% of the pool ({egp(result.cap)}). Medical insurance is exempt.
           </p>

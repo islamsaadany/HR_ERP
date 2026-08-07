@@ -62,6 +62,20 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   stage** model (8-week structure, no enum), with policy items linking to Handbook guidance and a
   **policy→tool button** pattern on Handbook sections. New Handbook policy sections added.
 
+- **2026-08-05 — Company coverage rates adopted (spec `012-benefits-coverage`, drafted):** the flexible basket gains a
+  per-benefit **company coverage rate** (100% Personal medical / Annual check-up / Coaching · 80% Gym / Sports /
+  Schooling / Childcare / Caregiver / Personal learning · 50% Mobile / Home-office). Only the **covered (company)
+  share draws from the pool**; the employee pays the remainder. Pool total and the 50% cap run on the **covered
+  amount**; claims reimburse the covered portion against proof of full spend. HR edits the rate per catalog item.
+  Decided alongside: **full-time selections → 5** (from 4); **part-time stays distinct** (max 2, no 50% cap —
+  a deliberate deviation from the concept doc); **medical stays a single item** (no Personal/Family split — also a
+  deliberate deviation). Spec `012` layers onto `007`. The approved **concept doc** is imported at
+  `specs/012-benefits-coverage/concept.md`, reconciled to those two deviations (11-benefit menu; PT rules called out).
+  Three UX questions (cost-vs-pool-draw entry, step granularity, share display) are **deferred to `/speckit-clarify`**.
+- **2026-08-05 — Backlog: HR bulk benefit release + export (not yet specced).** HR/Admin wants to release a single
+  guaranteed benefit (e.g. **summer allowance**) to the **whole team at once** and **download a sheet** of employee
+  name + amount-to-release for payroll/Finance. Distinct from the coverage work; to be specced next (own spec).
+
 ### Resolved earlier / Open
 - **A · Design language** — *resolved 2026-07-27:* **navy/gold** (Forefront reference tool) product-wide. The benefits selector's layout/interaction is preserved but recolored to navy/gold (not paper/pine).
 - **E · Real benefit figures** — *resolved:* ceilings, guaranteed amounts, and medical rate card all confirmed (spec `007`).
