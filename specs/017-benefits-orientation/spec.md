@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-07
 
-**Status**: Draft
+**Status**: Implemented (2026-08-07, migration `024`)
 
 **Input**: A personalized, first-run, skippable, re-openable stepped walkthrough on the Benefits page that eases employees into building their flexible basket. Layers on the built Benefits module (specs 007/012); changes no money rule.
 

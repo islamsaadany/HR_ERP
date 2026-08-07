@@ -65,6 +65,10 @@ model User {
   // /set-password on next sign-in until they choose their own compliant one.
   mustChangePassword Boolean @default(false)
 
+  // Set when the employee first dismisses/finishes the Benefits orientation tour (spec 017);
+  // stops it auto-opening again. The "How it works" button ignores this.
+  benefitsOrientationSeenAt DateTime?
+
   // HR-private employment fields (money-affecting: HR-set, authoritative)
   employmentType EmploymentType?
   tenureBand     TenureBand?

@@ -81,9 +81,12 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   Claims · Catalogue · Amounts), the single Catalogue table with coverage % as a column, view-first config editing,
   HR/Super-User manual/back-dated claim & release entry (with approval date), and per-benefit FT/PT eligibility
   (future). Coverage-% editing lives in the existing Configuration catalog editor until then.
-- **2026-08-07 — Orientation tour (planned, spec to follow):** a personalized, first-run, stepped walkthrough on the
-  Benefits page (your band → guaranteed basket → flexible categories → the rules: 50%, coverage %, claims), skippable
-  and re-openable. Approved to be its **own spec layered on `012`** (kept separate so `012` didn't balloon).
+- **2026-08-07 — Orientation tour BUILT (spec `017`, migration `024`):** personalized, first-run, skippable,
+  re-openable stepped-cards walkthrough on the Benefits page (welcome+name → pool/band → guaranteed → flexible
+  basket → rules). Auto-opens until submitted + seen; `User.benefitsOrientationSeenAt` flag + `markOrientationSeen`.
+  Final copy decisions: the 50% cap exemption is framed as **medical-only** (part-time rule unchanged — PT stays
+  uncapped in the engine, just not called out); claims described as **request or proof of full spend → covered
+  portion**. Read-only explainer; no money-rule change.
 - **2026-08-05 — Backlog: HR bulk benefit release + export (not yet specced).** HR/Admin wants to release a single
   guaranteed benefit (e.g. **summer allowance**) to the **whole team at once** and **download a sheet** of employee
   name + amount-to-release for payroll/Finance. Distinct from the coverage work; to be specced next (own spec).

@@ -205,6 +205,19 @@ export async function saveBasket(
   };
 }
 
+/**
+ * Mark the Benefits orientation tour as seen for the current user (spec 017), so it stops
+ * auto-opening. Set once; a no-op if already set. The "How it works" button ignores this flag.
+ */
+export async function markOrientationSeen(): Promise<void> {
+  const me = await requireUser();
+  await prisma.user.updateMany({
+    where: { id: me.id, benefitsOrientationSeenAt: null },
+    data: { benefitsOrientationSeenAt: new Date() },
+  });
+  revalidatePath("/benefits");
+}
+
 export type ReopenResult = { ok: boolean; error?: string; status?: "DRAFT" };
 
 /**

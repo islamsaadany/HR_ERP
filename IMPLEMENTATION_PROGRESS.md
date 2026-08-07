@@ -47,6 +47,7 @@
 | 014 | HR-Managed Departments (add/rename/remove) | ✅ implemented (branch — migration `022`) |
 | 015 | Consistent Admin Back Navigation | ✅ implemented (branch) |
 | 016 | Admin Benefits redesign + manual claim/release | ✅ implemented (branch) |
+| 017 | Benefits orientation tour | ✅ implemented (branch — migration `024`) |
 
 ## Next up
 Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Directory · Onboarding · Handbook · Time-Off · Benefits · Dashboard).
@@ -54,6 +55,18 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-07 — Benefits orientation tour (spec 017, branch `claude/hr-erp-benefits-coverage-rates-hnaox1`, migration `024`):**
+  A personalized, first-run, skippable, re-openable **stepped-cards** walkthrough (`BenefitsOrientation`)
+  on the employee Benefits page. 4 steps in the employee's own numbers (welcome + first name → pool/band;
+  guaranteed benefits with band amounts; how the flexible basket works; the rules — coverage 100/80/50,
+  50% cap with **medical exempt**, claims = request-or-proof → covered portion, link to `/benefits/policy`).
+  **Auto-opens** only when the selector is available and the employee hasn't submitted and hasn't seen it;
+  **"How it works"** button re-opens any time. New `User.benefitsOrientationSeenAt` flag (migration `024`) +
+  `markOrientationSeen` action (set once). No selector/money-rule change; reuses existing page data.
+  Verified: `tsc` + `build` green; throwaway Postgres — migration idempotent, flag set-once (2nd attempt a
+  no-op). UI mockup approved (final wording: medical-only 50% exemption; request-or-proof claims). Snapshot
+  saved. **Neon: `prisma/sql/024_benefits_orientation.sql` (auto-applied by the deploy runner).**
+
 - **2026-08-07 — Admin Benefits redesign + manual claim/release (spec 016, branch `claude/hr-erp-benefits-coverage-rates-hnaox1`):**
   `/admin/benefits` recomposed into **three tabs** — **Submissions & Claims** (default) · **Benefits
   Catalogue** · **Amounts** — retiring the old Configuration + Claim-requirements tabs. **Catalogue** is
