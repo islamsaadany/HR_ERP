@@ -1,8 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { ArticleForm } from "@/components/knowledge/ArticleForm";
-import { BackLink } from "@/components/admin/BackLink";
 import { updateArticle } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -21,8 +21,8 @@ export default async function EditArticlePage({
 
   return (
     <div>
-      <BackLink href="/admin/knowledge" label="Knowledge Base" />
-      <h1 className="font-serif text-3xl text-ink">Edit article</h1>
+      <Link href="/admin/knowledge" className="text-sm text-muted hover:text-ink">← Knowledge Base</Link>
+      <h1 className="mt-2 font-serif text-3xl text-ink">Edit article</h1>
       <div className="mt-6">
         <ArticleForm
           action={boundAction}

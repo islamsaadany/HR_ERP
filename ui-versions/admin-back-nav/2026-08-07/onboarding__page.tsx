@@ -3,7 +3,6 @@ import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { groupByStage, TRACK_LABEL } from "@/lib/onboarding";
 import { deleteActivity } from "./actions";
-import { BackLink } from "@/components/admin/BackLink";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +14,6 @@ export default async function AdminOnboardingPage() {
 
   return (
     <div>
-      <BackLink href="/admin" label="Admin" />
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">

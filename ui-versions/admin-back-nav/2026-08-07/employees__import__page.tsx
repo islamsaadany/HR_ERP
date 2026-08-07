@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { requireAdmin } from "@/lib/roles";
 import { EmployeeImportForm } from "@/components/admin/EmployeeImportForm";
-import { BackLink } from "@/components/admin/BackLink";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,6 @@ export default async function ImportEmployeesPage() {
 
   return (
     <div>
-      <BackLink href="/admin/employees" label="Employees" />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
         Admin · Registry
       </p>
@@ -64,6 +63,15 @@ export default async function ImportEmployeesPage() {
       </div>
 
       <EmployeeImportForm />
+
+      <div className="mt-8">
+        <Link
+          href="/admin/employees"
+          className="text-sm font-medium text-navy-600 hover:text-navy-800"
+        >
+          ← Back to employees
+        </Link>
+      </div>
     </div>
   );
 }

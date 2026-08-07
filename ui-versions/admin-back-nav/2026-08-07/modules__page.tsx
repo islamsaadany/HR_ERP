@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { requireSuperUser } from "@/lib/roles";
 import { getDisabledModules, MODULES } from "@/lib/modules";
-import { BackLink } from "@/components/admin/BackLink";
 import { setModuleEnabled } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export default async function ModulesPage() {
 
   return (
     <div>
-      <BackLink href="/admin" label="Admin" />
+      <Link href="/admin" className="text-sm text-muted hover:text-ink">← Admin</Link>
       <p className="mt-2 text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Super User</p>
       <h1 className="mt-1 font-serif text-3xl text-ink">Modules</h1>
       <p className="mt-1 text-muted">

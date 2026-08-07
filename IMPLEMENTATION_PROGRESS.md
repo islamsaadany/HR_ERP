@@ -45,6 +45,7 @@
 | 012 | Benefits — Company Coverage Rates (co-funding) | 📝 clarified, plan-ready (not built — next up) |
 | 013 | Benefits — HR Bulk-Release + configurable sheet | ✅ implemented (in `main`) |
 | 014 | HR-Managed Departments (add/rename/remove) | ✅ implemented (branch — migration `022`) |
+| 015 | Consistent Admin Back Navigation | ✅ implemented (branch) |
 
 ## Next up
 Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Directory · Onboarding · Handbook · Time-Off · Benefits · Dashboard).
@@ -52,6 +53,15 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-07 — Consistent admin back navigation (spec 015, branch `claude/hr-erp-benefits-coverage-rates-hnaox1`):**
+  Added a shared `BackLink` component (`components/admin/BackLink.tsx`, the existing muted "←" style) to
+  every admin page except the Admin home. Each links to its **structural parent** (section → Admin home;
+  nested create/edit/import/release → its section list) — explicit path, not browser history — per the
+  parent map in `specs/015`. Replaced the scattered ad-hoc back links (Modules, CSV Import, Release a
+  benefit, Knowledge new/edit, Departments) with the one component; removed now-unused `Link` imports.
+  20 admin pages wired. Verified: `tsc` + `build` green; grep confirms no stray ad-hoc back links.
+  UI snapshots of all admin pages saved before editing (`ui-versions/admin-back-nav/2026-08-07/`).
+
 - **2026-08-07 — HR-managed departments (spec 014, branch `claude/hr-erp-benefits-coverage-rates-hnaox1`, migration `022`):**
   Replaced the hard-coded `DEPARTMENTS` constant with a managed `Department` lookup table HR maintains
   at **Admin → Departments** (HR Admin + Super User). Department stays a **text label** on `User`

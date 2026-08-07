@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { EmployeeForm } from "@/components/admin/EmployeeForm";
 import { AdminPasswordCard } from "@/components/admin/AdminPasswordCard";
 import { getDepartments } from "@/lib/departments";
-import { BackLink } from "@/components/admin/BackLink";
 import { updateEmployee } from "../actions";
 import { toDateInput } from "@/lib/labels";
 
@@ -37,7 +36,6 @@ export default async function EditEmployeePage({
 
   return (
     <div>
-      <BackLink href="/admin/employees" label="Employees" />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
         Admin · Registry
       </p>

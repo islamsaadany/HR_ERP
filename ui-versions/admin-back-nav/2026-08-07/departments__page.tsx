@@ -1,7 +1,7 @@
+import Link from "next/link";
 import { requireAdmin } from "@/lib/roles";
 import { getDepartmentsWithUsage } from "@/lib/departments";
 import { DepartmentsManager } from "@/components/admin/DepartmentsManager";
-import { BackLink } from "@/components/admin/BackLink";
 
 export const dynamic = "force-dynamic";
 
@@ -11,8 +11,10 @@ export default async function DepartmentsPage() {
 
   return (
     <div>
-      <BackLink href="/admin" label="Admin" />
-      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
+      <Link href="/admin" className="text-sm text-muted hover:text-ink">
+        ← Admin
+      </Link>
+      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
         Admin
       </p>
       <h1 className="mt-1 font-serif text-3xl text-ink">Departments</h1>

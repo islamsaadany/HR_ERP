@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { ActivityForm } from "@/components/admin/ActivityForm";
-import { BackLink } from "@/components/admin/BackLink";
 import { updateActivity } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +18,6 @@ export default async function EditActivityPage({
 
   return (
     <div>
-      <BackLink href="/admin/onboarding" label="Onboarding" />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
         Admin · Onboarding
       </p>

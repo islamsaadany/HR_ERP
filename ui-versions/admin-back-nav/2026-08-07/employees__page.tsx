@@ -3,7 +3,6 @@ import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { toDateInput } from "@/lib/labels";
 import { getDepartments, unionDepartments } from "@/lib/departments";
-import { BackLink } from "@/components/admin/BackLink";
 import { EmployeeGrid, type GridRow } from "@/components/admin/EmployeeGrid";
 import { TempPasswordsPanel } from "@/components/admin/TempPasswordsPanel";
 
@@ -72,7 +71,6 @@ export default async function EmployeesPage() {
 
   return (
     <div>
-      <BackLink href="/admin" label="Admin" />
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">

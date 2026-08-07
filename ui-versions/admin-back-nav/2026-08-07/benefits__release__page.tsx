@@ -1,9 +1,9 @@
+import Link from "next/link";
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { getActivePlanYear, amountForBand } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL, STATUS_LABEL, toDateInput } from "@/lib/labels";
 import { ReleaseManager, type ReleaseBenefit, type ReleaseRow } from "@/components/benefits/ReleaseManager";
-import { BackLink } from "@/components/admin/BackLink";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +26,6 @@ export default async function BenefitReleasePage({
   if (!planYear) {
     return (
       <div>
-        <BackLink href="/admin/benefits" label="Benefits" />
         {eyebrow}
         <h1 className="mt-1 font-serif text-3xl text-ink">Release a benefit</h1>
         <div className="mt-6 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
@@ -87,13 +86,13 @@ export default async function BenefitReleasePage({
 
   return (
     <div>
-      <BackLink href="/admin/benefits" label="Benefits" />
       <div className="flex items-center justify-between gap-3">
         <div>
           {eyebrow}
           <h1 className="mt-1 font-serif text-3xl text-ink">Release a benefit</h1>
           <p className="mt-1 text-sm text-muted">Mark employees released and download a payroll sheet. Salary is never shown here.</p>
         </div>
+        <Link href="/admin/benefits" className="text-sm font-medium text-navy-600 hover:text-navy-800">← Back to Benefits</Link>
       </div>
 
       <ReleaseManager

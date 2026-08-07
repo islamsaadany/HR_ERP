@@ -7,7 +7,6 @@ import {
   TENURE_BAND_ORDER,
 } from "@/lib/labels";
 import { CLAIM_TYPE_LABEL } from "@/lib/benefits/claims";
-import { BackLink } from "@/components/admin/BackLink";
 import type { EmploymentType, TenureBand } from "@prisma/client";
 import {
   reopenSelection,
@@ -453,7 +452,6 @@ export default async function AdminBenefitsPage({
 
   return (
     <div>
-      <BackLink href="/admin" label="Admin" />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin · Benefits</p>
