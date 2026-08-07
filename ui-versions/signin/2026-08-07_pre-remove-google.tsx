@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
-import { auth, signIn } from "@/lib/auth";
+import { auth, signIn, googleAuthEnabled } from "@/lib/auth";
 import { getBrand } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
@@ -101,6 +101,29 @@ export default async function SignInPage({
               Sign in
             </button>
           </form>
+
+          {googleAuthEnabled ? (
+            <>
+              <div className="my-6 flex items-center gap-3 text-xs text-muted">
+                <span className="h-px flex-1 bg-border" />
+                or
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              <form
+                action={async () => {
+                  "use server";
+                  await signIn("google", { redirectTo: "/dashboard" });
+                }}
+              >
+                <button
+                  type="submit"
+                  className="w-full rounded-lg border border-line bg-surface px-4 py-3 text-sm font-semibold text-ink transition hover:bg-paper"
+                >
+                  Continue with Google
+                </button>
+              </form>
+            </>
+          ) : null}
 
           <p className="mt-6 text-center text-xs text-muted">
             Access is restricted to {brand.shortName} employees.

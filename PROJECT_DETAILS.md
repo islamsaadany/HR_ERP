@@ -6,7 +6,7 @@
 ---
 
 ## 1. Product summary
-An internal, English-language HR platform for **Forefront Consulting**. Google SSO (company-domain-locked), two roles (Employee, HR/Admin), and five v1 modules built on a shared employee registry.
+An internal, English-language HR platform for **Forefront Consulting**. Email + password sign-in (Google parked), two roles (Employee, HR/Admin), and five v1 modules built on a shared employee registry.
 
 ## 2. Stack
 | Layer | Choice |
@@ -14,7 +14,7 @@ An internal, English-language HR platform for **Forefront Consulting**. Google S
 | Framework | Next.js 15.5 (App Router) + React 19 · Tailwind v4 |
 | Language | TypeScript |
 | DB | PostgreSQL (Neon) + Prisma |
-| Auth | NextAuth v5, Google provider, domain-locked |
+| Auth | NextAuth v5, email + password (Credentials); Google parked (env-gated) |
 | Styling | Tailwind v4, **navy/gold** tokens on subtly warm neutrals; **Fraunces** (display) + **Hanken Grotesk** (body) self-hosted via `next/font`; soft card elevation + staggered reveals; gold keyboard focus rings |
 | Files | Vercel Blob |
 | Deploy | Vercel |
@@ -26,8 +26,8 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 ## 3. Modules → features → data (v1)
 
 ### Foundation (cross-cutting) — spec `001`
-- Google SSO (domain-locked), app shell + left nav, My Profile, and **My Documents** (personal uploads).
-- **Auth bridge (temporary):** while Google OAuth is being set up, sign-in is username/password (NextAuth Credentials) against a single bootstrap admin (`BOOTSTRAP_ADMIN_*`, defaults `Islam`/`1234`), upserted as an active Super User on first login. Google is shown only when `AUTH_GOOGLE_ID`/`_SECRET` are configured.
+- Email + password sign-in (Google parked), app shell + left nav, My Profile, and **My Documents** (personal uploads).
+- **Auth:** sign-in is email/password (NextAuth Credentials); any registered employee may sign in (domain lock lifted, HR warned on non-company emails). A bootstrap admin bridge (`BOOTSTRAP_ADMIN_*`) is retained as a fallback. Forced temp-password change on first login (see §3 Authentication).
 - **Bulk employee import:** Admin → Employees → **Import CSV** uploads the HR spreadsheet (upsert by email; tolerant date parsing with day-first for ambiguous dates; tenure band derived from hire date; per-row review report). Replaces a hand-written PII SQL seed.
 - **Export → edit → re-import round-trip:** Admin → Employees → **Export CSV** (`/api/admin/employees/export`) downloads all employees pre-filled in the exact import format (Name, Email, Department, Title, Contract Type, Date of Hiring, Phone, DOB, Marital Status, Manager Email, Number of Kids, Kid N DOB). HR fixes blanks/mistakes and re-uploads to update everyone by email. Round-trip verified (parses back with no errors). Role, status, and salary are intentionally NOT in the CSV (set in-app; import never overwrites them).
 - Roles: `EMPLOYEE`, `HR_ADMIN`, `SUPER_USER` (superset). Manager is a capability derived from the org chart. Bootstrap via `ADMIN_EMAILS`; Super User promotes in-app.
@@ -104,8 +104,12 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Access:** `/incentive` + template route are `requireSuperUser`; nav entry shows for super users only. Migration `013_incentive_scheme.sql`.
 - **Proof:** `scripts/verify-incentive.ts` (Appendix A, 27/27) and `scripts/verify-incentive-cycle.ts` (sample sheets, 16/16).
 
-### Authentication — email + password and Google
-- Sign-in offers **email + password** and **Google** (domain-locked), both matching the same employee by email. `User.passwordHash` (scrypt via Node crypto, no dependency; migration `014`). Admin set/reset per employee (temp password shown once); self-service change on Profile. Bootstrap admin bridge retained as a fallback.
+### Authentication — email + password (Google parked)
+- Sign-in is **email + password** (NextAuth Credentials), matching the employee by email. `User.passwordHash` (scrypt via Node crypto, no dependency; migration `014`). **Google sign-in is disabled for now** — the button is removed from the sign-in page; the provider is still env-gated (`AUTH_GOOGLE_ID`/`_SECRET`) so it can return later. Bootstrap admin bridge retained as a fallback.
+- **Any registered email may sign in** — the company-domain restriction was **lifted** from password login (decision 2026-08-07). HR sees a **non-blocking warning** when creating an employee whose email isn't on `ALLOWED_EMAIL_DOMAIN`. (The dormant Google `signIn` callback still domain-checks, but Google is off.)
+- **Forced temp-password change (migration `021`, `mustChangePassword`):** any admin-issued password — a single set/reset **or** the bulk generator — is temporary. On next sign-in the employee is gated to **`/set-password`** (a standalone page outside the `(app)` shell, so no redirect loop) and cannot reach the app until they choose their own. The flag clears when they set a compliant password (there or on Profile).
+- **Password policy** (`validatePasswordPolicy`, server-enforced on `/set-password` and Profile; mirrored in the UI): **≥ 8 chars, an uppercase letter, a number, and a special character**. Temporary passwords are exempt (they force a compliant change).
+- **HR bulk temp passwords:** Admin → Employees → **Temporary sign-in passwords** panel (`TempPasswordsPanel`) → `generateTeamPasswords`. "Generate for employees without a password" (missing) or, for Super Users, "Reset ALL passwords" (all, excludes the actor). Plaintext is returned **once** as a **one-time CSV** (name · email · password) — stored only as scrypt hashes, never re-shown. **No emails in v1**, so a forgotten password is reset the same way (no self-service recovery).
 
 ### Module release switch (super user)
 - `ModuleFlag { key, enabled }` (migration `015`) + Admin → **Modules**. A module switched off is hidden from everyone's nav (`AppShell.hiddenNav`) and its pages redirect home (`requireModuleEnabled`). Lets a super user build in the background and release when ready.

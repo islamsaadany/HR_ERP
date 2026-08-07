@@ -58,12 +58,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = String(creds?.password ?? "");
         if (!identifier || !password) return null;
 
-        const domainOk = (email: string) =>
-          !allowedDomain || email.endsWith(`@${allowedDomain}`);
-
         // 1) Real per-employee login: match by email, must be an ACTIVE employee
-        //    on the allowed domain with a set password that verifies.
-        if (identifier.includes("@") && domainOk(identifier)) {
+        //    with a set password that verifies. Any email HR has registered may
+        //    sign in — the company-domain restriction was intentionally lifted
+        //    (HR is warned when creating a non-company-domain account).
+        if (identifier.includes("@")) {
           const dbUser = await prisma.user.findUnique({ where: { email: identifier } });
           if (
             dbUser &&
