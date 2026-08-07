@@ -43,6 +43,7 @@ export default async function EditEmployeePage({
       <EmployeeForm
         action={boundUpdate}
         canEditRole={isSuperUser(actor.role)}
+        canSeeSalary={isSuperUser(actor.role)}
         managers={managers}
         submitLabel="Save changes"
         values={{
@@ -56,7 +57,8 @@ export default async function EditEmployeePage({
           tenureBand: employee.tenureBand,
           startDate: toDateInput(employee.startDate),
           endDate: toDateInput(employee.endDate),
-          monthlySalary: employee.monthlySalary != null ? String(employee.monthlySalary) : null,
+          // Confidential: never send salary to the client for a non-Super-User.
+          monthlySalary: isSuperUser(actor.role) && employee.monthlySalary != null ? String(employee.monthlySalary) : null,
           status: employee.status,
           dateOfBirth: toDateInput(employee.dateOfBirth),
           maritalStatus: employee.maritalStatus,

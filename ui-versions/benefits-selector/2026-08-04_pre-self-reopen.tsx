@@ -7,7 +7,7 @@ import {
   computeMedicalPremium,
   type MedicalConfig,
 } from "@/lib/benefits/rules";
-import { saveBasket, reopenOwnSelection, type SelectionPayload } from "@/app/(app)/benefits/actions";
+import { saveBasket, type SelectionPayload } from "@/app/(app)/benefits/actions";
 
 type CatalogItem = {
   key: string;
@@ -124,21 +124,6 @@ export function BenefitsSelector({
     });
   }
 
-  // Self-service reopen: unlock this employee's own submitted basket back to an editable draft so
-  // they can allocate the rest of their pool and re-submit — no HR needed. On success we flip the
-  // local status to DRAFT (mirrors persist()), and the server revalidate refreshes the page data.
-  function reopen() {
-    startTransition(async () => {
-      const res = await reopenOwnSelection();
-      if (res.ok && res.status) {
-        setServerMsg(null);
-        setStatus(res.status);
-      } else if (res.error) {
-        setServerMsg({ errors: [res.error], warnings: [] });
-      }
-    });
-  }
-
   const medicalPreview = computeMedicalPremium(medicalRate, { ...medical, selected: true });
 
   // Rows for the "Selected" summary panel.
@@ -172,34 +157,16 @@ export function BenefitsSelector({
   if (locked) {
     return (
       <>
-        {/* Confirmation banner — with self-service "Update my basket" (reopen). */}
-        <div className="mt-6 flex flex-col gap-3 rounded-xl border border-navy-200 bg-navy-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-navy-700 text-sm font-bold text-white">✓</span>
-            <div>
-              <div className="font-semibold text-navy-800">Your benefits basket is submitted.</div>
-              <p className="mt-0.5 text-sm text-navy-700">
-                Here&apos;s what you chose. You can update it any time while selection is open — the benefits you&apos;ve
-                already claimed stay locked.
-              </p>
-            </div>
+        {/* Confirmation banner */}
+        <div className="mt-6 flex items-start gap-3 rounded-xl border border-navy-200 bg-navy-50 px-5 py-4">
+          <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-navy-700 text-sm font-bold text-white">✓</span>
+          <div>
+            <div className="font-semibold text-navy-800">Your benefits basket is submitted.</div>
+            <p className="mt-0.5 text-sm text-navy-700">
+              It&apos;s locked for the plan year — here&apos;s what you chose. Ask HR to reopen it to make changes.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={reopen}
-            disabled={pending}
-            className="shrink-0 rounded-lg border border-navy-300 bg-white px-4 py-2 text-sm font-semibold text-navy-800 hover:bg-navy-100 disabled:opacity-60"
-          >
-            {pending ? "Opening…" : "Update my basket"}
-          </button>
         </div>
-
-        {/* Reopen error (e.g. the window closed in the meantime). */}
-        {serverMsg?.errors.length ? (
-          <div className="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-            <ul className="list-disc pl-4">{serverMsg.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>
-          </div>
-        ) : null}
 
         <div className="mt-6 grid items-start gap-6 lg:grid-cols-[1fr_320px]">
           {/* Left: read-only selections */}
@@ -238,7 +205,7 @@ export function BenefitsSelector({
                 <span className="text-muted">Benefits chosen</span>
                 <span className="font-semibold text-ink">{result.selectionCount} of {result.maxSelect}</span>
               </div>
-              <p className="mt-3 text-xs text-muted">Use “Update my basket” above to change these while selection is open.</p>
+              <p className="mt-3 text-xs text-muted">To change these, ask HR to reopen your basket.</p>
             </div>
           </aside>
         </div>

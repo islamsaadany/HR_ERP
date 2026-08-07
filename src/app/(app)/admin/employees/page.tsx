@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function EmployeesPage() {
   const actor = await requireAdmin();
+  const canSalary = isSuperUser(actor.role);
   const [employees, managers] = await Promise.all([
     prisma.user.findMany({
       orderBy: [{ status: "asc" }, { name: "asc" }],
@@ -49,7 +50,8 @@ export default async function EmployeesPage() {
     tenureBand: e.tenureBand ?? "",
     startDate: toDateInput(e.startDate),
     endDate: toDateInput(e.endDate),
-    monthlySalary: e.monthlySalary != null ? String(e.monthlySalary) : "",
+    // Confidential: never send salary to the client for a non-Super-User.
+    monthlySalary: canSalary && e.monthlySalary != null ? String(e.monthlySalary) : "",
     dateOfBirth: toDateInput(e.dateOfBirth),
     maritalStatus: e.maritalStatus ?? "",
     status: e.status,
@@ -103,6 +105,7 @@ export default async function EmployeesPage() {
         managers={managers}
         departments={departments}
         canEditRole={isSuperUser(actor.role)}
+        canSeeSalary={canSalary}
       />
     </div>
   );
