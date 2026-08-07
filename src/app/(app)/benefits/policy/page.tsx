@@ -77,11 +77,17 @@ export default async function BenefitsPolicyPage() {
           <ul className="space-y-2 text-sm text-ink">
             <li>
               <strong>Your pool</strong> is set by your <strong>employment type and tenure band</strong>, and is the
-              most you can allocate for the year. You&apos;ll see your own figure on the Benefits page.
+              most the company will contribute for the year. You&apos;ll see your own figure on the Benefits page.
             </li>
             <li>
-              <strong>No single flexible benefit may exceed 50% of your pool</strong> — so full-timers choose at least
-              two. (Part-time pools aren&apos;t subject to the 50% cap.)
+              <strong>The company co-funds each benefit.</strong> You enter a benefit&apos;s full cost; the company
+              covers a set percentage of it (shown per benefit — e.g. 100%, 80%, or 50%), and only that
+              <strong> covered share</strong> draws from your pool. You pay the rest. Example: a 10,000 gym
+              membership covered at 80% draws 8,000 from your pool; you pay 2,000.
+            </li>
+            <li>
+              <strong>No single flexible benefit&apos;s company share may exceed 50% of your pool</strong> — so
+              full-timers choose at least two. (Part-time pools aren&apos;t subject to the 50% cap.)
             </li>
             <li>
               <strong>Medical insurance is exempt from the 50% cap</strong> — it may take more than half your pool, but
@@ -172,12 +178,13 @@ export default async function BenefitsPolicyPage() {
             <li>
               Once your basket is submitted, open the <strong>&quot;Claims &amp; reimbursement&quot;</strong> tab on the
               Benefits page. Each benefit has its own row showing what&apos;s allocated, reimbursed, pending, and left
-              to claim.
+              to claim — all in <strong>company (covered) terms</strong>.
             </li>
             <li>
               Open a benefit and <strong>file a claim</strong>. Depending on the benefit you&apos;ll either{" "}
-              <strong>upload proof</strong> (an invoice, receipt, or proof of payment) with the amount, or simply{" "}
-              <strong>request</strong> it — the page tells you which.
+              <strong>upload proof</strong> of your full spend (an invoice, receipt, or proof of payment), or simply{" "}
+              <strong>request</strong> it — the page tells you which. You&apos;re reimbursed the{" "}
+              <strong>covered (company) portion</strong>, up to the amount allocated to that benefit.
             </li>
             <li>
               You can make <strong>several partial claims</strong> against a benefit over the year, up to the amount you

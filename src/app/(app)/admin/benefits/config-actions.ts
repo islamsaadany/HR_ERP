@@ -71,7 +71,7 @@ function slugify(s: string): string {
   );
 }
 
-/** Edit a basket item's name / category / description / order (not its key or medical flag). */
+/** Edit a basket item's name / category / description / order / coverage rate (not its key or medical flag). */
 export async function updateCatalogItem(formData: FormData): Promise<void> {
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
@@ -84,9 +84,21 @@ export async function updateCatalogItem(formData: FormData): Promise<void> {
   const order = orderRaw != null && String(orderRaw).trim() !== "" && Number.isFinite(orderN)
     ? Math.max(0, Math.round(orderN))
     : undefined;
+  // Coverage rate (spec 012): whole percent 0–100, clamped. Server-authoritative.
+  const rateRaw = formData.get("coverageRate");
+  const rateN = Number(rateRaw);
+  const coverageRate = rateRaw != null && String(rateRaw).trim() !== "" && Number.isFinite(rateN)
+    ? Math.min(100, Math.max(0, Math.round(rateN)))
+    : undefined;
   await prisma.benefitCatalogItem.update({
     where: { id },
-    data: { name, category, description, ...(order !== undefined ? { order } : {}) },
+    data: {
+      name,
+      category,
+      description,
+      ...(order !== undefined ? { order } : {}),
+      ...(coverageRate !== undefined ? { coverageRate } : {}),
+    },
   });
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");

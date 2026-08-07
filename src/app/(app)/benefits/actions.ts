@@ -9,9 +9,11 @@ import {
   evaluateBasket,
   type MedicalConfig,
 } from "@/lib/benefits/rules";
+import { coveredAmount } from "@/lib/benefits/coverage";
 
 export type SelectionPayload = {
-  items: { key: string; amount: number }[];
+  // The employee enters the full cost; the covered (company) share draws from the pool (spec 012).
+  items: { key: string; cost: number }[];
   medical: {
     selected: boolean;
     spouse: boolean;
@@ -69,7 +71,8 @@ export async function saveBasket(
   const byKey = new Map(catalog.map((c) => [c.key, c]));
   const medicalItem = catalog.find((c) => c.isMedical);
 
-  // Coerce + map non-medical lines.
+  // Coerce + map non-medical lines. The employee enters the COST; the covered (company) share
+  // = cost × coverageRate/100 is what draws from the pool (spec 012).
   const lines = payload.items
     .filter((i) => {
       const item = byKey.get(i.key);
@@ -78,9 +81,10 @@ export async function saveBasket(
     .map((i) => ({
       key: i.key,
       name: byKey.get(i.key)!.name,
-      amount: coerceAmount(i.amount),
+      cost: coerceAmount(i.cost),
+      coverageRate: byKey.get(i.key)!.coverageRate,
     }))
-    .filter((l) => l.amount > 0);
+    .filter((l) => l.cost > 0);
 
   const medical: MedicalConfig = {
     selected: payload.medical.selected && !!medicalItem,
@@ -113,13 +117,19 @@ export async function saveBasket(
     };
   }
 
-  // Build the line set (non-medical + medical premium line).
-  const lineData: { catalogItemId: string; amount: number }[] = lines.map((l) => ({
+  // Build the line set (non-medical + medical premium line). `amount` = covered pool draw;
+  // `cost` = the full price entered (spec 012). Medical: cost = amount = premium (100% covered).
+  const lineData: { catalogItemId: string; amount: number; cost: number }[] = lines.map((l) => ({
     catalogItemId: byKey.get(l.key)!.id,
-    amount: l.amount,
+    amount: coveredAmount(l.cost, l.coverageRate),
+    cost: l.cost,
   }));
   if (medical.selected && medicalItem) {
-    lineData.push({ catalogItemId: medicalItem.id, amount: result.medicalAmount });
+    lineData.push({
+      catalogItemId: medicalItem.id,
+      amount: result.medicalAmount,
+      cost: result.medicalAmount,
+    });
   }
 
   // Claimed-benefit lock (server-authoritative): a basket item with an active claim (pending

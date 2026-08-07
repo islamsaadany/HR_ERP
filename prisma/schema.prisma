@@ -391,6 +391,9 @@ model BenefitCatalogItem {
   order       Int             @default(0)
   active      Boolean         @default(true)
   claimType   ClaimType       @default(PROOF)
+  /// Company coverage rate, percent 0–100 (spec 012). The covered (company) share = cost × rate/100
+  /// draws from the pool; the employee pays the remainder. Medical is 100% (cost = covered).
+  coverageRate Int            @default(100)
   lines       SelectionLine[]
   claims      BenefitClaim[]
 }
@@ -434,7 +437,10 @@ model SelectionLine {
   selection     BenefitSelection   @relation(fields: [selectionId], references: [id], onDelete: Cascade)
   catalogItemId String
   catalogItem   BenefitCatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  /// Covered (company) amount = the pool draw. For medical = the premium. (spec 012)
   amount        Int
+  /// Full cost the employee entered (1,000 steps). For medical = the premium (cost = covered). (spec 012)
+  cost          Int                @default(0)
 
   @@unique([selectionId, catalogItemId])
 }

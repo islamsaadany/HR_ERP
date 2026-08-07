@@ -72,6 +72,18 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   deliberate deviation). Spec `012` layers onto `007`. The approved **concept doc** is imported at
   `specs/012-benefits-coverage/concept.md`, reconciled to those two deviations (11-benefit menu; PT rules called out).
   Three UX questions (cost-vs-pool-draw entry, step granularity, share display) are **deferred to `/speckit-clarify`**.
+- **2026-08-07 — Company coverage rates BUILT (spec `012`, migration `023`):** implemented the co-funding model —
+  per-benefit `coverageRate`; employee enters full cost; covered share (cost × rate) draws the pool; all money
+  rules (pool total, over-pool, FT 50% cap) run on the covered amount; **FT 5 / PT 3** selection limits (PT raised
+  to 3 by product decision, 2026-08-07); medical stays single/100%-covered/cap-exempt; claims reimburse the covered
+  portion. Math centralized in `src/lib/benefits/coverage.ts`. Supersedes spec `007`'s max-4/max-2 and full-amount
+  pool-draw FRs (annotated in 007). **Deferred to spec `016`:** the admin-Benefits tab redesign (Submissions &
+  Claims · Catalogue · Amounts), the single Catalogue table with coverage % as a column, view-first config editing,
+  HR/Super-User manual/back-dated claim & release entry (with approval date), and per-benefit FT/PT eligibility
+  (future). Coverage-% editing lives in the existing Configuration catalog editor until then.
+- **2026-08-07 — Orientation tour (planned, spec to follow):** a personalized, first-run, stepped walkthrough on the
+  Benefits page (your band → guaranteed basket → flexible categories → the rules: 50%, coverage %, claims), skippable
+  and re-openable. Approved to be its **own spec layered on `012`** (kept separate so `012` didn't balloon).
 - **2026-08-05 — Backlog: HR bulk benefit release + export (not yet specced).** HR/Admin wants to release a single
   guaranteed benefit (e.g. **summer allowance**) to the **whole team at once** and **download a sheet** of employee
   name + amount-to-release for payroll/Finance. Distinct from the coverage work; to be specced next (own spec).

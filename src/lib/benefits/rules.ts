@@ -1,8 +1,10 @@
 import type { EmploymentType } from "@prisma/client";
+import { coveredAmount } from "@/lib/benefits/coverage";
 
 export const STEP = 1000;
-export const MAX_SELECT_FULL_TIME = 4;
-export const MAX_SELECT_PART_TIME = 2;
+// Selection limits (spec 012): full-time 5 (raised from 4), part-time 3 (raised from 2).
+export const MAX_SELECT_FULL_TIME = 5;
+export const MAX_SELECT_PART_TIME = 3;
 
 export type MedicalConfig = {
   selected: boolean;
@@ -35,17 +37,20 @@ export function computeMedicalPremium(
 export type BasketInput = {
   employmentType: EmploymentType;
   ceiling: number;
-  /** non-medical selected lines */
-  lines: { key: string; name: string; amount: number }[];
+  /**
+   * Non-medical selected lines. The employee enters `cost`; the covered (company) share
+   * = cost × coverageRate/100 is what draws from the pool (spec 012).
+   */
+  lines: { key: string; name: string; cost: number; coverageRate: number }[];
   medical: MedicalConfig;
   medicalRate: MedicalRate;
 };
 
 export type BasketResult = {
-  total: number;
+  total: number; // covered (company) total drawn from the pool
   medicalAmount: number;
   medicalRaw: number;
-  cap: number; // 50% of ceiling
+  cap: number; // 50% of ceiling (applied to a line's covered share)
   remaining: number;
   selectionCount: number;
   maxSelect: number;
@@ -53,7 +58,7 @@ export type BasketResult = {
   warnings: string[];
 };
 
-/** Server-authoritative evaluation of a basket against all rules. */
+/** Server-authoritative evaluation of a basket against all rules — on the COVERED amount. */
 export function evaluateBasket(input: BasketInput): BasketResult {
   const { employmentType, ceiling, lines, medical, medicalRate } = input;
   const isFT = employmentType === "FULL_TIME";
@@ -66,30 +71,31 @@ export function evaluateBasket(input: BasketInput): BasketResult {
   const medicalRaw = computeMedicalPremium(medicalRate, medical);
   const medicalAmount = medical.selected ? Math.min(medicalRaw, ceiling) : 0;
 
-  let nonMedicalTotal = 0;
+  let nonMedicalCovered = 0;
   for (const line of lines) {
-    if (line.amount <= 0) continue;
-    nonMedicalTotal += line.amount;
-    if (line.amount % STEP !== 0) {
-      warnings.push(`${line.name}: amounts should be in steps of ${STEP}.`);
+    if (line.cost <= 0) continue;
+    const covered = coveredAmount(line.cost, line.coverageRate);
+    nonMedicalCovered += covered;
+    if (line.cost % STEP !== 0) {
+      warnings.push(`${line.name}: costs should be in steps of ${STEP}.`);
     }
-    // 50% single-benefit cap — full-time, non-medical only.
-    if (isFT && line.amount > cap) {
+    // 50% single-benefit cap — full-time, non-medical only, on the COVERED share.
+    if (isFT && covered > cap) {
       errors.push(
-        `${line.name} exceeds 50% of your pool (max ${cap.toLocaleString()}).`
+        `${line.name}: the company share exceeds 50% of your pool (max ${cap.toLocaleString()}).`
       );
     }
   }
 
   const selectionCount =
-    lines.filter((l) => l.amount > 0).length + (medical.selected ? 1 : 0);
+    lines.filter((l) => l.cost > 0).length + (medical.selected ? 1 : 0);
   if (selectionCount > maxSelect) {
     errors.push(
       `Too many benefits selected (max ${maxSelect}${isFT ? "" : " for part-time"}).`
     );
   }
 
-  const total = nonMedicalTotal + medicalAmount;
+  const total = nonMedicalCovered + medicalAmount;
   if (total > ceiling) {
     errors.push(
       `Over your pool by ${(total - ceiling).toLocaleString()} (ceiling ${ceiling.toLocaleString()}).`
@@ -115,7 +121,7 @@ export function evaluateBasket(input: BasketInput): BasketResult {
   };
 }
 
-/** Coerce a raw amount to a non-negative multiple of STEP. */
+/** Coerce a raw amount to a non-negative multiple of STEP (used for the entered cost). */
 export function coerceAmount(n: number): number {
   if (!Number.isFinite(n) || n <= 0) return 0;
   return Math.round(n / STEP) * STEP;

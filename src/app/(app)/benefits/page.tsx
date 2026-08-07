@@ -69,9 +69,10 @@ export default async function BenefitsPage({
     );
   }
 
-  const initialItems: Record<string, number> = {};
+  // The selector edits the COST the employee entered (spec 012). Older rows backfilled cost = amount.
+  const initialCosts: Record<string, number> = {};
   for (const line of existing?.lines ?? []) {
-    if (!line.catalogItem.isMedical) initialItems[line.catalogItem.key] = line.amount;
+    if (!line.catalogItem.isMedical) initialCosts[line.catalogItem.key] = line.cost;
   }
   const initialMedical = {
     selected: (existing?.lines ?? []).some((l) => l.catalogItem.isMedical),
@@ -207,9 +208,9 @@ export default async function BenefitsPage({
               <BenefitsSelector
                 employmentType={user.employmentType}
                 ceiling={ceilingRow.amount}
-                catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical }))}
+                catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical, coverageRate: c.coverageRate }))}
                 medicalRate={{ self: medicalRate.self, spouse: medicalRate.spouse, childUnder18: medicalRate.childUnder18, child18Plus: medicalRate.child18Plus }}
-                initialItems={initialItems}
+                initialCosts={initialCosts}
                 initialMedical={initialMedical}
                 initialStatus={existing?.status ?? "NONE"}
                 lockedClaimed={claimedByKey}
@@ -232,13 +233,13 @@ export default async function BenefitsPage({
             </div>
           ) : (
             <>
-              <p className="mt-1 text-sm text-muted">Select benefits, set amounts, then submit for {planYear.name}.</p>
+              <p className="mt-1 text-sm text-muted">Select benefits, enter each cost, then submit for {planYear.name}.</p>
               <BenefitsSelector
                 employmentType={user.employmentType}
                 ceiling={ceilingRow.amount}
-                catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical }))}
+                catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical, coverageRate: c.coverageRate }))}
                 medicalRate={{ self: medicalRate.self, spouse: medicalRate.spouse, childUnder18: medicalRate.childUnder18, child18Plus: medicalRate.child18Plus }}
-                initialItems={initialItems}
+                initialCosts={initialCosts}
                 initialMedical={initialMedical}
                 initialStatus={existing?.status ?? "NONE"}
                 lockedClaimed={claimedByKey}

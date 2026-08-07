@@ -42,7 +42,7 @@
 | 006 | Dashboard (Home) | ✅ complete, plan-ready |
 | 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
 | 008 | Knowledge Base — Consulting References & Reads | ✅ implemented (V1) |
-| 012 | Benefits — Company Coverage Rates (co-funding) | 📝 clarified, plan-ready (not built — next up) |
+| 012 | Benefits — Company Coverage Rates (co-funding) | ✅ implemented (branch — migration `023`) |
 | 013 | Benefits — HR Bulk-Release + configurable sheet | ✅ implemented (in `main`) |
 | 014 | HR-Managed Departments (add/rename/remove) | ✅ implemented (branch — migration `022`) |
 | 015 | Consistent Admin Back Navigation | ✅ implemented (branch) |
@@ -53,6 +53,27 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-07 — Benefits company coverage rates / co-funding (spec 012, branch `claude/hr-erp-benefits-coverage-rates-hnaox1`, migration `023`):**
+  Each flexible benefit now carries a **coverage rate**. The employee enters the **full cost**; the
+  **covered (company) share = cost × rate/100** draws from the pool, and they pay the rest. **All money
+  rules run on the covered amount** (pool total, over-pool, FT 50% cap). Selection limits raised to
+  **FT 5 / PT 3**. Medical unchanged (single 100%-covered rate-card item, cap-exempt). Claims reimburse
+  the **covered portion** against proof of full spend.
+  - Schema: `BenefitCatalogItem.coverageRate` (default 100) + `SelectionLine.cost` (`amount` stays the
+    covered pool draw). Migration `023_benefits_coverage.sql` — seeds 80%/50% rates, backfills `cost = amount`.
+  - New `src/lib/benefits/coverage.ts` (`coveredAmount`/`outOfPocket`) — single source shared by the
+    server rules (`rules.ts`, now covered-based; FT5/PT3) + `saveBasket` and the client selector.
+  - Selector (approved mockup): per benefit **Cost · Company pays (r%) · You pay**, a `r% covered` badge,
+    and the meter tracks the **company share**; "Selected" panel headlines the company share. Admin
+    Configuration catalog editor gains a **Coverage %** field (medical locked at 100). Policy page +
+    claims wording updated to covered terms.
+  - Verified: `tsc` + `build` green; **19/19** coverage/rules checks (`scripts/verify-coverage.mts`:
+    80/100/50 math, DC-2 non-1,000, FT 50% cap on covered, over-pool, PT exempt, FT5/PT3, medical);
+    throwaway Postgres — migration idempotent, rates seed (gym 80 / mobile 50 / medical 100), `cost`
+    backfill correct + idempotent. UI snapshot saved. **Neon: `prisma/sql/023_benefits_coverage.sql`
+    (auto-applied by the deploy runner).** The admin-Benefits tab redesign + manual claims is the next
+    spec (016).
+
 - **2026-08-07 — Consistent admin back navigation (spec 015, branch `claude/hr-erp-benefits-coverage-rates-hnaox1`):**
   Added a shared `BackLink` component (`components/admin/BackLink.tsx`, the existing muted "←" style) to
   every admin page except the Admin home. Each links to its **structural parent** (section → Admin home;

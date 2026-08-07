@@ -72,7 +72,8 @@ export function BenefitClaims({
       <h2 className="font-serif text-2xl text-ink">Your benefits &amp; claims</h2>
       <p className="mt-1 text-sm text-muted">
         Put your benefits to use. Some are paid automatically; a few just need a quick note, and the rest
-        need a receipt we&apos;ll review before paying you back.
+        need a receipt we&apos;ll review before paying you back. All figures below are the <strong>company
+        (covered) share</strong> — you show proof of your full spend and we reimburse the covered portion.
       </p>
 
       {error ? (
@@ -260,7 +261,7 @@ function ClaimRowsFragment({
                         Proof claims are reimbursed against spend, so they ask for an amount. */}
                     {isProof ? (
                       <div className="mb-3">
-                        <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Amount (EGP)</label>
+                        <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Covered amount to claim (EGP)</label>
                         <input
                           name="amount"
                           inputMode="numeric"
@@ -268,6 +269,9 @@ function ClaimRowsFragment({
                           required
                           className="w-full rounded-lg border border-line px-3 py-2 text-sm"
                         />
+                        <p className="mt-1 text-xs text-muted">
+                          The company (covered) portion you&apos;re claiming, up to {b.allocated != null ? egp(t.remaining ?? 0) : "your allocation"} left. Attach proof of your full spend below.
+                        </p>
                       </div>
                     ) : (
                       <p className="mb-3 text-xs text-muted">

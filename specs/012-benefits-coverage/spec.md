@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-05
 
-**Status**: Draft
+**Status**: Implemented (2026-08-07, migration `023`)
 
 **Input**: User description: "Add a company **coverage rate** per flexible benefit so the company co-funds by category. Each benefit has a real cost; the company covers a percentage of it, only the covered (company) share draws from the employee's pool, and the employee pays the remainder. Coverage rates per the approved concept doc (100% / 80% / 50%). The pool total and the 50% cap operate on the covered amount. Medical stays 100%-covered and rate-card-priced (unchanged, single item). Raise full-time selections to 5; part-time stays 2 and stays exempt from the 50% cap. Claims reimburse the covered portion against proof of the full spend."
 

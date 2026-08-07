@@ -242,6 +242,10 @@ export default async function AdminBenefitsPage({
                   <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Order</label>
                   <input name="order" type="number" min={0} defaultValue={c.order} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums" />
                 </div>
+                <div className="w-24" title={c.isMedical ? "Medical is always 100% covered" : "Company coverage % (0–100)"}>
+                  <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Coverage %</label>
+                  <input name="coverageRate" type="number" min={0} max={100} defaultValue={c.coverageRate} disabled={c.isMedical} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums disabled:opacity-60" />
+                </div>
                 <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">Save</button>
               </form>
               <div className="mt-2 flex items-center gap-3">
