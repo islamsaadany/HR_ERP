@@ -184,7 +184,7 @@ export function AppShell({
                   <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-400">
                     {shortName}
                   </div>
-                  <div className="font-serif text-xl uppercase">{companyName}</div>
+                  <div className="font-serif text-xl">{companyName}</div>
                 </div>
               )}
               <button
@@ -273,7 +273,7 @@ export function AppShell({
       {/* Main */}
       <div className="flex min-w-0 flex-col">
         <header className="flex items-center justify-between bg-navy-900 px-4 py-3 text-white md:hidden">
-          <span className="font-serif text-lg uppercase">{companyName}</span>
+          <span className="font-serif text-lg">{companyName}</span>
           <form action={signOutAction}>
             <button type="submit" className="text-xs text-navy-200 underline">
               Sign out
