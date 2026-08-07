@@ -16,7 +16,6 @@ const CARDS = [
   { href: "/admin/benefits", title: "Benefits Configuration", body: "Plan-year window and submissions.", ready: true },
   { href: "/admin/time-off", title: "Time-Off", body: "View all leave requests; approve or decline as a fallback.", ready: true },
   { href: "/admin/announcements", title: "Announcements", body: "Post company announcements.", ready: true },
-  { href: "/admin/departments", title: "Departments", body: "Add, rename, or remove the departments used across records and filters.", ready: true },
 ];
 
 export default async function AdminPage() {

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
 import { parseEmployeesCsv, type ParsedRow } from "@/lib/import/employees";
+import { getDepartments } from "@/lib/departments";
 
 export interface RowResult {
   rowNumber: number;
@@ -57,6 +58,7 @@ export async function importEmployees(
   const text = await file.text();
   const parsed = parseEmployeesCsv(text, {
     companyDomain: (process.env.ALLOWED_EMAIL_DOMAIN ?? "forefront.consulting").toLowerCase(),
+    knownDepartments: await getDepartments(),
   });
 
   if (parsed.headerErrors.length) {

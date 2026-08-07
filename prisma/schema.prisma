@@ -360,6 +360,17 @@ model BenefitRelease {
   @@index([guaranteedBenefitId, planYearId])
 }
 
+/// Managed list of valid department names (HR-editable, spec 014). The employee's
+/// `department` stays a text label on User; this table is the source of choices/filters.
+/// Renaming a department cascades to matching User.department values; a department can
+/// only be removed while no employee is assigned to it. Not a foreign key.
+model Department {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 /// Medical insurance rate card (single tier). One row.
 model MedicalRateCard {
   id           String @id @default(cuid())

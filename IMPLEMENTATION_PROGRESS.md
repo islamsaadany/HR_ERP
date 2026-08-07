@@ -44,6 +44,7 @@
 | 008 | Knowledge Base — Consulting References & Reads | ✅ implemented (V1) |
 | 012 | Benefits — Company Coverage Rates (co-funding) | 📝 clarified, plan-ready (not built — next up) |
 | 013 | Benefits — HR Bulk-Release + configurable sheet | ✅ implemented (in `main`) |
+| 014 | HR-Managed Departments (add/rename/remove) | ✅ implemented (branch — migration `022`) |
 
 ## Next up
 Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Directory · Onboarding · Handbook · Time-Off · Benefits · Dashboard).
@@ -51,6 +52,21 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-07 — HR-managed departments (spec 014, branch `claude/hr-erp-benefits-coverage-rates-hnaox1`, migration `022`):**
+  Replaced the hard-coded `DEPARTMENTS` constant with a managed `Department` lookup table HR maintains
+  at **Admin → Departments** (HR Admin + Super User). Department stays a **text label** on `User`
+  (Option A); **rename cascades** to every employee in that department (one transaction); **remove is
+  blocked** while anyone is assigned; names trimmed, duplicates rejected case-insensitively. New
+  `getDepartments()`/`getDepartmentsWithUsage()`/`unionDepartments()` in `lib/departments.ts`; every
+  department **choice/filter** now reads the managed list (employee create/edit form, grid filter,
+  directory filter, CSV-import unknown-department flag), while display-only surfaces keep the stored
+  label. `DepartmentsManager` client component (read-first list, Add, per-row Edit/Remove). Seeded the
+  original five (`022_departments.sql`, idempotent, runner-applied). Verified: `tsc` + `build` green;
+  **throwaway Postgres 13/13** (`scripts/verify-departments.mts`: add/dedup/trim, rename cascade with
+  zero stale + case-only self-rename, rename-to-other-name rejected, remove-guard block/allow) + the
+  migration applies idempotently (2nd run inserts 0). UI snapshots saved for the edited components.
+  **Neon: `prisma/sql/022_departments.sql` (auto-applied by the deploy runner).**
+
 - **2026-08-07 — Credentials auth + forced temp-password change (branch `claude/hr-erp-credentials-auth`, spec 001 FR-001/002/021/022/023/024):**
   Product decision: drop Google for now, use email + password, force a temp-password change on first login.
   - **Login:** removed the "Sign in with Google" button (provider still env-gated so it can return); **lifted the

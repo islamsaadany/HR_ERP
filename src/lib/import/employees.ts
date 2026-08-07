@@ -307,10 +307,15 @@ function niceDate(d: Date): string {
 /** Parse a full employee CSV/TSV into structured rows + warnings. */
 export function parseEmployeesCsv(
   text: string,
-  opts: { companyDomain?: string; now?: Date } = {}
+  opts: { companyDomain?: string; now?: Date; knownDepartments?: string[] } = {}
 ): ParseResult {
   const companyDomain = (opts.companyDomain ?? "forefront.consulting").toLowerCase();
   const now = opts.now ?? new Date();
+  // Managed department list (spec 014) — used only for a soft "unknown department" flag;
+  // import stays tolerant and still imports whatever value the cell holds.
+  const knownDepartments = new Set(
+    (opts.knownDepartments ?? []).map((d) => d.trim().toLowerCase())
+  );
 
   const grid = parseDelimited(text);
   if (grid.length === 0) {
@@ -426,13 +431,25 @@ export function parseEmployeesCsv(
       warnings.push(`manager reference "${managerEmailRaw}" isn't a valid email — skipped`);
     }
 
+    // Department: imported as-is (tolerant), but flag values not in the managed list (spec 014).
+    const departmentValue = cell(raw, "department") || null;
+    if (
+      departmentValue &&
+      knownDepartments.size > 0 &&
+      !knownDepartments.has(departmentValue.toLowerCase())
+    ) {
+      warnings.push(
+        `department "${departmentValue}" isn't in the managed list — imported anyway; add it under Admin → Departments if it should be official`
+      );
+    }
+
     rows.push({
       rowNumber,
       name,
       email,
       emailIsExternal,
       phone: cell(raw, "phone") || null,
-      department: cell(raw, "department") || null,
+      department: departmentValue,
       title: cell(raw, "title") || null,
       employmentType: et.value,
       tenureBand: band,
