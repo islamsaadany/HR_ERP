@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
-import { hashPassword, verifyPassword, MIN_PASSWORD_LENGTH } from "@/lib/password";
+import { hashPassword, verifyPassword, validatePasswordPolicy } from "@/lib/password";
 
 export type ChangePasswordState = { ok?: boolean; error?: string } | null;
 
@@ -19,8 +19,9 @@ export async function changeMyPassword(
   const current = String(formData.get("current") ?? "");
   const next = String(formData.get("next") ?? "").trim();
 
-  if (next.length < MIN_PASSWORD_LENGTH) {
-    return { error: `New password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
+  const policyError = validatePasswordPolicy(next);
+  if (policyError) {
+    return { error: policyError };
   }
 
   const dbUser = await prisma.user.findUnique({
@@ -31,6 +32,9 @@ export async function changeMyPassword(
     return { error: "Your current password is incorrect." };
   }
 
-  await prisma.user.update({ where: { id: me.id }, data: { passwordHash: hashPassword(next) } });
+  await prisma.user.update({
+    where: { id: me.id },
+    data: { passwordHash: hashPassword(next), mustChangePassword: false },
+  });
   return { ok: true };
 }

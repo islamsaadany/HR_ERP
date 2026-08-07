@@ -45,6 +45,7 @@ export default async function EditEmployeePage({
         canEditRole={isSuperUser(actor.role)}
         canSeeSalary={isSuperUser(actor.role)}
         managers={managers}
+        companyDomain={(process.env.ALLOWED_EMAIL_DOMAIN ?? "forefront.consulting").toLowerCase()}
         submitLabel="Save changes"
         values={{
           name: employee.name,

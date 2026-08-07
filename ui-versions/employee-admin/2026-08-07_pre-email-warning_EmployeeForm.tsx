@@ -36,7 +36,6 @@ export function EmployeeForm({
   canEditRole,
   canSeeSalary,
   submitLabel,
-  companyDomain = "forefront.consulting",
 }: {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   values: EmployeeFormValues;
@@ -45,17 +44,12 @@ export function EmployeeForm({
   /** Salary is confidential — the field is omitted entirely unless the actor is a Super User. */
   canSeeSalary: boolean;
   submitLabel: string;
-  /** Company email domain — a non-matching address raises a non-blocking warning. */
-  companyDomain?: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     action,
     null
   );
   const [deps, setDeps] = useState<Dep[]>(values.dependants);
-  const [email, setEmail] = useState(values.email);
-  const offDomain =
-    email.trim() !== "" && !email.trim().toLowerCase().endsWith(`@${companyDomain.toLowerCase()}`);
 
   return (
     <form action={formAction} className="max-w-3xl space-y-6">
@@ -76,20 +70,7 @@ export function EmployeeForm({
           </div>
           <div>
             <label className={L}>Email *</label>
-            <input
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className={I}
-            />
-            {offDomain ? (
-              <p className="mt-1 text-xs text-gold-700">
-                This isn&apos;t a @{companyDomain} address. They can still sign in with a password — just
-                double-check it&apos;s correct.
-              </p>
-            ) : null}
+            <input name="email" type="email" defaultValue={values.email} required className={I} />
           </div>
           <div>
             <label className={L}>Phone</label>

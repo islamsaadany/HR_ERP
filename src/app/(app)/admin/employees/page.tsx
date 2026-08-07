@@ -3,6 +3,7 @@ import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { toDateInput, DEPARTMENTS } from "@/lib/labels";
 import { EmployeeGrid, type GridRow } from "@/components/admin/EmployeeGrid";
+import { TempPasswordsPanel } from "@/components/admin/TempPasswordsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +100,8 @@ export default async function EmployeesPage() {
           </Link>
         </div>
       </div>
+
+      <TempPasswordsPanel canResetAll={isSuperUser(actor.role)} />
 
       <EmployeeGrid
         rows={rows}

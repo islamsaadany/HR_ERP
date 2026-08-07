@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/roles";
 import { isAdmin, isSuperUser } from "@/lib/roles";
 import { getDisabledHrefs } from "@/lib/modules";
@@ -13,6 +14,21 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser();
+
+  // Gate anyone on a temporary password to /set-password until they choose their own.
+  // Guarded so a pre-migration DB (no mustChangePassword column) never breaks the shell.
+  let mustChangePassword = false;
+  try {
+    const flag = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { mustChangePassword: true },
+    });
+    mustChangePassword = !!flag?.mustChangePassword;
+  } catch {
+    mustChangePassword = false;
+  }
+  if (mustChangePassword) redirect("/set-password");
+
   const hiddenNav = await getDisabledHrefs();
   const brand = await getBrand();
 

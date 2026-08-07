@@ -51,6 +51,24 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-07 — Credentials auth + forced temp-password change (branch `claude/hr-erp-credentials-auth`, spec 001 FR-001/002/021/022/023/024):**
+  Product decision: drop Google for now, use email + password, force a temp-password change on first login.
+  - **Login:** removed the "Sign in with Google" button (provider still env-gated so it can return); **lifted the
+    company-domain restriction** on password sign-in (`auth.ts` authorize) — any registered ACTIVE employee may
+    sign in. HR gets a **non-blocking warning** in the employee form when an email isn't on `ALLOWED_EMAIL_DOMAIN`.
+  - **Forced change:** new `mustChangePassword` flag (**migration `021_must_change_password.sql`** — renumbered from
+    the parked branch's `020` to avoid colliding with `020_benefit_release.sql`). Admin-issued passwords (single or
+    bulk) set the flag; the `(app)` layout redirects flagged users to a standalone **`/set-password`** page (outside
+    the shell, no redirect loop) until they choose their own. Cleared on set (there or on Profile).
+  - **Policy:** `validatePasswordPolicy` — ≥ 8 chars + uppercase + number + special — enforced server-side on
+    `/set-password` and Profile; temp passwords exempt.
+  - **Bulk temp passwords:** `TempPasswordsPanel` + `generateTeamPasswords` on Admin → Employees — generate for
+    everyone missing a password (or Super-User "Reset ALL", excluding the actor) → **one-time CSV** (name · email ·
+    password); stored only as scrypt hashes. No emails in v1 → HR reset is the only recovery.
+  - Verified: `tsc` + `build` green; **throwaway Postgres** — migration idempotent, column `NOT NULL default false`,
+    flag set-on-temp / clear-on-own, bulk missing-target correct; password-policy cases 7/7. Reuses the parked
+    `team-credentials` work, adapted to these decisions. **Neon: run `prisma/sql/021_must_change_password.sql`.**
+
 - **2026-08-05 — Consolidation branch `claude/hr-erp-benefits-consolidation`:** compiled the separate benefits
   branches into one mergeable unit off `main` (which already had spec 013). Bundles, verified together (`tsc` +
   `build` green):

@@ -131,9 +131,15 @@ An employee, from their Profile, uploads and views their own personal documents 
 ### Functional Requirements
 
 **Authentication & session**
-- **FR-001**: The system MUST allow sign-in only via Google accounts on the configured company domain, enforced on the server sign-in path, not merely hidden in the UI.
-- **FR-002**: The system MUST refuse any non-company-domain account and create no session for it.
+
+> **Auth model updated 2026-08-07:** sign-in is **email + password** (server-validated). **Google SSO is parked** — the provider stays behind configuration but is disabled and hidden in v1. The **company-domain restriction on sign-in was lifted**: any registered employee may sign in, and HR is warned (non-blocking) when creating a non-company-domain email. FR-001/FR-002 below reflect this; the original Google-only wording is superseded.
+
+- **FR-001**: The system MUST authenticate employees via **email + password**, validated on the server sign-in path (scrypt-hashed, timing-safe), matching an **ACTIVE** employee record by email — never merely hidden in the UI. (Google SSO remains available behind configuration but is disabled in v1.)
+- **FR-002**: The system MUST create a session **only** for an email that matches an ACTIVE employee record whose stored password verifies; it MUST NOT auto-provision accounts. The company-domain restriction on sign-in is **lifted** (any registered email may sign in); HR is warned when registering a non-company-domain email.
 - **FR-003**: On successful sign-in, the system MUST match the account to an existing employee record by email.
+- **FR-022**: The system MUST treat any **admin-issued password** (individual set/reset or the bulk generator) as **temporary**: it MUST flag the employee (`mustChangePassword`) and, on next sign-in, gate them to a set-password step — blocking access to the rest of the app — until they choose their own password. The flag MUST clear only when a compliant password is set.
+- **FR-023**: The system MUST enforce, on the server, a password policy for **user-chosen** passwords: at least **8 characters**, including an **uppercase letter, a number, and a special character**. Temporary admin-issued passwords are exempt (they force a compliant change). The UI mirrors the rule for guidance only.
+- **FR-024**: The system MUST let HR **bulk-issue temporary passwords** for active employees (all missing-password employees; Super User may reset everyone, excluding themselves) and return the plaintext **once** as a downloadable CSV; passwords MUST be stored only as hashes and never re-shown. With no email in v1, a forgotten password MUST be recoverable only by an HR reset (no self-service recovery).
 
 **Roles & authorization**
 - **FR-004**: The system MUST support three roles — Employee, HR Admin, and Super User — where Super User includes all HR Admin capabilities plus role governance and app-wide settings.
@@ -166,7 +172,7 @@ An employee, from their Profile, uploads and views their own personal documents 
 
 **Data handling**
 - **FR-020**: The system MUST support loading the initial team dataset via a database seed that is kept out of version control because it contains personal data (dates of birth, marital status, children's birth dates).
-- **FR-021**: The system MUST allow an employee record to exist with a placeholder (non-company) email such that the person appears in the directory but cannot sign in until a company-domain email is set.
+- **FR-021**: The system MUST allow an employee record to exist with any email (including a non-company address); the person appears in the directory and — since the domain restriction on sign-in was lifted (FR-002) — **may sign in once a password is set**. HR is warned (non-blocking) when the email isn't on the company domain.
 
 - **FR-022**: The system MUST record tenure using one of four HR-set tenure bands — **6 months–2 years, 2–4 years, 4–7 years, 7–10 years** — which drive the Benefits pool ceiling (confirmed 2026-07-27).
 - **FR-023**: Employees MUST be able to edit only their own **contact field(s)** (phone); all other registry fields are HR-managed and read-only to the employee (confirmed 2026-07-27).
