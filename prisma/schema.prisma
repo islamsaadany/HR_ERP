@@ -96,6 +96,8 @@ model User {
   benefitSelections BenefitSelection[]
   benefitClaims     BenefitClaim[] @relation("ClaimOwner")
   reviewedClaims    BenefitClaim[] @relation("ClaimReviewer")
+  benefitReleases   BenefitRelease[] @relation("ReleaseSubject")
+  releasesGiven     BenefitRelease[] @relation("ReleaseActor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -304,6 +306,7 @@ model PlanYear {
   createdAt  DateTime           @default(now())
   selections BenefitSelection[]
   claims     BenefitClaim[]
+  releases   BenefitRelease[]
 }
 
 /// Pool ceiling per (employment type × tenure band). Max claimable for the year.
@@ -329,6 +332,29 @@ model GuaranteedBenefit {
   order          Int            @default(0)
   claimType      ClaimType      @default(NOTE)
   claims         BenefitClaim[]
+  releases       BenefitRelease[]
+}
+
+/**
+ * A per-employee record that a fixed-allowance guaranteed benefit was released for a plan year
+ * (spec 013). Presence of a row = "Released"; absence = "Not released". `amount` snapshots the
+ * band-derived figure at release time. Salary-driven benefits (Loans) are never released here.
+ */
+model BenefitRelease {
+  id                  String            @id @default(cuid())
+  userId              String
+  user                User              @relation("ReleaseSubject", fields: [userId], references: [id], onDelete: Cascade)
+  guaranteedBenefitId String
+  guaranteedBenefit   GuaranteedBenefit @relation(fields: [guaranteedBenefitId], references: [id], onDelete: Cascade)
+  planYearId          String
+  planYear            PlanYear          @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  amount              Int
+  releasedAt          DateTime          @default(now())
+  releasedById        String?
+  releasedBy          User?             @relation("ReleaseActor", fields: [releasedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, guaranteedBenefitId, planYearId])
+  @@index([guaranteedBenefitId, planYearId])
 }
 
 /// Medical insurance rate card (single tier). One row.

@@ -42,6 +42,7 @@
 | 006 | Dashboard (Home) | ✅ complete, plan-ready |
 | 007 | Benefits — Flexible Benefits Selection | ✅ complete, plan-ready |
 | 008 | Knowledge Base — Consulting References & Reads | ✅ implemented (V1) |
+| 013 | Benefits — HR Bulk-Release + configurable sheet | ✅ implemented (branch `claude/hr-erp-benefits-bulk-release`) |
 
 ## Next up
 Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Directory · Onboarding · Handbook · Time-Off · Benefits · Dashboard).
@@ -49,6 +50,18 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-05 — Spec 013 IMPLEMENTED: HR bulk-release + configurable sheet (branch `claude/hr-erp-benefits-bulk-release`):**
+  New **`/admin/benefits/release`** (linked "Release a benefit" from admin Benefits). `ReleaseManager` (client):
+  benefit picker (fixed-allowance only — **Loans/salary-driven excluded**), employee table with **per-person
+  release** (checkbox + **Select all/none** → `setReleased`), a **Status** column, a **column picker** (default
+  `# · Employee · Tenure · Allowance value · Status` + optional non-confidential fields; **no salary**), and a
+  client-side **CSV download**. New `BenefitRelease` model + **migration `020_benefit_release.sql`** (per employee ×
+  benefit × plan year; presence = released; snapshots amount + date + actor). Amounts are band-derived
+  (`amountForBand`); no-band employees flagged. **HR sees no salary anywhere in this feature.**
+  Verified: `tsc` + `build` green; throwaway Postgres **9/9** (eligible filter excludes Loans; population = active +
+  matching type; amount snapshots; no-band/PT/LEFT excluded; idempotent re-release; unrelease; unique constraint) +
+  the migration SQL applies idempotently. **Neon: run `prisma/sql/020_benefit_release.sql`.** Docs updated.
+
 - **2026-08-04 — Admin Benefits restructure, slice 1 (branch `claude/hr-erp-benefits-admin-config`):**
   `/admin/benefits` moved from a long scroll to **three tabs** (`AdminBenefitsTabs`, mirroring the
   employee `BenefitsTabs`): **Configuration · Submissions & claims · Claim requirements**. Plan-year
