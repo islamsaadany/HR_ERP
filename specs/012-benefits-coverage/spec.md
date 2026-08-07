@@ -20,8 +20,8 @@
 
 - **Coverage adopted.** The company co-funds each flexible benefit at a per-benefit rate; only the covered share draws from the pool.
 - **Coverage rates** (seeded defaults, HR-editable): **100%** — Personal medical insurance, Annual health check-up, Coaching/therapy · **80%** — Gym membership, Sports expenses, Schooling/education, Childcare/nursery, Caregiver support, Personal learning · **50%** — Mobile device, Home-office setup.
-- **Selection limit:** full-time **5** (raised from 4); part-time stays **2**.
-- **Part-time is unchanged** — max 2 and **exempt from the 50% cap** (a deliberate deviation from the concept doc's "same rules" wording).
+- **Selection limit:** full-time **5** (raised from 4); part-time **3** (raised from 2).
+- **Part-time cap rule is unchanged** — **exempt from the 50% cap** (a deliberate deviation from the concept doc's "same rules" wording); only its selection limit rises to 3.
 - **Medical is unchanged** — a **single** medical item priced from the rate card, dependents via the modal; it is **100% covered** so its premium equals the covered amount equals the pool draw. **Not** split into Personal/Family (deliberate deviation from the concept doc).
 - **Guaranteed core, pool ceilings, and the medical rate card are out of scope** — already aligned to the concept doc.
 
@@ -60,7 +60,7 @@ The pool ceiling, the running total, and the 50% single-benefit cap all operate 
 
 1. **Given** a full-time employee with pool 30,000, **When** a single non-medical benefit's **covered share** exceeds 15,000 (50%), **Then** the breach is flagged and submission is blocked while it persists.
 2. **Given** any employee, **When** the **sum of covered shares** (plus medical) exceeds the pool ceiling, **Then** "over pool" is flagged and submission is blocked.
-3. **Given** a part-time employee, **When** they build a basket, **Then** the 50% cap does **not** apply and the selection limit is **2** (unchanged).
+3. **Given** a part-time employee, **When** they build a basket, **Then** the 50% cap does **not** apply and the selection limit is **3** (raised from 2).
 4. **Given** a full-time employee, **When** they select benefits, **Then** they may choose up to **5** (raised from 4).
 
 ### User Story 3 - HR sets the coverage rate per benefit (Priority: P2)
@@ -107,7 +107,7 @@ After submitting, the employee claims reimbursement against **proof of the full 
 - **FR-C02**: For a non-medical benefit, the system MUST derive the **covered (company) amount = cost × coverage rate** and the **employee out-of-pocket = cost − covered amount**. Only the **covered amount draws from the pool**.
 - **FR-C03**: The **pool total MUST be the sum of covered amounts** (plus the medical premium). Remaining pool = ceiling − covered total. The over-pool check MUST run on the covered total, not full costs.
 - **FR-C04**: The **50% single-benefit cap (full-time only) MUST apply to the covered amount** — no single non-medical benefit's covered share may exceed 50% of the pool ceiling. Part-time remains exempt.
-- **FR-C05**: The **selection limit MUST be 5 for full-time** (raised from 4) and **2 for part-time** (unchanged). Over-selection prevention (007 FR-035) applies at the new limits.
+- **FR-C05**: The **selection limit MUST be 5 for full-time** (raised from 4) and **3 for part-time** (raised from 2). Over-selection prevention (007 FR-035) applies at the new limits.
 - **FR-C06**: **Medical MUST remain a single item, rate-card-priced, and 100% covered** — its premium is the covered amount and the pool draw; it stays exempt from the 50% cap and capped at the pool ceiling. No Personal/Family split.
 - **FR-C07**: The selector MUST **show, per selected benefit, the coverage rate, the company/pool share, and the employee out-of-pocket**, and MUST show pool totals in **covered (company) terms** (exact labels per DC-3).
 - **FR-C08**: **Claims MUST reimburse the covered portion** of a proven spend, capped at the benefit's **covered allocation**; the claims table's allocated / reimbursed / pending / left figures MUST be in covered terms, consistent with the pool.
