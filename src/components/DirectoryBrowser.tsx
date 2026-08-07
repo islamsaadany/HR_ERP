@@ -17,7 +17,14 @@ export type DirEntry = {
 type SortKey = "title" | "department";
 type SortDir = "asc" | "desc";
 
-export function DirectoryBrowser({ people }: { people: DirEntry[] }) {
+export function DirectoryBrowser({
+  people,
+  departments: managed = [],
+}: {
+  people: DirEntry[];
+  /** Managed department list (spec 014); unioned with values present on the people shown. */
+  departments?: string[];
+}) {
   const [q, setQ] = useState("");
   const [dept, setDept] = useState("");
   // Alphabetical sort on the Title / Department columns (click a header to toggle).
@@ -34,11 +41,11 @@ export function DirectoryBrowser({ people }: { people: DirEntry[] }) {
     }
   }
 
-  const departments = useMemo(
-    () =>
-      Array.from(new Set(people.map((p) => p.department).filter(Boolean))).sort() as string[],
-    [people]
-  );
+  const departments = useMemo(() => {
+    const set = new Set<string>(managed);
+    for (const p of people) if (p.department) set.add(p.department);
+    return Array.from(set).sort();
+  }, [people, managed]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();

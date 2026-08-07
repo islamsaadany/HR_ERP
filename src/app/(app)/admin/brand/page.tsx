@@ -1,6 +1,7 @@
 import { requireSuperUser } from "@/lib/roles";
 import { getBrand } from "@/lib/brand";
 import { updateBrand, resetBrand } from "./actions";
+import { BackLink } from "@/components/admin/BackLink";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export default async function AdminBrandPage({
 
   return (
     <div className="max-w-2xl">
+      <BackLink href="/admin" label="Admin" />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin · Brand</p>
       <h1 className="mt-1 font-serif text-3xl text-ink">Branding</h1>
       <p className="mt-1 text-muted">

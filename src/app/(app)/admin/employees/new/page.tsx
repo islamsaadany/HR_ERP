@@ -1,20 +1,26 @@
 import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { EmployeeForm } from "@/components/admin/EmployeeForm";
+import { getDepartments } from "@/lib/departments";
+import { BackLink } from "@/components/admin/BackLink";
 import { createEmployee } from "../actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewEmployeePage() {
   const actor = await requireAdmin();
-  const managers = await prisma.user.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  });
+  const [managers, departments] = await Promise.all([
+    prisma.user.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+    getDepartments(),
+  ]);
 
   return (
     <div>
+      <BackLink href="/admin/employees" label="Employees" />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
         Admin · Registry
       </p>
@@ -24,6 +30,7 @@ export default async function NewEmployeePage() {
         canEditRole={isSuperUser(actor.role)}
         canSeeSalary={isSuperUser(actor.role)}
         managers={managers}
+        departments={departments}
         companyDomain={(process.env.ALLOWED_EMAIL_DOMAIN ?? "forefront.consulting").toLowerCase()}
         submitLabel="Create employee"
         values={{

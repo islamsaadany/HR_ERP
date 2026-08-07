@@ -7,6 +7,7 @@ import {
   computeMedicalPremium,
   type MedicalConfig,
 } from "@/lib/benefits/rules";
+import { coveredAmount, outOfPocket } from "@/lib/benefits/coverage";
 import { saveBasket, reopenOwnSelection, type SelectionPayload } from "@/app/(app)/benefits/actions";
 
 type CatalogItem = {
@@ -15,6 +16,7 @@ type CatalogItem = {
   description: string | null;
   category: string | null;
   isMedical: boolean;
+  coverageRate: number; // company coverage %, 0–100 (spec 012)
 };
 type Rate = {
   self: number;
@@ -25,12 +27,34 @@ type Rate = {
 
 const egp = (n: number) => "EGP " + Math.round(n).toLocaleString();
 
+/** The Cost · Company pays (r%) · You pay line shown under a selected benefit (spec 012, DC-3). */
+function CoverageLine({ cost, rate }: { cost: number; rate: number }) {
+  const covered = coveredAmount(cost, rate);
+  const you = outOfPocket(cost, rate);
+  return (
+    <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs">
+      <span className="text-muted">
+        Cost <span className="font-semibold tabular-nums text-ink">{egp(cost)}</span>
+      </span>
+      <span className="text-line">·</span>
+      <span className="text-muted">
+        Company pays ({rate}%){" "}
+        <span className="font-semibold tabular-nums text-navy-700">{egp(covered)}</span>
+      </span>
+      <span className="text-line">·</span>
+      <span className="text-muted">
+        You pay <span className="font-semibold tabular-nums text-gold-700">{egp(you)}</span>
+      </span>
+    </div>
+  );
+}
+
 export function BenefitsSelector({
   employmentType,
   ceiling,
   catalog,
   medicalRate,
-  initialItems,
+  initialCosts,
   initialMedical,
   initialStatus,
   lockedClaimed = {},
@@ -39,13 +63,14 @@ export function BenefitsSelector({
   ceiling: number;
   catalog: CatalogItem[];
   medicalRate: Rate;
-  initialItems: Record<string, number>;
+  /** catalog key → the COST the employee entered (spec 012). */
+  initialCosts: Record<string, number>;
   initialMedical: MedicalConfig;
   initialStatus: "DRAFT" | "SUBMITTED" | "NONE";
-  /** catalog key → amount already claimed (pending or reimbursed); these can't be deselected or reduced below it. */
+  /** catalog key → covered amount already claimed (pending or reimbursed); can't be deselected or reduced below it. */
   lockedClaimed?: Record<string, number>;
 }) {
-  const [amounts, setAmounts] = useState<Record<string, number>>(initialItems);
+  const [costs, setCosts] = useState<Record<string, number>>(initialCosts);
   const [medical, setMedical] = useState<MedicalConfig>(initialMedical);
   const [modalOpen, setModalOpen] = useState(false);
   const [status, setStatus] = useState(initialStatus);
@@ -55,6 +80,7 @@ export function BenefitsSelector({
   const locked = status === "SUBMITTED";
   const medicalItem = catalog.find((c) => c.isMedical);
   const nonMedical = catalog.filter((c) => !c.isMedical);
+  const rateOf = (key: string) => catalog.find((c) => c.key === key)?.coverageRate ?? 100;
 
   // Group the whole catalog (medical + non-medical) by category, preserving order.
   const groups = useMemo(() => {
@@ -77,44 +103,53 @@ export function BenefitsSelector({
         employmentType,
         ceiling,
         lines: nonMedical
-          .filter((c) => (amounts[c.key] ?? 0) > 0)
-          .map((c) => ({ key: c.key, name: c.name, amount: amounts[c.key] ?? 0 })),
+          .filter((c) => (costs[c.key] ?? 0) > 0)
+          .map((c) => ({ key: c.key, name: c.name, cost: costs[c.key] ?? 0, coverageRate: c.coverageRate })),
         medical,
         medicalRate,
       }),
-    [amounts, medical, employmentType, ceiling, nonMedical, medicalRate]
+    [costs, medical, employmentType, ceiling, nonMedical, medicalRate]
   );
 
   const pct = Math.min(100, ceiling > 0 ? (result.total / ceiling) * 100 : 0);
 
   // Once the max is reached, unselected items can't be added until one is deselected.
   const atMax = result.selectionCount >= result.maxSelect;
-  const claimedFloor = (key: string) => lockedClaimed[key] ?? 0;
-  const medicalClaimed = medicalItem ? claimedFloor(medicalItem.key) : 0;
 
-  function setAmount(key: string, val: number) {
+  // Claimed floor is a COVERED amount; convert to the minimum COST that still covers it.
+  const claimedCovered = (key: string) => lockedClaimed[key] ?? 0;
+  const costFloor = (key: string) => {
+    const claimed = claimedCovered(key);
+    if (claimed <= 0) return 0;
+    const rate = rateOf(key);
+    if (rate <= 0) return 0;
+    return Math.ceil((claimed * 100) / rate / STEP) * STEP;
+  };
+  const medicalClaimed = medicalItem ? claimedCovered(medicalItem.key) : 0;
+
+  function setCost(key: string, val: number) {
     if (locked) return;
-    // A claimed benefit can be raised but never dropped below what's already been claimed.
-    const floor = claimedFloor(key);
-    setAmounts((a) => ({ ...a, [key]: Math.max(floor, Math.max(0, val)) }));
+    // A claimed benefit can be raised but never dropped below the cost that covers what's claimed.
+    const floor = costFloor(key);
+    setCosts((a) => ({ ...a, [key]: Math.max(floor, Math.max(0, val)) }));
   }
   function toggleItem(key: string) {
     if (locked) return;
-    const on = (amounts[key] ?? 0) > 0;
+    const on = (costs[key] ?? 0) > 0;
     // Can't deselect a claimed benefit; can't add past the max.
-    if (on && claimedFloor(key) > 0) return;
+    if (on && claimedCovered(key) > 0) return;
     if (!on && atMax) return;
-    setAmounts((a) => {
+    setCosts((a) => {
       const next = { ...a };
       if ((next[key] ?? 0) > 0) delete next[key];
-      else next[key] = Math.max(STEP, claimedFloor(key));
+      else next[key] = Math.max(STEP, costFloor(key));
       return next;
     });
   }
 
   function persist(submit: boolean) {
     const payload: SelectionPayload = {
-      items: nonMedical.map((c) => ({ key: c.key, amount: amounts[c.key] ?? 0 })),
+      items: nonMedical.map((c) => ({ key: c.key, cost: costs[c.key] ?? 0 })),
       medical,
     };
     startTransition(async () => {
@@ -125,8 +160,7 @@ export function BenefitsSelector({
   }
 
   // Self-service reopen: unlock this employee's own submitted basket back to an editable draft so
-  // they can allocate the rest of their pool and re-submit — no HR needed. On success we flip the
-  // local status to DRAFT (mirrors persist()), and the server revalidate refreshes the page data.
+  // they can allocate the rest of their pool and re-submit — no HR needed.
   function reopen() {
     startTransition(async () => {
       const res = await reopenOwnSelection();
@@ -141,30 +175,37 @@ export function BenefitsSelector({
 
   const medicalPreview = computeMedicalPremium(medicalRate, { ...medical, selected: true });
 
-  // Rows for the "Selected" summary panel.
-  const selectedRows: { name: string; amount: number; over: boolean }[] = [
+  // Rows for the "Selected" summary panel — company share (covered) headline + cost/you-pay subtext.
+  const selectedRows: { name: string; covered: number; cost: number; you: number; over: boolean; medical?: boolean }[] = [
     ...nonMedical
-      .filter((c) => (amounts[c.key] ?? 0) > 0)
-      .map((c) => ({
-        name: c.name,
-        amount: amounts[c.key] ?? 0,
-        over: employmentType === "FULL_TIME" && (amounts[c.key] ?? 0) > result.cap,
-      })),
+      .filter((c) => (costs[c.key] ?? 0) > 0)
+      .map((c) => {
+        const cost = costs[c.key] ?? 0;
+        const covered = coveredAmount(cost, c.coverageRate);
+        return {
+          name: c.name,
+          covered,
+          cost,
+          you: cost - covered,
+          over: employmentType === "FULL_TIME" && covered > result.cap,
+        };
+      }),
     ...(medical.selected && medicalItem
-      ? [{ name: medicalItem.name, amount: result.medicalAmount, over: false }]
+      ? [{ name: medicalItem.name, covered: result.medicalAmount, cost: result.medicalAmount, you: 0, over: false, medical: true }]
       : []),
   ];
 
   // Terms — shared by the draft aside and the submitted full-width band.
   const terms: string[] = [
     `You may select a maximum of ${result.maxSelect} benefits from the menu each year.`,
+    "You enter each benefit's full cost; the company covers a set percentage of it (shown per benefit), and only that covered share draws from your pool. You pay the rest.",
     ...(employmentType === "FULL_TIME"
-      ? ["No single benefit may exceed 50% of your pool — in practice you'll choose at least two."]
+      ? ["No single benefit's company share may exceed 50% of your pool — in practice you'll choose at least two."]
       : []),
-    "Medical insurance is exempt from the 50% rule — it may exceed half your pool, but never your pool ceiling. Premiums follow the company rate card.",
-    "Your pool is set by your employment type and tenure band, and is the maximum claimable for the year.",
-    "Benefits are reimbursed against actual spend — submit an invoice, receipt, or proof of payment to Finance for every claim.",
-    "Any amount not claimed does not carry over to the following year, and is not paid out as cash.",
+    "Medical insurance is 100% covered and exempt from the 50% rule — it may exceed half your pool, but never your pool ceiling. Premiums follow the company rate card.",
+    "Your pool is set by your employment type and tenure band, and is the maximum company contribution for the year.",
+    "Benefits are reimbursed against actual spend — submit proof to Finance; you're reimbursed the covered (company) portion.",
+    "Any covered amount not claimed does not carry over to the following year, and is not paid out as cash.",
     "Guaranteed benefits are separate from the basket and are not affected by your choices.",
   ];
 
@@ -206,16 +247,26 @@ export function BenefitsSelector({
           <div className="overflow-hidden rounded-xl border border-line bg-surface">
             <div className="border-b border-line px-5 py-3">
               <h3 className="font-serif text-lg text-ink">Your selections</h3>
-              <p className="text-xs text-muted">The flexible benefits you chose for this year.</p>
+              <p className="text-xs text-muted">The flexible benefits you chose for this year — company share drawn from your pool.</p>
             </div>
             {selectedRows.length === 0 ? (
               <p className="px-5 py-4 text-sm italic text-muted">No flexible benefits selected.</p>
             ) : (
               <div className="divide-y divide-line px-5">
                 {selectedRows.map((r) => (
-                  <div key={r.name} className="flex items-center justify-between gap-3 py-3">
-                    <span className="text-sm font-medium text-ink">{r.name}</span>
-                    <span className="font-serif text-navy-800 tabular-nums">{egp(r.amount)}</span>
+                  <div key={r.name} className="flex items-start justify-between gap-3 py-3">
+                    <div>
+                      <span className="text-sm font-medium text-ink">{r.name}</span>
+                      {!r.medical ? (
+                        <div className="text-xs text-muted">Cost {egp(r.cost)} · you pay {egp(r.you)}</div>
+                      ) : (
+                        <div className="text-xs text-muted">100% covered</div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <span className="font-serif text-navy-800 tabular-nums">{egp(r.covered)}</span>
+                      <div className="text-[11px] text-muted">company share</div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -226,7 +277,7 @@ export function BenefitsSelector({
           <aside>
             <div className="rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-24">
               <div className="text-3xl font-serif text-ink tabular-nums">{egp(result.total)}</div>
-              <div className="text-sm text-muted">allocated of {egp(ceiling)} pool</div>
+              <div className="text-sm text-muted">company share of {egp(ceiling)} pool</div>
               <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
                 <div className="h-full rounded-full bg-gold-500" style={{ width: `${pct}%` }} />
               </div>
@@ -285,7 +336,7 @@ export function BenefitsSelector({
                   <div
                     key={item.key}
                     className={
-                      "flex items-center gap-3 rounded-xl border border-line bg-surface p-4 " +
+                      "flex items-start gap-3 rounded-xl border border-line bg-surface p-4 " +
                       (!medical.selected && atMax ? "opacity-50" : "")
                     }
                   >
@@ -303,7 +354,7 @@ export function BenefitsSelector({
                       }}
                       disabled={locked || (medical.selected && medicalClaimed > 0) || (!medical.selected && atMax)}
                       className={
-                        "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
+                        "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
                         (medical.selected ? "border-navy-700 bg-navy-700 text-white" : "border-line text-transparent")
                       }
                     >
@@ -328,30 +379,32 @@ export function BenefitsSelector({
                             }`
                           : item_desc(item)}
                       </div>
+                      {medical.selected ? (
+                        <CoverageLine cost={result.medicalAmount} rate={100} />
+                      ) : null}
                     </div>
                     {medical.selected ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-navy-800">{egp(result.medicalAmount)}</span>
-                        <button type="button" disabled={locked} onClick={() => setModalOpen(true)} className="rounded-lg border border-line px-3 py-1.5 text-xs hover:bg-navy-50">Edit</button>
-                      </div>
+                      <button type="button" disabled={locked} onClick={() => setModalOpen(true)} className="mt-0.5 shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs hover:bg-navy-50">Edit</button>
                     ) : (
-                      <span className="text-xs text-muted">Configure cover</span>
+                      <span className="mt-0.5 shrink-0 text-xs text-muted">Configure cover</span>
                     )}
                   </div>
                 ) : (
                   (() => {
-                    const amt = amounts[item.key] ?? 0;
-                    const on = amt > 0;
-                    const over = employmentType === "FULL_TIME" && amt > result.cap;
-                    const claimed = claimedFloor(item.key);
+                    const cost = costs[item.key] ?? 0;
+                    const on = cost > 0;
+                    const covered = coveredAmount(cost, item.coverageRate);
+                    const over = employmentType === "FULL_TIME" && covered > result.cap;
+                    const claimed = claimedCovered(item.key);
                     const claimLocked = claimed > 0;
+                    const floor = costFloor(item.key);
                     const blockedByMax = !on && atMax;
                     const selectDisabled = locked || claimLocked || blockedByMax;
                     return (
                       <div
                         key={item.key}
                         className={
-                          "flex items-center gap-3 rounded-xl border bg-surface p-4 " +
+                          "flex items-start gap-3 rounded-xl border bg-surface p-4 " +
                           (over ? "border-red-300 " : "border-line ") +
                           (blockedByMax ? "opacity-50 " : "") +
                           (claimLocked ? "opacity-70 " : "")
@@ -363,7 +416,7 @@ export function BenefitsSelector({
                           disabled={selectDisabled}
                           aria-label={claimLocked ? "Claimed — can't remove" : blockedByMax ? "Maximum benefits reached" : "Select"}
                           className={
-                            "grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
+                            "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border transition " +
                             (on ? "border-navy-700 bg-navy-700 text-white" : "border-line text-transparent") +
                             (selectDisabled ? " cursor-not-allowed" : "")
                           }
@@ -373,6 +426,9 @@ export function BenefitsSelector({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-ink">{item.name}</span>
+                            <span className="rounded bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-navy-700">
+                              {item.coverageRate}% covered
+                            </span>
                             {claimLocked ? (
                               <span className="rounded bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-navy-700">Claimed</span>
                             ) : null}
@@ -380,31 +436,33 @@ export function BenefitsSelector({
                           {item.description ? (
                             <div className="text-xs text-muted">{item.description}</div>
                           ) : null}
+                          {on ? <CoverageLine cost={cost} rate={item.coverageRate} /> : null}
                           {claimLocked ? (
-                            <div className="text-xs text-muted">Claimed {egp(claimed)} — can’t remove or reduce below this.</div>
+                            <div className="mt-1 text-xs text-muted">Claimed {egp(claimed)} — can’t remove or reduce below this.</div>
                           ) : blockedByMax ? (
-                            <div className="text-xs text-muted">Max {result.maxSelect} reached — deselect one to add this.</div>
+                            <div className="mt-1 text-xs text-muted">Max {result.maxSelect} reached — deselect one to add this.</div>
                           ) : over ? (
-                            <div className="text-xs font-medium text-red-600">
-                              Over the 50% cap (max {egp(result.cap)})
+                            <div className="mt-1 text-xs font-medium text-red-600">
+                              Company share over the 50% cap (max {egp(result.cap)})
                             </div>
                           ) : null}
                         </div>
                         {on ? (
-                          <div className="flex items-center gap-1">
-                            <button type="button" disabled={locked || amt <= claimed} onClick={() => setAmount(item.key, amt - STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50 disabled:opacity-40">−</button>
+                          <div className="mt-0.5 flex shrink-0 items-center gap-1">
+                            <button type="button" disabled={locked || cost <= floor} onClick={() => setCost(item.key, cost - STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50 disabled:opacity-40">−</button>
                             <input
-                              value={amt.toLocaleString()}
+                              value={cost.toLocaleString()}
                               onChange={(e) =>
-                                setAmount(item.key, parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0)
+                                setCost(item.key, parseInt(e.target.value.replace(/[^0-9]/g, "")) || 0)
                               }
                               disabled={locked}
+                              aria-label={`${item.name} cost`}
                               className="w-24 rounded-lg border border-line px-2 py-1.5 text-right text-sm tabular-nums"
                             />
-                            <button type="button" disabled={locked} onClick={() => setAmount(item.key, amt + STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50">+</button>
+                            <button type="button" disabled={locked} onClick={() => setCost(item.key, cost + STEP)} className="h-8 w-8 rounded-lg border border-line text-muted hover:bg-navy-50">+</button>
                           </div>
                         ) : (
-                          <span className="text-xs text-muted">{blockedByMax ? "Max reached" : "Select to allocate"}</span>
+                          <span className="mt-0.5 shrink-0 text-xs text-muted">{blockedByMax ? "Max reached" : "Select to enter a cost"}</span>
                         )}
                       </div>
                     );
@@ -430,13 +488,10 @@ export function BenefitsSelector({
 
       {/* Right column: meter + selected + terms */}
       <aside className="space-y-4">
-        {/* Meter / actions — sticky on desktop so the running calculation follows you
-            while you scroll the basket (F2). Only the compact meter is sticky (the whole
-            aside was taller than the viewport, so nothing pinned). top-24 clears the
-            sticky page header. */}
+        {/* Meter / actions — sticky on desktop so the running calculation follows you while you scroll. */}
         <div className="rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-24 lg:z-10">
           <div className="text-3xl font-serif text-ink tabular-nums">{egp(result.total)}</div>
-          <div className="text-sm text-muted">allocated of {egp(ceiling)} pool</div>
+          <div className="text-sm text-muted">company share of {egp(ceiling)} pool</div>
           <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
             <div
               className={"h-full rounded-full " + (result.total > ceiling ? "bg-red-500" : "bg-gold-500")}
@@ -459,7 +514,7 @@ export function BenefitsSelector({
             </p>
           ) : null}
           <p className="mt-3 text-xs text-muted">
-            No single benefit may exceed 50% of the pool ({egp(result.cap)}). Medical insurance is exempt.
+            The pool tracks the company&apos;s share. No single benefit&apos;s company share may exceed 50% of the pool ({egp(result.cap)}). Medical is exempt.
           </p>
 
           {!locked ? (
@@ -487,11 +542,11 @@ export function BenefitsSelector({
           ) : null}
         </div>
 
-        {/* Selected summary */}
+        {/* Selected summary — company share headline + cost/you-pay subtext */}
         <div className="overflow-hidden rounded-xl border border-line bg-surface">
           <div className="border-b border-line px-5 py-3">
             <h3 className="font-serif text-lg text-ink">Selected</h3>
-            <p className="text-xs text-muted">Your basket so far.</p>
+            <p className="text-xs text-muted">Company share drawn from your pool.</p>
           </div>
           <div className="px-5 py-3">
             {selectedRows.length === 0 ? (
@@ -499,10 +554,15 @@ export function BenefitsSelector({
             ) : (
               <div className="divide-y divide-line">
                 {selectedRows.map((r) => (
-                  <div key={r.name} className="flex justify-between py-2 text-sm">
-                    <span className="text-muted">{r.name}</span>
-                    <span className={"font-semibold tabular-nums " + (r.over ? "text-red-600" : "text-ink")}>
-                      {egp(r.amount)}
+                  <div key={r.name} className="flex items-start justify-between gap-3 py-2 text-sm">
+                    <div className="min-w-0">
+                      <span className="text-muted">{r.name}</span>
+                      {!r.medical ? (
+                        <div className="text-[11px] text-muted/80">Cost {egp(r.cost)} · you pay {egp(r.you)}</div>
+                      ) : null}
+                    </div>
+                    <span className={"shrink-0 font-semibold tabular-nums " + (r.over ? "text-red-600" : "text-ink")}>
+                      {egp(r.covered)}
                     </span>
                   </div>
                 ))}
@@ -530,14 +590,13 @@ export function BenefitsSelector({
         </div>
       </aside>
 
-      {/* Mobile floating summary — keeps the running total/actions visible while scrolling the list.
-          Desktop keeps the sticky right-hand panel above; this only shows below lg. */}
+      {/* Mobile floating summary — keeps the running total/actions visible while scrolling the list. */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
               <span className="font-serif text-lg text-ink tabular-nums">{egp(result.total)}</span>
-              <span className="text-xs text-muted">of {egp(ceiling)} pool</span>
+              <span className="text-xs text-muted">company share of {egp(ceiling)}</span>
             </div>
             <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-navy-50">
               <div
@@ -588,7 +647,7 @@ export function BenefitsSelector({
         <div className="fixed inset-0 z-50 grid place-items-center bg-navy-950/50 p-4" onClick={() => setModalOpen(false)}>
           <div className="w-full max-w-md rounded-2xl bg-surface p-6" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-serif text-xl text-ink">Personal medical insurance</h3>
-            <p className="mt-1 text-sm text-muted">You are always covered. Add dependants below.</p>
+            <p className="mt-1 text-sm text-muted">You are always covered. Add dependants below. Medical is 100% company-covered.</p>
 
             <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between rounded-lg border border-line px-4 py-3">
@@ -610,7 +669,7 @@ export function BenefitsSelector({
             </div>
 
             <div className="mt-4 flex items-center justify-between rounded-lg bg-navy-50 px-4 py-3">
-              <span className="text-sm font-medium text-navy-800">Annual premium</span>
+              <span className="text-sm font-medium text-navy-800">Annual premium (100% covered)</span>
               <span className="font-serif text-lg text-navy-800">{egp(medicalPreview)}</span>
             </div>
 

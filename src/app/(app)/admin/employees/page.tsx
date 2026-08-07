@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
-import { toDateInput, DEPARTMENTS } from "@/lib/labels";
+import { toDateInput } from "@/lib/labels";
+import { getDepartments, unionDepartments } from "@/lib/departments";
+import { BackLink } from "@/components/admin/BackLink";
 import { EmployeeGrid, type GridRow } from "@/components/admin/EmployeeGrid";
 import { TempPasswordsPanel } from "@/components/admin/TempPasswordsPanel";
 
@@ -10,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function EmployeesPage() {
   const actor = await requireAdmin();
   const canSalary = isSuperUser(actor.role);
-  const [employees, managers] = await Promise.all([
+  const [employees, managers, managedDepartments] = await Promise.all([
     prisma.user.findMany({
       orderBy: [{ status: "asc" }, { name: "asc" }],
       select: {
@@ -38,6 +40,7 @@ export default async function EmployeesPage() {
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
+    getDepartments(),
   ]);
 
   const rows: GridRow[] = employees.map((e) => ({
@@ -61,16 +64,15 @@ export default async function EmployeesPage() {
     reportsToName: e.reportsTo?.name ?? "",
   }));
 
-  // Known departments = the house list plus any already present on records.
-  const departments = Array.from(
-    new Set<string>([
-      ...DEPARTMENTS,
-      ...employees.map((e) => e.department).filter((d): d is string => !!d),
-    ])
-  ).sort();
+  // Known departments = the managed list plus any stray values already present on records.
+  const departments = unionDepartments(
+    managedDepartments,
+    employees.map((e) => e.department)
+  );
 
   return (
     <div>
+      <BackLink href="/admin" label="Admin" />
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">

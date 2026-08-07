@@ -2,7 +2,6 @@
 
 import { useActionState, useState } from "react";
 import type { ActionState } from "@/app/(app)/admin/employees/actions";
-import { DEPARTMENTS } from "@/lib/labels";
 
 type Dep = { name: string | null; dateOfBirth: string };
 
@@ -33,6 +32,7 @@ export function EmployeeForm({
   action,
   values,
   managers,
+  departments,
   canEditRole,
   canSeeSalary,
   submitLabel,
@@ -41,6 +41,8 @@ export function EmployeeForm({
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   values: EmployeeFormValues;
   managers: { id: string; name: string }[];
+  /** Managed department list (spec 014). The employee's current value is kept even if not in the list. */
+  departments: string[];
   canEditRole: boolean;
   /** Salary is confidential — the field is omitted entirely unless the actor is a Super User. */
   canSeeSalary: boolean;
@@ -48,6 +50,11 @@ export function EmployeeForm({
   /** Company email domain — a non-matching address raises a non-blocking warning. */
   companyDomain?: string;
 }) {
+  // Keep the employee's existing department selectable even if it's a legacy value not in the list.
+  const deptOptions =
+    values.department && !departments.includes(values.department)
+      ? [values.department, ...departments]
+      : departments;
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     action,
     null
@@ -99,7 +106,7 @@ export function EmployeeForm({
             <label className={L}>Department</label>
             <select name="department" defaultValue={values.department ?? ""} className={I}>
               <option value="">—</option>
-              {DEPARTMENTS.map((d) => (
+              {deptOptions.map((d) => (
                 <option key={d} value={d}>
                   {d}
                 </option>

@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/labels";
 import { deleteSection, uploadResource, deleteResource } from "./actions";
+import { BackLink } from "@/components/admin/BackLink";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default async function AdminHandbookPage({
 
   return (
     <div>
+      <BackLink href="/admin" label="Admin" />
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin · Handbook</p>

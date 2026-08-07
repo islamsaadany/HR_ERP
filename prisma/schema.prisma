@@ -65,6 +65,10 @@ model User {
   // /set-password on next sign-in until they choose their own compliant one.
   mustChangePassword Boolean @default(false)
 
+  // Set when the employee first dismisses/finishes the Benefits orientation tour (spec 017);
+  // stops it auto-opening again. The "How it works" button ignores this.
+  benefitsOrientationSeenAt DateTime?
+
   // HR-private employment fields (money-affecting: HR-set, authoritative)
   employmentType EmploymentType?
   tenureBand     TenureBand?
@@ -360,6 +364,17 @@ model BenefitRelease {
   @@index([guaranteedBenefitId, planYearId])
 }
 
+/// Managed list of valid department names (HR-editable, spec 014). The employee's
+/// `department` stays a text label on User; this table is the source of choices/filters.
+/// Renaming a department cascades to matching User.department values; a department can
+/// only be removed while no employee is assigned to it. Not a foreign key.
+model Department {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 /// Medical insurance rate card (single tier). One row.
 model MedicalRateCard {
   id           String @id @default(cuid())
@@ -380,6 +395,9 @@ model BenefitCatalogItem {
   order       Int             @default(0)
   active      Boolean         @default(true)
   claimType   ClaimType       @default(PROOF)
+  /// Company coverage rate, percent 0–100 (spec 012). The covered (company) share = cost × rate/100
+  /// draws from the pool; the employee pays the remainder. Medical is 100% (cost = covered).
+  coverageRate Int            @default(100)
   lines       SelectionLine[]
   claims      BenefitClaim[]
 }
@@ -423,7 +441,10 @@ model SelectionLine {
   selection     BenefitSelection   @relation(fields: [selectionId], references: [id], onDelete: Cascade)
   catalogItemId String
   catalogItem   BenefitCatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  /// Covered (company) amount = the pool draw. For medical = the premium. (spec 012)
   amount        Int
+  /// Full cost the employee entered (1,000 steps). For medical = the premium (cost = covered). (spec 012)
+  cost          Int                @default(0)
 
   @@unique([selectionId, catalogItemId])
 }

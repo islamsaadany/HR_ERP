@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { SectionForm } from "@/components/admin/SectionForm";
+import { BackLink } from "@/components/admin/BackLink";
 import { updateSection } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ export default async function EditSectionPage({
 
   return (
     <div>
+      <BackLink href="/admin/handbook" label="Handbook" />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
         Admin · Handbook
       </p>

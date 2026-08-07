@@ -3,9 +3,11 @@ import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
 import { getActivePlanYear, getMedicalRate, amountForBand } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
+import { MAX_SELECT_FULL_TIME, MAX_SELECT_PART_TIME } from "@/lib/benefits/rules";
 import { BenefitsSelector } from "@/components/benefits/BenefitsSelector";
 import { BenefitClaims, type ClaimableBenefit, type ClaimRow } from "@/components/benefits/BenefitClaims";
 import { BenefitsTabs } from "@/components/benefits/BenefitsTabs";
+import { BenefitsOrientation } from "@/components/benefits/BenefitsOrientation";
 import { SetupNotice } from "@/components/SetupNotice";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +23,13 @@ export default async function BenefitsPage({
   const { claimError } = await searchParams;
   const user = await prisma.user.findUnique({
     where: { id: me.id },
-    select: { employmentType: true, tenureBand: true, monthlySalary: true },
+    select: {
+      name: true,
+      employmentType: true,
+      tenureBand: true,
+      monthlySalary: true,
+      benefitsOrientationSeenAt: true,
+    },
   });
 
   const eyebrow = (
@@ -69,9 +77,10 @@ export default async function BenefitsPage({
     );
   }
 
-  const initialItems: Record<string, number> = {};
+  // The selector edits the COST the employee entered (spec 012). Older rows backfilled cost = amount.
+  const initialCosts: Record<string, number> = {};
   for (const line of existing?.lines ?? []) {
-    if (!line.catalogItem.isMedical) initialItems[line.catalogItem.key] = line.amount;
+    if (!line.catalogItem.isMedical) initialCosts[line.catalogItem.key] = line.cost;
   }
   const initialMedical = {
     selected: (existing?.lines ?? []).some((l) => l.catalogItem.isMedical),
@@ -157,6 +166,25 @@ export default async function BenefitsPage({
     }
   }
 
+  // ── Orientation tour (spec 017): personalized, auto-opens first-run until submitted + seen ──
+  const selectorAvailable = !!(planYear && ceilingRow && medicalRate && catalog.length > 0);
+  const orientation = {
+    employeeName: user.name ?? "",
+    employmentTypeLabel: EMPLOYMENT_TYPE_LABEL[user.employmentType],
+    tenureBandLabel: TENURE_BAND_LABEL[user.tenureBand],
+    ceiling: ceilingRow?.amount ?? null,
+    maxSelect: user.employmentType === "FULL_TIME" ? MAX_SELECT_FULL_TIME : MAX_SELECT_PART_TIME,
+    guaranteed: guaranteed.map((g) => {
+      const salaryDriven =
+        g.band6mo2y == null && g.band2to4y == null && g.band4to7y == null && g.band7to10y == null;
+      return { name: g.name, amount: amountForBand(user.tenureBand!, g), salaryDriven };
+    }),
+    categories: Array.from(
+      new Set(catalog.map((c) => c.category).filter((c): c is string => !!c))
+    ),
+    autoOpen: selectorAvailable && !submitted && !user.benefitsOrientationSeenAt,
+  };
+
   const guaranteedSection = (
     <section className="mt-6 overflow-hidden rounded-xl border border-line">
       <div className="bg-navy-800 px-6 py-4 text-white">
@@ -190,10 +218,11 @@ export default async function BenefitsPage({
         </p>
       </div>
 
-      <div className="mt-2">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <a href="/benefits/policy" className="text-sm font-medium text-navy-600 hover:text-navy-800">
           How the benefits basket works →
         </a>
+        <BenefitsOrientation {...orientation} />
       </div>
 
       {/* Once submitted: tabs sit above everything (guaranteed benefits live inside the
@@ -207,9 +236,9 @@ export default async function BenefitsPage({
               <BenefitsSelector
                 employmentType={user.employmentType}
                 ceiling={ceilingRow.amount}
-                catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical }))}
+                catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical, coverageRate: c.coverageRate }))}
                 medicalRate={{ self: medicalRate.self, spouse: medicalRate.spouse, childUnder18: medicalRate.childUnder18, child18Plus: medicalRate.child18Plus }}
-                initialItems={initialItems}
+                initialCosts={initialCosts}
                 initialMedical={initialMedical}
                 initialStatus={existing?.status ?? "NONE"}
                 lockedClaimed={claimedByKey}
@@ -232,13 +261,13 @@ export default async function BenefitsPage({
             </div>
           ) : (
             <>
-              <p className="mt-1 text-sm text-muted">Select benefits, set amounts, then submit for {planYear.name}.</p>
+              <p className="mt-1 text-sm text-muted">Select benefits, enter each cost, then submit for {planYear.name}.</p>
               <BenefitsSelector
                 employmentType={user.employmentType}
                 ceiling={ceilingRow.amount}
-                catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical }))}
+                catalog={catalog.map((c) => ({ key: c.key, name: c.name, description: c.description, category: c.category, isMedical: c.isMedical, coverageRate: c.coverageRate }))}
                 medicalRate={{ self: medicalRate.self, spouse: medicalRate.spouse, childUnder18: medicalRate.childUnder18, child18Plus: medicalRate.child18Plus }}
-                initialItems={initialItems}
+                initialCosts={initialCosts}
                 initialMedical={initialMedical}
                 initialStatus={existing?.status ?? "NONE"}
                 lockedClaimed={claimedByKey}

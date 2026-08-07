@@ -3,6 +3,8 @@ import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { EmployeeForm } from "@/components/admin/EmployeeForm";
 import { AdminPasswordCard } from "@/components/admin/AdminPasswordCard";
+import { getDepartments } from "@/lib/departments";
+import { BackLink } from "@/components/admin/BackLink";
 import { updateEmployee } from "../actions";
 import { toDateInput } from "@/lib/labels";
 
@@ -16,7 +18,7 @@ export default async function EditEmployeePage({
   const actor = await requireAdmin();
   const { id } = await params;
 
-  const [employee, managers] = await Promise.all([
+  const [employee, managers, departments] = await Promise.all([
     prisma.user.findUnique({
       where: { id },
       include: { dependants: { orderBy: { dateOfBirth: "asc" } } },
@@ -26,6 +28,7 @@ export default async function EditEmployeePage({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
+    getDepartments(),
   ]);
 
   if (!employee) notFound();
@@ -34,6 +37,7 @@ export default async function EditEmployeePage({
 
   return (
     <div>
+      <BackLink href="/admin/employees" label="Employees" />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
         Admin · Registry
       </p>
@@ -45,6 +49,7 @@ export default async function EditEmployeePage({
         canEditRole={isSuperUser(actor.role)}
         canSeeSalary={isSuperUser(actor.role)}
         managers={managers}
+        departments={departments}
         companyDomain={(process.env.ALLOWED_EMAIL_DOMAIN ?? "forefront.consulting").toLowerCase()}
         submitLabel="Save changes"
         values={{
