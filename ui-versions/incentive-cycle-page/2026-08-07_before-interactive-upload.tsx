@@ -6,8 +6,7 @@ import { computeCycle, type CycleAssignment } from "@/lib/incentive/compute";
 import type { AssignmentType } from "@/lib/incentive/rules";
 import { CycleReportView } from "@/components/incentive/CycleReport";
 import { FirmFiguresCard } from "@/components/incentive/FirmFiguresCard";
-import { SheetUpload } from "@/components/incentive/SheetUpload";
-import { saveFirmFigures } from "../actions";
+import { saveFirmFigures, uploadSheet } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -92,9 +91,13 @@ export default async function CyclePage({
             </div>
           </div>
           <p className="mt-1 text-[11px] text-muted">Download a template, fill it, upload it back. Re-uploading replaces that sheet.</p>
-          <div className="mt-3 space-y-3">
+          <div className="mt-3 space-y-2">
             {uploads.map((u) => (
-              <SheetUpload key={u.kind} cycleId={cycle.id} kind={u.kind} label={u.label} count={u.count} />
+              <form key={u.kind} action={uploadSheet.bind(null, cycle.id, u.kind)} encType="multipart/form-data" className="flex items-center gap-2">
+                <span className="w-28 shrink-0 text-sm text-ink">{u.label}<span className="text-muted"> ({u.count})</span></span>
+                <input type="file" name="file" accept=".csv,text/csv" className="min-w-0 flex-1 text-xs text-muted file:mr-2 file:rounded file:border-0 file:bg-navy-800 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white" />
+                <button className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-navy-700 hover:bg-navy-50">Upload</button>
+              </form>
             ))}
           </div>
         </div>
