@@ -22,10 +22,11 @@ faithfully, recolored into the navy/gold palette — do not redesign the structu
 Before editing any UI file, snapshot it to `ui-versions/<component>/<date>_<desc>.tsx`.
 
 ### III. Benefits Money & Rules Are Server-Authoritative (NON-NEGOTIABLE)
-Every benefits rule — pool ceiling by employment type × tenure, the 50% single-benefit cap,
-selection-count limits (full-time and part-time), medical-insurance handling, and the
-plan-year window — is validated on the server at save/submit time. The client mirrors rules
-for UX only and is never trusted. Placeholder figures are never presented as final.
+Every benefits rule — pool ceiling by employment type × tenure, the 50%-per-benefit cap
+(cumulative claims, full-time and part-time), the benefit-count limit (configurable, **off by
+default** — spec 018), medical-insurance handling, and the plan-year window — is validated on the
+server at claim/commit time. The client mirrors rules for UX only and is never trusted.
+Placeholder figures are never presented as final.
 
 ### IV. Spec-Driven & Docs Move With Code
 Every feature begins as a spec (`specs/`), not code. The four steering files

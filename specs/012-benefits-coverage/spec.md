@@ -1,5 +1,7 @@
 # Feature Specification: Benefits — Company Coverage Rates (Co-Funding)
 
+> **Note:** the coverage-% co-funding model here is retained by [spec 018](../018-benefits-claim-allowance/spec.md), but it now applies at **claim time** (employee enters the full receipt price → covered = price × rate%) rather than at basket allocation. The 1,000-step rounding is removed (cost is the exact receipt value), and the 50% cap applies to cumulative covered claims for full- and part-time.
+
 **Feature Branch**: `012-benefits-coverage`
 
 **Created**: 2026-08-05

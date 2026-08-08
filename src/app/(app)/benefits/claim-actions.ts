@@ -5,17 +5,19 @@ import { redirect } from "next/navigation";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
-import { getActivePlanYear, amountForBand } from "@/lib/benefits/config";
+import { getActivePlanYear, amountForBand, getMedicalCommitment } from "@/lib/benefits/config";
 import { tracker } from "@/lib/benefits/claims";
+import { evaluateClaim, type AllowanceContext } from "@/lib/benefits/rules";
 
 function fail(msg: string): never {
   redirect("/benefits?claimError=" + encodeURIComponent(msg));
 }
 
 /**
- * File a reimbursement claim against a benefit the employee is entitled to.
- * Partial claims are allowed up to the benefit's allocation. PROOF benefits require
- * a file upload; NOTE benefits take an optional note; NONE benefits can't be claimed.
+ * File a reimbursement claim (spec 018). Flexible (catalog) benefits are claimed directly — no
+ * submitted basket — and the employee enters the FULL price paid (matching their proof); the server
+ * computes the covered share and enforces the 50%-per-benefit cap (FT + PT) and the pool ceiling.
+ * Guaranteed benefits are unchanged (partial PROOF up to allocation; NOTE takes the remainder).
  */
 export async function createClaim(formData: FormData): Promise<void> {
   const me = await requireUser();
@@ -35,62 +37,95 @@ export async function createClaim(formData: FormData): Promise<void> {
   });
   if (!user?.employmentType || !user?.tenureBand) fail("Your profile isn't set — contact HR.");
 
-  // Resolve the benefit, its claim policy, and its allocation for this employee.
-  let allocated: number | null = null;
   let claimType: "NONE" | "NOTE" | "PROOF";
+  let claimAmount: number; // the COVERED amount stored on the claim
   const link: { guaranteedBenefitId?: string; catalogItemId?: string } = {};
 
   if (kind === "guaranteed") {
     const gb = await prisma.guaranteedBenefit.findUnique({ where: { id: benefitId } });
     if (!gb || gb.employmentType !== user.employmentType) fail("That benefit isn't available to you.");
     claimType = gb.claimType;
-    allocated = amountForBand(user.tenureBand, gb) ?? user.monthlySalary ?? null;
+    if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
+    const allocated = amountForBand(user.tenureBand, gb) ?? user.monthlySalary ?? null;
+    const existing = await prisma.benefitClaim.findMany({
+      where: {
+        userId: me.id,
+        planYearId: planYear.id,
+        guaranteedBenefitId: gb.id,
+        status: { in: ["PENDING", "RELEASED"] },
+      },
+      select: { amount: true, status: true },
+    });
+    const t = tracker(allocated, existing);
+    if (claimType === "NOTE") {
+      if (t.remaining != null && t.remaining <= 0) fail("You've already requested this benefit.");
+      claimAmount = t.remaining ?? allocated ?? 0;
+    } else {
+      if (!Number.isFinite(amount) || amount <= 0) fail("Enter a valid amount.");
+      if (t.remaining != null && amount > t.remaining) {
+        fail(`That exceeds the amount left to claim (EGP ${t.remaining.toLocaleString()}).`);
+      }
+      claimAmount = amount;
+    }
     link.guaranteedBenefitId = gb.id;
   } else if (kind === "catalog") {
-    // Must be in the employee's submitted basket for this plan year.
-    const selection = await prisma.benefitSelection.findUnique({
-      where: { userId_planYearId: { userId: me.id, planYearId: planYear!.id } },
-      include: { lines: { where: { catalogItemId: benefitId }, include: { catalogItem: true } } },
+    const item = await prisma.benefitCatalogItem.findUnique({ where: { id: benefitId } });
+    if (!item || !item.active) fail("That benefit isn't available.");
+    if (item.isMedical) fail("Medical cover doesn't need a claim.");
+    claimType = item.claimType;
+    if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
+
+    const ceilingRow = await prisma.poolCeiling.findUnique({
+      where: {
+        employmentType_tenureBand: {
+          employmentType: user.employmentType,
+          tenureBand: user.tenureBand,
+        },
+      },
     });
-    const line = selection?.lines[0];
-    if (!selection || selection.status !== "SUBMITTED" || !line) {
-      fail("You can only claim benefits in your submitted basket.");
+    if (!ceilingRow) fail("Benefits aren't fully configured yet.");
+
+    // Build the allowance context: pool ceiling, committed medical premium, and covered totals
+    // (pending + released) per catalog item — used by evaluateClaim for the 50% + ceiling rules.
+    const [commitment, activeClaims, catalogItems] = await Promise.all([
+      getMedicalCommitment(me.id, planYear.id),
+      prisma.benefitClaim.findMany({
+        where: {
+          userId: me.id,
+          planYearId: planYear.id,
+          catalogItemId: { not: null },
+          status: { in: ["PENDING", "RELEASED"] },
+        },
+        select: { catalogItemId: true, amount: true },
+      }),
+      prisma.benefitCatalogItem.findMany({ select: { id: true, key: true } }),
+    ]);
+    const idToKey = new Map(catalogItems.map((c) => [c.id, c.key]));
+    const claimedByBenefit: Record<string, number> = {};
+    for (const c of activeClaims) {
+      const k = c.catalogItemId ? idToKey.get(c.catalogItemId) : undefined;
+      if (k) claimedByBenefit[k] = (claimedByBenefit[k] ?? 0) + c.amount;
     }
-    if (line!.catalogItem.isMedical) fail("Medical cover doesn't need a claim.");
-    claimType = line!.catalogItem.claimType;
-    allocated = line!.amount;
-    link.catalogItemId = benefitId;
+    const ctx: AllowanceContext = {
+      ceiling: ceilingRow.amount,
+      medicalPremium: commitment?.premium ?? 0,
+      claimedByBenefit,
+      employmentType: user.employmentType,
+    };
+
+    // The employee enters the FULL price they paid (matches proof); the server computes covered.
+    if (!Number.isFinite(amount) || amount <= 0) fail("Enter the full price you paid.");
+    const result = evaluateClaim(ctx, {
+      key: item.key,
+      name: item.name,
+      fullCost: amount,
+      coverageRate: item.coverageRate,
+    });
+    if (result.errors.length > 0) fail(result.errors[0]);
+    claimAmount = result.covered;
+    link.catalogItemId = item.id;
   } else {
     fail("Unknown benefit type.");
-  }
-
-  if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
-
-  // Amount already claimed (pending + released count against the allocation).
-  const existing = await prisma.benefitClaim.findMany({
-    where: {
-      userId: me.id,
-      planYearId: planYear!.id,
-      ...(link.guaranteedBenefitId ? { guaranteedBenefitId: link.guaranteedBenefitId } : {}),
-      ...(link.catalogItemId ? { catalogItemId: link.catalogItemId } : {}),
-      status: { in: ["PENDING", "RELEASED"] },
-    },
-    select: { amount: true, status: true },
-  });
-  const t = tracker(allocated, existing);
-
-  // Request (NOTE) claims take the full remaining allocation — no amount entered.
-  // Proof claims are partial: use the entered amount, capped at the remainder.
-  let claimAmount: number;
-  if (claimType === "NOTE") {
-    if (t.remaining != null && t.remaining <= 0) fail("You've already requested this benefit.");
-    claimAmount = t.remaining ?? allocated ?? 0;
-  } else {
-    if (!Number.isFinite(amount) || amount <= 0) fail("Enter a valid amount.");
-    if (t.remaining != null && amount > t.remaining) {
-      fail(`That exceeds the amount left to claim (EGP ${t.remaining.toLocaleString()}).`);
-    }
-    claimAmount = amount;
   }
 
   // Proof upload (mandatory for PROOF benefits).
@@ -112,7 +147,7 @@ export async function createClaim(formData: FormData): Promise<void> {
   await prisma.benefitClaim.create({
     data: {
       userId: me.id,
-      planYearId: planYear!.id,
+      planYearId: planYear.id,
       guaranteedBenefitId: link.guaranteedBenefitId ?? null,
       catalogItemId: link.catalogItemId ?? null,
       amount: claimAmount,

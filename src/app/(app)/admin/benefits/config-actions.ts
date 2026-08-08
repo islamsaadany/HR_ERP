@@ -1,9 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import type { EmploymentType, TenureBand } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
+
+/** Parse a coverage-rate field. Returns a whole percent 1–100, or `undefined` if not provided.
+ *  Rejects 0 / out-of-range (spec 018, FR-018) by redirecting with an error message. */
+function parseCoverageRate(raw: FormDataEntryValue | null): number | undefined {
+  if (raw == null || String(raw).trim() === "") return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || Math.round(n) < 1 || Math.round(n) > 100) {
+    redirect("/admin/benefits?error=" + encodeURIComponent("Coverage must be between 1% and 100%."));
+  }
+  return Math.round(n);
+}
 
 const TYPES: EmploymentType[] = ["FULL_TIME", "PART_TIME"];
 const BANDS: TenureBand[] = ["BAND_6MO_2Y", "BAND_2_4Y", "BAND_4_7Y", "BAND_7_10Y"];
@@ -84,12 +96,8 @@ export async function updateCatalogItem(formData: FormData): Promise<void> {
   const order = orderRaw != null && String(orderRaw).trim() !== "" && Number.isFinite(orderN)
     ? Math.max(0, Math.round(orderN))
     : undefined;
-  // Coverage rate (spec 012): whole percent 0–100, clamped. Server-authoritative.
-  const rateRaw = formData.get("coverageRate");
-  const rateN = Number(rateRaw);
-  const coverageRate = rateRaw != null && String(rateRaw).trim() !== "" && Number.isFinite(rateN)
-    ? Math.min(100, Math.max(0, Math.round(rateN)))
-    : undefined;
+  // Coverage rate (spec 012/018): whole percent 1–100 (0 rejected). Server-authoritative.
+  const coverageRate = parseCoverageRate(formData.get("coverageRate"));
   await prisma.benefitCatalogItem.update({
     where: { id },
     data: {
@@ -121,6 +129,8 @@ export async function createCatalogItem(formData: FormData): Promise<void> {
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
   const category = String(formData.get("category") ?? "").trim() || null;
+  // Coverage rate (spec 018): whole percent 1–100 (0 rejected); default 100 when not provided.
+  const coverageRate = parseCoverageRate(formData.get("coverageRate")) ?? 100;
   const base = slugify(name);
   let key = base;
   let n = 1;
@@ -130,7 +140,7 @@ export async function createCatalogItem(formData: FormData): Promise<void> {
   }
   const max = await prisma.benefitCatalogItem.aggregate({ _max: { order: true } });
   await prisma.benefitCatalogItem.create({
-    data: { key, name, category, order: (max._max.order ?? 0) + 1, active: true },
+    data: { key, name, category, coverageRate, order: (max._max.order ?? 0) + 1, active: true },
   });
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");

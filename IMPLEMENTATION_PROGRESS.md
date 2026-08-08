@@ -14,9 +14,18 @@
 | 4 — Handbook & Resources | 🟢 Complete |
 | 5 — Time-Off / Leave | 🟢 Complete (V1) |
 | 6 — Benefits (admin config) | 🟢 Complete |
-| 7 — Benefits (employee selector) | 🟢 Complete |
+| 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
+
+## Spec 018 — Benefits claim-based living allowance (built, pending review + Neon migration)
+- [x] Spec + `/speckit-clarify` + `/speckit-plan` + `/speckit-tasks` (`specs/018-benefits-claim-allowance/`).
+- [x] Schema: dropped `BenefitSelection` + `SelectionLine`; added `MedicalCommitment`; migration `prisma/sql/025_claim_based_allowance.sql` (**validated on a throwaway local Postgres**).
+- [x] Rules: `evaluateClaim` (50%-per-benefit for FT+PT + pool ceiling); cost = exact receipt value (no rounding); `COUNT_LIMIT_ENABLED=false`; `evaluateBasket`/`STEP`/`coerceAmount` removed.
+- [x] Server: `commitMedical`, claim-as-you-go `createClaim` (no basket requirement, computes covered), admin `editMedicalCommitment`/`removeMedicalCommitment`, manual-release + export + dashboard updated; admin catalog 0% guard.
+- [x] UI: new `MedicalCommitmentCard`, `BenefitClaims` full-price entry + covered preview, rewritten benefits page + orientation + `/benefits/policy`; removed `BenefitsSelector`/`BenefitsTabs` (snapshots in `ui-versions/`).
+- [x] `npx tsc --noEmit` + `npm run build` green. Docs updated (this file, PROJECT_DETAILS, CLAUDE.md, constitution).
+- [ ] **User review of the new UI** + apply `025_*.sql` to Neon (destructive clean-wipe of selection data — confirmed test data).
 
 ## Phase 0 — Docs & specs
 - [x] Repo access to `islamsaadany/HR_ERP` confirmed and cloned.

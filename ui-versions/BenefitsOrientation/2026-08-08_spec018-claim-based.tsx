@@ -10,6 +10,7 @@ export type OrientationProps = {
   employmentTypeLabel: string | null;
   tenureBandLabel: string | null;
   ceiling: number | null;
+  maxSelect: number;
   guaranteed: { name: string; amount: number | null; salaryDriven: boolean }[];
   categories: string[];
   /** Auto-open on first render (server-computed: not submitted + not seen + selector available). */
@@ -97,7 +98,7 @@ export function BenefitsOrientation(props: OrientationProps) {
                   onClick={() => (last ? close() : setStep((s) => s + 1))}
                   className="rounded-lg bg-navy-800 px-3.5 py-2 text-sm font-semibold text-white hover:bg-navy-700"
                 >
-                  {last ? "Got it" : "Next →"}
+                  {last ? "Start choosing" : "Next →"}
                 </button>
               </div>
             </div>
@@ -169,9 +170,9 @@ function buildSteps(p: OrientationProps, firstName: string) {
         ),
     },
     {
-      eyebrow: "Using your pool",
-      title: "Claim as you go — all year",
-      intro: "There's nothing to submit. Claim from these categories any time during the year:",
+      eyebrow: "Build your basket",
+      title: "How the flexible basket works",
+      intro: `Pick up to ${p.maxSelect} benefits from these categories:`,
       body: (
         <>
           <div className="mb-3 flex flex-wrap gap-1.5">
@@ -179,9 +180,9 @@ function buildSteps(p: OrientationProps, firstName: string) {
               <span key={c} className="rounded-full border border-line bg-surface px-2.5 py-1 text-[11px] font-medium text-navy-700">{c}</span>
             ))}
           </div>
-          {ruleRow("1", <>When you spend, enter the benefit&apos;s <strong>full price</strong> (the amount on your receipt).</>)}
-          {ruleRow("2", <>The company covers a <strong>set %</strong> — that part comes from your pool, you pay the rest. <span className="font-semibold text-gold-700">e.g. a 10,000 gym at 80% → 8,000 from your pool, you pay 2,000.</span></>)}
-          {ruleRow("3", <><strong>Claim in full or in parts</strong> — e.g. 2,000 for a course now, more later — and come back through the year.</>)}
+          {ruleRow("1", <>You enter each benefit&apos;s <strong>full cost</strong>.</>)}
+          {ruleRow("2", <>The company covers a <strong>set %</strong> — that part comes from your pool.</>)}
+          {ruleRow("3", <>You pay the rest. <span className="font-semibold text-gold-700">e.g. a 10,000 gym at 80% → 8,000 from your pool, you pay 2,000.</span></>)}
         </>
       ),
     },
@@ -192,9 +193,8 @@ function buildSteps(p: OrientationProps, firstName: string) {
       body: (
         <>
           {ruleRow("%", <><strong>Coverage varies</strong> — 100% (medical, check-up, coaching), 80% (gym, sports, schooling…), 50% (mobile, home-office).</>)}
-          {ruleRow("½", <>Across the year, no single benefit&apos;s company share can pass <strong>half your pool</strong> — this keeps your choices varied. <span className="text-muted">(Medical is exempt.)</span></>)}
-          {ruleRow("✓", <><strong>Claims:</strong> show proof of your full spend (or request it); you&apos;re paid back the covered portion — and you can claim the same benefit <strong>more than once</strong>, up to that 50%.</>)}
-          {ruleRow("🏥", <><strong>Medical is the one thing you submit</strong> — set it up once for the year; HR manages it after, since it&apos;s arranged with a provider.</>)}
+          {ruleRow("½", <>No single benefit&apos;s company share can be more than half your pool. <span className="text-muted">(Medical insurance is exempt.)</span></>)}
+          {ruleRow("✓", <><strong>Claims:</strong> make a request or show proof of your full spend; you&apos;re paid back the covered portion.</>)}
           <p className="mt-3">
             <a href="/benefits/policy" className="text-sm font-semibold text-navy-600 hover:text-navy-800">Read the full guide →</a>
           </p>

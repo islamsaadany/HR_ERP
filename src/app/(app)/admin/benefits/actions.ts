@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import type { ClaimType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
+import { getMedicalRate } from "@/lib/benefits/config";
+import { computeMedicalPremium } from "@/lib/benefits/rules";
 
 export async function createPlanYear(formData: FormData): Promise<void> {
   await requireAdmin();
@@ -36,34 +38,59 @@ export async function setPlanYearStatus(formData: FormData): Promise<void> {
   revalidatePath("/benefits");
 }
 
-/** Reopen a submitted basket so the employee can edit it (while the window is open). */
-export async function reopenSelection(formData: FormData): Promise<void> {
-  await requireAdmin();
+/**
+ * HR override (spec 018): edit an employee's committed medical election. Medical is locked to the
+ * employee after commit; only HR may change dependants (which recomputes the premium, capped at the
+ * employee's pool ceiling). `id` is the MedicalCommitment id.
+ */
+export async function editMedicalCommitment(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
   const id = formData.get("id") as string;
   if (!id) return;
-  await prisma.benefitSelection.update({
+
+  const commitment = await prisma.medicalCommitment.findUnique({
     where: { id },
-    data: { status: "DRAFT", submittedAt: null },
+    include: { user: { select: { employmentType: true, tenureBand: true } } },
+  });
+  if (!commitment) redirect("/admin/benefits?error=" + encodeURIComponent("That medical commitment no longer exists."));
+
+  const spouse = formData.get("spouse") === "on" || formData.get("spouse") === "true";
+  const childrenUnder18 = Math.max(0, Math.floor(Number(formData.get("childrenUnder18") ?? 0)));
+  const children18Plus = Math.max(0, Math.floor(Number(formData.get("children18Plus") ?? 0)));
+
+  const [rate, ceilingRow] = await Promise.all([
+    getMedicalRate(),
+    commitment.user.employmentType && commitment.user.tenureBand
+      ? prisma.poolCeiling.findUnique({
+          where: {
+            employmentType_tenureBand: {
+              employmentType: commitment.user.employmentType,
+              tenureBand: commitment.user.tenureBand,
+            },
+          },
+        })
+      : Promise.resolve(null),
+  ]);
+  if (!rate || !ceilingRow) {
+    redirect("/admin/benefits?error=" + encodeURIComponent("Benefits aren't fully configured for that employee."));
+  }
+  const rawPremium = computeMedicalPremium(rate, { spouse, childrenUnder18, children18Plus });
+  const premium = Math.min(rawPremium, ceilingRow.amount);
+
+  await prisma.medicalCommitment.update({
+    where: { id },
+    data: { spouse, childrenUnder18, children18Plus, premium, committedById: admin.id },
   });
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
 }
 
-/** Fully reset a submission — deletes the basket so the employee starts fresh.
- *  Blocked if any claims exist for that employee's plan year (so nothing is lost). */
-export async function resetSelection(formData: FormData): Promise<void> {
+/** HR override (spec 018): remove an employee's committed medical so they can re-commit. */
+export async function removeMedicalCommitment(formData: FormData): Promise<void> {
   await requireAdmin();
   const id = formData.get("id") as string;
   if (!id) return;
-  const sel = await prisma.benefitSelection.findUnique({ where: { id } });
-  if (!sel) return;
-  const claimCount = await prisma.benefitClaim.count({
-    where: { userId: sel.userId, planYearId: sel.planYearId },
-  });
-  if (claimCount > 0) {
-    redirect("/admin/benefits?error=" + encodeURIComponent("Can't reset — this employee has claims for the year. Resolve them first."));
-  }
-  await prisma.benefitSelection.delete({ where: { id } }); // lines cascade
+  await prisma.medicalCommitment.delete({ where: { id } });
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
 }

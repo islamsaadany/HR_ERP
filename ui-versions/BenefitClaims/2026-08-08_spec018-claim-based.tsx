@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { ClaimType, ClaimStatus } from "@prisma/client";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS, tracker } from "@/lib/benefits/claims";
-import { coveredAmount } from "@/lib/benefits/coverage";
 import { formatDate } from "@/lib/labels";
 import { createClaim } from "@/app/(app)/benefits/claim-actions";
 
@@ -24,9 +23,7 @@ export type ClaimableBenefit = {
   id: string;
   name: string;
   claimType: ClaimType; // NOTE | PROOF
-  /** Company coverage % for a flexible (catalog) benefit; null for guaranteed (fixed amounts). */
-  coverageRate: number | null;
-  allocated: number | null; // for catalog = 50%-of-pool cap; for guaranteed = its allocation
+  allocated: number | null;
   claims: ClaimRow[];
 };
 
@@ -72,11 +69,11 @@ export function BenefitClaims({
 
   return (
     <section className="mt-10">
-      <h2 className="font-serif text-2xl text-ink">Your flexible benefits &amp; claims</h2>
+      <h2 className="font-serif text-2xl text-ink">Your benefits &amp; claims</h2>
       <p className="mt-1 text-sm text-muted">
-        Claim as you spend — any time this year, as often as you like. Enter the <strong>full price you
-        paid</strong> (matching your receipt); the company covers a set percentage of each benefit, and only
-        that covered share draws from your pool. No single benefit&apos;s covered share may pass half your pool.
+        Put your benefits to use. Some are paid automatically; a few just need a quick note, and the rest
+        need a receipt we&apos;ll review before paying you back. All figures below are the <strong>company
+        (covered) share</strong> — you show proof of your full spend and we reimburse the covered portion.
       </p>
 
       {error ? (
@@ -100,7 +97,7 @@ export function BenefitClaims({
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
                 <th className="w-10 px-4 py-3 text-right font-medium">#</th>
                 <th className="px-4 py-3 font-medium">Benefit</th>
-                <th className="px-4 py-3 text-right font-medium">Cap / allocation</th>
+                <th className="px-4 py-3 text-right font-medium">Allocated</th>
                 <th className="px-4 py-3 text-right font-medium">Reimbursed</th>
                 <th className="px-4 py-3 text-right font-medium">Pending</th>
                 <th className="px-4 py-3 text-right font-medium">Left to claim</th>
@@ -162,7 +159,6 @@ function ClaimRowsFragment({
   actionLabel: string;
   onToggle: () => void;
 }) {
-  const isCatalog = b.kind === "catalog";
   return (
     <>
       <tr className={"border-b border-line " + (isOpen ? "bg-navy-50/40" : "hover:bg-navy-50/40")}>
@@ -170,8 +166,7 @@ function ClaimRowsFragment({
         <td className="px-4 py-3">
           <div className="font-medium text-ink">{b.name}</div>
           <div className="text-xs text-muted">
-            {isCatalog ? "Flexible" : "Guaranteed"}
-            {isCatalog && b.coverageRate != null ? ` · ${b.coverageRate}% covered` : ""} ·{" "}
+            {b.kind === "guaranteed" ? "Guaranteed" : "Basket"} ·{" "}
             {isProof ? "proof of payment required" : "note only"}
           </div>
         </td>
@@ -255,7 +250,55 @@ function ClaimRowsFragment({
                     Fully claimed — nothing left to request.
                   </p>
                 ) : (
-                  <ClaimForm benefit={b} isProof={isProof} isCatalog={isCatalog} remaining={t.remaining ?? null} />
+                  <form
+                    action={createClaim}
+                    encType="multipart/form-data"
+                    className="rounded-lg border border-line bg-surface p-3"
+                  >
+                    <input type="hidden" name="kind" value={b.kind} />
+                    <input type="hidden" name="benefitId" value={b.id} />
+                    {/* Request (NOTE) claims take the full allocated amount — no amount box.
+                        Proof claims are reimbursed against spend, so they ask for an amount. */}
+                    {isProof ? (
+                      <div className="mb-3">
+                        <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Covered amount to claim (EGP)</label>
+                        <input
+                          name="amount"
+                          inputMode="numeric"
+                          placeholder={t.remaining != null ? String(t.remaining) : "Amount"}
+                          required
+                          className="w-full rounded-lg border border-line px-3 py-2 text-sm"
+                        />
+                        <p className="mt-1 text-xs text-muted">
+                          The company (covered) portion you&apos;re claiming, up to {b.allocated != null ? egp(t.remaining ?? 0) : "your allocation"} left. Attach proof of your full spend below.
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="mb-3 text-xs text-muted">
+                        Requests the full amount{b.allocated != null ? ` (${egp(b.allocated)})` : ""}. Add a note if useful.
+                      </p>
+                    )}
+                    <div className="mb-3">
+                      <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Note (optional)</label>
+                      <input name="note" className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
+                    </div>
+                    {isProof ? (
+                      <div className="mb-3">
+                        <label className="mb-1 block text-xs uppercase tracking-wide text-muted">
+                          Proof of payment (required)
+                        </label>
+                        <input
+                          type="file"
+                          name="proof"
+                          required
+                          className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-navy-700"
+                        />
+                      </div>
+                    ) : null}
+                    <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">
+                      {isProof ? "Submit request" : "Confirm request"}
+                    </button>
+                  </form>
                 )}
               </div>
             </div>
@@ -263,99 +306,5 @@ function ClaimRowsFragment({
         </tr>
       ) : null}
     </>
-  );
-}
-
-/** The new-claim form. Catalog (flexible) PROOF claims ask for the FULL price paid and show a live
- *  covered preview; guaranteed PROOF claims ask for the covered amount directly (fixed benefits). */
-function ClaimForm({
-  benefit: b,
-  isProof,
-  isCatalog,
-  remaining,
-}: {
-  benefit: ClaimableBenefit;
-  isProof: boolean;
-  isCatalog: boolean;
-  remaining: number | null;
-}) {
-  const [fullCost, setFullCost] = useState<number>(0);
-  const rate = b.coverageRate ?? 100;
-  const covered = coveredAmount(fullCost, rate);
-  const overRemaining = remaining != null && covered > remaining;
-
-  return (
-    <form action={createClaim} encType="multipart/form-data" className="rounded-lg border border-line bg-surface p-3">
-      <input type="hidden" name="kind" value={b.kind} />
-      <input type="hidden" name="benefitId" value={b.id} />
-
-      {isProof && isCatalog ? (
-        // Flexible benefit: enter the full receipt price; the company covers coverageRate%.
-        <div className="mb-3">
-          <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Full price you paid (EGP)</label>
-          <input
-            name="amount"
-            inputMode="numeric"
-            value={fullCost ? fullCost.toLocaleString() : ""}
-            onChange={(e) => setFullCost(parseInt(e.target.value.replace(/[^0-9]/g, ""), 10) || 0)}
-            placeholder="e.g. 10,000"
-            required
-            className={"w-full rounded-lg border px-3 py-2 text-sm " + (overRemaining ? "border-red-300" : "border-line")}
-          />
-          <p className="mt-1 text-xs text-muted">
-            Company covers {rate}% → <span className="font-semibold text-navy-700">{egp(covered)}</span> reimbursed.
-            {remaining != null ? ` Up to ${egp(remaining)} covered left on this benefit.` : ""}
-          </p>
-          {overRemaining ? (
-            <p className="mt-1 text-xs font-medium text-red-600">
-              That covered amount exceeds what&apos;s left ({egp(remaining ?? 0)}). Lower the price or claim the rest later.
-            </p>
-          ) : null}
-        </div>
-      ) : isProof ? (
-        // Guaranteed PROOF: covered amount entered directly (fixed-amount benefit, no coverage %).
-        <div className="mb-3">
-          <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Amount to claim (EGP)</label>
-          <input
-            name="amount"
-            inputMode="numeric"
-            placeholder={remaining != null ? String(remaining) : "Amount"}
-            required
-            className="w-full rounded-lg border border-line px-3 py-2 text-sm"
-          />
-          <p className="mt-1 text-xs text-muted">
-            Up to {remaining != null ? egp(remaining) : "your allocation"} left. Attach proof of your spend below.
-          </p>
-        </div>
-      ) : (
-        <p className="mb-3 text-xs text-muted">
-          Requests the full amount{b.allocated != null ? ` (${egp(b.allocated)})` : ""}. Add a note if useful.
-        </p>
-      )}
-
-      <div className="mb-3">
-        <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Note (optional)</label>
-        <input name="note" className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
-      </div>
-
-      {isProof ? (
-        <div className="mb-3">
-          <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Proof of payment (required)</label>
-          <input
-            type="file"
-            name="proof"
-            required
-            className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-navy-700"
-          />
-        </div>
-      ) : null}
-
-      <button
-        disabled={isProof && isCatalog && (fullCost <= 0 || overRemaining)}
-        className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50"
-      >
-        {isProof ? "Submit claim" : "Confirm request"}
-      </button>
-    </form>
   );
 }

@@ -99,7 +99,7 @@ four steering files (same commit).
 - **Edge cases: handle more, not fewer** — nulls, empty states, unexpected input, boundaries.
 - **Aim for "engineered enough"** — not fragile, not over-abstracted. When in doubt, ask.
 - **Explicit over clever** — readable, obvious code over compact/clever solutions.
-- **Benefits money & rules are server-authoritative** — every pool ceiling, 50% cap, max-4, and medical-exemption rule is enforced on the server at save/submit time, never trusted from the client.
+- **Benefits money & rules are server-authoritative** — every pool ceiling, 50%-per-benefit cap, and medical rule is enforced on the server at claim/commit time, never trusted from the client. (The benefit-count limit is retained but off by default — spec 018.)
 
 ### 4. Git Workflow
 - **Development branch:** the session-coded branch you start on (e.g. `claude/hr-system-planning-2oc2mu`). All work is committed here.
@@ -122,7 +122,7 @@ four steering files (same commit).
 **v1 modules:** Foundation (auth + roles + employee registry + **My Documents** personal uploads) · Onboarding · Benefits · Team Directory · **Handbook & Resources** (shared policies/handbook + downloadable company files) · Time-Off / Leave Management · Dashboard · Learning Track (placeholder in v1).
 **Phase-2 (designed-for, built later):** full Learning Track, Case Studies, benefits claims/reimbursement.
 
-The **Benefits** module is the heart of v1 — it is the only module involving money and admin-configured rules (pool ceilings by employment type × tenure, a 50% single-benefit cap, a max of 4 flexible benefits, and rate-card-driven medical insurance that is exempt from the 50% cap). All rule enforcement lives server-side.
+The **Benefits** module is the heart of v1 — it is the only module involving money and admin-configured rules (pool ceilings by employment type × tenure, a 50% single-benefit cap, and rate-card-driven medical insurance that is exempt from the 50% cap). As of **spec 018** it is a **claim-based living allowance**: no basket to submit — employees claim flexible benefits as they spend across the open plan year, medical is a one-time commitment, and the benefit-count limit is retired (dormant flag). All rule enforcement lives server-side.
 
 ### Technology Stack (decided)
 - **Framework:** Next.js 16 (App Router) + React 19
@@ -178,8 +178,8 @@ HR_ERP/
 - **Email + password sign-in (Google parked)** — sign-in is NextAuth Credentials (email + scrypt-hashed password); the company-domain restriction on password login was **lifted** (2026-08-07) — any registered employee may sign in, and HR is warned when creating a non-company-domain email. Google is disabled for now (button removed; provider still env-gated so it can return). Admin-issued passwords are temporary: the employee is forced to `/set-password` on next sign-in (`mustChangePassword`) and must choose one meeting the policy (≥ 8 chars, uppercase + number + special). No emails in v1 → a forgotten password is reset by HR (no self-service recovery).
 - **Roles** — `EMPLOYEE`, `HR_ADMIN`, and `SUPER_USER` (superset of HR Admin; adds governance: role grants + app-wide settings). A `manager` capability derives from the org chart (an employee with direct reports) — e.g. approving their team's time-off. Admin surfaces and API routes check role server-side. Bootstrap admins via `ADMIN_EMAILS`; later, promotion in-app.
 - **Employee registry is the backbone** — `User` (Google identity + employmentType + tenureBand + reportsTo + role) is read by Directory, Onboarding, Benefits, and Dashboard. It is built and validated first (Phase 2) before the money module is built on top.
-- **Benefits rules are server-side** — pool ceiling (type × tenure), 50% single-benefit cap, max-4 selections, and medical-insurance exemption are all validated on save/submit in `src/lib/benefits/`. The client mirrors them for UX only.
-- **Plan-year window** — an admin opens/closes a benefits selection cycle; employees can only save/submit while it is open. A submitted basket is locked (or requires admin reopen) per the benefits spec.
+- **Benefits rules are server-side (spec 018)** — pool ceiling (type × tenure), the 50%-per-benefit cap (on cumulative claims, full- **and** part-time), and medical handling are validated at claim/commit time in `src/lib/benefits/` (`evaluateClaim`). The client mirrors them for UX only. The benefit-count limit is retained behind `COUNT_LIMIT_ENABLED` (default off).
+- **Plan-year window** — an admin opens/closes a benefits cycle; employees can only claim / commit medical while it is open. **Medical is committed once** (a `MedicalCommitment` row) and then locked — only HR can change/remove it. **Flexible benefits are claimed as-you-go** (`BenefitClaim` linked directly to the catalog item); there is no basket to submit and no per-benefit allocation. (Superseded the old basket/`BenefitSelection` model.)
 - **Placeholder benefits data** — real rate card, pool ceilings, and tenure bands arrive later; until then an admin config screen + seeded placeholders drive the module. Placeholder figures must never be presented as final.
 - **No emails, ever (v1)** — no invitations, reminders, or notifications.
 

@@ -1,5 +1,7 @@
 # Feature Specification: Benefits Orientation Tour
 
+> **Note:** the tour copy was rewritten for [spec 018](../018-benefits-claim-allowance/spec.md) — claim-as-you-go (nothing to submit), full-price entry, claim a benefit more than once up to 50% of the pool, and "medical is the one thing you commit." The `maxSelect` step and the "pick up to N / submit your basket" language are removed; the final button reads "Got it."
+
 **Feature Branch**: `017-benefits-orientation`
 
 **Created**: 2026-08-07

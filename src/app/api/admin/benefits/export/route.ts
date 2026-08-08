@@ -12,8 +12,9 @@ function csvCell(v: string | number | null | undefined): string {
 }
 
 /**
- * Export the plan-year's benefit submissions as CSV for Finance — one row per
- * selected benefit line (employee × benefit × amount). HR / Super User only.
+ * Export the plan-year's benefits activity as CSV for Finance (spec 018): one row per committed
+ * medical premium and one row per filed claim (employee × benefit × covered amount × status).
+ * HR / Super User only.
  */
 export async function GET(req: Request) {
   await requireAdmin();
@@ -28,56 +29,74 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "No plan year found." }, { status: 404 });
   }
 
-  const selections = await prisma.benefitSelection.findMany({
-    where: { planYearId: planYear.id },
-    include: {
-      user: { select: { name: true, email: true } },
-      lines: { include: { catalogItem: { select: { name: true, category: true, isMedical: true } } } },
-    },
-    orderBy: [{ status: "asc" }, { user: { name: "asc" } }],
-  });
+  const [commitments, claims] = await Promise.all([
+    prisma.medicalCommitment.findMany({
+      where: { planYearId: planYear.id },
+      include: { user: { select: { name: true, email: true } } },
+      orderBy: { user: { name: "asc" } },
+    }),
+    prisma.benefitClaim.findMany({
+      where: { planYearId: planYear.id },
+      include: {
+        user: { select: { name: true, email: true } },
+        catalogItem: { select: { name: true, category: true } },
+        guaranteedBenefit: { select: { name: true } },
+      },
+      orderBy: [{ status: "asc" }, { createdAt: "asc" }],
+    }),
+  ]);
 
   const header = [
     "Plan Year",
     "Employee",
     "Email",
-    "Status",
-    "Submitted At",
     "Benefit",
+    "Type",
     "Category",
-    "Medical",
-    "Amount (EGP)",
+    "Covered Amount (EGP)",
+    "Status",
+    "Date",
   ];
   const rows: string[] = [header.map(csvCell).join(",")];
 
-  for (const s of selections) {
-    const submittedAt = s.submittedAt ? s.submittedAt.toISOString().slice(0, 10) : "";
-    if (s.lines.length === 0) {
-      // Keep the employee visible even with an empty basket (e.g. a draft).
-      rows.push(
-        [planYear.name, s.user.name, s.user.email, s.status, submittedAt, "", "", "", "0"]
-          .map(csvCell)
-          .join(",")
-      );
-      continue;
-    }
-    for (const l of s.lines) {
-      rows.push(
-        [
-          planYear.name,
-          s.user.name,
-          s.user.email,
-          s.status,
-          submittedAt,
-          l.catalogItem.name,
-          l.catalogItem.category ?? "",
-          l.catalogItem.isMedical ? "Yes" : "No",
-          l.amount,
-        ]
-          .map(csvCell)
-          .join(",")
-      );
-    }
+  // Committed medical premiums (automatic cover, not a claim).
+  for (const c of commitments) {
+    rows.push(
+      [
+        planYear.name,
+        c.user.name,
+        c.user.email,
+        "Medical insurance",
+        "Medical (committed)",
+        "",
+        c.premium,
+        "Committed",
+        c.committedAt.toISOString().slice(0, 10),
+      ]
+        .map(csvCell)
+        .join(",")
+    );
+  }
+
+  // Filed claims (flexible + guaranteed).
+  for (const cl of claims) {
+    const name = cl.catalogItem?.name ?? cl.guaranteedBenefit?.name ?? "";
+    const type = cl.catalogItemId ? "Flexible" : "Guaranteed";
+    rows.push(
+      [
+        planYear.name,
+        cl.user.name,
+        cl.user.email,
+        name,
+        type,
+        cl.catalogItem?.category ?? "",
+        cl.amount,
+        cl.status,
+        cl.createdAt.toISOString().slice(0, 10),
+      ]
+        .map(csvCell)
+        .join(",")
+    );
   }
 
   const csv = rows.join("\r\n") + "\r\n";

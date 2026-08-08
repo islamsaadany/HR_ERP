@@ -40,16 +40,16 @@ export default async function DashboardPage() {
 
   const planYear = await getActivePlanYear();
 
-  const [assignedCount, completedCount, myPending, approvals, selection, announcements, hasReports, teamCount, disabled] =
+  const [assignedCount, completedCount, myPending, approvals, medicalCommitment, announcements, hasReports, teamCount, disabled] =
     await Promise.all([
       prisma.onboardingActivity.count({ where: { active: true, track: { in: tracks } } }),
       prisma.activityCompletion.count({ where: { userId: me.id } }),
       prisma.leaveRequest.count({ where: { userId: me.id, status: "PENDING" } }),
       prisma.leaveRequest.count({ where: { approverId: me.id, status: "PENDING" } }),
       planYear
-        ? prisma.benefitSelection.findUnique({
+        ? prisma.medicalCommitment.findUnique({
             where: { userId_planYearId: { userId: me.id, planYearId: planYear.id } },
-            select: { status: true },
+            select: { id: true },
           })
         : Promise.resolve(null),
       prisma.announcement.findMany({ orderBy: { publishedAt: "desc" }, take: 5 }),
@@ -64,17 +64,16 @@ export default async function DashboardPage() {
   const onbPct = assignedCount === 0 ? 100 : Math.round((completedCount / assignedCount) * 100);
   const onboardingDone = assignedCount > 0 && completedCount >= assignedCount;
 
-  const benefitsSubmitted = selection?.status === "SUBMITTED";
   const benefitsMsg = !planYear
     ? "Selection not open."
-    : selection?.status === "DRAFT"
-    ? "Draft saved — submit before it closes."
-    : "Open — build your basket.";
+    : medicalCommitment
+    ? "Medical committed — claim benefits anytime."
+    : "Open — commit medical & claim as you spend.";
 
   // Card visibility: disabled modules never show. Time-Off + Team Directory are the
-  // always-on primary cards; Onboarding hides when complete; Benefits hides once submitted.
+  // always-on primary cards; Onboarding hides when complete; Benefits shows while open.
   const showOnboarding = on("onboarding") && !onboardingDone;
-  const showBenefits = on("benefits") && !benefitsSubmitted;
+  const showBenefits = on("benefits") && !!planYear;
   const showTimeOff = on("timeoff");
   const showDirectory = on("directory");
   const showApprovals = on("timeoff") && hasReports > 0;
