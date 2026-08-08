@@ -1,0 +1,285 @@
+<title>Benefits — proposed layout (spec 018 mockup)</title>
+<style>
+  :root {
+    --paper:#F2EEE4; --surface:#FFFFFF; --ink:#17233A; --muted:#6E7484;
+    --navy-900:#0E1B2E; --navy-800:#1C2E48; --navy-700:#294061; --navy-50:#EEF1F6;
+    --gold:#C6A02C; --gold-600:#A9871F; --gold-100:#F3E9C8; --gold-800:#7A5E14;
+    --line:#E6E0D3; --good-bg:#E9F2EC; --good:#2F7A4D; --bad-bg:#F7E9E9; --bad:#B23B3B;
+    --serif: "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans);
+    line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1120px; margin:0 auto; padding:28px 22px 80px; }
+  .note { background:var(--navy-900); color:#fff; border-radius:14px; padding:16px 20px; margin-bottom:26px; }
+  .note b { color:var(--gold); }
+  .note p { margin:.35em 0 0; font-size:14px; color:#D7DEEA; }
+
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--gold-600); }
+  h1 { font-family:var(--serif); font-weight:600; font-size:40px; margin:6px 0 4px; letter-spacing:.2px; }
+  .sub { color:var(--muted); margin:0; }
+  .toprow { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:18px 0 10px; flex-wrap:wrap; }
+  .link { color:var(--navy-700); font-weight:600; font-size:14px; text-decoration:none; }
+  .link:hover { color:var(--navy-900); text-decoration:underline; }
+  .btn-ghost { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:9px 14px;
+    font-weight:600; font-size:14px; color:var(--navy-700); cursor:pointer; }
+
+  .grid { display:grid; grid-template-columns:1fr 300px; gap:22px; align-items:start; }
+  @media (max-width:880px){ .grid { grid-template-columns:1fr; } .side { position:static !important; } }
+
+  /* Sidebar meter */
+  .side { position:sticky; top:16px; display:flex; flex-direction:column; gap:16px; }
+  .meter { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px; }
+  .meter .big { font-family:var(--serif); font-size:30px; font-variant-numeric:tabular-nums; }
+  .meter .cap { font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .bar { height:9px; border-radius:99px; background:var(--navy-50); overflow:hidden; margin-top:14px; }
+  .bar > i { display:block; height:100%; width:38%; background:var(--gold); border-radius:99px; }
+  .meter .row { display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-top:12px; }
+  .meter .row b { color:var(--ink); font-variant-numeric:tabular-nums; }
+
+  /* Guaranteed band */
+  .band { border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .band-head { background:var(--navy-900); color:#fff; padding:14px 20px; }
+  .band-head .k { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); }
+  .band-head h2 { font-family:var(--serif); font-size:20px; margin:2px 0 0; font-weight:600; }
+  .g-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1px; background:var(--line); }
+  .g-card { background:var(--surface); padding:15px; display:flex; flex-direction:column; gap:4px; min-height:120px; }
+  .g-card .nm { font-weight:600; font-size:14px; }
+  .g-card .ds { font-size:12px; color:var(--muted); flex:1; }
+  .g-card .amt { font-family:var(--serif); font-size:17px; color:var(--navy-800); }
+  .g-card .act { margin-top:6px; }
+  .mini { border:1px solid var(--line); border-radius:8px; padding:5px 12px; background:var(--surface);
+    font-size:12.5px; font-weight:600; color:var(--navy-700); cursor:pointer; }
+
+  .sec-title { font-family:var(--serif); font-size:24px; margin:26px 0 4px; font-weight:600; }
+  .cat { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:20px 0 8px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; }
+
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:6px; }
+  .card .top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .card .nm { font-weight:600; font-size:15px; }
+  .badge { font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 7px; border-radius:6px;
+    background:var(--gold-100); color:var(--gold-800); white-space:nowrap; }
+  .card .ds { font-size:12.5px; color:var(--muted); }
+  .card .left { font-size:12.5px; color:var(--ink); margin-top:2px; }
+  .card .left b { font-variant-numeric:tabular-nums; }
+  .btn { background:var(--navy-800); color:#fff; border:none; border-radius:10px; padding:9px 14px;
+    font-weight:600; font-size:13.5px; cursor:pointer; align-self:flex-start; margin-top:4px; }
+  .btn:hover { background:var(--navy-700); }
+
+  /* Expanded claim form inside a card */
+  .card.wide { grid-column:1/-1; }
+  .claimform { border-top:1px dashed var(--line); margin-top:10px; padding-top:12px; }
+  .field label { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-bottom:4px; }
+  .field input { width:100%; max-width:260px; border:1px solid var(--line); border-radius:9px; padding:8px 11px; font-size:14px; font-family:var(--sans); }
+  .prev { font-size:12.5px; color:var(--muted); margin-top:6px; }
+  .prev b { color:var(--navy-700); font-variant-numeric:tabular-nums; }
+
+  /* Medical commitment card */
+  .medical { background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden; grid-column:1/-1; }
+  .medical .mhead { border-bottom:1px solid var(--line); padding:16px 18px; }
+  .medical h3 { font-family:var(--serif); font-size:18px; margin:0; display:inline; }
+  .medical .mdesc { font-size:13px; color:var(--muted); margin:6px 0 0; }
+  .dep-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:18px; }
+  @media (max-width:560px){ .dep-grid { grid-template-columns:1fr; } }
+  .dep { display:flex; align-items:center; justify-content:space-between; border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .dep .k { font-weight:600; font-size:14px; }
+  .dep .p { font-size:12px; color:var(--muted); }
+  .counter { display:flex; align-items:center; gap:6px; }
+  .counter button { width:30px; height:30px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--muted); font-size:16px; cursor:pointer; }
+  .counter span { width:26px; text-align:center; font-weight:600; font-variant-numeric:tabular-nums; }
+  .mfoot { display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid var(--line); padding:14px 18px; flex-wrap:wrap; }
+  .mfoot .prem { font-size:13px; color:var(--muted); }
+  .mfoot .prem b { font-family:var(--serif); font-size:20px; color:var(--navy-800); font-variant-numeric:tabular-nums; margin-left:6px; }
+  .commit { background:var(--navy-800); color:#fff; border:none; border-radius:10px; padding:11px 20px; font-weight:700; font-size:14px; cursor:pointer; }
+
+  .callout { margin:34px 0 10px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold-600); font-weight:700; }
+
+  /* Orientation modal preview */
+  .stage { position:relative; border:1px solid var(--line); border-radius:16px; overflow:hidden; height:420px; }
+  .stage .bgshot { position:absolute; inset:0; padding:24px; filter:blur(5px); opacity:.55; pointer-events:none; }
+  .stage .bgshot h1 { font-size:30px; }
+  .scrim { position:absolute; inset:0; background:rgba(10,18,35,.62); display:grid; place-items:center; }
+  .modal { width:min(430px,86%); background:var(--surface); border-radius:18px; box-shadow:0 24px 60px rgba(6,12,26,.4); overflow:hidden; }
+  .modal .strip { height:5px; background:linear-gradient(90deg,var(--navy-800),var(--gold)); }
+  .modal .body { padding:20px 22px 8px; }
+  .modal .we { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--gold-600); }
+  .modal h2 { font-family:var(--serif); font-size:24px; margin:6px 0 2px; }
+  .modal p.i { font-size:13.5px; color:var(--muted); margin:0 0 10px; }
+  .stat { display:flex; justify-content:space-between; border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:8px; font-size:14px; }
+  .stat b { font-family:var(--serif); color:var(--navy-800); }
+  .poolbox { border:1px solid var(--navy-50); background:var(--navy-50); border-radius:12px; text-align:center; padding:14px; }
+  .poolbox .n { font-family:var(--serif); font-size:28px; color:var(--navy-800); }
+  .poolbox .l { font-size:12px; color:var(--muted); }
+  .modal .foot { display:flex; align-items:center; justify-content:space-between; padding:14px 22px 18px; }
+  .dots { display:flex; gap:6px; }
+  .dots i { width:6px; height:6px; border-radius:99px; background:var(--navy-50); display:block; }
+  .dots i.on { width:20px; background:var(--gold); }
+  .next { background:var(--navy-800); color:#fff; border:none; border-radius:10px; padding:9px 16px; font-weight:600; font-size:14px; }
+  .cap-copy { font-size:13px; color:var(--muted); margin-top:10px; }
+  .cap-copy code { background:#EFEADD; padding:1px 5px; border-radius:4px; }
+</style>
+
+<div class="wrap">
+  <div class="note">
+    <b>Mockup for review — not the live app.</b>
+    <p>Proposed benefits page for spec 018 (claim-based allowance), restoring the original navy/gold categorized-card layout. Confirm the look here before I touch any component.</p>
+  </div>
+
+  <!-- Header -->
+  <div class="eyebrow">Benefits</div>
+  <h1>Your benefits</h1>
+  <p class="sub">Full-time · 4 – 7 years</p>
+  <div class="toprow">
+    <a class="link" href="#">Read the full guide →</a>
+    <button class="btn-ghost">How it works</button>
+  </div>
+
+  <div class="grid">
+    <!-- MAIN COLUMN -->
+    <div class="main">
+      <!-- Guaranteed band (top) -->
+      <div class="band">
+        <div class="band-head">
+          <div class="k">You receive automatically</div>
+          <h2>Guaranteed benefits</h2>
+        </div>
+        <div class="g-grid">
+          <div class="g-card"><div class="nm">Marriage allowance</div><div class="ds">One-time on marriage.</div><div class="amt">EGP 30,000</div><div class="act"><button class="mini">Request</button></div></div>
+          <div class="g-card"><div class="nm">Summer allowance</div><div class="ds">Paid each summer.</div><div class="amt">EGP 5,000</div><div class="act"><button class="mini">Request</button></div></div>
+          <div class="g-card"><div class="nm">Professional development</div><div class="ds">Courses &amp; certifications.</div><div class="amt">EGP 18,000</div><div class="act"><button class="mini">Claim · proof</button></div></div>
+          <div class="g-card"><div class="nm">Special events</div><div class="ds">Life milestones.</div><div class="amt">EGP 12,000</div><div class="act"><button class="mini">Request</button></div></div>
+          <div class="g-card"><div class="nm">Loans</div><div class="ds">Up to one month salary.</div><div class="amt">EGP 150,000</div><div class="act"><button class="mini">Request</button></div></div>
+        </div>
+      </div>
+
+      <h2 class="sec-title">Your flexible benefits</h2>
+      <p class="sub" style="font-size:13.5px;max-width:60ch;">Claim as you spend — any time this year. Enter the full price you paid; the company covers a set % of each benefit, and only that covered share draws from your pool.</p>
+
+      <!-- Category: Health & protection (medical leads) -->
+      <div class="cat">Health &amp; protection</div>
+
+      <!-- Medical commitment card -->
+      <div class="medical">
+        <div class="mhead">
+          <h3>Medical insurance</h3> <span class="badge" style="margin-left:8px;">50% EXEMPT</span>
+          <p class="mdesc">The one benefit you commit up front — you&apos;re always covered; add dependants below. 100% company-covered, drawn from your pool. Once committed it&apos;s locked (HR-managed), so review before you confirm.</p>
+        </div>
+        <div class="dep-grid">
+          <div class="dep"><div><div class="k">You</div><div class="p">EGP 8,000</div></div><span class="p">Included</span></div>
+          <div class="dep"><div><div class="k">Spouse</div><div class="p">EGP 6,000</div></div><input type="checkbox" style="width:18px;height:18px;"></div>
+          <div class="dep"><div><div class="k">Children under 18</div><div class="p">EGP 4,500 each</div></div><div class="counter"><button>−</button><span>0</span><button>+</button></div></div>
+          <div class="dep"><div><div class="k">Children 18+</div><div class="p">EGP 8,000 each</div></div><div class="counter"><button>−</button><span>0</span><button>+</button></div></div>
+        </div>
+        <div class="mfoot">
+          <div class="prem">Annual premium (100% covered)<b>EGP 8,000</b></div>
+          <button class="commit">Commit medical</button>
+        </div>
+      </div>
+
+      <div class="cards" style="margin-top:12px;">
+        <div class="card">
+          <div class="top"><div class="nm">Annual health check-up</div><span class="badge">100% covered</span></div>
+          <div class="ds">Yearly preventive check-up.</div>
+          <div class="left">Left to claim <b>EGP 22,500</b></div>
+          <button class="btn">Claim</button>
+        </div>
+      </div>
+
+      <!-- Category: Wellbeing — one card shown expanded with the claim form -->
+      <div class="cat">Wellbeing</div>
+      <div class="cards">
+        <div class="card wide">
+          <div class="top"><div class="nm">Gym membership</div><span class="badge">80% covered</span></div>
+          <div class="ds">Any gym or studio membership.</div>
+          <div class="left">Left to claim <b>EGP 22,500</b> · claimed EGP 0</div>
+          <div class="claimform">
+            <div class="field">
+              <label>Full price you paid (EGP)</label>
+              <input value="10,000" />
+            </div>
+            <div class="prev">Company covers 80% → <b>EGP 8,000</b> reimbursed. Up to EGP 22,500 covered left on this benefit.</div>
+            <div class="field" style="margin-top:10px;">
+              <label>Proof of payment (required)</label>
+              <input type="file" />
+            </div>
+            <button class="btn" style="margin-top:10px;">Submit claim</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="top"><div class="nm">Coaching / therapy</div><span class="badge">100% covered</span></div>
+          <div class="ds">Sessions with a licensed pro.</div>
+          <div class="left">Left to claim <b>EGP 22,500</b></div>
+          <button class="btn">Claim</button>
+        </div>
+        <div class="card">
+          <div class="top"><div class="nm">Sports</div><span class="badge">80% covered</span></div>
+          <div class="ds">Clubs, classes, equipment.</div>
+          <div class="left">Left to claim <b>EGP 22,500</b></div>
+          <button class="btn">Claim</button>
+        </div>
+      </div>
+
+      <!-- Category: Lifestyle & flexibility -->
+      <div class="cat">Lifestyle &amp; flexibility</div>
+      <div class="cards">
+        <div class="card">
+          <div class="top"><div class="nm">Mobile device</div><span class="badge">50% covered</span></div>
+          <div class="ds">Phone or plan.</div>
+          <div class="left">Left to claim <b>EGP 22,500</b></div>
+          <button class="btn">Claim</button>
+        </div>
+        <div class="card">
+          <div class="top"><div class="nm">Home-office setup</div><span class="badge">50% covered</span></div>
+          <div class="ds">Desk, chair, monitor.</div>
+          <div class="left">Left to claim <b>EGP 22,500</b></div>
+          <button class="btn">Claim</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR (sticky meter) -->
+    <aside class="side">
+      <div class="meter">
+        <div class="big">EGP 28,000</div>
+        <div class="cap">left of your EGP 45,000 annual pool (company share)</div>
+        <div class="bar"><i></i></div>
+        <div class="row"><span>Used</span><b>EGP 17,000</b></div>
+        <div class="row"><span>Per-benefit cap (50%)</span><b>EGP 22,500</b></div>
+      </div>
+      <div class="meter" style="font-size:12.5px;color:var(--muted);">
+        Medical is committed once and locked. Everything else you claim as you go — nothing to submit.
+      </div>
+    </aside>
+  </div>
+
+  <!-- Orientation modal preview (darker + blurred scrim) -->
+  <div class="callout">Welcome / orientation modal — darker + blurred scrim</div>
+  <div class="stage">
+    <div class="bgshot">
+      <div class="eyebrow">Benefits</div>
+      <h1>Your benefits</h1>
+      <p class="sub">Full-time · 4 – 7 years</p>
+      <div class="meter" style="margin-top:16px;max-width:320px;"><div class="big">EGP 28,000</div><div class="cap">left of your EGP 45,000 pool</div><div class="bar"><i></i></div></div>
+    </div>
+    <div class="scrim">
+      <div class="modal">
+        <div class="strip"></div>
+        <div class="body">
+          <div class="we">Welcome, Islam</div>
+          <h2>Here&apos;s you</h2>
+          <p class="i">Your benefits are set by your role and how long you&apos;ve been here.</p>
+          <div class="stat"><span>Employment type</span><b>Full-time</b></div>
+          <div class="stat"><span>Tenure band</span><b>4 – 7 years</b></div>
+          <div class="poolbox"><div class="n">EGP 45,000</div><div class="l">your annual flexible pool</div></div>
+        </div>
+        <div class="foot">
+          <div class="dots"><i class="on"></i><i></i><i></i><i></i></div>
+          <button class="next">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="cap-copy">Also fixed in the tour copy (step 4): the Claims bullet drops the redundant <code>up to that 50%</code> — it&apos;s already stated in the ½ rule above it. Final button reads <code>Got it</code>.</p>
+</div>
