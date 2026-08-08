@@ -20,7 +20,7 @@ Guaranteed benefits are unchanged. All money rules remain server-authoritative.
 
 ### Session 2026-08-07
 
-- Q: At cutover, how should existing current-plan-year benefits data be treated? → A: **Wipe** all current-year selections/allocations and start fresh — employees re-commit medical; already-filed claims are kept.
+- Q: At cutover, how should existing current-plan-year benefits data be treated? → A: **Wipe** all benefits selection data — it is confirmed test data. Employees re-commit medical under the new model. Prior claims need **not** be preserved by the migration; HR re-enters any real ones via the existing manual claim-entry flow (spec 016).
 - Q: Should this iteration build an admin control to re-enable the removed count limit? → A: **No** — ship the limit OFF with the rule retained in code (a flag/constant); defer any admin toggle to a later follow-up.
 - Q: How should the medical commitment and flexible claims be modeled? → A: Add a **dedicated medical-commitment record** and **remove** the old basket tables (`BenefitSelection` / `SelectionLine`); claims link to the catalog item directly.
 
@@ -179,7 +179,7 @@ When an administrator creates or edits a flexible catalog benefit, the system pr
 
 **Rollout & data model**
 
-- **FR-022**: At rollout, the system MUST clear all existing current-plan-year flexible selections and allocation lines; employees re-commit medical under the new model, and any previously filed claims MUST be retained.
+- **FR-022**: At rollout, the system MUST clear all existing benefits selection/allocation data (confirmed test data). Employees re-commit medical under the new model. The migration is NOT required to preserve prior claims; HR re-enters any real prior claims via the existing manual claim-entry flow (spec 016).
 - **FR-023**: The employee's medical commitment MUST be stored as a dedicated medical-commitment record (one per employee per plan year). The legacy basket/selection model (`BenefitSelection` / `SelectionLine`) MUST be removed, and flexible-benefit claims MUST link directly to the catalog item (not to a selection line).
 
 ### Key Entities *(include if feature involves data)*
@@ -204,7 +204,7 @@ When an administrator creates or edits a flexible catalog benefit, the system pr
 
 ## Assumptions
 
-- **Cutover / legacy data** (resolved): at rollout, all current-plan-year flexible selections and allocation lines are **wiped** and the module starts fresh under the new model. Employees **re-commit medical**; previously **filed claims are kept**. (The old basket tables are removed — see Key Entities / FR-023.)
+- **Cutover / legacy data** (resolved): all existing benefits data is **test data**, so at rollout all selection/allocation data is **wiped** and the module starts fresh. Employees **re-commit medical**; the migration does **not** preserve prior claims — HR re-enters any real ones via the existing manual claim-entry flow (spec 016). (The old basket tables are removed — see Key Entities / FR-023.)
 - **Admin count-limit toggle** (resolved): the count limit ships **OFF** with the rule retained in code as a flag/constant. **No admin UI** for it in this iteration; re-enabling is a later follow-up.
 - **50% basis**: the 50%-per-benefit cap and the overall cap are both computed against the **full pool ceiling** (not the pool net of medical), consistent with today's rule.
 - **Claim caps count pending claims**: pending (not-yet-reviewed) claims count toward both the per-benefit 50% cap and the pool ceiling, so an employee cannot over-reserve by stacking pending claims; rejected claims release their reservation.
