@@ -31,4 +31,4 @@
 
 ## Notes
 
-- Two decisions were deliberately deferred to `/speckit-clarify` and recorded as Assumptions rather than blocking markers: (1) legacy-data cutover handling, and (2) whether a dedicated admin count-limit toggle UI ships this iteration or is deferred. Both have documented reasonable defaults, so the spec is planning-ready either way.
+- Clarification session 2026-08-07 resolved the three open decisions and folded them into the spec: (1) cutover = wipe current-year selections/allocations, re-commit medical, keep filed claims (FR-022); (2) count limit ships OFF, rule retained in code, no admin toggle this iteration; (3) new dedicated medical-commitment record, remove `BenefitSelection`/`SelectionLine`, claims link to catalog items directly (FR-023). No open [NEEDS CLARIFICATION] markers remain. Spec is planning-ready.

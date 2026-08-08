@@ -16,6 +16,14 @@ This feature reframes the flexible basket as a **living, claim-based allowance**
 
 Guaranteed benefits are unchanged. All money rules remain server-authoritative.
 
+## Clarifications
+
+### Session 2026-08-07
+
+- Q: At cutover, how should existing current-plan-year benefits data be treated? → A: **Wipe** all current-year selections/allocations and start fresh — employees re-commit medical; already-filed claims are kept.
+- Q: Should this iteration build an admin control to re-enable the removed count limit? → A: **No** — ship the limit OFF with the rule retained in code (a flag/constant); defer any admin toggle to a later follow-up.
+- Q: How should the medical commitment and flexible claims be modeled? → A: Add a **dedicated medical-commitment record** and **remove** the old basket tables (`BenefitSelection` / `SelectionLine`); claims link to the catalog item directly.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Claim a flexible benefit as you spend (Priority: P1)
@@ -169,12 +177,17 @@ When an administrator creates or edits a flexible catalog benefit, the system pr
 - **FR-020**: All money rules in this feature (50% cap, pool ceiling, medical handling, count limit when enabled, plan-year window) MUST be enforced on the server; any client-side calculation is for display only and is never trusted.
 - **FR-021**: Guaranteed benefits MUST remain unchanged — automatic and separate from the flexible allowance and its rules.
 
+**Rollout & data model**
+
+- **FR-022**: At rollout, the system MUST clear all existing current-plan-year flexible selections and allocation lines; employees re-commit medical under the new model, and any previously filed claims MUST be retained.
+- **FR-023**: The employee's medical commitment MUST be stored as a dedicated medical-commitment record (one per employee per plan year). The legacy basket/selection model (`BenefitSelection` / `SelectionLine`) MUST be removed, and flexible-benefit claims MUST link directly to the catalog item (not to a selection line).
+
 ### Key Entities *(include if feature involves data)*
 
 - **Pool ceiling**: the maximum company contribution for an employee for the plan year, determined by employment type × tenure band. The basis for both the 50%-per-benefit cap and the overall total cap.
 - **Flexible benefit (catalog item)**: a benefit an employee can claim against, with a coverage percentage (1–100%) and a claim type (proof required / note / automatic). Coverage % determines the company-covered share of a claim.
-- **Claim**: a request for reimbursement against a specific benefit for a specific plan year, carrying the full price paid, the covered amount recorded at claim time, optional proof/note, and a status (pending / reimbursed / rejected). Multiple claims may exist per benefit.
-- **Medical commitment**: an employee's once-per-year committed medical configuration (self + dependants) and its computed premium, treated as automatic cover drawn from the pool; editable only by HR after commitment.
+- **Claim**: a request for reimbursement against a specific benefit for a specific plan year, carrying the full price paid, the covered amount recorded at claim time, optional proof/note, and a status (pending / reimbursed / rejected). It links **directly to the catalog item** (no selection line), and multiple claims may exist per benefit.
+- **Medical commitment**: a **dedicated record** (one per employee per plan year) holding the employee's committed medical configuration (self + dependants) and its computed premium, treated as automatic cover drawn from the pool; editable only by HR after commitment. This replaces the old basket/selection model — `BenefitSelection` / `SelectionLine` are removed, and flexible benefits no longer have any per-benefit selection or allocation record.
 - **Plan year**: the open/closed window that gates whether claims and medical commitments may be made.
 
 ## Success Criteria *(mandatory)*
@@ -191,8 +204,8 @@ When an administrator creates or edits a flexible catalog benefit, the system pr
 
 ## Assumptions
 
-- **Cutover / legacy data**: existing submitted baskets from the old model are treated as historical. Any previously entered non-medical allocation lines no longer act as pre-allocations under the new model (claims going forward stand on their own); a previously committed medical configuration is carried forward as the employee's medical commitment for the current plan year. The exact data-migration handling is a candidate for `/speckit-clarify`.
-- **Admin count-limit toggle**: the count limit is disabled for employees in this iteration and the rule is retained in code. Whether a dedicated **admin UI toggle** (and optional custom N) ships in this same iteration or is deferred to a follow-up is left open for `/speckit-clarify`; the default assumption is the rule remains dormant/config-driven without a new admin screen this round.
+- **Cutover / legacy data** (resolved): at rollout, all current-plan-year flexible selections and allocation lines are **wiped** and the module starts fresh under the new model. Employees **re-commit medical**; previously **filed claims are kept**. (The old basket tables are removed — see Key Entities / FR-023.)
+- **Admin count-limit toggle** (resolved): the count limit ships **OFF** with the rule retained in code as a flag/constant. **No admin UI** for it in this iteration; re-enabling is a later follow-up.
 - **50% basis**: the 50%-per-benefit cap and the overall cap are both computed against the **full pool ceiling** (not the pool net of medical), consistent with today's rule.
 - **Claim caps count pending claims**: pending (not-yet-reviewed) claims count toward both the per-benefit 50% cap and the pool ceiling, so an employee cannot over-reserve by stacking pending claims; rejected claims release their reservation.
 - **Coverage recorded at claim time**: the covered amount is fixed when a claim is filed; later admin changes to a benefit's coverage % do not retroactively alter existing claims.
