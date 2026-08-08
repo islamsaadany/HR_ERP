@@ -118,23 +118,23 @@
     <button class="btn-ghost" onclick="show('welcome')">How it works</button>
   </div>
 
+  <!-- Guaranteed band (full width, above the two-column area — matches original) -->
+  <div class="band">
+    <div class="band-head"><div class="k">You receive automatically</div><h2>Guaranteed benefits</h2></div>
+    <div class="g-grid">
+      <div class="g-card"><div class="nm">Marriage allowance</div><div class="ds">One-time on marriage.</div><div class="amt">EGP 30,000</div><button class="mini">Request</button></div>
+      <div class="g-card"><div class="nm">Summer allowance</div><div class="ds">Paid each summer.</div><div class="amt">EGP 5,000</div><button class="mini">Request</button></div>
+      <div class="g-card"><div class="nm">Professional development</div><div class="ds">Courses &amp; certifications.</div><div class="amt">EGP 18,000</div><button class="mini">Claim · proof</button></div>
+      <div class="g-card"><div class="nm">Special events</div><div class="ds">Life milestones.</div><div class="amt">EGP 12,000</div><button class="mini">Request</button></div>
+      <div class="g-card"><div class="nm">Loans</div><div class="ds">Up to one month salary.</div><div class="amt">EGP 150,000</div><button class="mini">Request</button></div>
+    </div>
+  </div>
+
+  <h2 class="sec-title">Your flexible benefits</h2>
+  <p class="sec-lede">Claim as you spend — any time this year. Enter the full price you paid; the company covers a set % of each benefit, and only that covered share draws from your pool.</p>
+
   <div class="grid">
     <div class="main">
-      <!-- Guaranteed band (top) -->
-      <div class="band">
-        <div class="band-head"><div class="k">You receive automatically</div><h2>Guaranteed benefits</h2></div>
-        <div class="g-grid">
-          <div class="g-card"><div class="nm">Marriage allowance</div><div class="ds">One-time on marriage.</div><div class="amt">EGP 30,000</div><button class="mini">Request</button></div>
-          <div class="g-card"><div class="nm">Summer allowance</div><div class="ds">Paid each summer.</div><div class="amt">EGP 5,000</div><button class="mini">Request</button></div>
-          <div class="g-card"><div class="nm">Professional development</div><div class="ds">Courses &amp; certifications.</div><div class="amt">EGP 18,000</div><button class="mini">Claim · proof</button></div>
-          <div class="g-card"><div class="nm">Special events</div><div class="ds">Life milestones.</div><div class="amt">EGP 12,000</div><button class="mini">Request</button></div>
-          <div class="g-card"><div class="nm">Loans</div><div class="ds">Up to one month salary.</div><div class="amt">EGP 150,000</div><button class="mini">Request</button></div>
-        </div>
-      </div>
-
-      <h2 class="sec-title">Your flexible benefits</h2>
-      <p class="sec-lede">Claim as you spend — any time this year. Enter the full price you paid; the company covers a set % of each benefit, and only that covered share draws from your pool.</p>
-
       <!-- Health & protection (medical row first) -->
       <div class="cathead"><span>Health &amp; protection</span><span class="rule"></span></div>
       <div class="rows">
@@ -166,6 +166,7 @@
       <!-- Wellbeing -->
       <div class="cathead"><span>Wellbeing</span><span class="rule"></span></div>
       <div class="rows">
+        <details class="row"><summary><div class="rleft"><div class="rname">Coaching / therapy <span class="badge navy">100% covered</span></div><div class="rdesc">Sessions with a licensed pro.</div></div><div class="rright"><div class="rleftclaim">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></div></summary><div class="claimform"><div class="field"><label>Full price you paid (EGP)</label><input type="text" oninput="cov(this,100,'co1')" placeholder="e.g. 2,000"></div><div class="prev" id="co1">Company covers 100% → <b>EGP 0</b> reimbursed.</div><div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div><button class="btn" style="margin-top:10px;">Submit claim</button></div></details>
         <details class="row">
           <summary>
             <div class="rleft"><div class="rname">Gym membership <span class="badge navy">80% covered</span></div><div class="rdesc">Any gym or studio membership.</div></div>
@@ -178,7 +179,6 @@
             <button class="btn" style="margin-top:10px;">Submit claim</button>
           </div>
         </details>
-        <details class="row"><summary><div class="rleft"><div class="rname">Coaching / therapy <span class="badge navy">100% covered</span></div><div class="rdesc">Sessions with a licensed pro.</div></div><div class="rright"><div class="rleftclaim">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></div></summary><div class="claimform"><div class="field"><label>Full price you paid (EGP)</label><input type="text" oninput="cov(this,100,'co1')" placeholder="e.g. 2,000"></div><div class="prev" id="co1">Company covers 100% → <b>EGP 0</b> reimbursed.</div><div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div><button class="btn" style="margin-top:10px;">Submit claim</button></div></details>
         <details class="row"><summary><div class="rleft"><div class="rname">Sports <span class="badge navy">80% covered</span></div><div class="rdesc">Clubs, classes, equipment.</div></div><div class="rright"><div class="rleftclaim">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></div></summary><div class="claimform"><div class="field"><label>Full price you paid (EGP)</label><input type="text" oninput="cov(this,80,'s1')" placeholder="e.g. 4,000"></div><div class="prev" id="s1">Company covers 80% → <b>EGP 0</b> reimbursed.</div><div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div><button class="btn" style="margin-top:10px;">Submit claim</button></div></details>
       </div>
 
