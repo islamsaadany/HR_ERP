@@ -43,7 +43,7 @@ export function BenefitsOrientation(props: OrientationProps) {
 
       {open ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-navy-950/60 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-50 grid place-items-center bg-navy-950/30 p-4"
           onClick={close}
           role="dialog"
           aria-modal="true"
@@ -193,7 +193,7 @@ function buildSteps(p: OrientationProps, firstName: string) {
         <>
           {ruleRow("%", <><strong>Coverage varies</strong> — 100% (medical, check-up, coaching), 80% (gym, sports, schooling…), 50% (mobile, home-office).</>)}
           {ruleRow("½", <>Across the year, no single benefit&apos;s company share can pass <strong>half your pool</strong> — this keeps your choices varied. <span className="text-muted">(Medical is exempt.)</span></>)}
-          {ruleRow("✓", <><strong>Claims:</strong> show proof of your full spend (or request it); you&apos;re paid back the covered portion — and you can claim the same benefit <strong>more than once</strong>.</>)}
+          {ruleRow("✓", <><strong>Claims:</strong> show proof of your full spend (or request it); you&apos;re paid back the covered portion — and you can claim the same benefit <strong>more than once</strong>, up to that 50%.</>)}
           {ruleRow("🏥", <><strong>Medical is the one thing you submit</strong> — set it up once for the year; HR manages it after, since it&apos;s arranged with a provider.</>)}
           <p className="mt-3">
             <a href="/benefits/policy" className="text-sm font-semibold text-navy-600 hover:text-navy-800">Read the full guide →</a>
