@@ -2,9 +2,9 @@
 <style>
   :root {
     --paper:#F2EEE4; --surface:#FFFFFF; --ink:#17233A; --muted:#6E7484;
-    --navy-900:#0E1B2E; --navy-800:#1C2E48; --navy-700:#294061; --navy-50:#EEF1F6;
+    --navy-950:#0A1220; --navy-900:#0E1B2E; --navy-800:#1C2E48; --navy-700:#294061; --navy-50:#EEF1F6; --navy-100:#DCE3EE;
     --gold:#C6A02C; --gold-600:#A9871F; --gold-100:#F3E9C8; --gold-800:#7A5E14;
-    --line:#E6E0D3; --good-bg:#E9F2EC; --good:#2F7A4D;
+    --line:#E6E0D3;
     --serif:"Iowan Old Style","Palatino Linotype",Georgia,"Times New Roman",serif;
     --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
@@ -12,123 +12,115 @@
   body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.5; -webkit-font-smoothing:antialiased; }
   .wrap { max-width:1120px; margin:0 auto; padding:26px 22px 90px; }
   .note { background:var(--navy-900); color:#fff; border-radius:14px; padding:14px 20px; margin-bottom:24px; }
-  .note b { color:var(--gold); }
-  .note p { margin:.35em 0 0; font-size:13.5px; color:#D7DEEA; }
+  .note b { color:var(--gold); } .note p { margin:.35em 0 0; font-size:13.5px; color:#D7DEEA; }
 
   .eyebrow { font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--gold-600); }
   h1 { font-family:var(--serif); font-weight:600; font-size:40px; margin:6px 0 4px; }
   .sub { color:var(--muted); margin:0; }
-  .toprow { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:18px 0 10px; flex-wrap:wrap; }
+  .toprow { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:18px 0 6px; flex-wrap:wrap; }
   .link { color:var(--navy-700); font-weight:600; font-size:14px; text-decoration:none; cursor:pointer; }
   .link:hover { color:var(--navy-900); text-decoration:underline; }
   .btn-ghost { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:9px 14px; font-weight:600; font-size:14px; color:var(--navy-700); cursor:pointer; }
 
-  .grid { display:grid; grid-template-columns:1fr 300px; gap:22px; align-items:start; }
-  @media (max-width:880px){ .grid { grid-template-columns:1fr; } .side { position:static !important; } }
+  .grid { display:grid; grid-template-columns:1fr 320px; gap:24px; align-items:start; margin-top:16px; }
+  @media (max-width:900px){ .grid { grid-template-columns:1fr; } .side { position:static !important; } }
 
-  .side { position:sticky; top:16px; display:flex; flex-direction:column; gap:16px; }
-  .meter { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px; }
-  .meter .big { font-family:var(--serif); font-size:30px; font-variant-numeric:tabular-nums; }
-  .meter .cap { font-size:12.5px; color:var(--muted); margin-top:2px; }
-  .bar { height:9px; border-radius:99px; background:var(--navy-50); overflow:hidden; margin-top:14px; }
-  .bar > i { display:block; height:100%; width:38%; background:var(--gold); }
-  .meter .row { display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-top:12px; }
-  .meter .row b { color:var(--ink); font-variant-numeric:tabular-nums; }
-
+  /* Guaranteed band (unchanged from original) */
   .band { border:1px solid var(--line); border-radius:16px; overflow:hidden; }
   .band-head { background:var(--navy-900); color:#fff; padding:14px 20px; }
   .band-head .k { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold); }
   .band-head h2 { font-family:var(--serif); font-size:20px; margin:2px 0 0; font-weight:600; }
-  .g-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1px; background:var(--line); }
-  .g-card { background:var(--surface); padding:15px; display:flex; flex-direction:column; gap:4px; min-height:118px; }
-  .g-card .nm { font-weight:600; font-size:14px; }
-  .g-card .ds { font-size:12px; color:var(--muted); flex:1; }
-  .g-card .amt { font-family:var(--serif); font-size:17px; color:var(--navy-800); }
-  .mini { border:1px solid var(--line); border-radius:8px; padding:5px 12px; background:var(--surface); font-size:12.5px; font-weight:600; color:var(--navy-700); cursor:pointer; margin-top:4px; align-self:flex-start; }
+  .g-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1px; background:var(--line); }
+  .g-card { background:var(--surface); padding:14px; display:flex; flex-direction:column; gap:3px; min-height:112px; }
+  .g-card .nm { font-weight:600; font-size:14px; } .g-card .ds { font-size:12px; color:var(--muted); flex:1; }
+  .g-card .amt { font-family:var(--serif); font-size:16px; color:var(--navy-800); }
+  .mini { border:1px solid var(--line); border-radius:8px; padding:5px 12px; background:var(--surface); font-size:12px; font-weight:600; color:var(--navy-700); cursor:pointer; margin-top:5px; align-self:flex-start; }
 
-  .sec-title { font-family:var(--serif); font-size:24px; margin:26px 0 4px; font-weight:600; }
-  .cat { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:20px 0 8px; }
-  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:12px; }
+  .sec-title { font-family:var(--serif); font-size:24px; margin:26px 0 2px; font-weight:600; }
+  .sec-lede { font-size:13.5px; color:var(--muted); max-width:62ch; margin:0 0 4px; }
 
-  /* Collapsible card via <details> */
-  details.card, details.medical { background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
-  details.card { }
-  details.card[open] { grid-column:1/-1; border-color:var(--navy-700); }
-  summary { list-style:none; cursor:pointer; padding:16px; display:flex; flex-direction:column; gap:6px; position:relative; }
-  summary::-webkit-details-marker { display:none; }
-  summary .sumtop { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
-  summary .nm { font-weight:600; font-size:15px; }
-  .badge { font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 7px; border-radius:6px; background:var(--gold-100); color:var(--gold-800); white-space:nowrap; }
-  summary .ds { font-size:12.5px; color:var(--muted); }
-  summary .left { font-size:12.5px; color:var(--ink); }
-  summary .left b { font-variant-numeric:tabular-nums; }
-  .cue { align-self:flex-start; margin-top:2px; font-size:12.5px; font-weight:700; color:var(--navy-700); background:var(--navy-50); border-radius:8px; padding:4px 10px; }
-  details[open] summary .cue::after { content:" ▴"; }
-  details:not([open]) summary .cue::after { content:" ▾"; }
+  /* Category header with divider line (matches original) */
+  .cathead { display:flex; align-items:center; gap:12px; padding:20px 0 6px; }
+  .cathead span { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-600); white-space:nowrap; }
+  .cathead .rule { height:1px; flex:1; background:var(--line); }
+
+  /* Benefit ROWS (full-width list, matches original) */
+  .rows { display:flex; flex-direction:column; gap:8px; }
+  details.row, .row.med { background:var(--surface); border:1px solid var(--line); border-radius:14px; }
+  details.row[open] { border-color:var(--navy-700); }
+  details.row > summary, .row.med .medsum { list-style:none; cursor:pointer; display:flex; align-items:flex-start; justify-content:space-between; gap:14px; padding:15px 16px; }
+  details.row > summary::-webkit-details-marker { display:none; }
+  .rleft { min-width:0; }
+  .rname { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-weight:600; font-size:15px; }
+  .rdesc { font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .badge { font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .badge.navy { background:var(--navy-50); color:var(--navy-700); }
+  .badge.gold { background:var(--gold-100); color:var(--gold-800); }
+  .rright { display:flex; flex-direction:column; align-items:flex-end; gap:6px; text-align:right; white-space:nowrap; }
+  .rleftclaim { font-size:12.5px; color:var(--ink); } .rleftclaim b { font-variant-numeric:tabular-nums; }
+  .cue { font-size:12.5px; font-weight:700; color:var(--navy-700); background:var(--navy-50); border:none; border-radius:8px; padding:6px 12px; cursor:pointer; }
+  details.row[open] summary .cue::after { content:" ▴"; }
+  details.row:not([open]) summary .cue::after { content:" ▾"; }
 
   .claimform { border-top:1px dashed var(--line); margin:0 16px; padding:14px 0 16px; }
   .field label { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-bottom:4px; }
   .field input[type=text], .field input[type=file] { width:100%; max-width:280px; border:1px solid var(--line); border-radius:9px; padding:8px 11px; font-size:14px; font-family:var(--sans); }
-  .prev { font-size:12.5px; color:var(--muted); margin-top:6px; }
-  .prev b { color:var(--navy-700); font-variant-numeric:tabular-nums; }
-  .btn { background:var(--navy-800); color:#fff; border:none; border-radius:10px; padding:9px 15px; font-weight:600; font-size:13.5px; cursor:pointer; }
-  .btn:hover { background:var(--navy-700); }
+  .prev { font-size:12.5px; color:var(--muted); margin-top:6px; } .prev b { color:var(--navy-700); font-variant-numeric:tabular-nums; }
+  .btn { background:var(--navy-800); color:#fff; border:none; border-radius:10px; padding:9px 15px; font-weight:600; font-size:13.5px; cursor:pointer; } .btn:hover { background:var(--navy-700); }
 
-  /* Medical */
-  details.medical { grid-column:1/-1; }
-  details.medical summary h3 { font-family:var(--serif); font-size:18px; margin:0; display:inline; }
-  details.medical .mdesc { font-size:12.5px; color:var(--muted); margin:6px 0 0; max-width:70ch; }
-  .dep-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:4px 16px 16px; }
-  @media (max-width:560px){ .dep-grid { grid-template-columns:1fr; } }
-  .dep { display:flex; align-items:center; justify-content:space-between; border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
-  .dep .k { font-weight:600; font-size:14px; } .dep .p { font-size:12px; color:var(--muted); }
-  .counter { display:flex; align-items:center; gap:6px; }
-  .counter button { width:30px; height:30px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--muted); font-size:16px; cursor:pointer; }
-  .counter span { width:26px; text-align:center; font-weight:600; font-variant-numeric:tabular-nums; }
-  .mfoot { display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid var(--line); padding:14px 16px; flex-wrap:wrap; }
-  .mfoot .prem { font-size:13px; color:var(--muted); }
-  .mfoot .prem b { font-family:var(--serif); font-size:20px; color:var(--navy-800); font-variant-numeric:tabular-nums; margin-left:6px; }
-  .commit { background:var(--navy-800); color:#fff; border:none; border-radius:10px; padding:11px 20px; font-weight:700; font-size:14px; cursor:pointer; }
+  /* Sidebar */
+  .side { position:sticky; top:16px; display:flex; flex-direction:column; gap:16px; }
+  .meter { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px; }
+  .meter .big { font-family:var(--serif); font-size:30px; font-variant-numeric:tabular-nums; }
+  .meter .cap { font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .bar { height:9px; border-radius:99px; background:var(--navy-50); overflow:hidden; margin-top:14px; } .bar > i { display:block; height:100%; width:38%; background:var(--gold); }
+  .meter .row2 { display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-top:12px; } .meter .row2 b { color:var(--ink); font-variant-numeric:tabular-nums; }
+  .terms h3 { font-family:var(--serif); font-size:16px; margin:0; } .terms { padding:18px 20px; }
+  .terms ol { margin:8px 0 0; padding:0; list-style:none; } .terms li { display:flex; gap:8px; font-size:11.5px; color:var(--muted); padding:6px 0; border-top:1px solid var(--line); } .terms li:first-child{border-top:none;}
+  .terms .n { flex:0 0 auto; width:16px; height:16px; border-radius:99px; background:var(--navy-50); color:var(--navy-700); font-size:10px; font-weight:700; display:grid; place-items:center; }
 
-  .callout { margin:36px 0 10px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold-600); font-weight:700; }
-
-  /* Welcome modal overlay */
-  .overlay { position:fixed; inset:0; background:rgba(10,18,35,.62); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:none; place-items:center; z-index:50; padding:20px; }
+  /* Overlays */
+  .overlay { position:fixed; inset:0; background:rgba(10,18,35,.62); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:none; place-items:center; z-index:60; padding:20px; }
   .overlay.show { display:grid; }
-  .modal { width:min(440px,92%); background:var(--surface); border-radius:18px; box-shadow:0 24px 60px rgba(6,12,26,.45); overflow:hidden; }
+  .modal { width:min(440px,92%); background:var(--surface); border-radius:18px; box-shadow:0 24px 60px rgba(6,12,26,.45); overflow:hidden; position:relative; }
+  .modal.pad { padding:22px; }
   .modal .strip { height:5px; background:linear-gradient(90deg,var(--navy-800),var(--gold)); }
   .modal .body { padding:20px 22px 8px; }
   .modal .we { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--gold-600); }
   .modal h2 { font-family:var(--serif); font-size:24px; margin:6px 0 2px; }
-  .modal p.i { font-size:13.5px; color:var(--muted); margin:0 0 10px; }
-  .stat { display:flex; justify-content:space-between; border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:8px; font-size:14px; }
-  .stat b { font-family:var(--serif); color:var(--navy-800); }
-  .poolbox { border:1px solid var(--navy-50); background:var(--navy-50); border-radius:12px; text-align:center; padding:14px; }
-  .poolbox .n { font-family:var(--serif); font-size:28px; color:var(--navy-800); } .poolbox .l { font-size:12px; color:var(--muted); }
+  .modal h3 { font-family:var(--serif); font-size:20px; margin:0 0 2px; }
+  .modal p.i { font-size:13.5px; color:var(--muted); margin:0 0 12px; }
+  .stat { display:flex; justify-content:space-between; border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:8px; font-size:14px; } .stat b { font-family:var(--serif); color:var(--navy-800); }
+  .poolbox { border:1px solid var(--navy-50); background:var(--navy-50); border-radius:12px; text-align:center; padding:14px; } .poolbox .n { font-family:var(--serif); font-size:28px; color:var(--navy-800); } .poolbox .l { font-size:12px; color:var(--muted); }
   .modal .foot { display:flex; align-items:center; justify-content:space-between; padding:14px 22px 18px; }
   .dots { display:flex; gap:6px; } .dots i { width:6px; height:6px; border-radius:99px; background:var(--navy-50); display:block; } .dots i.on { width:20px; background:var(--gold); }
   .next { background:var(--navy-800); color:#fff; border:none; border-radius:10px; padding:9px 16px; font-weight:600; font-size:14px; cursor:pointer; }
   .skip { position:absolute; right:16px; top:14px; font-size:12px; color:var(--muted); cursor:pointer; }
-  .modal .rel { position:relative; }
+  .dep { display:flex; align-items:center; justify-content:space-between; border:1px solid var(--line); border-radius:10px; padding:11px 14px; margin-bottom:8px; }
+  .dep .k { font-weight:600; font-size:14px; } .dep .p { font-size:12px; color:var(--muted); }
+  .counter { display:flex; align-items:center; gap:6px; } .counter button { width:30px; height:30px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--muted); font-size:16px; cursor:pointer; } .counter span { width:26px; text-align:center; font-weight:600; font-variant-numeric:tabular-nums; }
+  .premrow { display:flex; align-items:center; justify-content:space-between; background:var(--navy-50); border-radius:10px; padding:11px 14px; margin-top:4px; } .premrow b { font-family:var(--serif); font-size:18px; color:var(--navy-800); }
+  .mactions { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+  .mghost { border:1px solid var(--line); background:var(--surface); border-radius:10px; padding:9px 15px; font-size:14px; color:var(--muted); cursor:pointer; }
 </style>
 
 <div class="wrap">
   <div class="note">
     <b>Interactive mockup — not the live app.</b>
-    <p>Click any benefit to expand/collapse it (they rest <b>collapsed</b>, like the original). The medical premium and the covered amount update live. Use “How it works” to see the blurred welcome tour.</p>
+    <p>Restored to the original <b>row list grouped by category</b>. Click a benefit row to expand its claim form (they rest collapsed). Medical opens the dependant modal (live premium). “How it works” shows the blurred welcome tour.</p>
   </div>
 
   <div class="eyebrow">Benefits</div>
   <h1>Your benefits</h1>
   <p class="sub">Full-time · 4 – 7 years</p>
   <div class="toprow">
-    <span class="link" onclick="document.getElementById('ov').classList.add('show')">Read the full guide →</span>
-    <button class="btn-ghost" onclick="document.getElementById('ov').classList.add('show')">How it works</button>
+    <span class="link" onclick="show('guide')">Read the full guide →</span>
+    <button class="btn-ghost" onclick="show('welcome')">How it works</button>
   </div>
 
   <div class="grid">
     <div class="main">
-      <!-- Guaranteed band -->
+      <!-- Guaranteed band (top) -->
       <div class="band">
         <div class="band-head"><div class="k">You receive automatically</div><h2>Guaranteed benefits</h2></div>
         <div class="g-grid">
@@ -141,37 +133,29 @@
       </div>
 
       <h2 class="sec-title">Your flexible benefits</h2>
-      <p class="sub" style="font-size:13.5px;max-width:62ch;">Claim as you spend — any time this year. Enter the full price you paid; the company covers a set % of each benefit, and only that covered share draws from your pool.</p>
+      <p class="sec-lede">Claim as you spend — any time this year. Enter the full price you paid; the company covers a set % of each benefit, and only that covered share draws from your pool.</p>
 
-      <!-- Health & protection: medical leads (collapsed by default) -->
-      <div class="cat">Health &amp; protection</div>
-      <details class="medical">
-        <summary>
-          <div class="sumtop">
-            <div><h3>Medical insurance</h3> <span class="badge" style="margin-left:8px;">50% EXEMPT</span></div>
-            <span class="cue">Set up</span>
+      <!-- Health & protection (medical row first) -->
+      <div class="cathead"><span>Health &amp; protection</span><span class="rule"></span></div>
+      <div class="rows">
+        <!-- Medical row → opens modal (like original) -->
+        <div class="row med">
+          <div class="medsum" onclick="show('med')">
+            <div class="rleft">
+              <div class="rname">Medical insurance <span class="badge gold">50% EXEMPT</span></div>
+              <div class="rdesc">The one benefit you commit up front — you&apos;re always covered; add dependants. 100% company-covered. Once committed it&apos;s locked (HR-managed).</div>
+            </div>
+            <div class="rright"><button class="cue">Set up cover</button></div>
           </div>
-          <p class="mdesc">The one benefit you commit up front — you&apos;re always covered; add dependants. 100% company-covered, drawn from your pool. Once committed it&apos;s locked (HR-managed).</p>
-        </summary>
-        <div class="dep-grid">
-          <div class="dep"><div><div class="k">You</div><div class="p">EGP 8,000</div></div><span class="p">Included</span></div>
-          <div class="dep"><div><div class="k">Spouse</div><div class="p">EGP 6,000</div></div><input type="checkbox" id="sp" onchange="prem()" style="width:18px;height:18px;"></div>
-          <div class="dep"><div><div class="k">Children under 18</div><div class="p">EGP 4,500 each</div></div><div class="counter"><button onclick="bump('u',-1)">−</button><span id="u">0</span><button onclick="bump('u',1)">+</button></div></div>
-          <div class="dep"><div><div class="k">Children 18+</div><div class="p">EGP 8,000 each</div></div><div class="counter"><button onclick="bump('o',-1)">−</button><span id="o">0</span><button onclick="bump('o',1)">+</button></div></div>
         </div>
-        <div class="mfoot"><div class="prem">Annual premium (100% covered)<b id="premium">EGP 8,000</b></div><button class="commit">Commit medical</button></div>
-      </details>
-
-      <div class="cards" style="margin-top:12px;">
-        <details class="card">
+        <!-- Annual check-up row -->
+        <details class="row">
           <summary>
-            <div class="sumtop"><span class="nm">Annual health check-up</span><span class="badge">100% covered</span></div>
-            <div class="ds">Yearly preventive check-up.</div>
-            <div class="left">Left to claim <b>EGP 22,500</b></div>
-            <span class="cue">Claim</span>
+            <div class="rleft"><div class="rname">Annual health check-up <span class="badge navy">100% covered</span></div><div class="rdesc">Yearly preventive check-up.</div></div>
+            <div class="rright"><div class="rleftclaim">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></div>
           </summary>
           <div class="claimform">
-            <div class="field"><label>Full price you paid (EGP)</label><input type="text" value="" placeholder="e.g. 3,000" oninput="cov(this,100,'c1')"></div>
+            <div class="field"><label>Full price you paid (EGP)</label><input type="text" placeholder="e.g. 3,000" oninput="cov(this,100,'c1')"></div>
             <div class="prev" id="c1">Company covers 100% → <b>EGP 0</b> reimbursed. Up to EGP 22,500 left.</div>
             <div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div>
             <button class="btn" style="margin-top:10px;">Submit claim</button>
@@ -179,14 +163,13 @@
         </details>
       </div>
 
-      <div class="cat">Wellbeing</div>
-      <div class="cards">
-        <details class="card">
+      <!-- Wellbeing -->
+      <div class="cathead"><span>Wellbeing</span><span class="rule"></span></div>
+      <div class="rows">
+        <details class="row">
           <summary>
-            <div class="sumtop"><span class="nm">Gym membership</span><span class="badge">80% covered</span></div>
-            <div class="ds">Any gym or studio membership.</div>
-            <div class="left">Left to claim <b>EGP 22,500</b></div>
-            <span class="cue">Claim</span>
+            <div class="rleft"><div class="rname">Gym membership <span class="badge navy">80% covered</span></div><div class="rdesc">Any gym or studio membership.</div></div>
+            <div class="rright"><div class="rleftclaim">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></div>
           </summary>
           <div class="claimform">
             <div class="field"><label>Full price you paid (EGP)</label><input type="text" value="10,000" oninput="cov(this,80,'g1')"></div>
@@ -195,35 +178,45 @@
             <button class="btn" style="margin-top:10px;">Submit claim</button>
           </div>
         </details>
-        <details class="card"><summary><div class="sumtop"><span class="nm">Coaching / therapy</span><span class="badge">100% covered</span></div><div class="ds">Sessions with a licensed pro.</div><div class="left">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></summary><div class="claimform"><div class="field"><label>Full price you paid (EGP)</label><input type="text" oninput="cov(this,100,'co1')" placeholder="e.g. 2,000"></div><div class="prev" id="co1">Company covers 100% → <b>EGP 0</b> reimbursed.</div><div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div><button class="btn" style="margin-top:10px;">Submit claim</button></div></details>
-        <details class="card"><summary><div class="sumtop"><span class="nm">Sports</span><span class="badge">80% covered</span></div><div class="ds">Clubs, classes, equipment.</div><div class="left">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></summary><div class="claimform"><div class="field"><label>Full price you paid (EGP)</label><input type="text" oninput="cov(this,80,'s1')" placeholder="e.g. 4,000"></div><div class="prev" id="s1">Company covers 80% → <b>EGP 0</b> reimbursed.</div><div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div><button class="btn" style="margin-top:10px;">Submit claim</button></div></details>
+        <details class="row"><summary><div class="rleft"><div class="rname">Coaching / therapy <span class="badge navy">100% covered</span></div><div class="rdesc">Sessions with a licensed pro.</div></div><div class="rright"><div class="rleftclaim">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></div></summary><div class="claimform"><div class="field"><label>Full price you paid (EGP)</label><input type="text" oninput="cov(this,100,'co1')" placeholder="e.g. 2,000"></div><div class="prev" id="co1">Company covers 100% → <b>EGP 0</b> reimbursed.</div><div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div><button class="btn" style="margin-top:10px;">Submit claim</button></div></details>
+        <details class="row"><summary><div class="rleft"><div class="rname">Sports <span class="badge navy">80% covered</span></div><div class="rdesc">Clubs, classes, equipment.</div></div><div class="rright"><div class="rleftclaim">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></div></summary><div class="claimform"><div class="field"><label>Full price you paid (EGP)</label><input type="text" oninput="cov(this,80,'s1')" placeholder="e.g. 4,000"></div><div class="prev" id="s1">Company covers 80% → <b>EGP 0</b> reimbursed.</div><div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div><button class="btn" style="margin-top:10px;">Submit claim</button></div></details>
       </div>
 
-      <div class="cat">Lifestyle &amp; flexibility</div>
-      <div class="cards">
-        <details class="card"><summary><div class="sumtop"><span class="nm">Mobile device</span><span class="badge">50% covered</span></div><div class="ds">Phone or plan.</div><div class="left">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></summary><div class="claimform"><div class="field"><label>Full price you paid (EGP)</label><input type="text" oninput="cov(this,50,'m1')" placeholder="e.g. 12,000"></div><div class="prev" id="m1">Company covers 50% → <b>EGP 0</b> reimbursed.</div><div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div><button class="btn" style="margin-top:10px;">Submit claim</button></div></details>
-        <details class="card"><summary><div class="sumtop"><span class="nm">Home-office setup</span><span class="badge">50% covered</span></div><div class="ds">Desk, chair, monitor.</div><div class="left">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></summary><div class="claimform"><div class="field"><label>Full price you paid (EGP)</label><input type="text" oninput="cov(this,50,'h1')" placeholder="e.g. 9,000"></div><div class="prev" id="h1">Company covers 50% → <b>EGP 0</b> reimbursed.</div><div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div><button class="btn" style="margin-top:10px;">Submit claim</button></div></details>
+      <!-- Lifestyle & flexibility -->
+      <div class="cathead"><span>Lifestyle &amp; flexibility</span><span class="rule"></span></div>
+      <div class="rows">
+        <details class="row"><summary><div class="rleft"><div class="rname">Mobile device <span class="badge navy">50% covered</span></div><div class="rdesc">Phone or plan.</div></div><div class="rright"><div class="rleftclaim">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></div></summary><div class="claimform"><div class="field"><label>Full price you paid (EGP)</label><input type="text" oninput="cov(this,50,'m1')" placeholder="e.g. 12,000"></div><div class="prev" id="m1">Company covers 50% → <b>EGP 0</b> reimbursed.</div><div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div><button class="btn" style="margin-top:10px;">Submit claim</button></div></details>
+        <details class="row"><summary><div class="rleft"><div class="rname">Home-office setup <span class="badge navy">50% covered</span></div><div class="rdesc">Desk, chair, monitor.</div></div><div class="rright"><div class="rleftclaim">Left to claim <b>EGP 22,500</b></div><span class="cue">Claim</span></div></summary><div class="claimform"><div class="field"><label>Full price you paid (EGP)</label><input type="text" oninput="cov(this,50,'h1')" placeholder="e.g. 9,000"></div><div class="prev" id="h1">Company covers 50% → <b>EGP 0</b> reimbursed.</div><div class="field" style="margin-top:10px;"><label>Proof of payment (required)</label><input type="file"></div><button class="btn" style="margin-top:10px;">Submit claim</button></div></details>
       </div>
     </div>
 
+    <!-- Sidebar: meter + terms (matches original aside) -->
     <aside class="side">
       <div class="meter">
         <div class="big">EGP 28,000</div>
         <div class="cap">left of your EGP 45,000 annual pool (company share)</div>
         <div class="bar"><i></i></div>
-        <div class="row"><span>Used</span><b>EGP 17,000</b></div>
-        <div class="row"><span>Per-benefit cap (50%)</span><b>EGP 22,500</b></div>
+        <div class="row2"><span>Used</span><b>EGP 17,000</b></div>
+        <div class="row2"><span>Per-benefit cap (50%)</span><b>EGP 22,500</b></div>
       </div>
-      <div class="meter" style="font-size:12.5px;color:var(--muted);">Medical is committed once and locked. Everything else you claim as you go — nothing to submit.</div>
+      <div class="meter terms">
+        <h3>How it works</h3>
+        <ol>
+          <li><span class="n">1</span><span>Claim as you spend — nothing to submit. Enter the full price; the company covers a set % of each benefit.</span></li>
+          <li><span class="n">2</span><span>No single benefit&apos;s covered share may pass half your pool. Medical is exempt.</span></li>
+          <li><span class="n">3</span><span>Medical is committed once and locked (HR-managed after).</span></li>
+          <li><span class="n">4</span><span>Unclaimed amounts don&apos;t carry over or pay out as cash.</span></li>
+        </ol>
+      </div>
     </aside>
   </div>
 </div>
 
 <!-- Welcome / orientation modal (darker + blurred scrim) -->
-<div class="overlay" id="ov" onclick="if(event.target===this)this.classList.remove('show')">
+<div class="overlay" id="welcome" onclick="if(event.target===this)hide('welcome')">
   <div class="modal"><div class="strip"></div>
-    <div class="body rel">
-      <span class="skip" onclick="document.getElementById('ov').classList.remove('show')">Skip ✕</span>
+    <div class="body">
+      <span class="skip" onclick="hide('welcome')">Skip ✕</span>
       <div class="we">Welcome, Islam</div>
       <h2>Here&apos;s you</h2>
       <p class="i">Your benefits are set by your role and how long you&apos;ve been here.</p>
@@ -231,23 +224,35 @@
       <div class="stat"><span>Tenure band</span><b>4 – 7 years</b></div>
       <div class="poolbox"><div class="n">EGP 45,000</div><div class="l">your annual flexible pool</div></div>
     </div>
-    <div class="foot"><div class="dots"><i class="on"></i><i></i><i></i><i></i></div>
-      <button class="next" onclick="document.getElementById('ov').classList.remove('show')">Next →</button></div>
+    <div class="foot"><div class="dots"><i class="on"></i><i></i><i></i><i></i></div><button class="next" onclick="hide('welcome')">Next →</button></div>
   </div>
+</div>
+
+<!-- Medical modal (dependant picker, like original) -->
+<div class="overlay" id="med" onclick="if(event.target===this)hide('med')">
+  <div class="modal pad">
+    <h3>Personal medical insurance</h3>
+    <p class="i">You are always covered. Add dependants below. Medical is 100% company-covered.</p>
+    <div class="dep"><div><div class="k">You</div><div class="p">EGP 8,000</div></div><span class="p">Included</span></div>
+    <div class="dep"><div><div class="k">Spouse</div><div class="p">EGP 6,000</div></div><input type="checkbox" id="sp" onchange="prem()" style="width:18px;height:18px;"></div>
+    <div class="dep"><div><div class="k">Children under 18</div><div class="p">EGP 4,500 each</div></div><div class="counter"><button onclick="bump('u',-1)">−</button><span id="u">0</span><button onclick="bump('u',1)">+</button></div></div>
+    <div class="dep"><div><div class="k">Children 18+</div><div class="p">EGP 8,000 each</div></div><div class="counter"><button onclick="bump('o',-1)">−</button><span id="o">0</span><button onclick="bump('o',1)">+</button></div></div>
+    <div class="premrow"><span class="k">Annual premium (100% covered)</span><b id="premium">EGP 8,000</b></div>
+    <div class="mactions"><button class="mghost" onclick="hide('med')">Cancel</button><button class="btn" onclick="hide('med')">Commit medical</button></div>
+  </div>
+</div>
+
+<!-- Guide modal (placeholder) -->
+<div class="overlay" id="guide" onclick="if(event.target===this)hide('guide')">
+  <div class="modal pad"><h3>Full benefits guide</h3><p class="i">The written policy page (/benefits/policy) opens here — rules, what&apos;s automatic, and how to claim. Placeholder in this mockup.</p><div class="mactions"><button class="btn" onclick="hide('guide')">Close</button></div></div>
 </div>
 
 <script>
   var counts = { u:0, o:0 };
   function fmt(n){ return "EGP " + n.toLocaleString(); }
-  function prem(){
-    var p = 8000 + (document.getElementById('sp').checked?6000:0) + counts.u*4500 + counts.o*8000;
-    document.getElementById('premium').textContent = fmt(p);
-  }
+  function show(id){ document.getElementById(id).classList.add('show'); }
+  function hide(id){ document.getElementById(id).classList.remove('show'); }
+  function prem(){ var p = 8000 + (document.getElementById('sp').checked?6000:0) + counts.u*4500 + counts.o*8000; document.getElementById('premium').textContent = fmt(p); }
   function bump(k,d){ counts[k]=Math.max(0,counts[k]+d); document.getElementById(k).textContent=counts[k]; prem(); }
-  function cov(input, rate, id){
-    var v = parseInt((input.value||"").replace(/[^0-9]/g,''),10) || 0;
-    var c = Math.round(v*rate/100);
-    var el = document.getElementById(id);
-    el.innerHTML = "Company covers " + rate + "% → <b>" + fmt(c) + "</b> reimbursed. Up to EGP 22,500 left.";
-  }
+  function cov(input, rate, id){ var v = parseInt((input.value||"").replace(/[^0-9]/g,''),10) || 0; var c = Math.round(v*rate/100); document.getElementById(id).innerHTML = "Company covers " + rate + "% → <b>" + fmt(c) + "</b> reimbursed. Up to EGP 22,500 left."; }
 </script>
