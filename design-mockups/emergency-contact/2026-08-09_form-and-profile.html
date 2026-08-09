@@ -1,0 +1,86 @@
+<title>Emergency Contact — mockup for sign-off</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:64ch}
+  .proposal{margin-top:36px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 14px 36px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px}
+  .card h3{font-family:Georgia,serif;font-size:18px;margin:0 0 16px;color:var(--ink)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 5px}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:9px 11px;font-size:14px;color:var(--ink)}
+  .full{grid-column:1 / -1}
+  .field{padding:10px 0;border-top:1px solid var(--line)}
+  .field:first-child{border-top:0}
+  .field .k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .field .v{font-size:15px;color:var(--ink);margin-top:2px}
+  .badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:999px;background:var(--navy-50);color:var(--navy-700)}
+  .note{margin-top:14px;font-size:12.5px;color:var(--muted)}
+  .decision{margin-top:28px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px}
+  footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Employee registry · design review</p>
+  <h1>Emergency Contact — where it appears</h1>
+  <p class="lede">HR-managed (name · relationship · phone), shown on the admin employee form and read-only on the employee's own Profile. Not in the Team Directory. Static mockup, matched to your existing form/profile styles.</p>
+
+  <!-- 1: admin form -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Admin employee form — a new “Emergency contact” section</h2>
+    <p class="sub">Added after the existing “Personal” section; same card + 2-column field layout.</p>
+    <div class="card">
+      <h3>Emergency contact</h3>
+      <div class="grid">
+        <div>
+          <label class="lbl">Contact name</label>
+          <input class="inp" value="Sara Ali" />
+        </div>
+        <div>
+          <label class="lbl">Relationship</label>
+          <input class="inp" value="Spouse" />
+        </div>
+        <div class="full">
+          <label class="lbl">Contact phone</label>
+          <input class="inp" value="+20 100 123 4567" />
+        </div>
+      </div>
+      <p class="note">All three are optional and HR-editable. Employees can’t change these themselves.</p>
+    </div>
+  </section>
+
+  <!-- 2: profile read-only -->
+  <section class="proposal">
+    <h2><span class="num">2</span> Employee Profile — read-only “Emergency contact” block</h2>
+    <p class="sub">A new section alongside Contact / Employment / Personal. The employee sees it but can’t edit it.</p>
+    <div class="card" style="max-width:520px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px">
+        <h3 style="margin:0">Emergency contact</h3>
+        <span class="badge">Managed by HR</span>
+      </div>
+      <div class="field"><div class="k">Name</div><div class="v">Sara Ali</div></div>
+      <div class="field"><div class="k">Relationship</div><div class="v">Spouse</div></div>
+      <div class="field"><div class="k">Phone</div><div class="v">+20 100 123 4567</div></div>
+      <p class="note">If nothing is set yet, the values show “—”, and the block still appears so the employee knows to ask HR to add it.</p>
+    </div>
+  </section>
+
+  <div class="decision">
+    <b>Confirm this placement &amp; wording.</b> On approval I’ll snapshot both components to <code>ui-versions/</code>, add the section to the admin form (create + edit), and the read-only block to the Profile. Tell me here if you’d prefer a different label (e.g. “In case of emergency”), a required field, or a different position.
+  </div>
+
+  <footer>HR_ERP · Emergency Contact mockup · 2026-08-09 · navy/gold, matched to the live app. Static preview for approval.</footer>
+</div>
