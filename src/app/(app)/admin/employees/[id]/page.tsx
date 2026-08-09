@@ -69,6 +69,9 @@ export default async function EditEmployeePage({
           dateOfBirth: toDateInput(employee.dateOfBirth),
           maritalStatus: employee.maritalStatus,
           reportsToId: employee.reportsToId,
+          emergencyContactName: employee.emergencyContactName,
+          emergencyContactRelationship: employee.emergencyContactRelationship,
+          emergencyContactPhone: employee.emergencyContactPhone,
           dependants: employee.dependants.map((d) => ({
             name: d.name,
             dateOfBirth: toDateInput(d.dateOfBirth),

@@ -8,16 +8,49 @@ import { requireAdmin } from "@/lib/roles";
 import { getMedicalRate } from "@/lib/benefits/config";
 import { computeMedicalPremium } from "@/lib/benefits/rules";
 
+/** Parse a yyyy-mm-dd form value to a Date, or null if absent/invalid. */
+function parseDate(raw: FormDataEntryValue | null): Date | null {
+  const s = (raw as string | null)?.trim();
+  if (!s) return null;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 export async function createPlanYear(formData: FormData): Promise<void> {
   await requireAdmin();
   const name = (formData.get("name") as string | null)?.trim();
   if (!name) return;
+  // Proration window (spec 019): both optional, but if both given, end must be after start.
+  const startDate = parseDate(formData.get("startDate"));
+  const endDate = parseDate(formData.get("endDate"));
+  if (startDate && endDate && endDate.getTime() <= startDate.getTime()) {
+    redirect("/admin/benefits?error=" + encodeURIComponent("Plan-year end date must be after the start date."));
+  }
   // Close any currently open years, then open the new one.
   await prisma.planYear.updateMany({
     where: { status: "OPEN" },
     data: { status: "CLOSED" },
   });
-  await prisma.planYear.create({ data: { name, status: "OPEN" } });
+  await prisma.planYear.create({ data: { name, status: "OPEN", startDate, endDate } });
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+}
+
+/**
+ * Set/adjust an existing plan year's proration window (spec 019). HR/Admin only.
+ * Both dates required together; end must be after start. Clearing them (blank)
+ * turns proration off for that year (treated as "no window").
+ */
+export async function editPlanYearWindow(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = (formData.get("id") as string | null)?.trim();
+  if (!id) return;
+  const startDate = parseDate(formData.get("startDate"));
+  const endDate = parseDate(formData.get("endDate"));
+  if (startDate && endDate && endDate.getTime() <= startDate.getTime()) {
+    redirect("/admin/benefits?error=" + encodeURIComponent("Plan-year end date must be after the start date."));
+  }
+  await prisma.planYear.update({ where: { id }, data: { startDate, endDate } });
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
 }

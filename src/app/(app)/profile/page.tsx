@@ -121,6 +121,17 @@ export default async function ProfilePage({
         />
       </section>
 
+      {/* Emergency contact — HR-managed, read-only here (registry extension) */}
+      <section className="mt-6 rounded-xl border border-line bg-surface p-6">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-serif text-lg text-ink">Emergency contact</h2>
+          <span className="rounded-full bg-navy-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-navy-700">Managed by HR</span>
+        </div>
+        <Field label="Name" value={me.emergencyContactName} />
+        <Field label="Relationship" value={me.emergencyContactRelationship} />
+        <Field label="Phone" value={me.emergencyContactPhone} />
+      </section>
+
       {/* My Documents (spec 001 · US6) */}
       <section className="mt-6 rounded-xl border border-line bg-surface p-6">
         <h2 className="font-serif text-lg text-ink">My Documents</h2>

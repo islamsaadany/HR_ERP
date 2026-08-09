@@ -18,6 +18,15 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Spec 019 — Mid-year starter proration (built, pending Neon migration)
+- [x] Spec + `/speckit-plan` + `/speckit-tasks` + `/speckit-implement` (`specs/019-mid-year-proration/`).
+- [x] Schema: `PlanYear.startDate`/`endDate` + `GuaranteedBenefit.prorated`; migration `prisma/sql/027_plan_year_window.sql` (**applied cleanly on a throwaway local Postgres, 000→027; profdev flag + entry-tier ceilings verified**).
+- [x] Core: pure `src/lib/benefits/proration.ts` (`classifyEligibility`/`prorate`/`remainingWholeMonths`); `config.ts` `planYearWindow` + `poolCeilingFor` (entry-tier fallback); `derive.ts` `addMonths`.
+- [x] Server (authoritative): `createClaim` prorates the pool ceiling (6mo) + Professional-development allocation; `commitMedical` 3-month gate + prorated premium + entry-tier fallback; `createPlanYear`/`editPlanYearWindow` accept dates. **Compiled module validated against the quickstart figures via tsx (5000/1333/2375, FULL/NOT_YET, fallbacks).**
+- [x] UI (mockup-approved): `PlanYearDialog` date inputs + edit-dates; admin window display + “proration off” warning; employee “Prorated · N of 12 mo” pool + prof-dev indicators; **medical-only view** for sub-6-month employees with prorated premium preview. Snapshots in `ui-versions/`.
+- [x] `npx tsc --noEmit` green (build's `apply-sql` step needs the live DB, not runnable from a session). Docs updated (this file, PROJECT_DETAILS, IMPLEMENTATION_PLAN decision log).
+- [ ] **Apply `027_*.sql` to Neon** (paste after `026`), then **set each open plan year's start/end dates** in the Plan-year dialog to switch proration on. Medical premium figures stay placeholders until the operator's prorated rates are confirmed.
+
 ## Spec 018 — Benefits claim-based living allowance (built, pending review + Neon migration)
 - [x] Spec + `/speckit-clarify` + `/speckit-plan` + `/speckit-tasks` (`specs/018-benefits-claim-allowance/`).
 - [x] Schema: dropped `BenefitSelection` + `SelectionLine`; added `MedicalCommitment`; migration `prisma/sql/025_claim_based_allowance.sql` (**validated on a throwaway local Postgres**).

@@ -26,3 +26,17 @@ export const isMinor = (dob: Date | null | undefined) => {
   const a = ageFromDob(dob);
   return a !== null && a < 18;
 };
+
+/**
+ * Add whole calendar months to a date (spec 019). Clamps day overflow to the
+ * last day of the target month (e.g. Jan 31 + 1 month → Feb 28/29). Pure; used
+ * to compute benefit eligibility dates (start date + N months of service).
+ */
+export function addMonths(date: Date, months: number): Date {
+  const d = new Date(date.getTime());
+  const targetMonth = d.getMonth() + months;
+  const result = new Date(d.getFullYear(), targetMonth, 1, d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds());
+  const lastDayOfTargetMonth = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(d.getDate(), lastDayOfTargetMonth));
+  return result;
+}

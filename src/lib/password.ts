@@ -7,6 +7,16 @@
  */
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
+// The password policy lives in a Node-free module so it can also run in the browser
+// (the live requirement checklist). Re-exported here for existing server imports.
+export {
+  MIN_PASSWORD_LENGTH,
+  PASSWORD_POLICY_HINT,
+  validatePasswordPolicy,
+  passwordMeetsPolicy,
+  PASSWORD_RULES,
+} from "./password-policy";
+
 const KEY_LEN = 64;
 
 export function hashPassword(password: string): string {
@@ -29,33 +39,7 @@ export function verifyPassword(password: string, stored: string | null | undefin
 /** A short, readable temporary password an admin can hand to an employee. */
 export function generateTempPassword(): string {
   // ~11 URL-safe chars, no ambiguous separators. A temporary password is exempt
-  // from the user policy below — the employee is forced to choose a compliant one
-  // on first sign-in (mustChangePassword).
+  // from the user policy (see password-policy.ts) — the employee is forced to
+  // choose a compliant one on first sign-in (mustChangePassword).
   return randomBytes(8).toString("base64url");
-}
-
-/** Shared minimum length for a user-chosen sign-in password. */
-export const MIN_PASSWORD_LENGTH = 8;
-
-/** Human-readable summary of the password policy, for UI hints. */
-export const PASSWORD_POLICY_HINT =
-  `At least ${MIN_PASSWORD_LENGTH} characters, including an uppercase letter, a number, and a special character (e.g. @ % ! #).`;
-
-/**
- * Validate a user-chosen password against the house policy: at least
- * MIN_PASSWORD_LENGTH characters, with an uppercase letter, a number, and a
- * special (non-alphanumeric) character. Returns an error message, or null when
- * it passes. Admin-issued temporary passwords are intentionally NOT run through
- * this — they exist only to force a compliant change on first sign-in.
- */
-export function validatePasswordPolicy(password: string): string | null {
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
-  }
-  if (!/[A-Z]/.test(password)) return "Password must include an uppercase letter.";
-  if (!/[0-9]/.test(password)) return "Password must include a number.";
-  if (!/[^A-Za-z0-9]/.test(password)) {
-    return "Password must include a special character (e.g. @ % ! #).";
-  }
-  return null;
 }

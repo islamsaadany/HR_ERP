@@ -5,9 +5,13 @@ import { redirect } from "next/navigation";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
-import { getActivePlanYear, amountForBand, getMedicalCommitment } from "@/lib/benefits/config";
+import { getActivePlanYear, amountForBand, getMedicalCommitment, planYearWindow } from "@/lib/benefits/config";
 import { tracker } from "@/lib/benefits/claims";
 import { evaluateClaim, type AllowanceContext } from "@/lib/benefits/rules";
+import { classifyEligibility, prorate } from "@/lib/benefits/proration";
+
+/** Pool / Professional-development eligibility unlocks at 6 months of service. */
+const POOL_THRESHOLD_MONTHS = 6;
 
 function fail(msg: string): never {
   redirect("/benefits?claimError=" + encodeURIComponent(msg));
@@ -33,9 +37,13 @@ export async function createClaim(formData: FormData): Promise<void> {
 
   const user = await prisma.user.findUnique({
     where: { id: me.id },
-    select: { employmentType: true, tenureBand: true, monthlySalary: true },
+    select: { employmentType: true, tenureBand: true, monthlySalary: true, startDate: true },
   });
   if (!user?.employmentType || !user?.tenureBand) fail("Your profile isn't set — contact HR.");
+
+  // Mid-year starter proration (spec 019): scale the pool ceiling / Professional-development
+  // allocation by the whole months left in the plan year from the 6-month eligibility date.
+  const poolEligibility = classifyEligibility(user.startDate, POOL_THRESHOLD_MONTHS, planYearWindow(planYear));
 
   let claimType: "NONE" | "NOTE" | "PROOF";
   let claimAmount: number; // the COVERED amount stored on the claim
@@ -46,7 +54,11 @@ export async function createClaim(formData: FormData): Promise<void> {
     if (!gb || gb.employmentType !== user.employmentType) fail("That benefit isn't available to you.");
     claimType = gb.claimType;
     if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
-    const allocated = amountForBand(user.tenureBand, gb) ?? user.monthlySalary ?? null;
+    const bandAmount = amountForBand(user.tenureBand, gb) ?? user.monthlySalary ?? null;
+    // Only benefits flagged `prorated` (Professional development) shrink for mid-year
+    // starters; event/season gifts (marriage, summer, special events, loans) stay full.
+    const allocated =
+      gb.prorated && bandAmount != null ? prorate(bandAmount, poolEligibility.fraction) : bandAmount;
     const existing = await prisma.benefitClaim.findMany({
       where: {
         userId: me.id,
@@ -107,7 +119,8 @@ export async function createClaim(formData: FormData): Promise<void> {
       if (k) claimedByBenefit[k] = (claimedByBenefit[k] ?? 0) + c.amount;
     }
     const ctx: AllowanceContext = {
-      ceiling: ceilingRow.amount,
+      // Prorated for mid-year starters (spec 019); full ceiling once eligible from day one.
+      ceiling: prorate(ceilingRow.amount, poolEligibility.fraction),
       medicalPremium: commitment?.premium ?? 0,
       claimedByBenefit,
       employmentType: user.employmentType,
@@ -139,8 +152,14 @@ export async function createClaim(formData: FormData): Promise<void> {
       const blob = await put(`claims/${me.id}/${safeName}`, file, { access: "public", addRandomSuffix: true });
       proofUrl = blob.url;
       proofName = file.name;
-    } catch {
-      fail("Proof upload failed — is Blob storage configured?");
+    } catch (err) {
+      // Surface the real cause in the server logs so we can tell a missing/invalid
+      // BLOB_READ_WRITE_TOKEN apart from a transient upload failure.
+      console.error("[benefits] proof upload to Vercel Blob failed:", err);
+      const hint = !process.env.BLOB_READ_WRITE_TOKEN
+        ? "Proof upload failed — file storage isn't configured yet (BLOB_READ_WRITE_TOKEN is missing). Contact HR/IT."
+        : "Proof upload failed — please try again, and contact HR/IT if it keeps happening.";
+      fail(hint);
     }
   }
 

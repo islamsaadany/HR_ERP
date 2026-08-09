@@ -27,8 +27,12 @@ export type BoardGuaranteed = {
   note: string | null;
   claimType: ClaimType;
   allocated: number | null;
+  /** The full (un-prorated) amount, shown struck-through when this benefit is prorated. */
+  proratedFrom?: number | null;
   claims: BoardClaim[];
 };
+/** Present only for a mid-year starter (spec 019): the prorated months of the plan year. */
+export type BoardProration = { months: number } | null;
 export type BoardFlex = {
   id: string;
   key: string;
@@ -66,6 +70,10 @@ export function BenefitsBoard({
   medicalRate,
   medicalCommitted,
   planYearOpen,
+  proration,
+  medicalOnly,
+  medicalPremiumFraction = 1,
+  medicalProration,
   error,
 }: {
   ceiling: number;
@@ -78,11 +86,58 @@ export function BenefitsBoard({
   medicalRate: BoardMedicalRate;
   medicalCommitted: BoardMedicalCommitted;
   planYearOpen: boolean;
+  proration?: BoardProration;
+  /** Sub-6-month employee (spec 019): only medical is available; the rest unlocks at 6 months. */
+  medicalOnly?: boolean;
+  /** Prorates the medical premium PREVIEW to match the server (fraction of the year). */
+  medicalPremiumFraction?: number;
+  /** Badge data for a prorated medical premium. */
+  medicalProration?: BoardProration;
   error?: string;
 }) {
   const [medOpen, setMedOpen] = useState(false);
   const [gClaim, setGClaim] = useState<BoardGuaranteed | null>(null);
   const pct = ceiling > 0 ? Math.min(100, (poolUsed / ceiling) * 100) : 0;
+  const proratedBadge = proration ? (
+    <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-800">
+      Prorated · {proration.months} of 12 mo
+    </span>
+  ) : null;
+
+  // Sub-6-month employee (spec 019): medical is available now; everything else waits for 6 months.
+  if (medicalOnly) {
+    return (
+      <>
+        <section className="mt-6 overflow-hidden rounded-2xl border border-line">
+          <div className="bg-navy-900 px-6 py-4 text-white">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-300">Available now</div>
+            <h2 className="font-serif text-xl">Personal medical insurance</h2>
+          </div>
+          <div className="space-y-3 bg-surface p-5">
+            {error ? <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
+            <MedicalRow committed={medicalCommitted} onSetup={() => setMedOpen(true)} />
+            {medicalProration ? (
+              <p className="rounded-lg bg-navy-50 px-3 py-2 text-xs text-navy-700">
+                You joined part-way through the plan year, so your medical premium is prorated to the remaining{" "}
+                {medicalProration.months} {medicalProration.months === 1 ? "month" : "months"}. You&apos;ll get a full-year
+                premium next plan year.
+              </p>
+            ) : null}
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-line bg-paper px-4 py-3">
+              <span className="text-sm text-muted">Flexible basket &amp; guaranteed benefits</span>
+              <span className="rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-800">
+                Unlocks at 6 months
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {medOpen ? (
+          <MedicalModal rate={medicalRate} ceiling={ceiling} premiumFraction={medicalPremiumFraction} onClose={() => setMedOpen(false)} />
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <>
@@ -97,7 +152,13 @@ export function BenefitsBoard({
             <div key={g.id} className="flex flex-col gap-1 bg-surface p-4">
               <div className="text-sm font-medium text-ink">{g.name}</div>
               <div className="min-h-[2rem] flex-1 text-xs text-muted">{g.note ?? ""}</div>
-              <div className="font-serif text-base text-navy-800">{g.allocated != null ? egp(g.allocated) : "Available"}</div>
+              <div className="font-serif text-base text-navy-800">
+                {g.allocated != null ? egp(g.allocated) : "Available"}
+                {g.proratedFrom != null ? (
+                  <span className="ml-1.5 align-middle text-xs font-normal text-muted line-through">{egp(g.proratedFrom)}</span>
+                ) : null}
+              </div>
+              {g.proratedFrom != null && proratedBadge ? <div>{proratedBadge}</div> : null}
               {g.claimType !== "NONE" ? (
                 <button
                   type="button"
@@ -156,8 +217,17 @@ export function BenefitsBoard({
         {/* Right: sticky meter + how it works */}
         <aside className="space-y-4 lg:sticky lg:top-24">
           <div className="rounded-2xl border border-line bg-surface p-5">
+            {proratedBadge ? <div className="mb-2">{proratedBadge}</div> : null}
             <div className="font-serif text-3xl text-ink tabular-nums">{egp(poolRemaining)}</div>
-            <div className="text-sm text-muted">left of your {egp(ceiling)} annual pool (company share)</div>
+            <div className="text-sm text-muted">
+              left of your {egp(ceiling)} {proration ? "prorated" : "annual"} pool (company share)
+            </div>
+            {proration ? (
+              <p className="mt-2 rounded-lg bg-navy-50 px-3 py-2 text-xs text-navy-700">
+                You joined part-way through the plan year, so your pool covers the remaining {proration.months}{" "}
+                {proration.months === 1 ? "month" : "months"}. You&apos;ll get the full annual amount next plan year.
+              </p>
+            ) : null}
             <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
               <div className="h-full rounded-full bg-gold-500" style={{ width: `${pct}%` }} />
             </div>
@@ -191,7 +261,7 @@ export function BenefitsBoard({
 
       {/* Medical modal */}
       {medOpen ? (
-        <MedicalModal rate={medicalRate} ceiling={ceiling} onClose={() => setMedOpen(false)} />
+        <MedicalModal rate={medicalRate} ceiling={ceiling} premiumFraction={medicalPremiumFraction} onClose={() => setMedOpen(false)} />
       ) : null}
 
       {/* Guaranteed claim modal */}
@@ -339,14 +409,17 @@ function MedicalRow({ committed, onSetup }: { committed: BoardMedicalCommitted; 
 }
 
 /** Modal to commit medical (dependant picker + live premium). */
-function MedicalModal({ rate, ceiling, onClose }: { rate: BoardMedicalRate; ceiling: number; onClose: () => void }) {
+function MedicalModal({ rate, ceiling, premiumFraction = 1, onClose }: { rate: BoardMedicalRate; ceiling: number; premiumFraction?: number; onClose: () => void }) {
   const router = useRouter();
   const [spouse, setSpouse] = useState(false);
   const [u18, setU18] = useState(0);
   const [o18, setO18] = useState(0);
   const [msg, setMsg] = useState<{ errors: string[]; warnings: string[] } | null>(null);
   const [pending, startTransition] = useTransition();
-  const premium = computeMedicalPremium(rate, { spouse, childrenUnder18: u18, children18Plus: o18 });
+  const annualPremium = computeMedicalPremium(rate, { spouse, childrenUnder18: u18, children18Plus: o18 });
+  // Preview the prorated premium the server will actually commit for a mid-year starter.
+  const isPro = premiumFraction < 1;
+  const premium = Math.round(annualPremium * premiumFraction);
 
   function commit() {
     startTransition(async () => {
@@ -374,8 +447,11 @@ function MedicalModal({ rate, ceiling, onClose }: { rate: BoardMedicalRate; ceil
           <Counter label="Children 18+" note={egp(rate.child18Plus) + " each"} value={o18} onChange={setO18} />
         </div>
         <div className="mt-4 flex items-center justify-between rounded-lg bg-navy-50 px-4 py-3">
-          <span className="text-sm font-medium text-navy-800">Annual premium (100% covered)</span>
-          <span className="font-serif text-lg text-navy-800 tabular-nums">{egp(premium)}</span>
+          <span className="text-sm font-medium text-navy-800">{isPro ? "Prorated premium (100% covered)" : "Annual premium (100% covered)"}</span>
+          <span className="font-serif text-lg text-navy-800 tabular-nums">
+            {egp(premium)}
+            {isPro ? <span className="ml-1.5 align-middle text-xs font-normal text-muted line-through">{egp(annualPremium)}</span> : null}
+          </span>
         </div>
         {premium > ceiling ? <p className="mt-2 text-xs font-medium text-red-600">Premium exceeds your pool — it will be capped at {egp(ceiling)}; contact HR.</p> : null}
         {msg?.errors.length ? <div className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700"><ul className="list-disc pl-4">{msg.errors.map((e, i) => <li key={i}>{e}</li>)}</ul></div> : null}
