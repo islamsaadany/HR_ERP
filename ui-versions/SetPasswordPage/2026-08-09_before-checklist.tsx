@@ -1,12 +1,20 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, validatePasswordPolicy, PASSWORD_POLICY_HINT } from "@/lib/password";
+import {
+  hashPassword,
+  validatePasswordPolicy,
+  MIN_PASSWORD_LENGTH,
+  PASSWORD_POLICY_HINT,
+} from "@/lib/password";
 import { getBrand } from "@/lib/brand";
 import { signOutAction } from "@/lib/signout-action";
-import { SetPasswordForm } from "@/components/SetPasswordForm";
 
 export const dynamic = "force-dynamic";
+
+const L = "block text-xs font-medium uppercase tracking-wide text-muted mb-1";
+const I =
+  "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-navy-500 focus:outline-none";
 
 /**
  * Forced first-time password change. Employees issued a temporary password are gated here
@@ -74,7 +82,27 @@ export default async function SetPasswordPage({
             </p>
           ) : null}
 
-          <SetPasswordForm action={setPassword} />
+          <form action={setPassword} className="space-y-4">
+            <div>
+              <label htmlFor="next" className={L}>
+                New password
+              </label>
+              <input id="next" name="next" type="password" autoComplete="new-password" required minLength={MIN_PASSWORD_LENGTH} className={I} />
+              <p className="mt-1 text-xs text-muted">{PASSWORD_POLICY_HINT}</p>
+            </div>
+            <div>
+              <label htmlFor="confirm" className={L}>
+                Confirm new password
+              </label>
+              <input id="confirm" name="confirm" type="password" autoComplete="new-password" required minLength={MIN_PASSWORD_LENGTH} className={I} />
+            </div>
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-navy-800 px-4 py-3 text-sm font-semibold text-white transition hover:bg-navy-700"
+            >
+              Save and continue
+            </button>
+          </form>
 
           <form action={signOutAction} className="mt-6 text-center">
             <button type="submit" className="text-xs text-muted underline underline-offset-2 hover:text-navy-700">
