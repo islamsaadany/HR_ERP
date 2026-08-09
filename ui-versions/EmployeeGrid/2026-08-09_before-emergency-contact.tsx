@@ -27,9 +27,6 @@ export type GridRow = {
   monthlySalary: string;
   dateOfBirth: string;
   maritalStatus: "" | "SINGLE" | "MARRIED" | "DIVORCED" | "WIDOWED";
-  emergencyContactName: string;
-  emergencyContactRelationship: string;
-  emergencyContactPhone: string;
   status: "ACTIVE" | "LEFT";
   role: "EMPLOYEE" | "HR_ADMIN" | "SUPER_USER";
   reportsToId: string;
@@ -135,9 +132,6 @@ export function EmployeeGrid({
         editable: true,
         hideable: true,
       },
-      { key: "emergencyContactName", label: "Emergency name", type: "text", editable: true, hideable: true },
-      { key: "emergencyContactRelationship", label: "Emergency relationship", type: "text", editable: true, hideable: true },
-      { key: "emergencyContactPhone", label: "Emergency phone", type: "text", editable: true, hideable: true },
       {
         key: "status",
         label: "Status",

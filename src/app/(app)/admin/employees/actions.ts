@@ -190,6 +190,9 @@ const FIELD_SCHEMAS = {
   status: employeeSchema.shape.status,
   dateOfBirth: employeeSchema.shape.dateOfBirth,
   maritalStatus: employeeSchema.shape.maritalStatus,
+  emergencyContactName: employeeSchema.shape.emergencyContactName,
+  emergencyContactRelationship: employeeSchema.shape.emergencyContactRelationship,
+  emergencyContactPhone: employeeSchema.shape.emergencyContactPhone,
   reportsToId: employeeSchema.shape.reportsToId,
 } as const;
 
