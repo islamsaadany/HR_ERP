@@ -1,0 +1,171 @@
+<title>Benefits UI tweaks — mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* Faithful to the app's navy/gold tokens — single light identity, painted
+     explicitly so it holds on any host ground. */
+  :root{
+    --navy-50:#eceff5; --navy-500:#2f4d78; --navy-700:#163055; --navy-800:#0f2444;
+    --gold-100:#f6ecca; --gold-500:#c9a227; --gold-600:#a8821e;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --green-50:#ecf6ee; --green-200:#bfe0c6; --green-700:#1f7a3d;
+    --red-50:#fbecec; --red-700:#b23b3b;
+    --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+    line-height:1.5;-webkit-font-smoothing:antialiased;padding:32px 20px 72px}
+  .wrap{max-width:1080px;margin:0 auto}
+  h1.page{font-family:var(--serif);font-size:34px;margin:.2em 0 0;letter-spacing:-.01em}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lead{color:var(--muted);max-width:65ch;margin:14px 0 34px}
+  .change{margin:0 0 44px}
+  .change > h2{font-family:var(--serif);font-size:20px;margin:0 0 4px}
+  .change > .why{color:var(--muted);font-size:14px;margin:0 0 18px;max-width:70ch}
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media (max-width:760px){.ba{grid-template-columns:1fr}}
+  .col > .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+    color:var(--muted);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+  .tag .dot{width:8px;height:8px;border-radius:50%}
+  .tag.before .dot{background:#c9c3b6}
+  .tag.after .dot{background:var(--gold-500)}
+  /* app-surface frame */
+  .frame{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
+  .card + .card{margin-top:16px}
+  .card.gold{border-color:var(--gold-500)}
+  .h2{font-family:var(--serif);font-size:17px;margin:0}
+  .muted{color:var(--muted)}
+  .sm{font-size:13px}
+  .xs{font-size:12px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .banner{border-radius:10px;padding:12px 16px;font-size:14px;display:flex;gap:10px;align-items:flex-start}
+  .banner.ok{background:var(--green-50);border:1px solid var(--green-200);color:var(--green-700)}
+  .banner.err{background:var(--red-50);color:var(--red-700)}
+  .banner .ic{font-weight:700}
+  .btn{border-radius:9px;font-size:13px;font-weight:600;padding:8px 14px;border:1px solid var(--line);
+    background:var(--surface);color:var(--navy-700);cursor:default;white-space:nowrap}
+  .btn.gold{background:var(--gold-500);border-color:var(--gold-500);color:var(--navy-800)}
+  .btn.navy{background:var(--navy-800);border-color:var(--navy-800);color:#fff}
+  .btn.sm{padding:6px 11px;font-size:12px}
+  .claimitem{border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px}
+  .pill{font-size:11px;font-weight:700;background:var(--navy-50);color:var(--navy-700);border-radius:999px;padding:3px 9px}
+  .hdrbtns{display:flex;gap:8px;align-items:center}
+  .note{background:var(--gold-100);border:1px solid var(--gold-500);color:var(--gold-600);
+    border-radius:10px;padding:10px 14px;font-size:13px;margin-top:18px}
+  .callout{border-left:3px solid var(--gold-500);padding:2px 0 2px 14px;margin:10px 0 0;color:var(--muted);font-size:13px}
+  .tabs{display:flex;gap:6px;margin:16px 0 4px;flex-wrap:wrap}
+  .tab{font-size:13px;font-weight:600;padding:8px 14px;border-radius:9px 9px 0 0;color:var(--muted)}
+  .tab.on{background:var(--surface);border:1px solid var(--line);border-bottom-color:var(--surface);color:var(--ink)}
+  del{color:#b0a89a;text-decoration-thickness:1px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">HR_ERP · Benefits</p>
+  <h1 class="page">Benefits — three UI tweaks</h1>
+  <p class="lead">A faithful navy/gold replica for sign-off. Nothing here is live yet — please
+    approve the look and the button position, then I'll build it against the real components.</p>
+
+  <!-- ─── CHANGE 1 ─────────────────────────────────────────── -->
+  <section class="change">
+    <h2>1 · Success message after a claim is submitted</h2>
+    <p class="why">Today the claim saves and the page just reloads with no confirmation. I'll add a
+      green success banner at the top of the board (mirroring the existing red error banner's shape
+      and position), so the employee gets clear feedback.</p>
+    <div class="ba">
+      <div class="col">
+        <p class="tag before"><span class="dot"></span>Before — no feedback</p>
+        <div class="frame">
+          <div class="row"><h3 class="h2">Your benefits &amp; claims</h3><span class="pill">Plan year open</span></div>
+          <div class="card" style="margin-top:14px">
+            <div class="row"><strong class="sm">Professional development</strong><span class="xs muted">EGP 3,000 left</span></div>
+            <p class="xs muted" style="margin:8px 0 0">Claim history · file a claim…</p>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <p class="tag after"><span class="dot"></span>After — confirmation banner</p>
+        <div class="frame">
+          <div class="banner ok"><span class="ic">✓</span><span><strong>Claim submitted.</strong> HR will review it and release your reimbursement — you'll see it move to <em>Released</em> here once approved.</span></div>
+          <div class="row" style="margin-top:14px"><h3 class="h2">Your benefits &amp; claims</h3><span class="pill">Plan year open</span></div>
+          <div class="card" style="margin-top:14px">
+            <div class="row"><strong class="sm">Professional development</strong><span class="xs muted">EGP 3,000 left</span></div>
+            <p class="xs muted" style="margin:8px 0 0">Claim history · file a claim…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CHANGE 2 ─────────────────────────────────────────── -->
+  <section class="change">
+    <h2>2 · Page title → “Benefits Management”</h2>
+    <p class="why">The page spans reviewing claims, the catalogue, and amounts — configuration is only
+      one part of it. Renaming the H1 (the eyebrow stays “Admin · Benefits”).</p>
+    <div class="ba">
+      <div class="col">
+        <p class="tag before"><span class="dot"></span>Before</p>
+        <div class="frame">
+          <p class="eyebrow">Admin · Benefits</p>
+          <h3 class="page" style="font-size:28px"><del>Benefits configuration</del></h3>
+          <div class="tabs"><span class="tab on">Submissions &amp; Claims</span><span class="tab">Benefits Catalogue</span><span class="tab">Amounts</span></div>
+        </div>
+      </div>
+      <div class="col">
+        <p class="tag after"><span class="dot"></span>After</p>
+        <div class="frame">
+          <p class="eyebrow">Admin · Benefits</p>
+          <h3 class="page" style="font-size:28px">Benefits Management</h3>
+          <div class="tabs"><span class="tab on">Submissions &amp; Claims</span><span class="tab">Benefits Catalogue</span><span class="tab">Amounts</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CHANGE 3 ─────────────────────────────────────────── -->
+  <section class="change">
+    <h2>3 · “Record a past claim / release” → a button, not a full card</h2>
+    <p class="why">Recording a past claim is an exception (HR back-filling something paid outside the
+      app), yet it currently occupies a full gold-bordered card between “Claims to review” and the
+      submissions list. <strong>My suggested position:</strong> move it to a compact gold
+      <em>“Record entry…”</em> button in the top-right of the <strong>Claims to review</strong> header
+      — it stays next to the claims workflow it belongs to, reads as a secondary action, and the
+      explanatory text simply moves into the popup (where it already lives). Net effect: one less
+      full-width card, cleaner tab.</p>
+    <div class="ba">
+      <div class="col">
+        <p class="tag before"><span class="dot"></span>Before — full card of its own</p>
+        <div class="frame">
+          <div class="card">
+            <h4 class="h2">Claims to review · 2</h4>
+            <div class="claimitem"><div class="row"><span class="sm"><strong>Sara N.</strong> · Professional development · EGP 1,200</span><span class="xs muted">Aug 6</span></div>
+              <div class="hdrbtns" style="margin-top:10px"><span class="btn navy sm">Release payment</span><span class="btn sm">Reject</span></div></div>
+          </div>
+          <div class="card gold">
+            <h4 class="h2">Record a past claim / release</h4>
+            <p class="sm muted" style="margin:6px 0 0">Back-fill a claim that was already approved and paid outside the app. It's saved as released and counts against the benefit's allocation.</p>
+            <span class="btn gold" style="margin-top:12px;display:inline-block">Record entry…</span>
+          </div>
+          <div class="card"><h4 class="h2">Medical commitments · 2026</h4><p class="sm muted" style="margin:6px 0 0">…</p></div>
+        </div>
+      </div>
+      <div class="col">
+        <p class="tag after"><span class="dot"></span>After — button in the section header</p>
+        <div class="frame">
+          <div class="card">
+            <div class="row"><h4 class="h2">Claims to review · 2</h4><span class="btn gold sm">＋ Record entry…</span></div>
+            <div class="claimitem"><div class="row"><span class="sm"><strong>Sara N.</strong> · Professional development · EGP 1,200</span><span class="xs muted">Aug 6</span></div>
+              <div class="hdrbtns" style="margin-top:10px"><span class="btn navy sm">Release payment</span><span class="btn sm">Reject</span></div></div>
+          </div>
+          <div class="card"><h4 class="h2">Medical commitments · 2026</h4><p class="sm muted" style="margin:6px 0 0">…</p></div>
+          <p class="callout">The popup is unchanged — it keeps the “Record a past claim / release” heading
+            and the “saved as released…” explanation, so no information is lost.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="note"><strong>Nothing is built yet.</strong> Approve this (or tell me what to adjust — e.g. a different
+    button position, wording, or banner color) and I'll implement against the real components, snapshot the
+    UI versions, run type-check + build, and push.</p>
+</div>
