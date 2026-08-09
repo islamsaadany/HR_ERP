@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/roles";
+import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { getActivePlanYear, amountForBand } from "@/lib/benefits/config";
+import { flexCap } from "@/lib/benefits/rules";
 
 export type ManualResult = { ok: true } | { ok: false; error: string };
 
@@ -58,7 +59,11 @@ export async function recordManualRelease(formData: FormData): Promise<ManualRes
     const salaryDriven =
       gb.band6mo2y == null && gb.band2to4y == null && gb.band4to7y == null && gb.band7to10y == null;
     if (salaryDriven) {
-      // Loans etc. — the allocation is the employee's monthly salary.
+      // Loans etc. — the allocation is the employee's monthly salary (confidential). Only a Super
+      // User may record against it, so an HR Admin never sees the salary via the allocation.
+      if (!isSuperUser(actor.role)) {
+        return { ok: false, error: "Only a Super User can record a salary-based benefit (e.g. Loans)." };
+      }
       if (!user.monthlySalary || user.monthlySalary <= 0) {
         return { ok: false, error: "This benefit is salary-driven but the employee has no monthly salary set." };
       }
@@ -69,18 +74,23 @@ export async function recordManualRelease(formData: FormData): Promise<ManualRes
     }
     claimWhere.guaranteedBenefitId = id;
   } else if (kind === "catalog") {
-    // Must have a submitted basket line for this catalog item (its covered allocation).
-    const line = await prisma.selectionLine.findFirst({
-      where: {
-        catalogItemId: id,
-        selection: { userId: user.id, planYearId: planYear.id, status: "SUBMITTED" },
-      },
-      select: { amount: true },
-    });
-    if (!line) {
-      return { ok: false, error: "The employee has no submitted basket allocation for that benefit." };
+    // Flexible benefits (spec 018): no basket. The per-benefit allocation is 50% of the pool ceiling.
+    const item = await prisma.benefitCatalogItem.findUnique({ where: { id }, select: { isMedical: true } });
+    if (!item) return { ok: false, error: "Catalog benefit not found." };
+    if (item.isMedical) return { ok: false, error: "Medical is automatic cover — it isn't claimed." };
+    if (!user.employmentType || !user.tenureBand) {
+      return { ok: false, error: "The employee has no employment type / tenure band set." };
     }
-    allocation = line.amount;
+    const ceilingRow = await prisma.poolCeiling.findUnique({
+      where: {
+        employmentType_tenureBand: {
+          employmentType: user.employmentType,
+          tenureBand: user.tenureBand,
+        },
+      },
+    });
+    if (!ceilingRow) return { ok: false, error: "No pool ceiling configured for that employee." };
+    allocation = flexCap(ceilingRow.amount);
     claimWhere.catalogItemId = id;
   } else {
     return { ok: false, error: "Unknown benefit type." };

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
-import { MAX_SELECT_FULL_TIME, MAX_SELECT_PART_TIME } from "@/lib/benefits/rules";
 import { PrintButton } from "@/components/benefits/PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -64,14 +63,15 @@ export default async function BenefitsPolicyPage() {
 
       <div id="print-area" className="mt-4">
         <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Benefits guide</p>
-        <h1 className="mt-1 font-serif text-3xl text-ink">How the benefits basket works</h1>
+        <h1 className="mt-1 font-serif text-3xl text-ink">How your benefits work</h1>
         <p className="mt-2 max-w-2xl text-muted">
-          Everyone receives a set of <strong>guaranteed benefits</strong> automatically. On top of that you build
-          a <strong>flexible basket</strong> from a shared pool of money, choosing the benefits that suit you. Your
-          own pool and the exact amounts appear on the Benefits page — this guide explains how it all works.
+          Everyone receives a set of <strong>guaranteed benefits</strong> automatically. On top of that you have a
+          <strong> flexible pool</strong> of money to spend on the benefits that suit you — you simply{" "}
+          <strong>claim as you go</strong> through the year. Your own pool and the exact amounts appear on the
+          Benefits page; this guide explains how it all works.
         </p>
 
-        {/* ── The rules, in plain words. Policy limits only (the max-selection counts) — no money. ── */}
+        {/* ── The rules, in plain words. No money figures. ── */}
         <h2 className={H2}>The rules</h2>
         <div className={card}>
           <ul className="space-y-2 text-sm text-ink">
@@ -80,29 +80,31 @@ export default async function BenefitsPolicyPage() {
               most the company will contribute for the year. You&apos;ll see your own figure on the Benefits page.
             </li>
             <li>
-              <strong>The company co-funds each benefit.</strong> You enter a benefit&apos;s full cost; the company
-              covers a set percentage of it (shown per benefit — e.g. 100%, 80%, or 50%), and only that
-              <strong> covered share</strong> draws from your pool. You pay the rest. Example: a 10,000 gym
-              membership covered at 80% draws 8,000 from your pool; you pay 2,000.
+              <strong>Claim as you spend — nothing to submit.</strong> When you pay for a benefit, enter its
+              <strong> full price</strong> (matching your receipt). The company covers a set percentage of it (shown per
+              benefit — e.g. 100%, 80%, or 50%), and only that <strong>covered share</strong> draws from your pool. You
+              pay the rest. Example: a 10,000 gym membership covered at 80% reimburses 8,000 from your pool; you pay 2,000.
             </li>
             <li>
-              <strong>No single flexible benefit&apos;s company share may exceed 50% of your pool</strong> — so
-              full-timers choose at least two. (Part-time pools aren&apos;t subject to the 50% cap.)
+              <strong>You can claim the same benefit more than once</strong> across the year — in full or in parts (say,
+              a course now and another later).
             </li>
             <li>
-              <strong>Medical insurance is exempt from the 50% cap</strong> — it may take more than half your pool, but
-              never more than your pool ceiling. You price your own cover when you select it.
+              <strong>No single benefit&apos;s covered share may exceed 50% of your pool</strong> — this keeps your
+              choices varied. It applies whether you&apos;re full-time or part-time.
             </li>
             <li>
-              You may pick up to <strong>{MAX_SELECT_FULL_TIME} flexible benefits if full-time</strong> and up to{" "}
-              <strong>{MAX_SELECT_PART_TIME} if part-time</strong>.
+              <strong>Medical insurance is the one thing you commit to.</strong> You set it up once for the year
+              (yourself, and optionally spouse and children); after that it&apos;s locked and HR manages it, since it&apos;s
+              arranged with a provider. It&apos;s 100% covered, exempt from the 50% cap, but never more than your pool
+              ceiling.
             </li>
             <li>
               <strong>Benefits are reimbursed against actual spend</strong> — anything you don&apos;t claim isn&apos;t paid
               out as cash and doesn&apos;t carry over to next year.
             </li>
             <li>
-              <strong>Guaranteed benefits are separate</strong> from the basket and are not affected by your choices.
+              <strong>Guaranteed benefits are separate</strong> and are not affected by your choices.
             </li>
           </ul>
         </div>
@@ -130,22 +132,22 @@ export default async function BenefitsPolicyPage() {
           )}
         </div>
 
-        {/* ── Building the basket: the how-to, then the menu (names/descriptions, no amounts). ── */}
-        <h2 className={H2}>Building your flexible basket</h2>
+        {/* ── Using the pool: the how-to, then the menu (names/descriptions, no amounts). ── */}
+        <h2 className={H2}>Using your flexible pool</h2>
         <div className={card}>
           <ol className="list-decimal space-y-2 pl-5 text-sm text-ink">
             <li>Open <strong>Benefits</strong> while a selection window is open.</li>
             <li>
-              <strong>Select</strong> the benefits you want and set an amount for each — the running meter shows how
-              much of your pool you&apos;ve used and what&apos;s left.
+              First, <strong>commit your medical insurance</strong>: choose who&apos;s covered (yourself, and optionally
+              spouse and children) — the premium is worked out for you. This is a one-time commitment for the year.
             </li>
             <li>
-              For <strong>medical insurance</strong>, choose who&apos;s covered (yourself, and optionally spouse and
-              children) — the premium is worked out for you.
+              Then, whenever you spend on a flexible benefit, <strong>file a claim</strong>: enter the full price you
+              paid and attach proof. The company reimburses the covered share, which draws from your pool.
             </li>
             <li>
-              <strong>Save a draft</strong> any time and come back to it, then <strong>Submit</strong> when you&apos;re
-              happy. A submitted basket is locked for the year unless HR reopens it for you.
+              Come back any time during the year — <strong>there&apos;s nothing to submit</strong>. The pool meter shows
+              how much you&apos;ve used and what&apos;s left.
             </li>
           </ol>
         </div>
@@ -176,23 +178,23 @@ export default async function BenefitsPolicyPage() {
         <div className={card}>
           <ol className="list-decimal space-y-2 pl-5 text-sm text-ink">
             <li>
-              Once your basket is submitted, open the <strong>&quot;Claims &amp; reimbursement&quot;</strong> tab on the
-              Benefits page. Each benefit has its own row showing what&apos;s allocated, reimbursed, pending, and left
-              to claim — all in <strong>company (covered) terms</strong>.
+              On the Benefits page, each flexible benefit has its own row showing its coverage %, and what&apos;s
+              reimbursed, pending, and left to claim — all in <strong>company (covered) terms</strong>, up to 50% of
+              your pool per benefit.
             </li>
             <li>
               Open a benefit and <strong>file a claim</strong>. Depending on the benefit you&apos;ll either{" "}
               <strong>upload proof</strong> of your full spend (an invoice, receipt, or proof of payment), or simply{" "}
               <strong>request</strong> it — the page tells you which. You&apos;re reimbursed the{" "}
-              <strong>covered (company) portion</strong>, up to the amount allocated to that benefit.
+              <strong>covered (company) portion</strong> of the price you paid.
             </li>
             <li>
-              You can make <strong>several partial claims</strong> against a benefit over the year, up to the amount you
-              allocated to it.
+              You can make <strong>several claims</strong> against a benefit over the year, up to its 50%-of-pool cap,
+              and across benefits up to your overall pool.
             </li>
             <li>
               HR reviews each claim: it moves from <strong>Pending review</strong> to <strong>Reimbursed</strong>, or is{" "}
-              <strong>Rejected</strong> with a reason. You can follow every claim&apos;s status on the same tab.
+              <strong>Rejected</strong> with a reason. You can follow every claim&apos;s status on the Benefits page.
             </li>
             <li>
               Anything you don&apos;t claim by year end isn&apos;t paid out as cash and doesn&apos;t carry over.

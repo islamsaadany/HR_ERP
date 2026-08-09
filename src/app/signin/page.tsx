@@ -48,7 +48,7 @@ export default async function SignInPage({
               {brand.shortName}
             </div>
           )}
-          <h1 className="mt-2 font-serif text-3xl text-white">{brand.companyName}</h1>
+          <h1 className="mt-2 font-serif text-3xl uppercase text-white">{brand.companyName}</h1>
           <p className="mt-2 text-sm text-navy-100">
             Sign in to your account.
           </p>

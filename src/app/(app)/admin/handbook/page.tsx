@@ -50,7 +50,7 @@ export default async function AdminHandbookPage({
 
       <h2 className="mt-10 font-serif text-lg text-ink">Resources</h2>
       {resError ? <p className="mt-2 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{resError}</p> : null}
-      <form action={uploadResource} className="mt-3 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4">
+      <form action={uploadResource} encType="multipart/form-data" className="mt-3 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4">
         <div className="min-w-[160px] flex-1">
           <label className="block text-xs uppercase tracking-wide text-muted mb-1">Title</label>
           <input name="title" placeholder="e.g. Company profile" className="w-full rounded-lg border border-line px-3 py-2 text-sm" />

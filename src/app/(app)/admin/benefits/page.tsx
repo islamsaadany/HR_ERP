@@ -10,8 +10,8 @@ import { CLAIM_TYPE_LABEL } from "@/lib/benefits/claims";
 import { BackLink } from "@/components/admin/BackLink";
 import type { EmploymentType, TenureBand } from "@prisma/client";
 import {
-  reopenSelection,
-  resetSelection,
+  editMedicalCommitment,
+  removeMedicalCommitment,
   setClaimType,
   releaseClaim,
   rejectClaim,
@@ -43,13 +43,13 @@ export default async function AdminBenefitsPage({
   const planYears = await prisma.planYear.findMany({ orderBy: { createdAt: "desc" } });
   const active = planYears.find((p) => p.status === "OPEN") ?? planYears[0];
 
-  const [selections, pendingClaims, guaranteedBenefits, catalogItems, poolCeilings, employees] =
+  const [medicalCommitments, pendingClaims, guaranteedBenefits, catalogItems, poolCeilings, employees] =
     await Promise.all([
       active
-        ? prisma.benefitSelection.findMany({
+        ? prisma.medicalCommitment.findMany({
             where: { planYearId: active.id },
-            include: { user: { select: { name: true } }, lines: true },
-            orderBy: { updatedAt: "desc" },
+            include: { user: { select: { name: true, employmentType: true, tenureBand: true } } },
+            orderBy: { committedAt: "desc" },
           })
         : Promise.resolve([]),
       active
@@ -281,8 +281,8 @@ export default async function AdminBenefitsPage({
       {/* Submissions */}
       <section className="rounded-xl border border-line bg-surface p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="font-serif text-lg text-ink">Submissions {active ? `· ${active.name}` : ""}</h2>
-          {active && selections.length > 0 ? (
+          <h2 className="font-serif text-lg text-ink">Medical commitments {active ? `· ${active.name}` : ""}</h2>
+          {active ? (
             <a
               href={`/api/admin/benefits/export?planYearId=${active.id}`}
               className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
@@ -291,42 +291,60 @@ export default async function AdminBenefitsPage({
             </a>
           ) : null}
         </div>
-        {selections.length === 0 ? (
-          <p className="text-sm text-muted">No baskets yet.</p>
+        <p className="mb-3 text-xs text-muted">
+          Medical is the one committed benefit — locked to the employee after they commit. Edit dependants
+          (recomputes the premium, capped at their pool) or remove a commitment so they can re-commit.
+          Flexible benefits are claimed directly; review those claims below.
+        </p>
+        {medicalCommitments.length === 0 ? (
+          <p className="text-sm text-muted">No medical commitments yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs uppercase text-muted">
                   <th className="py-2 pr-4 font-medium">Employee</th>
-                  <th className="py-2 pr-4 font-medium">Status</th>
-                  <th className="py-2 pr-4 font-medium">Total</th>
-                  <th className="py-2 pr-4 font-medium">Submitted</th>
+                  <th className="py-2 pr-4 font-medium">Cover</th>
+                  <th className="py-2 pr-4 font-medium">Premium</th>
+                  <th className="py-2 pr-4 font-medium">Committed</th>
                   <th className="py-2" />
                 </tr>
               </thead>
               <tbody>
-                {selections.map((s) => {
-                  const total = s.lines.reduce((sum, l) => sum + l.amount, 0);
+                {medicalCommitments.map((m) => {
+                  const deps = [
+                    m.spouse ? "spouse" : null,
+                    m.childrenUnder18 + m.children18Plus > 0
+                      ? `${m.childrenUnder18 + m.children18Plus} child(ren)`
+                      : null,
+                  ].filter(Boolean);
                   return (
-                    <tr key={s.id} className="border-b border-line last:border-0">
-                      <td className="py-2 pr-4 text-ink">{s.user.name}</td>
-                      <td className="py-2 pr-4">
-                        <span className={"rounded-full px-2 py-0.5 text-xs font-semibold " + (s.status === "SUBMITTED" ? "bg-navy-50 text-navy-700" : "bg-gold-100 text-gold-800")}>{s.status}</span>
-                      </td>
-                      <td className="py-2 pr-4 tabular-nums text-ink">{egp(total)}</td>
-                      <td className="py-2 pr-4 text-muted">{s.submittedAt ? formatDate(s.submittedAt) : "—"}</td>
-                      <td className="py-2 text-right">
-                        <div className="flex items-center justify-end gap-3">
-                          {s.status === "SUBMITTED" ? (
-                            <form action={reopenSelection}>
-                              <input type="hidden" name="id" value={s.id} />
-                              <button className="text-sm font-medium text-navy-600 hover:text-navy-800">Reopen</button>
-                            </form>
-                          ) : null}
-                          <form action={resetSelection}>
-                            <input type="hidden" name="id" value={s.id} />
-                            <button className="text-sm font-medium text-muted hover:text-red-600">Reset</button>
+                    <tr key={m.id} className="border-b border-line align-top last:border-0">
+                      <td className="py-2 pr-4 text-ink">{m.user.name}</td>
+                      <td className="py-2 pr-4 text-muted">You{deps.length ? " + " + deps.join(" + ") : ""}</td>
+                      <td className="py-2 pr-4 tabular-nums text-ink">{egp(m.premium)}</td>
+                      <td className="py-2 pr-4 text-muted">{formatDate(m.committedAt)}</td>
+                      <td className="py-2">
+                        <div className="flex flex-wrap items-end justify-end gap-2">
+                          <form action={editMedicalCommitment} className="flex items-end gap-1.5">
+                            <input type="hidden" name="id" value={m.id} />
+                            <label className="flex flex-col text-[10px] uppercase tracking-wide text-muted">
+                              Spouse
+                              <input type="checkbox" name="spouse" value="true" defaultChecked={m.spouse} className="mt-1 h-5 w-5" />
+                            </label>
+                            <label className="flex flex-col text-[10px] uppercase tracking-wide text-muted">
+                              &lt;18
+                              <input type="number" name="childrenUnder18" min={0} defaultValue={m.childrenUnder18} className="mt-1 w-14 rounded border border-line px-2 py-1 text-sm" />
+                            </label>
+                            <label className="flex flex-col text-[10px] uppercase tracking-wide text-muted">
+                              18+
+                              <input type="number" name="children18Plus" min={0} defaultValue={m.children18Plus} className="mt-1 w-14 rounded border border-line px-2 py-1 text-sm" />
+                            </label>
+                            <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-navy-700 hover:bg-navy-50">Save</button>
+                          </form>
+                          <form action={removeMedicalCommitment}>
+                            <input type="hidden" name="id" value={m.id} />
+                            <button className="text-sm font-medium text-muted hover:text-red-600">Remove</button>
                           </form>
                         </div>
                       </td>
@@ -394,7 +412,7 @@ export default async function AdminBenefitsPage({
             </div>
             <div className="w-20" title={c.isMedical ? "Medical is always 100% covered" : "Company coverage % (0–100)"}>
               <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Coverage %</label>
-              <input name="coverageRate" type="number" min={0} max={100} defaultValue={c.coverageRate} disabled={c.isMedical} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums disabled:opacity-60" />
+              <input name="coverageRate" type="number" min={1} max={100} defaultValue={c.coverageRate} disabled={c.isMedical} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums disabled:opacity-60" />
             </div>
             <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">Save</button>
           </form>
@@ -418,6 +436,10 @@ export default async function AdminBenefitsPage({
         <div className="min-w-[150px]">
           <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Category</label>
           <input name="category" placeholder="e.g. Wellbeing" className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
+        </div>
+        <div className="w-24">
+          <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Coverage %</label>
+          <input name="coverageRate" type="number" min={1} max={100} defaultValue={100} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums" />
         </div>
         <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">Add item</button>
       </form>

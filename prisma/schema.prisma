@@ -100,7 +100,8 @@ model User {
   leaveApprovals LeaveRequest[] @relation("LeaveApprover")
 
   // Benefits
-  benefitSelections BenefitSelection[]
+  medicalCommitments MedicalCommitment[] @relation("MedicalOwner")
+  committedMedical   MedicalCommitment[] @relation("MedicalCommitter")
   benefitClaims     BenefitClaim[] @relation("ClaimOwner")
   reviewedClaims    BenefitClaim[] @relation("ClaimReviewer")
   benefitReleases   BenefitRelease[] @relation("ReleaseSubject")
@@ -287,11 +288,6 @@ enum PlanYearStatus {
   CLOSED
 }
 
-enum SelectionStatus {
-  DRAFT
-  SUBMITTED
-}
-
 /// What an employee must provide to claim/reimburse a benefit.
 enum ClaimType {
   NONE // paid automatically — no request needed
@@ -311,7 +307,7 @@ model PlanYear {
   name       String
   status     PlanYearStatus     @default(OPEN)
   createdAt  DateTime           @default(now())
-  selections BenefitSelection[]
+  medicalCommitments MedicalCommitment[]
   claims     BenefitClaim[]
   releases   BenefitRelease[]
 }
@@ -398,25 +394,30 @@ model BenefitCatalogItem {
   /// Company coverage rate, percent 0–100 (spec 012). The covered (company) share = cost × rate/100
   /// draws from the pool; the employee pays the remainder. Medical is 100% (cost = covered).
   coverageRate Int            @default(100)
-  lines       SelectionLine[]
   claims      BenefitClaim[]
 }
 
-/// An employee's basket for a plan year.
-model BenefitSelection {
-  id                     String          @id @default(cuid())
-  userId                 String
-  user                   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  planYearId             String
-  planYear               PlanYear        @relation(fields: [planYearId], references: [id], onDelete: Cascade)
-  status                 SelectionStatus @default(DRAFT)
-  medicalSpouse          Boolean         @default(false)
-  medicalChildrenUnder18 Int             @default(0)
-  medicalChildren18Plus  Int             @default(0)
-  submittedAt            DateTime?
-  createdAt              DateTime        @default(now())
-  updatedAt              DateTime        @updatedAt
-  lines                  SelectionLine[]
+/// An employee's committed medical election for a plan year (spec 018) — the single commitment in
+/// the flexible-benefits module. Existence of the row means medical is committed. The employee
+/// cannot edit or remove it after committing; only HR (admin) may, as an exception. Flexible
+/// benefits have no selection/allocation record — they are claimed directly (see BenefitClaim).
+model MedicalCommitment {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation("MedicalOwner", fields: [userId], references: [id], onDelete: Cascade)
+  planYearId      String
+  planYear        PlanYear @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  spouse          Boolean  @default(false)
+  childrenUnder18 Int      @default(0)
+  children18Plus  Int      @default(0)
+  /// Covered premium (100%) drawn from the pool; capped at the ceiling at commit time.
+  premium         Int
+  /// Set when HR commits/edits on the employee's behalf; null for a self-commit.
+  committedById   String?
+  committedBy     User?    @relation("MedicalCommitter", fields: [committedById], references: [id], onDelete: SetNull)
+  committedAt     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@unique([userId, planYearId])
 }
@@ -432,21 +433,6 @@ model Announcement {
   publishedAt DateTime @default(now())
 
   @@index([publishedAt])
-}
-
-/// One chosen benefit line (amount; for medical, the computed premium).
-model SelectionLine {
-  id            String             @id @default(cuid())
-  selectionId   String
-  selection     BenefitSelection   @relation(fields: [selectionId], references: [id], onDelete: Cascade)
-  catalogItemId String
-  catalogItem   BenefitCatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
-  /// Covered (company) amount = the pool draw. For medical = the premium. (spec 012)
-  amount        Int
-  /// Full cost the employee entered (1,000 steps). For medical = the premium (cost = covered). (spec 012)
-  cost          Int                @default(0)
-
-  @@unique([selectionId, catalogItemId])
 }
 
 /// A reimbursement claim against a benefit (guaranteed or basket) for a plan year.

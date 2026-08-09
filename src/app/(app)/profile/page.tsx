@@ -134,7 +134,7 @@ export default async function ProfilePage({
           </p>
         ) : null}
 
-        <form action={uploadMyDocument} className="mt-4 flex flex-wrap items-end gap-3">
+        <form action={uploadMyDocument} encType="multipart/form-data" className="mt-4 flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[180px]">
             <label className="block text-xs uppercase tracking-wide text-muted mb-1">
               Title (optional)

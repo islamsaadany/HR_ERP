@@ -33,3 +33,10 @@ export async function getActivePlanYear() {
 export async function getMedicalRate() {
   return prisma.medicalRateCard.findFirst();
 }
+
+/** The employee's committed medical election for a plan year, or null if not yet committed (spec 018). */
+export async function getMedicalCommitment(userId: string, planYearId: string) {
+  return prisma.medicalCommitment.findUnique({
+    where: { userId_planYearId: { userId, planYearId } },
+  });
+}

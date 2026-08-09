@@ -34,7 +34,7 @@ export default async function AdminBrandPage({
         <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       ) : null}
 
-      <form action={updateBrand} className="mt-6 space-y-5 rounded-xl border border-line bg-surface p-6">
+      <form action={updateBrand} encType="multipart/form-data" className="mt-6 space-y-5 rounded-xl border border-line bg-surface p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className={label}>Company name</label>

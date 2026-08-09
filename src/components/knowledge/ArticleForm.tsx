@@ -99,7 +99,7 @@ export function ArticleForm({
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Left: authoring */}
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} encType="multipart/form-data" className="space-y-4">
         {/* Prompt helper */}
         <div className="rounded-xl border border-line bg-surface p-4">
           <div className="flex items-center justify-between">

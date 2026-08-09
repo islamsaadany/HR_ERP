@@ -5,7 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { computeCycle, type CycleAssignment } from "@/lib/incentive/compute";
 import type { AssignmentType } from "@/lib/incentive/rules";
 import { CycleReportView } from "@/components/incentive/CycleReport";
-import { saveFirmFigures, uploadSheet } from "../actions";
+import { FirmFiguresCard } from "@/components/incentive/FirmFiguresCard";
+import { SheetUpload } from "@/components/incentive/SheetUpload";
+import { saveFirmFigures } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +55,6 @@ export default async function CyclePage({
   );
 
   const saveFirm = saveFirmFigures.bind(null, cycle.id);
-  const input = "rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-navy-500 focus:outline-none";
 
   const uploads: { kind: "people" | "assignments" | "contributions"; label: string; count: number }[] = [
     { kind: "people", label: "People", count: cycle.people.length },
@@ -74,24 +75,12 @@ export default async function CyclePage({
 
       {/* Inputs: firm figures + sheet uploads */}
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <form action={saveFirm} className="rounded-xl border border-line bg-surface p-4">
-          <div className="text-sm font-semibold text-ink">Firm P&amp;L</div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            <div>
-              <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Revenue</label>
-              <input name="revenue" defaultValue={cycle.revenue ?? ""} className={input + " w-full"} />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Delivery cost</label>
-              <input name="deliveryCost" defaultValue={cycle.deliveryCost ?? ""} className={input + " w-full"} />
-            </div>
-            <div>
-              <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Total expenses</label>
-              <input name="totalExpenses" defaultValue={cycle.totalExpenses ?? ""} className={input + " w-full"} />
-            </div>
-          </div>
-          <button className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">Save firm figures</button>
-        </form>
+        <FirmFiguresCard
+          revenue={cycle.revenue}
+          deliveryCost={cycle.deliveryCost}
+          totalExpenses={cycle.totalExpenses}
+          action={saveFirm}
+        />
 
         <div className="rounded-xl border border-line bg-surface p-4">
           <div className="flex items-center justify-between">
@@ -103,13 +92,9 @@ export default async function CyclePage({
             </div>
           </div>
           <p className="mt-1 text-[11px] text-muted">Download a template, fill it, upload it back. Re-uploading replaces that sheet.</p>
-          <div className="mt-3 space-y-2">
+          <div className="mt-3 space-y-3">
             {uploads.map((u) => (
-              <form key={u.kind} action={uploadSheet.bind(null, cycle.id, u.kind)} className="flex items-center gap-2">
-                <span className="w-28 shrink-0 text-sm text-ink">{u.label}<span className="text-muted"> ({u.count})</span></span>
-                <input type="file" name="file" accept=".csv,text/csv" className="min-w-0 flex-1 text-xs text-muted file:mr-2 file:rounded file:border-0 file:bg-navy-800 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white" />
-                <button className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-navy-700 hover:bg-navy-50">Upload</button>
-              </form>
+              <SheetUpload key={u.kind} cycleId={cycle.id} kind={u.kind} label={u.label} count={u.count} />
             ))}
           </div>
         </div>

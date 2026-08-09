@@ -1,5 +1,7 @@
 # Feature Specification: Benefits — Flexible Benefits Selection
 
+> **⚠️ Partially superseded by [spec 018 — Benefits Claim-Based Living Allowance](../018-benefits-claim-allowance/spec.md).** The one-shot "select → allocate → submit → then claim" basket described here is replaced by a claim-as-you-go allowance: no basket/submit, no per-benefit allocation; the 50% cap applies to cumulative claims (full- and part-time); medical is a one-time commitment; the benefit-count limit is retired. Refer to spec 018 for current behavior.
+
 **Feature Branch**: `007-benefits`
 
 **Created**: 2026-07-27
