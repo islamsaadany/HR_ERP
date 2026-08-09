@@ -173,7 +173,7 @@ HR_ERP/
   ui-versions/                     # UI snapshots before edits (rollback log)
 ```
 
-**Authoring status:** Phase 0 — Documentation. No `src/`, `prisma/`, or `package.json` exist yet. The layout above is the target after Phase 1.
+**Authoring status:** Feature-complete through Phase 8 (Foundation → Benefits → Dashboard). `src/`, `prisma/`, and `package.json` all exist and build; the layout above reflects the live structure. Remaining: Phase 9 (Learning Track placeholder + handoff) and the spec 018 Neon migration + UI review. See `IMPLEMENTATION_PROGRESS.md` for the live status.
 
 ### Important Patterns (project-specific)
 - **Email + password sign-in (Google parked)** — sign-in is NextAuth Credentials (email + scrypt-hashed password); the company-domain restriction on password login was **lifted** (2026-08-07) — any registered employee may sign in, and HR is warned when creating a non-company-domain email. Google is disabled for now (button removed; provider still env-gated so it can return). Admin-issued passwords are temporary: the employee is forced to `/set-password` on next sign-in (`mustChangePassword`) and must choose one meeting the policy (≥ 8 chars, uppercase + number + special). No emails in v1 → a forgotten password is reset by HR (no self-service recovery).
@@ -242,4 +242,4 @@ prior sessions have accidentally reverted agreed-upon designs.
 
 ---
 
-*Last Updated: 2026-07-27 (Phase 0 — Documentation. Planning set recreated directly in the HR_ERP repo after repo access was resolved.)*
+*Last Updated: 2026-08-09 (Reconciled the authoring-status line with the live repo — feature-complete through Phase 8; `src/`, `prisma/`, and `package.json` exist and build.)*
