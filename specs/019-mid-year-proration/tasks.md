@@ -78,8 +78,8 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 **Independent test**: quickstart S3 — start `2026-08-01` → medical committable, premium 1,333; basket shown as unlocking at 6 months.
 
 - [x] T016 [US4] In `commitMedical` (`src/app/(app)/benefits/actions.ts`): add the 3-month eligibility gate via `classifyEligibility(startDate, 3, window)`; allow commit when `tenureBand` is null but medical-eligible, using `poolCeilingFor(type, null)`; set `premium = min(prorate(rawAnnualPremium, medicalEligibility.fraction), proratedCeiling)`; keep single-commit lock + 50%-cap exemption.
-- [ ] T017 [US4] Adjust the gate in `src/app/(app)/benefits/page.tsx`: allow an employee with no `tenureBand` but medical-eligible (≥3mo) to reach a **medical-only** render; keep the block only when `employmentType` is missing or the employee is not medical-eligible. (Snapshot page already covered under T011/T015 edits; ensure `ui-versions/BenefitsPage/` snapshot exists before structural change.)
-- [ ] T025 [US4] In `src/components/benefits/BenefitsBoard.tsx`, render the medical-only view (approved mockup) — medical available; flexible basket + guaranteed benefits shown as "unlocks at 6 months" — and mirror the prorated medical premium (display only).
+- [x] T017 [US4] Adjust the gate in `src/app/(app)/benefits/page.tsx`: allow an employee with no `tenureBand` but medical-eligible (≥3mo) to reach a **medical-only** render; keep the block only when `employmentType` is missing or the employee is not medical-eligible. (Snapshot page already covered under T011/T015 edits; ensure `ui-versions/BenefitsPage/` snapshot exists before structural change.)
+- [x] T025 [US4] In `src/components/benefits/BenefitsBoard.tsx`, render the medical-only view (approved mockup) — medical available; flexible basket + guaranteed benefits shown as "unlocks at 6 months" — and mirror the prorated medical premium (display only).
 
 **Checkpoint**: medical @ 3 months works, prorates, medical-only view shows; server enforces.
 
