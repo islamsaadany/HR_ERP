@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/roles";
+import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { getActivePlanYear, amountForBand } from "@/lib/benefits/config";
 import { flexCap } from "@/lib/benefits/rules";
 
@@ -59,7 +59,11 @@ export async function recordManualRelease(formData: FormData): Promise<ManualRes
     const salaryDriven =
       gb.band6mo2y == null && gb.band2to4y == null && gb.band4to7y == null && gb.band7to10y == null;
     if (salaryDriven) {
-      // Loans etc. — the allocation is the employee's monthly salary.
+      // Loans etc. — the allocation is the employee's monthly salary (confidential). Only a Super
+      // User may record against it, so an HR Admin never sees the salary via the allocation.
+      if (!isSuperUser(actor.role)) {
+        return { ok: false, error: "Only a Super User can record a salary-based benefit (e.g. Loans)." };
+      }
       if (!user.monthlySalary || user.monthlySalary <= 0) {
         return { ok: false, error: "This benefit is salary-driven but the employee has no monthly salary set." };
       }
