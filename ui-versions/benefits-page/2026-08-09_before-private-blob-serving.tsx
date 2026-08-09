@@ -227,8 +227,7 @@ export default async function BenefitsPage({
       status: c.status,
       note: c.note,
       proofName: c.proofName,
-      // Proof lives in a private store; link to the authorized serving route.
-      proofUrl: c.proofUrl ? `/api/claims/${c.id}/proof` : null,
+      proofUrl: c.proofUrl,
       decisionNote: c.decisionNote,
       createdAt: c.createdAt,
     };

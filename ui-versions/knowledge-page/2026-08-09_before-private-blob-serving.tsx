@@ -16,7 +16,6 @@ export default async function KnowledgePage() {
       where: { published: true },
       orderBy: [{ order: "asc" }, { title: "asc" }],
       select: {
-        id: true,
         slug: true,
         title: true,
         cluster: true,
@@ -53,14 +52,7 @@ export default async function KnowledgePage() {
             No articles yet. HR can add them under Admin → Knowledge Base.
           </div>
         ) : (
-          <KnowledgeExplorer
-            articles={articles.map(({ id, ...rest }) => ({
-              ...rest,
-              // Decks live in a private store; point the reader at the
-              // authorized serving route instead of the raw blob URL.
-              attachmentUrl: rest.attachmentUrl ? `/api/knowledge/${id}/attachment` : null,
-            }))}
-          />
+          <KnowledgeExplorer articles={articles} />
         )}
       </div>
     </div>

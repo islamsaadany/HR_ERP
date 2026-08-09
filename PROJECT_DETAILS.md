@@ -16,7 +16,7 @@ An internal, English-language HR platform for **Forefront Consulting**. Email + 
 | DB | PostgreSQL (Neon) + Prisma |
 | Auth | NextAuth v5, email + password (Credentials); Google parked (env-gated) |
 | Styling | Tailwind v4, **navy/gold** tokens on subtly warm neutrals; **Fraunces** (display) + **Hanken Grotesk** (body) self-hosted via `next/font`; soft card elevation + staggered reveals; gold keyboard focus rings |
-| Files | Vercel Blob |
+| Files | Vercel Blob (**private** store; files streamed through authorized server routes, never by raw URL — see `src/lib/blob-serve.ts`) |
 | Deploy | Vercel |
 | Email | none (v1) |
 

@@ -36,8 +36,7 @@ export default async function EditArticlePage({
             readingMinutes: a.readingMinutes != null ? String(a.readingMinutes) : "",
             order: a.order,
             published: a.published,
-            // Deck lives in a private store; link to the authorized serving route.
-            attachmentUrl: a.attachmentUrl ? `/api/knowledge/${a.id}/attachment` : "",
+            attachmentUrl: a.attachmentUrl ?? "",
             attachmentName: a.attachmentName ?? "",
           }}
         />

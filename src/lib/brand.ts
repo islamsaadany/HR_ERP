@@ -99,7 +99,13 @@ export const getBrand = cache(async (): Promise<Brand> => {
       return {
         companyName: row.companyName,
         shortName: row.shortName,
-        logoUrl: row.logoUrl,
+        // The logo lives in a PRIVATE blob store, so it can't be an <img src>
+        // directly — point every consumer at the public serving route instead.
+        // The `?v=` (last segment of the stored URL, which carries the random
+        // upload suffix) busts the browser cache when the logo is replaced.
+        logoUrl: row.logoUrl
+          ? `/api/brand/logo?v=${encodeURIComponent(row.logoUrl.split("/").pop() ?? "1")}`
+          : null,
         primaryColor: row.primaryColor,
         accentColor: row.accentColor,
       };

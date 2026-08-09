@@ -125,7 +125,7 @@ export async function uploadResource(formData: FormData): Promise<void> {
   }
   const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const blob = await put(`resources/${safeName}`, f, {
-    access: "public",
+    access: "private",
     addRandomSuffix: true,
   });
   await prisma.resource.create({

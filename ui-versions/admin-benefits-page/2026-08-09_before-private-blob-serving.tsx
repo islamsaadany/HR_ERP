@@ -240,7 +240,7 @@ export default async function AdminBenefitsPage({
                 </div>
                 {c.note ? <p className="mt-1 text-sm text-ink">“{c.note}”</p> : null}
                 {c.proofUrl ? (
-                  <a href={`/api/claims/${c.id}/proof`} target="_blank" rel="noopener" className="mt-1 inline-block text-sm text-navy-600 underline">
+                  <a href={c.proofUrl} target="_blank" rel="noopener" className="mt-1 inline-block text-sm text-navy-600 underline">
                     {c.proofName ?? "View proof"}
                   </a>
                 ) : null}
