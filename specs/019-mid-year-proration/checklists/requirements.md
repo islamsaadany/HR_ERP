@@ -31,5 +31,5 @@
 
 ## Notes
 
-- Medical (3-month unlock + premium proration) is explicitly parked pending operator rates and documented under Dependencies — an intentional scope boundary, not a gap.
-- Money-sensitive defaults (whole-month boundary rule, divide-by-12, EGP rounding) are recorded in Assumptions rather than left as clarifications, per the agreed formula. `/speckit-clarify` can revisit if HR wants a different rounding.
+- Medical is **in scope**: 3-month eligibility unlock + premium prorated by the same ÷12 rule (User Story 4). Only the operator's actual premium **figures** are pending — a non-blocking data/config swap documented under Dependencies; the module uses the existing placeholder rate card until then.
+- Money-sensitive defaults (whole-month boundary rule, divide-by-12, EGP rounding, sub-6-month medical = entry-tier band) are recorded in Assumptions rather than left as clarifications, per the agreed formula. `/speckit-clarify` can revisit if HR wants a different rounding.

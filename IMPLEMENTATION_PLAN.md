@@ -92,10 +92,14 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   it's a work-related guaranteed benefit and shouldn't sit below the flexible *Personal learning* basket item (80%).
   Per-band amounts unchanged; guaranteed coverage is descriptive (the claim engine already caps a PROOF claim at the
   band allowance), so this is a note/text change only.
-- **2026-08-09 — OPEN: Medical eligibility at 3 months (mockup pending sign-off).** Unlock *medical only* at
-  ≥3 months tenure (start-date-based, server-enforced) while the rest of the basket stays gated at the 6-month band.
-  Open sub-decision surfaced in the mockup: which pool ceiling / rate card applies to a 3–5-month employee's medical
-  (proposed default: the entry 6mo–2y tier). Not yet built.
+- **2026-08-09 — Mid-year starter proration specced (spec `019`, not yet built).** New plan-year **start/end dates**
+  (admin-set) drive proration of the **flexible pool** and **guaranteed Professional development** for employees who
+  first become eligible mid-year: `annual × remaining whole months ÷ 12`; full annual amounts from the next plan year.
+  Event/season gifts (marriage, summer, special events, loans) are **not** prorated. **Medical is folded in** (product
+  decision 2026-08-09): unlocks at **3 months** (not 6), prorated by the same rule, sub-6-month medical uses the entry
+  6mo–2y tier; built now against the **placeholder** rate card with the operator's confirmed prorated premium figures
+  a later non-blocking data swap. Realizes the approved "medical available at 3 months" mockup. Money-sensitive defaults
+  (whole-month floor, ÷12, nearest-EGP rounding) recorded in the spec's Assumptions.
 - **2026-08-05 — Backlog: HR bulk benefit release + export (not yet specced).** HR/Admin wants to release a single
   guaranteed benefit (e.g. **summer allowance**) to the **whole team at once** and **download a sheet** of employee
   name + amount-to-release for payroll/Finance. Distinct from the coverage work; to be specced next (own spec).
