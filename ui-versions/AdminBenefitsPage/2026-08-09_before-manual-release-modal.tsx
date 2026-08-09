@@ -27,7 +27,7 @@ import {
 import { PlanYearDialog } from "@/components/admin/PlanYearDialog";
 import { AdminBenefitsTabs } from "@/components/admin/AdminBenefitsTabs";
 import { EditableSection } from "@/components/admin/EditableSection";
-import { ManualReleaseModal } from "@/components/admin/ManualReleaseModal";
+import { ManualReleaseForm } from "@/components/admin/ManualReleaseForm";
 
 export const dynamic = "force-dynamic";
 const egp = (n: number) => "EGP " + n.toLocaleString();
@@ -272,7 +272,7 @@ export default async function AdminBenefitsPage({
           (not queued) and counts against the benefit&apos;s allocation.
         </p>
         {active ? (
-          <ManualReleaseModal employees={employees} benefits={manualBenefits} />
+          <ManualReleaseForm employees={employees} benefits={manualBenefits} />
         ) : (
           <p className="mt-3 text-sm text-muted">Open a plan year to record entries.</p>
         )}
