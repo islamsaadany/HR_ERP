@@ -1,0 +1,152 @@
+# Feature Specification: Mid-Year Starter Proration
+
+**Feature Branch**: `019-mid-year-proration`
+
+**Created**: 2026-08-09
+
+**Status**: Draft
+
+**Input**: User description: "Mid-year starter proration for benefits. When an employee first becomes benefits-eligible partway through a plan year, their benefit for that year is prorated for the remaining months; from the next plan year onward they receive the full annual benefit."
+
+## Overview
+
+An employee who first becomes benefits-eligible partway through a plan year should not receive a full year's allowance for a partial year of service. This feature prorates the **annual flexible pool** and the **guaranteed Professional-development** budget down to the months the employee is actually eligible within that plan year. Once a full plan year has passed (they are eligible from its first day), they receive the full annual figures.
+
+Proration is measured against the plan year's calendar window, so a plan year must carry an explicit **start date** and **end date** — which it does not today (a plan year has only a name and an open/closed status).
+
+**Medical is out of scope for this feature** and explicitly parked (see Dependencies): the 3-month medical eligibility unlock and any prorated medical premium wait until the insurance operator confirms prorated rates.
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - Admin defines the plan-year window (Priority: P1)
+
+An HR/Admin managing benefits sets a **start date** and **end date** on a plan year (in addition to its name and open/closed status). This window is the basis for every proration calculation.
+
+**Why this priority**: Nothing else in this feature can be computed without a plan-year window. It is the foundation and is independently useful (it also documents the cycle for everyone).
+
+**Independent Test**: Open the admin Benefits area, create/edit a plan year, set start and end dates, save, and confirm they persist and display. Delivers value on its own by making the active cycle's dates explicit.
+
+**Acceptance Scenarios**:
+
+1. **Given** an HR/Admin on the plan-year management surface, **When** they create or edit a plan year and enter a start and end date, **Then** the dates are saved and shown with the plan year.
+2. **Given** an HR/Admin entering an end date earlier than the start date, **When** they save, **Then** the change is rejected with a clear message and no invalid window is stored.
+
+---
+
+### User Story 2 - A mid-year starter sees a prorated flexible pool (Priority: P1)
+
+An employee who reaches 6 months of service **during** the current plan year sees their flexible pool ceiling reduced to the remaining whole months of that plan year, and every flexible claim is checked against that prorated ceiling.
+
+**Why this priority**: This is the core money outcome and the largest allowance affected. It is the reason the feature exists.
+
+**Independent Test**: With a plan-year window set, take an employee whose 6-month eligibility date lands inside the window; confirm their displayed pool ceiling equals `annual × remaining-whole-months ÷ 12`, and that a claim exceeding the prorated ceiling is blocked server-side.
+
+**Acceptance Scenarios**:
+
+1. **Given** a plan year running 1 Jan – 31 Dec and an employee whose 6-month eligibility date is 1 Oct, **When** they view Benefits, **Then** their flexible pool ceiling is 3/12 of the annual ceiling for their band.
+2. **Given** that same employee, **When** they file flexible claims whose covered total would exceed the prorated ceiling, **Then** the server rejects the over-ceiling claim with a "contact HR / over your allowance" style message.
+3. **Given** an employee whose 6-month eligibility date falls **on or before** the plan-year start, **When** they view Benefits, **Then** they receive the **full** annual pool (no proration).
+4. **Given** an employee whose 6-month eligibility date falls **after** the plan-year end, **When** they view Benefits, **Then** they have **no** flexible allowance for that plan year.
+
+---
+
+### User Story 3 - Professional development is prorated the same way (Priority: P2)
+
+For a mid-year starter, the guaranteed **Professional-development** annual budget is prorated to the remaining whole months of the plan year, using the same rule as the flexible pool.
+
+**Why this priority**: It is the one guaranteed benefit that behaves like an annual budget rather than an event/season gift, so it must follow the same proration; second only to the flexible pool in impact.
+
+**Independent Test**: For a mid-year starter, confirm the Professional-development claimable amount equals `annual band amount × remaining-whole-months ÷ 12`, and a proof claim above the prorated amount is blocked.
+
+**Acceptance Scenarios**:
+
+1. **Given** a mid-year starter with a prorated window of 4 months in a 12-month plan year, **When** they view Professional development, **Then** the claimable amount is 4/12 of their band's annual Professional-development figure.
+2. **Given** the same employee, **When** they submit a Professional-development claim above the prorated amount, **Then** it is rejected server-side.
+
+---
+
+### User Story 4 - Event/season gifts are unaffected (Priority: P2)
+
+Marriage allowance, Summer allowance, Special events, and Loans are **not** prorated — they remain granted in full when their triggering event or season occurs, regardless of the employee's mid-year start.
+
+**Why this priority**: Prevents the feature from wrongly shrinking life-event and seasonal gifts; protects existing correct behavior.
+
+**Independent Test**: For a mid-year starter, confirm Marriage/Summer/Special events/Loans display and release at their full band amounts, with no proration applied.
+
+**Acceptance Scenarios**:
+
+1. **Given** a mid-year starter, **When** they view their guaranteed benefits, **Then** Marriage allowance, Summer allowance, Special events, and Loans show their full (un-prorated) band amounts.
+2. **Given** HR releases a Summer allowance to a mid-year starter, **When** the release is recorded, **Then** the full seasonal amount is granted.
+
+---
+
+### User Story 5 - Full amounts from the next plan year (Priority: P3)
+
+An employee who was a mid-year starter in one plan year, and is eligible from day one of the next plan year, receives the **full** annual figures in that next plan year with no proration.
+
+**Why this priority**: Confirms proration is a one-year, self-clearing effect; important for trust but naturally follows from the rule.
+
+**Independent Test**: Advance the same employee to the following plan year (eligibility date before that year's start) and confirm full annual pool and full Professional-development budget.
+
+**Acceptance Scenarios**:
+
+1. **Given** an employee prorated in plan year N, **When** plan year N+1 opens and their eligibility date precedes its start, **Then** they receive the full annual pool and Professional-development budget.
+
+---
+
+### Edge Cases
+
+- **No window set**: If the active plan year has no start/end dates, proration cannot be computed. The system MUST treat the plan year as un-prorated (full amounts) and surface a clear admin warning that dates are missing, rather than silently zeroing allowances.
+- **Missing employee start date**: If an employee has no start date, their eligibility date is unknown. The system MUST fall back to existing behavior (treat as eligible per their assigned tenure band, un-prorated) and not block them; flag for HR to set a start date.
+- **Eligibility exactly on the start or end date**: Eligibility on/before the start date → full year; eligibility after the end date → nothing; eligibility on the end date → the boundary month rule (see Assumptions) determines the count.
+- **Partial first month**: A mid-month eligibility date does not grant a partial month — only **whole** remaining months count (see Assumptions for the exact boundary rule).
+- **Plan year not exactly 12 months**: Proration divides by 12 per the agreed formula; a plan year materially shorter/longer than 12 months is an admin data question flagged in Assumptions, not silently rescaled.
+- **Already-claimed amount above a new prorated ceiling**: If a prorated ceiling is applied after claims already exist (e.g., dates entered late), the system MUST not corrupt existing released claims; it stops further claims once the prorated ceiling is reached and surfaces the over-allocation to HR.
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+- **FR-001**: A plan year MUST carry an admin-set **start date** and **end date** in addition to its name and open/closed status.
+- **FR-002**: The system MUST reject a plan-year window whose end date is not after its start date.
+- **FR-003**: The system MUST compute an employee's **flexible-pool eligibility date** as their employment start date plus 6 months of service.
+- **FR-004**: For the active plan year, the system MUST classify an employee as **full** (eligibility date on/before plan-year start), **prorated** (eligibility date within the plan-year window), or **not yet eligible** (eligibility date after plan-year end).
+- **FR-005**: For a **prorated** employee, the system MUST reduce the **flexible pool ceiling** to `annual ceiling × remaining whole months ÷ 12`, where remaining whole months is measured from the eligibility date to the plan-year end (see Assumptions for the boundary rule).
+- **FR-006**: For a **prorated** employee, the system MUST reduce the claimable **Professional-development** budget by the same rule (`annual band amount × remaining whole months ÷ 12`).
+- **FR-007**: The system MUST enforce every proration **server-side** at claim/commit time (the existing money-rule pattern); the client mirrors the prorated figures for display only and is never trusted.
+- **FR-008**: The 50%-per-benefit cap and pool-total checks MUST operate against the **prorated** pool for a prorated employee (i.e., the cap is a share of the reduced pool).
+- **FR-009**: The system MUST NOT prorate **Marriage allowance, Summer allowance, Special events, or Loans** — these remain full when their event/season triggers.
+- **FR-010**: The system MUST treat a **not-yet-eligible** employee as having no flexible pool and no prorated Professional-development budget for that plan year.
+- **FR-011**: From a plan year in which the employee is eligible from day one, the system MUST present the **full** annual figures (proration self-clears).
+- **FR-012**: The employee-facing Benefits view MUST clearly indicate when amounts are **prorated** for the current plan year and why (mid-year start), so the reduced figures are not mistaken for errors.
+- **FR-013**: If the active plan year lacks a start/end window, the system MUST fall back to un-prorated (full) amounts and warn HR/Admin that dates are missing.
+- **FR-014**: **Medical is excluded** from this feature: no medical eligibility or premium proration is introduced here (parked pending operator rates).
+
+### Key Entities *(include if feature involves data)*
+
+- **Plan year**: The benefits cycle. Gains a **start date** and **end date** (the proration window) alongside its existing name and open/closed status. Exactly one is open at a time.
+- **Employee eligibility classification (derived, not stored)**: Per employee per plan year — **full**, **prorated**, or **not yet eligible** — computed from the employee's start date, the 6-month service rule, and the plan-year window. No stored flag; recomputed each plan year.
+- **Prorated allowance (derived)**: The reduced flexible pool ceiling and Professional-development budget for a prorated employee, `annual × remaining whole months ÷ 12`.
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: 100% of mid-year starters (eligibility date inside the plan-year window) see a flexible pool and Professional-development budget equal to their annual figure scaled by remaining whole months ÷ 12.
+- **SC-002**: 0% of over-prorated-ceiling flexible or Professional-development claims are accepted by the server.
+- **SC-003**: 100% of event/season gifts (Marriage, Summer, Special events, Loans) remain at full band amounts for mid-year starters.
+- **SC-004**: An employee eligible from day one of a plan year always sees 12/12 (full) amounts — proration never lingers past the first eligible year.
+- **SC-005**: An HR/Admin can set a plan-year start and end date and see them reflected in employees' prorated figures without any code change or manual per-employee calculation.
+
+## Assumptions
+
+- **Boundary/whole-month rule**: "Remaining whole months" is the count of complete months from the eligibility date to the plan-year end date (a partial first month does not count). Example: eligibility 1 Oct, end 31 Dec → 3 months. This yields the `× months ÷ 12` figure; the resulting currency amount is rounded to the nearest whole EGP.
+- **Divide by 12**: Proration divides by 12 (a standard year) per the agreed formula, assuming plan years are approximately 12 months. A plan year deliberately much shorter/longer than 12 months is treated as an admin data decision and is not silently rescaled; if this becomes common, revisit as a follow-up.
+- **Eligibility basis**: The 6-month rule is measured from the employee's recorded employment start date; this reuses the existing tenure model (an employee reaches the entry tenure band at 6 months), so proration only ever reduces the entry-tier allowance in the first eligible year.
+- **Classification is stateless/derived**: Full / prorated / not-yet-eligible is recomputed from dates each plan year; no migration of per-employee flags is required beyond adding the plan-year window.
+- **Existing money-rule engine is reused**: Proration is layered into the existing server-authoritative benefits rules (the same place the pool ceiling and 50% cap are enforced), not a parallel system.
+
+## Dependencies
+
+- **Plan-year window (in scope, prerequisite)**: Adding start/end dates to a plan year is part of this feature and blocks the rest of it.
+- **Medical proration (parked, out of scope)**: The 3-month medical eligibility unlock and any prorated medical premium/pool draw are deferred until Forefront confirms prorated rates with the insurance operator. A previously approved employee-facing mockup exists for "medical available at 3 months"; it is on hold and will be folded into that later medical spec, not built here.
