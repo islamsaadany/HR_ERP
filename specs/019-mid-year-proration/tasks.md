@@ -36,9 +36,9 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 
 - [x] T007 [US1] Extend `createPlanYear` in `src/app/(app)/benefits/actions.ts` to accept optional `startDate`/`endDate`, validate `endDate > startDate` when both present, and persist them.
 - [x] T008 [US1] Add `editPlanYearWindow(formData)` server action in `src/app/(app)/benefits/actions.ts` (HR_ADMIN/SUPER_USER only) to set/adjust an existing plan year's `startDate`/`endDate` with the same validation.
-- [ ] T013 [US1] ⛔ MOCKUP GATE: build a static navy/gold mockup under `design-mockups/proration/2026-08-09_planyear-dates-and-prorated-indicators.html` showing (a) the plan-year dialog with start/end date inputs and (b) the employee "prorated for mid-year start / unlocks at 6 months" indicators; publish as an Artifact and get explicit sign-off. Blocks T014, T017, T022, T025.
-- [ ] T014 [US1] After T013 sign-off: snapshot `src/components/admin/PlanYearDialog.tsx` to `ui-versions/PlanYearDialog/`, then add start/end date inputs to the create form and expose window editing per the approved mockup.
-- [ ] T009 [US1] In `src/app/(app)/admin/benefits/page.tsx`, display the active plan year's window and show a clear "dates missing — proration off" warning when the window is unset (FR-016).
+- [x] T013 [US1] ⛔ MOCKUP GATE: build a static navy/gold mockup under `design-mockups/proration/2026-08-09_planyear-dates-and-prorated-indicators.html` showing (a) the plan-year dialog with start/end date inputs and (b) the employee "prorated for mid-year start / unlocks at 6 months" indicators; publish as an Artifact and get explicit sign-off. Blocks T014, T017, T022, T025.
+- [x] T014 [US1] After T013 sign-off: snapshot `src/components/admin/PlanYearDialog.tsx` to `ui-versions/PlanYearDialog/`, then add start/end date inputs to the create form and expose window editing per the approved mockup.
+- [x] T009 [US1] In `src/app/(app)/admin/benefits/page.tsx`, display the active plan year's window and show a clear "dates missing — proration off" warning when the window is unset (FR-016).
 
 **Checkpoint**: plan years carry a window; admin can set/see it; missing-window warning shows.
 
@@ -51,8 +51,8 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 **Independent test**: quickstart S2 — start `2026-04-01`, window `2026-01-01..12-31` → ceiling 5,000; a claim over 5,000 covered is rejected.
 
 - [x] T010 [US2] In `src/app/(app)/benefits/claim-actions.ts` (catalog path), compute `poolEligibility = classifyEligibility(startDate, 6, window)` and set `ctx.ceiling = prorate(annualCeiling, poolEligibility.fraction)` before `evaluateClaim` (server-authoritative; 50% cap + pool total then run against the prorated pool).
-- [ ] T011 [US2] In `src/app/(app)/benefits/page.tsx`, compute the same pool eligibility and pass the prorated ceiling (and status) into the board data so displayed figures match the server.
-- [ ] T022 [US2] After T013 sign-off: snapshot `src/components/benefits/BenefitsBoard.tsx` to `ui-versions/BenefitsBoard/`, then show the "prorated (mid-year start)" indicator on the pool summary per the approved mockup (display only).
+- [x] T011 [US2] In `src/app/(app)/benefits/page.tsx`, compute the same pool eligibility and pass the prorated ceiling (and status) into the board data so displayed figures match the server.
+- [x] T022 [US2] After T013 sign-off: snapshot `src/components/benefits/BenefitsBoard.tsx` to `ui-versions/BenefitsBoard/`, then show the "prorated (mid-year start)" indicator on the pool summary per the approved mockup (display only).
 
 **Checkpoint**: flexible pool prorates and is enforced; UI reflects it.
 
@@ -65,7 +65,7 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 **Independent test**: quickstart S2 — prof-dev claimable = 1,250; a proof claim above it is rejected; Marriage/Summer/etc. stay full.
 
 - [x] T012 [US3] In `src/app/(app)/benefits/claim-actions.ts` (guaranteed path), when `gb.prorated === true` set `allocated = prorate(amountForBand(band, gb), poolEligibility.fraction)`; leave all `prorated === false` benefits at their full band amount.
-- [ ] T015 [US3] In `src/app/(app)/benefits/page.tsx`, mirror the prorated prof-dev allocation in the guaranteed display (read `prorated` flag; show prorated amount only for prof-dev).
+- [x] T015 [US3] In `src/app/(app)/benefits/page.tsx`, mirror the prorated prof-dev allocation in the guaranteed display (read `prorated` flag; show prorated amount only for prof-dev).
 
 **Checkpoint**: prof-dev prorates; event/season gifts unaffected.
 

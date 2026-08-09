@@ -27,12 +27,8 @@ export type BoardGuaranteed = {
   note: string | null;
   claimType: ClaimType;
   allocated: number | null;
-  /** The full (un-prorated) amount, shown struck-through when this benefit is prorated. */
-  proratedFrom?: number | null;
   claims: BoardClaim[];
 };
-/** Present only for a mid-year starter (spec 019): the prorated months of the plan year. */
-export type BoardProration = { months: number } | null;
 export type BoardFlex = {
   id: string;
   key: string;
@@ -70,7 +66,6 @@ export function BenefitsBoard({
   medicalRate,
   medicalCommitted,
   planYearOpen,
-  proration,
   error,
 }: {
   ceiling: number;
@@ -83,17 +78,11 @@ export function BenefitsBoard({
   medicalRate: BoardMedicalRate;
   medicalCommitted: BoardMedicalCommitted;
   planYearOpen: boolean;
-  proration?: BoardProration;
   error?: string;
 }) {
   const [medOpen, setMedOpen] = useState(false);
   const [gClaim, setGClaim] = useState<BoardGuaranteed | null>(null);
   const pct = ceiling > 0 ? Math.min(100, (poolUsed / ceiling) * 100) : 0;
-  const proratedBadge = proration ? (
-    <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-800">
-      Prorated · {proration.months} of 12 mo
-    </span>
-  ) : null;
 
   return (
     <>
@@ -108,13 +97,7 @@ export function BenefitsBoard({
             <div key={g.id} className="flex flex-col gap-1 bg-surface p-4">
               <div className="text-sm font-medium text-ink">{g.name}</div>
               <div className="min-h-[2rem] flex-1 text-xs text-muted">{g.note ?? ""}</div>
-              <div className="font-serif text-base text-navy-800">
-                {g.allocated != null ? egp(g.allocated) : "Available"}
-                {g.proratedFrom != null ? (
-                  <span className="ml-1.5 align-middle text-xs font-normal text-muted line-through">{egp(g.proratedFrom)}</span>
-                ) : null}
-              </div>
-              {g.proratedFrom != null && proratedBadge ? <div>{proratedBadge}</div> : null}
+              <div className="font-serif text-base text-navy-800">{g.allocated != null ? egp(g.allocated) : "Available"}</div>
               {g.claimType !== "NONE" ? (
                 <button
                   type="button"
@@ -173,17 +156,8 @@ export function BenefitsBoard({
         {/* Right: sticky meter + how it works */}
         <aside className="space-y-4 lg:sticky lg:top-24">
           <div className="rounded-2xl border border-line bg-surface p-5">
-            {proratedBadge ? <div className="mb-2">{proratedBadge}</div> : null}
             <div className="font-serif text-3xl text-ink tabular-nums">{egp(poolRemaining)}</div>
-            <div className="text-sm text-muted">
-              left of your {egp(ceiling)} {proration ? "prorated" : "annual"} pool (company share)
-            </div>
-            {proration ? (
-              <p className="mt-2 rounded-lg bg-navy-50 px-3 py-2 text-xs text-navy-700">
-                You joined part-way through the plan year, so your pool covers the remaining {proration.months}{" "}
-                {proration.months === 1 ? "month" : "months"}. You&apos;ll get the full annual amount next plan year.
-              </p>
-            ) : null}
+            <div className="text-sm text-muted">left of your {egp(ceiling)} annual pool (company share)</div>
             <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
               <div className="h-full rounded-full bg-gold-500" style={{ width: `${pct}%` }} />
             </div>

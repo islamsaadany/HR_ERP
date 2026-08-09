@@ -1,10 +1,9 @@
 import { requireUser, isAdmin } from "@/lib/roles";
 import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
-import { getActivePlanYear, getMedicalRate, amountForBand, getMedicalCommitment, planYearWindow } from "@/lib/benefits/config";
+import { getActivePlanYear, getMedicalRate, amountForBand, getMedicalCommitment } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { flexCap } from "@/lib/benefits/rules";
-import { classifyEligibility, prorate } from "@/lib/benefits/proration";
 import {
   BenefitsBoard,
   type BoardClaim,
@@ -32,7 +31,6 @@ export default async function BenefitsPage({
       employmentType: true,
       tenureBand: true,
       monthlySalary: true,
-      startDate: true,
       benefitsOrientationSeenAt: true,
     },
   });
@@ -75,16 +73,11 @@ export default async function BenefitsPage({
     );
   }
 
-  // Mid-year starter proration (spec 019): the flexible pool and Professional-development
-  // budget scale to the whole months left in the plan year from the 6-month eligibility date.
-  const poolEligibility = classifyEligibility(user.startDate, 6, planYearWindow(planYear));
-  const isProrated = poolEligibility.status === "PRORATED";
-
   const orientation = {
     employeeName: user.name ?? "",
     employmentTypeLabel: EMPLOYMENT_TYPE_LABEL[user.employmentType],
     tenureBandLabel: TENURE_BAND_LABEL[user.tenureBand],
-    ceiling: ceilingRow ? prorate(ceilingRow.amount, poolEligibility.fraction) : null,
+    ceiling: ceilingRow?.amount ?? null,
     guaranteed: guaranteed.map((g) => {
       const salaryDriven =
         g.band6mo2y == null && g.band2to4y == null && g.band4to7y == null && g.band7to10y == null;
@@ -159,27 +152,20 @@ export default async function BenefitsPage({
     map.set(key, arr);
   }
 
-  const proratedCeiling = prorate(ceilingRow.amount, poolEligibility.fraction);
-  const cap = flexCap(proratedCeiling);
+  const cap = flexCap(ceilingRow.amount);
   const medicalPremium = medicalCommitment?.premium ?? 0;
   const poolUsed = medicalPremium + claimsCoveredTotal;
-  const poolRemaining = Math.max(0, proratedCeiling - poolUsed);
+  const poolRemaining = Math.max(0, ceilingRow.amount - poolUsed);
 
-  // Guaranteed band (all guaranteed benefits for this employment type). Only benefits flagged
-  // `prorated` (Professional development) shrink for mid-year starters; the rest stay full.
-  const guaranteedBoard: BoardGuaranteed[] = guaranteed.map((g) => {
-    const fullAmount = amountForBand(user.tenureBand!, g) ?? user.monthlySalary ?? null;
-    const allocated = g.prorated && fullAmount != null ? prorate(fullAmount, poolEligibility.fraction) : fullAmount;
-    return {
-      id: g.id,
-      name: g.name,
-      note: g.note,
-      claimType: g.claimType,
-      allocated,
-      proratedFrom: g.prorated && isProrated && fullAmount != null && allocated !== fullAmount ? fullAmount : null,
-      claims: byG.get(g.id) ?? [],
-    };
-  });
+  // Guaranteed band (all guaranteed benefits for this employment type).
+  const guaranteedBoard: BoardGuaranteed[] = guaranteed.map((g) => ({
+    id: g.id,
+    name: g.name,
+    note: g.note,
+    claimType: g.claimType,
+    allocated: amountForBand(user.tenureBand!, g) ?? user.monthlySalary ?? null,
+    claims: byG.get(g.id) ?? [],
+  }));
 
   // Flexible catalog grouped by category (preserving catalog order). Medical is included (rendered as
   // its commitment row); non-medical "automatic" (NONE) items are surfaced as a note, not claimable.
@@ -214,11 +200,10 @@ export default async function BenefitsPage({
     <div>
       {header}
       <BenefitsBoard
-        ceiling={proratedCeiling}
+        ceiling={ceilingRow.amount}
         poolUsed={poolUsed}
         poolRemaining={poolRemaining}
         cap={cap}
-        proration={isProrated ? { months: poolEligibility.remainingWholeMonths } : null}
         guaranteed={guaranteedBoard}
         automatic={automatic}
         groups={groups}
