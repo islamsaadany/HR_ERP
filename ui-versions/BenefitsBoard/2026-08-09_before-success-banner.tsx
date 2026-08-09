@@ -75,7 +75,6 @@ export function BenefitsBoard({
   medicalPremiumFraction = 1,
   medicalProration,
   error,
-  claimSuccess,
 }: {
   ceiling: number;
   poolUsed: number;
@@ -95,21 +94,10 @@ export function BenefitsBoard({
   /** Badge data for a prorated medical premium. */
   medicalProration?: BoardProration;
   error?: string;
-  /** Shown after a claim is submitted (redirect `?claimOk=1`). */
-  claimSuccess?: boolean;
 }) {
   const [medOpen, setMedOpen] = useState(false);
   const [gClaim, setGClaim] = useState<BoardGuaranteed | null>(null);
   const pct = ceiling > 0 ? Math.min(100, (poolUsed / ceiling) * 100) : 0;
-  const successBanner = claimSuccess ? (
-    <p className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-      <span aria-hidden="true" className="font-bold">✓</span>
-      <span>
-        <strong>Claim submitted.</strong> HR will review it and release your reimbursement — you&apos;ll see it
-        move to <em>Released</em> here once approved.
-      </span>
-    </p>
-  ) : null;
   const proratedBadge = proration ? (
     <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-800">
       Prorated · {proration.months} of 12 mo
@@ -126,7 +114,6 @@ export function BenefitsBoard({
             <h2 className="font-serif text-xl">Personal medical insurance</h2>
           </div>
           <div className="space-y-3 bg-surface p-5">
-            {successBanner}
             {error ? <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
             <MedicalRow committed={medicalCommitted} onSetup={() => setMedOpen(true)} />
             {medicalProration ? (
@@ -194,7 +181,6 @@ export function BenefitsBoard({
         benefit, and only that covered share draws from your pool.
       </p>
 
-      {claimSuccess ? <div className="mt-4">{successBanner}</div> : null}
       {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
       {automatic.length > 0 ? (
         <p className="mt-4 rounded-lg bg-navy-50 px-4 py-3 text-sm text-navy-700">
