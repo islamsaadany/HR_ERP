@@ -3,8 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
-import { getActivePlanYear, getMedicalRate } from "@/lib/benefits/config";
+import { getActivePlanYear, getMedicalRate, planYearWindow, poolCeilingFor } from "@/lib/benefits/config";
 import { computeMedicalPremium, type MedicalConfig } from "@/lib/benefits/rules";
+import { classifyEligibility, prorate } from "@/lib/benefits/proration";
+
+/** Medical insurance unlocks at 3 months of service (spec 019), before the 6-month basket. */
+const MEDICAL_THRESHOLD_MONTHS = 3;
 
 export type MedicalPayload = {
   spouse: boolean;
@@ -32,27 +36,32 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
 
   const user = await prisma.user.findUnique({
     where: { id: me.id },
-    select: { employmentType: true, tenureBand: true },
+    select: { employmentType: true, tenureBand: true, startDate: true },
   });
-  if (!user?.employmentType || !user?.tenureBand) {
-    return { ok: false, errors: ["Your employment type or tenure isn't set — contact HR."], warnings: [] };
+  if (!user?.employmentType) {
+    return { ok: false, errors: ["Your employment type isn't set — contact HR."], warnings: [] };
   }
 
-  const [ceilingRow, medicalRate, existing] = await Promise.all([
-    prisma.poolCeiling.findUnique({
-      where: {
-        employmentType_tenureBand: {
-          employmentType: user.employmentType,
-          tenureBand: user.tenureBand,
-        },
-      },
-    }),
+  // Medical unlocks at 3 months of service (spec 019) — before the 6-month basket — and is
+  // prorated for the remaining whole months of the plan year from that eligibility date.
+  const medicalEligibility = classifyEligibility(
+    user.startDate,
+    MEDICAL_THRESHOLD_MONTHS,
+    planYearWindow(planYear)
+  );
+  if (medicalEligibility.status === "NOT_YET") {
+    return { ok: false, errors: ["Medical insurance becomes available after 3 months of service."], warnings: [] };
+  }
+
+  const [ceilingAmount, medicalRate, existing] = await Promise.all([
+    // Entry-tier (6mo–2y) fallback when a sub-6-month employee has no band yet.
+    poolCeilingFor(user.employmentType, user.tenureBand),
     getMedicalRate(),
     prisma.medicalCommitment.findUnique({
       where: { userId_planYearId: { userId: me.id, planYearId: planYear.id } },
     }),
   ]);
-  if (!ceilingRow || !medicalRate) {
+  if (ceilingAmount == null || !medicalRate) {
     return { ok: false, errors: ["Benefits aren't fully configured yet."], warnings: [] };
   }
   if (existing) {
@@ -65,12 +74,16 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
     children18Plus: Math.max(0, Math.floor(payload.children18Plus)),
   };
   const rawPremium = computeMedicalPremium(medicalRate, cfg);
-  const premium = Math.min(rawPremium, ceilingRow.amount);
+  // Prorate both the annual premium and the pool cap by the medical eligibility fraction
+  // (fraction = 1 for a full-year employee, so this is a no-op for them).
+  const proratedCeiling = prorate(ceilingAmount, medicalEligibility.fraction);
+  const proratedPremium = prorate(rawPremium, medicalEligibility.fraction);
+  const premium = Math.min(proratedPremium, proratedCeiling);
 
   const warnings: string[] = [];
-  if (rawPremium > ceilingRow.amount) {
+  if (proratedPremium > proratedCeiling) {
     warnings.push(
-      `Your medical premium of EGP ${rawPremium.toLocaleString()} exceeds your pool — capped at EGP ${ceilingRow.amount.toLocaleString()}. Contact HR.`
+      `Your medical premium of EGP ${proratedPremium.toLocaleString()} exceeds your pool — capped at EGP ${proratedCeiling.toLocaleString()}. Contact HR.`
     );
   }
 

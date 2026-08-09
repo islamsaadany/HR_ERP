@@ -12,17 +12,17 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 
 ## Phase 1: Setup
 
-- [ ] T001 Confirm baseline builds green before changes: run `npx tsc --noEmit` (deps already installed) and record the result in the PR/commit notes.
+- [x] T001 Confirm baseline builds green before changes: run `npx tsc --noEmit` (deps already installed) and record the result in the PR/commit notes.
 
 ---
 
 ## Phase 2: Foundational (blocking prerequisites for ALL user stories)
 
-- [ ] T002 Add `startDate DateTime?` and `endDate DateTime?` to `model PlanYear`, and `prorated Boolean @default(false)` to `model GuaranteedBenefit`, in `prisma/schema.prisma`.
-- [ ] T003 Create migration `prisma/sql/027_plan_year_window.sql` (idempotent): `ADD COLUMN IF NOT EXISTS` for `PlanYear.startDate`, `PlanYear.endDate`, `GuaranteedBenefit.prorated`; then `UPDATE "GuaranteedBenefit" SET "prorated" = true WHERE "id" IN ('gb_ft_profdev','gb_pt_profdev')`.
-- [ ] T004 [P] Add a `monthsSince(start, now?)` / add-months helper to `src/lib/derive.ts` (whole-month arithmetic, null-safe), reusing the existing derive conventions.
-- [ ] T005 [P] Create the pure module `src/lib/benefits/proration.ts` per `contracts/proration.md`: `PlanYearWindow`, `Eligibility`, `eligibilityDate`, `remainingWholeMonths`, `classifyEligibility`, `prorate`. Handle null window / null start date → `FULL` fallback; boundary rules exactly as the contract test table.
-- [ ] T006 Extend `src/lib/benefits/config.ts`: widen `getActivePlanYear` to include `startDate`/`endDate`; add `planYearWindow(planYear)` → `{start,end}|null`; add `poolCeilingFor(employmentType, band|null)` with the `BAND_6MO_2Y` entry-tier fallback when `band` is null.
+- [x] T002 Add `startDate DateTime?` and `endDate DateTime?` to `model PlanYear`, and `prorated Boolean @default(false)` to `model GuaranteedBenefit`, in `prisma/schema.prisma`.
+- [x] T003 Create migration `prisma/sql/027_plan_year_window.sql` (idempotent): `ADD COLUMN IF NOT EXISTS` for `PlanYear.startDate`, `PlanYear.endDate`, `GuaranteedBenefit.prorated`; then `UPDATE "GuaranteedBenefit" SET "prorated" = true WHERE "id" IN ('gb_ft_profdev','gb_pt_profdev')`.
+- [x] T004 [P] Add a `monthsSince(start, now?)` / add-months helper to `src/lib/derive.ts` (whole-month arithmetic, null-safe), reusing the existing derive conventions.
+- [x] T005 [P] Create the pure module `src/lib/benefits/proration.ts` per `contracts/proration.md`: `PlanYearWindow`, `Eligibility`, `eligibilityDate`, `remainingWholeMonths`, `classifyEligibility`, `prorate`. Handle null window / null start date → `FULL` fallback; boundary rules exactly as the contract test table.
+- [x] T006 Extend `src/lib/benefits/config.ts`: widen `getActivePlanYear` to include `startDate`/`endDate`; add `planYearWindow(planYear)` → `{start,end}|null`; add `poolCeilingFor(employmentType, band|null)` with the `BAND_6MO_2Y` entry-tier fallback when `band` is null.
 
 **Checkpoint**: proration math + window + ceiling lookup exist and typecheck. No behavior wired yet.
 
@@ -34,8 +34,8 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 
 **Independent test**: Open Admin → Benefits, create/edit a plan year with dates, confirm they save, and that end-before-start is rejected.
 
-- [ ] T007 [US1] Extend `createPlanYear` in `src/app/(app)/benefits/actions.ts` to accept optional `startDate`/`endDate`, validate `endDate > startDate` when both present, and persist them.
-- [ ] T008 [US1] Add `editPlanYearWindow(formData)` server action in `src/app/(app)/benefits/actions.ts` (HR_ADMIN/SUPER_USER only) to set/adjust an existing plan year's `startDate`/`endDate` with the same validation.
+- [x] T007 [US1] Extend `createPlanYear` in `src/app/(app)/benefits/actions.ts` to accept optional `startDate`/`endDate`, validate `endDate > startDate` when both present, and persist them.
+- [x] T008 [US1] Add `editPlanYearWindow(formData)` server action in `src/app/(app)/benefits/actions.ts` (HR_ADMIN/SUPER_USER only) to set/adjust an existing plan year's `startDate`/`endDate` with the same validation.
 - [ ] T013 [US1] ⛔ MOCKUP GATE: build a static navy/gold mockup under `design-mockups/proration/2026-08-09_planyear-dates-and-prorated-indicators.html` showing (a) the plan-year dialog with start/end date inputs and (b) the employee "prorated for mid-year start / unlocks at 6 months" indicators; publish as an Artifact and get explicit sign-off. Blocks T014, T017, T022, T025.
 - [ ] T014 [US1] After T013 sign-off: snapshot `src/components/admin/PlanYearDialog.tsx` to `ui-versions/PlanYearDialog/`, then add start/end date inputs to the create form and expose window editing per the approved mockup.
 - [ ] T009 [US1] In `src/app/(app)/admin/benefits/page.tsx`, display the active plan year's window and show a clear "dates missing — proration off" warning when the window is unset (FR-016).
@@ -50,7 +50,7 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 
 **Independent test**: quickstart S2 — start `2026-04-01`, window `2026-01-01..12-31` → ceiling 5,000; a claim over 5,000 covered is rejected.
 
-- [ ] T010 [US2] In `src/app/(app)/benefits/claim-actions.ts` (catalog path), compute `poolEligibility = classifyEligibility(startDate, 6, window)` and set `ctx.ceiling = prorate(annualCeiling, poolEligibility.fraction)` before `evaluateClaim` (server-authoritative; 50% cap + pool total then run against the prorated pool).
+- [x] T010 [US2] In `src/app/(app)/benefits/claim-actions.ts` (catalog path), compute `poolEligibility = classifyEligibility(startDate, 6, window)` and set `ctx.ceiling = prorate(annualCeiling, poolEligibility.fraction)` before `evaluateClaim` (server-authoritative; 50% cap + pool total then run against the prorated pool).
 - [ ] T011 [US2] In `src/app/(app)/benefits/page.tsx`, compute the same pool eligibility and pass the prorated ceiling (and status) into the board data so displayed figures match the server.
 - [ ] T022 [US2] After T013 sign-off: snapshot `src/components/benefits/BenefitsBoard.tsx` to `ui-versions/BenefitsBoard/`, then show the "prorated (mid-year start)" indicator on the pool summary per the approved mockup (display only).
 
@@ -64,7 +64,7 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 
 **Independent test**: quickstart S2 — prof-dev claimable = 1,250; a proof claim above it is rejected; Marriage/Summer/etc. stay full.
 
-- [ ] T012 [US3] In `src/app/(app)/benefits/claim-actions.ts` (guaranteed path), when `gb.prorated === true` set `allocated = prorate(amountForBand(band, gb), poolEligibility.fraction)`; leave all `prorated === false` benefits at their full band amount.
+- [x] T012 [US3] In `src/app/(app)/benefits/claim-actions.ts` (guaranteed path), when `gb.prorated === true` set `allocated = prorate(amountForBand(band, gb), poolEligibility.fraction)`; leave all `prorated === false` benefits at their full band amount.
 - [ ] T015 [US3] In `src/app/(app)/benefits/page.tsx`, mirror the prorated prof-dev allocation in the guaranteed display (read `prorated` flag; show prorated amount only for prof-dev).
 
 **Checkpoint**: prof-dev prorates; event/season gifts unaffected.
@@ -77,7 +77,7 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 
 **Independent test**: quickstart S3 — start `2026-08-01` → medical committable, premium 1,333; basket shown as unlocking at 6 months.
 
-- [ ] T016 [US4] In `commitMedical` (`src/app/(app)/benefits/actions.ts`): add the 3-month eligibility gate via `classifyEligibility(startDate, 3, window)`; allow commit when `tenureBand` is null but medical-eligible, using `poolCeilingFor(type, null)`; set `premium = min(prorate(rawAnnualPremium, medicalEligibility.fraction), proratedCeiling)`; keep single-commit lock + 50%-cap exemption.
+- [x] T016 [US4] In `commitMedical` (`src/app/(app)/benefits/actions.ts`): add the 3-month eligibility gate via `classifyEligibility(startDate, 3, window)`; allow commit when `tenureBand` is null but medical-eligible, using `poolCeilingFor(type, null)`; set `premium = min(prorate(rawAnnualPremium, medicalEligibility.fraction), proratedCeiling)`; keep single-commit lock + 50%-cap exemption.
 - [ ] T017 [US4] Adjust the gate in `src/app/(app)/benefits/page.tsx`: allow an employee with no `tenureBand` but medical-eligible (≥3mo) to reach a **medical-only** render; keep the block only when `employmentType` is missing or the employee is not medical-eligible. (Snapshot page already covered under T011/T015 edits; ensure `ui-versions/BenefitsPage/` snapshot exists before structural change.)
 - [ ] T025 [US4] In `src/components/benefits/BenefitsBoard.tsx`, render the medical-only view (approved mockup) — medical available; flexible basket + guaranteed benefits shown as "unlocks at 6 months" — and mirror the prorated medical premium (display only).
 
@@ -91,7 +91,7 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 
 **Independent test**: quickstart S5 — those four show/release full band amounts.
 
-- [ ] T018 [US5] Verify (trace + quickstart S5) that the guaranteed path prorates ONLY when `gb.prorated === true`; confirm Marriage/Summer/Special events/Loans (`prorated=false`) and the manual-release/bulk-release paths use full band amounts, unchanged. Fix if any path reads a prorated value.
+- [x] T018 [US5] Verify (trace + quickstart S5) that the guaranteed path prorates ONLY when `gb.prorated === true`; confirm Marriage/Summer/Special events/Loans (`prorated=false`) and the manual-release/bulk-release paths use full band amounts, unchanged. Fix if any path reads a prorated value.
 
 **Checkpoint**: gifts confirmed un-prorated.
 
@@ -103,7 +103,7 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 
 **Independent test**: quickstart S6 — advance to next plan year → full pool/prof-dev/medical.
 
-- [ ] T019 [US6] Verify (quickstart S6, no code expected — classification is stateless) that an employee whose eligibility date precedes the plan-year start resolves to `FULL` for pool, prof-dev, and medical. Add a code comment near `classifyEligibility` if the self-clearing behavior is non-obvious.
+- [x] T019 [US6] Verify (quickstart S6, no code expected — classification is stateless) that an employee whose eligibility date precedes the plan-year start resolves to `FULL` for pool, prof-dev, and medical. Add a code comment near `classifyEligibility` if the self-clearing behavior is non-obvious.
 
 **Checkpoint**: proration self-clears next year.
 
