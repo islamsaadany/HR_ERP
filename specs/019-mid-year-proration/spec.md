@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-09
 
-**Status**: Draft
+**Status**: Implemented 2026-08-09 (server + UI built and typechecked; pending Neon migration `027` and admin-set plan-year dates. Medical premium figures remain placeholders pending operator rates.)
 
 **Input**: User description: "Mid-year starter proration for benefits. When an employee first becomes benefits-eligible partway through a plan year, their benefit for that year is prorated for the remaining months; from the next plan year onward they receive the full annual benefit."
 

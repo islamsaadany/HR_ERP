@@ -111,10 +111,10 @@ No automated test framework exists in this repo; verification is via `npx tsc --
 
 ## Phase 9: Polish & Cross-Cutting
 
-- [ ] T020 [P] Run `quickstart.md` scenarios S1–S7 against a throwaway local Postgres (apply `000..027` SQL), confirming each expected figure and every server rejection (house rule 3a).
-- [ ] T021 [P] Run `npx tsc --noEmit` and `npm run build`; resolve any type/build errors introduced.
-- [ ] T023 [P] Update steering docs in the same change: `PROJECT_DETAILS.md` (plan-year window + proration rules + medical @ 3mo), `IMPLEMENTATION_PROGRESS.md` (spec 019 status), and this spec if behavior shifted during build.
-- [ ] T024 [P] Confirm `prisma/sql/027_plan_year_window.sql` matches the final `schema.prisma` (Constitution IV / house rule) and note in the handoff exactly which SQL files to paste into Neon and in what order.
+- [x] T020 [P] Run `quickstart.md` scenarios S1–S7 against a throwaway local Postgres (apply `000..027` SQL), confirming each expected figure and every server rejection (house rule 3a).
+- [x] T021 [P] Run `npx tsc --noEmit` and `npm run build`; resolve any type/build errors introduced.
+- [x] T023 [P] Update steering docs in the same change: `PROJECT_DETAILS.md` (plan-year window + proration rules + medical @ 3mo), `IMPLEMENTATION_PROGRESS.md` (spec 019 status), and this spec if behavior shifted during build.
+- [x] T024 [P] Confirm `prisma/sql/027_plan_year_window.sql` matches the final `schema.prisma` (Constitution IV / house rule) and note in the handoff exactly which SQL files to paste into Neon and in what order.
 
 ---
 
