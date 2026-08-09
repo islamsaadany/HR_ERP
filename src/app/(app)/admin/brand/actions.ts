@@ -41,8 +41,12 @@ export async function updateBrand(formData: FormData): Promise<void> {
     try {
       const blob = await put(`brand/${safeName}`, file, { access: "public", addRandomSuffix: true });
       logoUrl = blob.url;
-    } catch {
-      redirect("/admin/brand?error=" + encodeURIComponent("Logo upload failed — is Blob storage configured?"));
+    } catch (err) {
+      console.error("[brand] logo upload to Vercel Blob failed:", err);
+      const hint = !process.env.BLOB_READ_WRITE_TOKEN
+        ? "Logo upload failed — file storage isn't configured yet (BLOB_READ_WRITE_TOKEN is missing)."
+        : "Logo upload failed — please try again.";
+      redirect("/admin/brand?error=" + encodeURIComponent(hint));
     }
   }
 

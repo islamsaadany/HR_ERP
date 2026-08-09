@@ -1,0 +1,194 @@
+<title>Benefits fixes — mockup for sign-off</title>
+<style>
+  :root{
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-500:#2f4d78;
+    --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-500:#c9a227; --gold-600:#a8821e; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --green-50:#ecfdf5; --green-700:#047857; --amber-50:#fffbeb; --amber-700:#b45309;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 20px 80px}
+  .serif{font-family:Georgia,"Times New Roman",serif}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:64ch}
+  .proposal{margin-top:40px}
+  .proposal > h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-family:ui-sans-serif,system-ui;font-weight:700}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px 36px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:720px){.cols{grid-template-columns:1fr}}
+  .tag{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+    padding:3px 8px;border-radius:6px;margin-bottom:10px}
+  .tag.before{background:#f3f0ea;color:var(--muted);border:1px solid var(--line)}
+  .tag.after{background:var(--navy-50);color:var(--navy-700);border:1px solid var(--navy-100)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card.gold{border-color:var(--gold-500)}
+  .card h3{font-family:Georgia,serif;font-size:16px;margin:0 0 4px}
+  .card p.hint{font-size:12.5px;color:var(--muted);margin:2px 0 0}
+  label.lbl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 4px}
+  .field{margin-top:12px}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 10px;font-size:13px;color:var(--ink)}
+  select.inp{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 16px) 14px,calc(100% - 11px) 14px;background-size:5px 5px;background-repeat:no-repeat}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+  .row > div{flex:1;min-width:120px}
+  .btn{border:0;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn.primary{background:var(--navy-800);color:#fff}
+  .btn.primary:hover{background:var(--navy-700)}
+  .btn.ghost{background:var(--navy-50);color:var(--navy-700);border:1px solid var(--navy-100)}
+  .btn.gold{background:var(--gold-500);color:var(--navy-900)}
+  .btn:focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+  .pill{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px}
+  .pill.navy{background:var(--navy-50);color:var(--navy-700)}
+  .pill.gold{background:var(--gold-100);color:var(--gold-800)}
+  .note{border-radius:10px;padding:10px 12px;font-size:12.5px;margin-top:14px}
+  .note.amber{background:var(--amber-50);color:var(--amber-700);border:1px solid #fde68a}
+  .note.green{background:var(--green-50);color:var(--green-700);border:1px solid #a7f3d0}
+  .decision{margin-top:14px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:10px 14px;border-radius:0 8px 8px 0;font-size:12.5px}
+  .decision b{color:var(--gold-800)}
+  .dashed{border:1px dashed var(--line);border-radius:14px;padding:34px 20px;text-align:center;color:var(--muted);font-size:13px;background:var(--surface)}
+  .miniform{opacity:.55;pointer-events:none;margin-top:14px}
+  /* modal */
+  .stage{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--paper)}
+  .stage-bar{background:var(--navy-900);color:#fff;padding:12px 16px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  .stage-body{padding:18px}
+  .overlay{position:absolute;inset:0;background:rgba(10,26,48,.45);display:flex;align-items:center;justify-content:center;padding:18px}
+  .overlay[hidden]{display:none}
+  .modal{background:var(--surface);border-radius:16px;width:100%;max-width:460px;box-shadow:0 20px 50px rgba(10,26,48,.35);overflow:hidden}
+  .modal-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .modal-head h3{margin:0}
+  .modal-body{padding:18px}
+  .x{border:0;background:transparent;font-size:20px;line-height:1;color:var(--muted);cursor:pointer}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
+  .legend b{color:var(--ink)}
+  footer{margin-top:56px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Benefits · design review</p>
+  <h1>Two benefits tweaks — for your sign-off</h1>
+  <p class="lede">Static mockup only — nothing here is wired to the app yet. Approve the look and I'll port it faithfully into the real components (navy/gold, matching your existing styles).</p>
+
+  <!-- PROPOSAL 1 -->
+  <section class="proposal">
+    <h2><span class="num">1</span> "Record a past claim / release" → a button that opens a popup</h2>
+    <p class="sub">Admin → Benefits. It's an exception (HR back-filling a claim paid outside the app), so it shouldn't sit open in the middle of the page.</p>
+
+    <div class="cols">
+      <div>
+        <span class="tag before">Before — always-visible panel</span>
+        <div class="card gold">
+          <h3>Record a past claim / release</h3>
+          <p class="hint">Back-fill a claim that was already approved and paid outside the app. It's saved as released (not queued) and counts against the benefit's allocation.</p>
+          <div class="miniform">
+            <div class="row">
+              <div><label class="lbl">Employee</label><select class="inp"><option>Choose…</option></select></div>
+              <div><label class="lbl">Benefit</label><select class="inp"><option>Choose…</option></select></div>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <div><label class="lbl">Amount (covered)</label><input class="inp" placeholder="e.g. 8000"></div>
+              <div><label class="lbl">Approval date</label><input class="inp" placeholder="yyyy-mm-dd"></div>
+              <div style="flex:0"><button class="btn primary">Record</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <span class="tag after">After — collapsed to a button, opens a modal</span>
+        <div class="stage">
+          <div class="stage-bar"><span>Admin · Benefits</span><span class="pill gold" style="background:#1c3454;color:#f6ecca">Plan year open</span></div>
+          <div class="stage-body">
+            <div class="card gold" style="display:flex;justify-content:space-between;align-items:center;gap:16px">
+              <div>
+                <h3 style="margin:0">Record a past claim / release</h3>
+                <p class="hint">Back-fill a claim paid outside the app. Rarely needed — opens in a dialog.</p>
+              </div>
+              <button class="btn gold" style="white-space:nowrap" onclick="document.getElementById('ov').hidden=false">Record entry…</button>
+            </div>
+          </div>
+
+          <div class="overlay" id="ov" hidden>
+            <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">
+              <div class="modal-head">
+                <div>
+                  <h3 id="mt">Record a past claim / release</h3>
+                  <p class="hint">Saved as <b>released</b> (not queued) and counted against the benefit's allocation.</p>
+                </div>
+                <button class="x" aria-label="Close" onclick="document.getElementById('ov').hidden=true">×</button>
+              </div>
+              <div class="modal-body">
+                <div class="field"><label class="lbl">Employee</label><select class="inp"><option>Choose…</option><option>Nour A.</option></select></div>
+                <div class="field"><label class="lbl">Benefit</label><select class="inp"><option>Choose…</option><option>Professional development</option></select></div>
+                <div class="row" style="margin-top:12px">
+                  <div><label class="lbl">Amount (covered)</label><input class="inp" placeholder="e.g. 8000"></div>
+                  <div><label class="lbl">Approval date</label><input class="inp" placeholder="yyyy-mm-dd"></div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+                  <button class="btn ghost" onclick="document.getElementById('ov').hidden=true">Cancel</button>
+                  <button class="btn primary">Record</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="hint" style="margin-top:8px">↑ Click <b>Record entry…</b> to preview the popup.</p>
+      </div>
+    </div>
+    <div class="decision">No behaviour change — same fields, same server validation (rejects future dates, missing allocations, over-cap amounts). Only the entry point moves from an open panel to a dialog.</div>
+  </section>
+
+  <!-- PROPOSAL 2 -->
+  <section class="proposal">
+    <h2><span class="num">2</span> Medical insurance available after 3 months (rest of the basket stays at 6)</h2>
+    <p class="sub">Today the whole Benefits page is locked until an employee reaches the 6-month tenure band. We'd unlock <em>medical only</em> at 3 months.</p>
+
+    <div class="cols">
+      <div>
+        <span class="tag before">Before — a 3-to-5-month employee sees</span>
+        <div class="dashed">Your employment type or tenure isn't set yet. Contact HR to enable your benefits.</div>
+        <p class="hint" style="margin-top:8px">Nothing is reachable — including medical.</p>
+      </div>
+
+      <div>
+        <span class="tag after">After — medical unlocked, basket still locked</span>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <h3 style="margin:0">Personal medical insurance</h3>
+            <span class="pill navy">Available now</span>
+          </div>
+          <p class="hint">One-time commitment for the plan year. Self is always covered; add dependants below.</p>
+          <div class="miniform" style="opacity:.7">
+            <div class="row">
+              <div><label class="lbl">Spouse</label><select class="inp"><option>No</option><option>Yes</option></select></div>
+              <div><label class="lbl">Children under 18</label><input class="inp" value="0"></div>
+              <div><label class="lbl">Children 18+</label><input class="inp" value="0"></div>
+            </div>
+          </div>
+          <div style="margin-top:14px"><button class="btn primary">Set up cover</button></div>
+        </div>
+        <div class="card" style="margin-top:12px;background:#faf8f3;display:flex;gap:12px;align-items:center">
+          <span class="pill gold">Unlocks at 6 months</span>
+          <p class="hint" style="margin:0">Flexible basket (gym, learning, schooling…) and guaranteed benefits open when you reach the 6-month tenure band.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="decision">
+      <b>One decision I need from you:</b> a 3-to-5-month employee has no tenure band yet, and the medical premium/ceiling are looked up by band. My proposed default is to use the <b>entry tier (6 mo–2 yr)</b> ceiling &amp; rate card for their medical — simplest, and "rest of basket unchanged." Tell me if medical for that early window should instead use a different/‑dedicated ceiling.
+      <div class="legend">
+        <span>Eligibility source: <b>start date ≥ 3 months</b> (server-enforced)</span>
+        <span>Basket threshold: <b>unchanged (6 months)</b></span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    HR_ERP · Benefits fixes mockup · 2026-08-09 · navy/gold, matched to the live app. Static preview for approval — no real data, no wiring.
+  </footer>
+</div>

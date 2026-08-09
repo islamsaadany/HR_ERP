@@ -139,8 +139,14 @@ export async function createClaim(formData: FormData): Promise<void> {
       const blob = await put(`claims/${me.id}/${safeName}`, file, { access: "public", addRandomSuffix: true });
       proofUrl = blob.url;
       proofName = file.name;
-    } catch {
-      fail("Proof upload failed — is Blob storage configured?");
+    } catch (err) {
+      // Surface the real cause in the server logs so we can tell a missing/invalid
+      // BLOB_READ_WRITE_TOKEN apart from a transient upload failure.
+      console.error("[benefits] proof upload to Vercel Blob failed:", err);
+      const hint = !process.env.BLOB_READ_WRITE_TOKEN
+        ? "Proof upload failed — file storage isn't configured yet (BLOB_READ_WRITE_TOKEN is missing). Contact HR/IT."
+        : "Proof upload failed — please try again, and contact HR/IT if it keeps happening.";
+      fail(hint);
     }
   }
 
