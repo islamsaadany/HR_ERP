@@ -81,6 +81,11 @@ model User {
   dateOfBirth   DateTime?
   maritalStatus MaritalStatus?
 
+  // Emergency contact (HR-managed; shown read-only on the employee's own Profile, never the Directory)
+  emergencyContactName         String?
+  emergencyContactRelationship String?
+  emergencyContactPhone        String?
+
   // Reporting line (org chart) — self relation
   reportsToId String?
   reportsTo   User?   @relation("Reports", fields: [reportsToId], references: [id], onDelete: SetNull)

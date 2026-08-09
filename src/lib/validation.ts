@@ -52,6 +52,10 @@ export const employeeSchema = z.object({
       .optional()
   ),
   reportsToId: strOrNull,
+  // Emergency contact (HR-managed, spec 001 registry extension).
+  emergencyContactName: strOrNull,
+  emergencyContactRelationship: strOrNull,
+  emergencyContactPhone: strOrNull,
   dependants: z.array(dependantSchema).default([]),
 });
 
