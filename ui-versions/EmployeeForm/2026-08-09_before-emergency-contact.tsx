@@ -21,9 +21,6 @@ export type EmployeeFormValues = {
   dateOfBirth: string | null;
   maritalStatus: string | null;
   reportsToId: string | null;
-  emergencyContactName: string | null;
-  emergencyContactRelationship: string | null;
-  emergencyContactPhone: string | null;
   dependants: Dep[];
 };
 
@@ -262,24 +259,6 @@ export function EmployeeForm({
           <p className="mt-1 text-xs text-muted">
             A dependant needs a date of birth (age is calculated).
           </p>
-        </div>
-      </section>
-
-      <section className="rounded-xl border border-line bg-surface p-6">
-        <h2 className="mb-4 font-serif text-lg text-ink">Emergency contact</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className={L}>Contact name *</label>
-            <input name="emergencyContactName" defaultValue={values.emergencyContactName ?? ""} required className={I} />
-          </div>
-          <div>
-            <label className={L}>Relationship *</label>
-            <input name="emergencyContactRelationship" defaultValue={values.emergencyContactRelationship ?? ""} required className={I} />
-          </div>
-          <div className="sm:col-span-2">
-            <label className={L}>Contact phone *</label>
-            <input name="emergencyContactPhone" defaultValue={values.emergencyContactPhone ?? ""} required className={I} />
-          </div>
         </div>
       </section>
 

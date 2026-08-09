@@ -49,6 +49,9 @@ export default async function NewEmployeePage() {
           dateOfBirth: null,
           maritalStatus: null,
           reportsToId: null,
+          emergencyContactName: null,
+          emergencyContactRelationship: null,
+          emergencyContactPhone: null,
           dependants: [],
         }}
       />
