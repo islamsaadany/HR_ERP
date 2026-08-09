@@ -1,0 +1,190 @@
+<title>Proration UI — mockup for sign-off</title>
+<style>
+  :root{
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-500:#2f4d78;
+    --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-500:#c9a227; --gold-600:#a8821e; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --green-50:#ecfdf5; --green-700:#047857; --amber-50:#fffbeb; --amber-600:#b45309; --amber-700:#92400e;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:66ch}
+  .proposal{margin-top:40px}
+  .proposal > h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px 36px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:760px){.cols{grid-template-columns:1fr}}
+  .tag{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:6px;margin-bottom:10px}
+  .tag.before{background:#f3f0ea;color:var(--muted);border:1px solid var(--line)}
+  .tag.after{background:var(--navy-50);color:var(--navy-700);border:1px solid var(--navy-100)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card.gold{border-color:var(--gold-500)}
+  .card h3{font-family:Georgia,serif;font-size:16px;margin:0 0 4px}
+  .hint{font-size:12.5px;color:var(--muted);margin:2px 0 0}
+  label.lbl{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 4px}
+  .field{margin-top:12px}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 10px;font-size:13px;color:var(--ink)}
+  .row{display:flex;flex-wrap:wrap;gap:10px}
+  .row > div{flex:1;min-width:130px}
+  .btn{border:0;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn.primary{background:var(--navy-800);color:#fff}
+  .btn.gold{background:var(--gold-500);color:var(--navy-900)}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.05em}
+  .pill.navy{background:var(--navy-50);color:var(--navy-700)}
+  .pill.gold{background:var(--gold-100);color:var(--gold-800)}
+  .pill.amber{background:var(--amber-50);color:var(--amber-700);border:1px solid #fde68a}
+  .note{border-radius:10px;padding:10px 12px;font-size:12.5px;margin-top:12px}
+  .note.amber{background:var(--amber-50);color:var(--amber-700);border:1px solid #fde68a}
+  .note.navy{background:var(--navy-50);color:var(--navy-700);border:1px solid var(--navy-100)}
+  .decision{margin-top:14px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:10px 14px;border-radius:0 8px 8px 0;font-size:12.5px}
+  .meter{height:10px;border-radius:999px;background:var(--navy-50);overflow:hidden;margin-top:8px}
+  .meter > span{display:block;height:100%;background:var(--navy-700)}
+  .big{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .strike{color:var(--muted);text-decoration:line-through;font-size:13px}
+  .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .x{border:0;background:transparent;font-size:18px;color:var(--muted);cursor:pointer}
+  .rowline{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+  .locked{opacity:.55}
+  footer{margin-top:56px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Benefits · proration UI · design review</p>
+  <h1>Proration — the visible pieces, for sign-off</h1>
+  <p class="lede">The server-side proration math is already built. These are the only <em>new visual</em> elements it needs. Approve the look and I'll port them into the real components (navy/gold, matching your app). Static mockup — no real data, no wiring.</p>
+
+  <!-- 1: plan-year dialog dates -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Plan-year dialog gains Start &amp; End dates</h2>
+    <p class="sub">Admin → Benefits → “Plan year”. The window is what every proration is measured against.</p>
+    <div class="cols">
+      <div>
+        <span class="tag before">Before</span>
+        <div class="card">
+          <div class="modal-head"><h3 style="margin:0">Plan years</h3><button class="x">✕</button></div>
+          <div class="rowline" style="border-top:0"><span><b>2026</b> <span class="pill navy">Open</span></span><button class="btn" style="border:1px solid var(--line);background:var(--surface);color:var(--navy-700)">Close</button></div>
+          <div class="field"><label class="lbl">New plan year</label>
+            <div class="row"><div><input class="inp" placeholder="e.g. 2027"></div><div style="flex:0"><button class="btn primary" style="white-space:nowrap">Open new year</button></div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <span class="tag after">After</span>
+        <div class="card">
+          <div class="modal-head"><h3 style="margin:0">Plan years</h3><button class="x">✕</button></div>
+          <div class="rowline" style="border-top:0">
+            <span><b>2026</b> <span class="pill navy">Open</span><br><span class="hint">1 Jan 2026 → 31 Dec 2026</span></span>
+            <button class="btn" style="border:1px solid var(--line);background:var(--surface);color:var(--navy-700)">Edit dates</button>
+          </div>
+          <div class="field" style="border-top:1px solid var(--line);padding-top:14px">
+            <label class="lbl">New plan year</label>
+            <div class="row"><div><input class="inp" placeholder="e.g. 2027"></div></div>
+            <div class="row" style="margin-top:10px">
+              <div><label class="lbl">Start date</label><input class="inp" type="date" value="2027-01-01"></div>
+              <div><label class="lbl">End date</label><input class="inp" type="date" value="2027-12-31"></div>
+            </div>
+            <div class="row" style="margin-top:10px"><div style="flex:0"><button class="btn primary" style="white-space:nowrap">Open new year</button></div></div>
+            <p class="hint" style="margin-top:8px">End date must be after the start date. Leave both blank to run the year with proration off.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2: admin window display + warning -->
+  <section class="proposal">
+    <h2><span class="num">2</span> Admin Benefits shows the window (and warns if it’s missing)</h2>
+    <p class="sub">So HR can see at a glance whether proration is active for the open year.</p>
+    <div class="cols">
+      <div>
+        <span class="tag after">Window set</span>
+        <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div><h3 style="margin:0">Plan year 2026</h3><p class="hint">Proration window · 1 Jan 2026 → 31 Dec 2026</p></div>
+          <span class="pill navy">Proration on</span>
+        </div></div>
+      </div>
+      <div>
+        <span class="tag after">Window missing</span>
+        <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div><h3 style="margin:0">Plan year 2026</h3><p class="hint">No start/end dates set</p></div>
+          <span class="pill amber">Proration off</span>
+        </div>
+        <div class="note amber">⚠ This year has no dates, so mid-year starters get full amounts. Set a start &amp; end date to enable proration.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3: employee prorated indicators -->
+  <section class="proposal">
+    <h2><span class="num">3</span> Employee sees a clear “prorated — mid-year start” indicator</h2>
+    <p class="sub">So the smaller figures read as intentional, not a bug (FR-015). Example: joined 1 Apr 2026 → eligible 1 Oct → 3 of 12 months.</p>
+    <div class="cols">
+      <div>
+        <span class="tag before">Before (full-year employee)</span>
+        <div class="card">
+          <p class="hint">Your flexible pool this year</p>
+          <div class="big">EGP 20,000</div>
+          <div class="meter"><span style="width:22%"></span></div>
+          <p class="hint" style="margin-top:6px">EGP 4,400 claimed · 15,600 left</p>
+        </div>
+      </div>
+      <div>
+        <span class="tag after">After (mid-year starter)</span>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <p class="hint">Your flexible pool this year</p>
+            <span class="pill gold">Prorated · 3 of 12 mo</span>
+          </div>
+          <div class="big">EGP 5,000 <span class="strike">20,000</span></div>
+          <div class="meter"><span style="width:40%"></span></div>
+          <p class="hint" style="margin-top:6px">EGP 2,000 claimed · 3,000 left</p>
+          <div class="note navy">You joined part-way through the plan year, so your allowance covers the remaining 3 months. You’ll get the full annual amount next plan year.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <span class="tag after">Guaranteed list — only Professional development prorates</span>
+      <div class="card">
+        <div class="rowline" style="border-top:0"><span>Marriage allowance</span><b>EGP 18,000</b></div>
+        <div class="rowline"><span>Summer allowance</span><b>EGP 2,500</b></div>
+        <div class="rowline"><span>Professional development <span class="pill gold" style="margin-left:6px">Prorated · 3 of 12 mo</span></span><span><b>EGP 1,250</b> <span class="strike">5,000</span></span></div>
+        <div class="rowline"><span>Special events</span><b>EGP 6,000</b></div>
+      </div>
+      <p class="hint" style="margin-top:6px">Marriage, Summer, Special events &amp; Loans stay at full amounts — only Professional development is prorated.</p>
+    </div>
+  </section>
+
+  <!-- 4: medical-only prorated -->
+  <section class="proposal">
+    <h2><span class="num">4</span> Medical-only view (3–6 months) now shows the prorated premium</h2>
+    <p class="sub">The medical-only layout was already approved; this adds the prorated premium figure. Example: joined 1 Aug → medical eligible 1 Nov → 2 of 12 months.</p>
+    <div class="card" style="max-width:520px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <h3 style="margin:0">Personal medical insurance</h3>
+        <span class="pill navy">Available now</span>
+      </div>
+      <p class="hint">One-time commitment for the plan year. Self always covered; add dependants below.</p>
+      <div class="row" style="margin-top:12px"><div><label class="lbl">Spouse</label><input class="inp" value="No"></div><div><label class="lbl">Children &lt;18</label><input class="inp" value="0"></div></div>
+      <div class="note navy" style="margin-top:12px"><b>Prorated premium · 2 of 12 months:</b> EGP 1,333 <span class="strike">8,000 / yr</span> — covers you to year-end. Full year from next plan year.</div>
+      <div style="margin-top:12px"><button class="btn primary">Set up cover</button></div>
+      <div class="rowline locked" style="margin-top:8px"><span>Flexible basket &amp; guaranteed benefits</span><span class="pill gold">Unlocks at 6 months</span></div>
+    </div>
+    <p class="hint" style="margin-top:8px">Placeholder premium figures until the operator confirms the real prorated rates — the layout won’t change when they’re swapped in.</p>
+  </section>
+
+  <div class="decision">
+    <b>Please confirm these look right.</b> On approval I’ll: snapshot each component to <code>ui-versions/</code>, add the date inputs to the plan-year dialog, the window display + warning to admin Benefits, and the prorated indicators + medical premium to the employee board. If you want a different indicator wording (e.g. show the fraction differently, or hide the struck-through original), say so here.
+  </div>
+
+  <footer>HR_ERP · Proration UI mockup · 2026-08-09 · navy/gold, matched to the live app. Static preview for approval.</footer>
+</div>
