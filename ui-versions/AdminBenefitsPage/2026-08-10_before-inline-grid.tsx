@@ -6,30 +6,35 @@ import {
   TENURE_BAND_LABEL,
   TENURE_BAND_ORDER,
 } from "@/lib/labels";
-import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS } from "@/lib/benefits/claims";
+import { CLAIM_TYPE_LABEL, CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS } from "@/lib/benefits/claims";
 import { BackLink } from "@/components/admin/BackLink";
 import type { EmploymentType, TenureBand } from "@prisma/client";
 import {
   editMedicalCommitment,
   removeMedicalCommitment,
+  setClaimType,
   approveClaim,
   rejectClaim,
 } from "./actions";
 import {
   updatePoolCeilings,
   updateGuaranteedAmounts,
+  updateCatalogItem,
+  toggleCatalogItem,
   createCatalogItem,
   updateMedicalRateCard,
+  setEligibility,
 } from "./config-actions";
 import { isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
 import { PlanYearDialog } from "@/components/admin/PlanYearDialog";
 import { AdminBenefitsTabs } from "@/components/admin/AdminBenefitsTabs";
 import { EditableSection } from "@/components/admin/EditableSection";
 import { ManualReleaseModal } from "@/components/admin/ManualReleaseModal";
-import { CatalogueGrid, type CatalogueGridRow } from "@/components/admin/CatalogueGrid";
+import { EligibilityToggles } from "@/components/admin/EligibilityToggles";
 
 export const dynamic = "force-dynamic";
 const egp = (n: number) => "EGP " + n.toLocaleString();
+const CLAIM_TYPES = ["NONE", "NOTE", "PROOF"] as const;
 
 export default async function AdminBenefitsPage({
   searchParams,
@@ -211,6 +216,24 @@ export default async function AdminBenefitsPage({
     );
   };
 
+  const typeSelect = (kind: string, id: string, current: string) => (
+    <form action={setClaimType} className="flex items-center gap-1.5">
+      <input type="hidden" name="kind" value={kind} />
+      <input type="hidden" name="id" value={id} />
+      <select
+        key={`${id}-${current}`}
+        name="claimType"
+        defaultValue={current}
+        className="rounded-lg border border-line bg-surface px-2 py-1 text-sm"
+      >
+        {CLAIM_TYPES.map((t) => (
+          <option key={t} value={t}>{CLAIM_TYPE_LABEL[t]}</option>
+        ))}
+      </select>
+      <button className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-navy-700 hover:bg-navy-50">Set</button>
+    </form>
+  );
+
   // ── Tab 1: Submissions & Claims ─────────────────────────────────────────
   const submissionsPanel = (
     <div className="space-y-6">
@@ -359,45 +382,130 @@ export default async function AdminBenefitsPage({
     </div>
   );
 
-  // ── Tab 2: Benefits Catalogue (unified inline grid) ─────────────────────
-  const catalogueRows: CatalogueGridRow[] = [
-    ...guaranteedBenefits.map((g): CatalogueGridRow => ({
-      kind: "guaranteed", id: g.id, name: g.name, note: g.note ?? "",
-      typeLabel: "Guaranteed", scope: "",
-      category: g.category ?? "", claimType: g.claimType,
-      eligibleFullTime: g.eligibleFullTime, eligiblePartTime: g.eligiblePartTime,
-      coverage: isSalaryDriven(g) ? "Salary" : "Fixed", coverageEditable: false, coverageRate: 0,
-      active: true, statusEditable: false, order: g.order,
+  // ── Tab 2: Benefits Catalogue (unified: guaranteed + flexible + medical) ──
+  // Type badge classes.
+  const TYPE_BADGE: Record<string, string> = {
+    Guaranteed: "bg-gold-50 text-gold-800",
+    Flexible: "bg-navy-50 text-navy-700",
+    Medical: "bg-[#efe9f7] text-[#5b3fa0]",
+  };
+  type CatRow = {
+    kind: "guaranteed" | "catalog";
+    id: string; name: string; scope: string | null; category: string | null; order: number;
+    claimType: (typeof CLAIM_TYPES)[number]; eligibleFullTime: boolean; eligiblePartTime: boolean;
+    typeLabel: "Guaranteed" | "Flexible" | "Medical"; coverage: string; status: string; active: boolean; isMedical: boolean;
+  };
+  const unifiedCatalogue: CatRow[] = [
+    ...guaranteedBenefits.map((g): CatRow => ({
+      kind: "guaranteed", id: g.id, name: g.name, scope: null, category: g.note, order: g.order,
+      claimType: g.claimType, eligibleFullTime: g.eligibleFullTime, eligiblePartTime: g.eligiblePartTime,
+      typeLabel: "Guaranteed", coverage: isSalaryDriven(g) ? "Salary" : "Fixed", status: "Visible", active: true, isMedical: false,
     })),
-    ...catalogItems.map((c): CatalogueGridRow => ({
-      kind: "catalog", id: c.id, name: c.name, note: c.description ?? "",
-      typeLabel: c.isMedical ? "Medical" : "Flexible",
-      scope: c.isMedical ? (c.medicalScope === "FAMILY" ? "Family" : "Personal") : "",
-      category: c.category ?? "", claimType: c.claimType,
+    ...catalogItems.map((c): CatRow => ({
+      kind: "catalog", id: c.id, name: c.name, scope: c.isMedical ? (c.medicalScope === "FAMILY" ? "Family" : "Personal") : null,
+      category: c.category, order: c.order, claimType: c.claimType,
       eligibleFullTime: c.eligibleFullTime, eligiblePartTime: c.eligiblePartTime,
-      coverage: c.isMedical ? "100%" : `${c.coverageRate}%`, coverageEditable: !c.isMedical, coverageRate: c.coverageRate,
-      active: c.active, statusEditable: true, order: c.order,
+      typeLabel: c.isMedical ? "Medical" : "Flexible", coverage: c.isMedical ? "100%" : `${c.coverageRate}%`,
+      status: c.active ? "Visible" : "Hidden", active: c.active, isMedical: c.isMedical,
     })),
-  ];
-  // Category suggestions: the aligned set (spec 021) plus anything already in use.
-  const KNOWN_CATEGORIES = [
-    "Health & protection", "Wellbeing", "Life & family", "Personal growth",
-    "Lifestyle & flexibility", "Allowances & bonuses", "Financial support",
-  ];
-  const catalogueCategories = Array.from(
-    new Set([...KNOWN_CATEGORIES, ...catalogueRows.map((r) => r.category).filter(Boolean)])
-  ).sort();
+  ].sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
 
-  const cataloguePanel = (
-    <section className="rounded-xl border border-line bg-surface p-6">
-      <h2 className="font-serif text-lg text-ink">Benefits Catalogue</h2>
-      <p className="mt-1 max-w-[80ch] text-sm text-muted">
-        Every benefit employees can receive — guaranteed, flexible, and medical. Edit inline: set who&apos;s
-        eligible (FT / PT) and how it&apos;s claimed here; amounts live on the Amounts tab. Hidden items stay
-        out of the basket but are never deleted.
-      </p>
-      <CatalogueGrid rows={catalogueRows} categories={catalogueCategories} />
-      <form action={createCatalogItem} className="mt-4 flex flex-wrap items-end gap-2 border-t border-line pt-4">
+  const check = (v: boolean) =>
+    v ? <span className="font-bold text-navy-700">✓</span> : <span className="text-line">—</span>;
+
+  const catalogueRead = (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
+            <th className="py-2 pr-4 font-medium">Benefit</th>
+            <th className="py-2 pr-4 font-medium">Type</th>
+            <th className="py-2 pr-4 font-medium">Category</th>
+            <th className="py-2 pr-4 font-medium">Claim requirement</th>
+            <th className="py-2 pr-4 font-medium text-center">FT</th>
+            <th className="py-2 pr-4 font-medium text-center">PT</th>
+            <th className="py-2 pr-4 font-medium text-right">Coverage</th>
+            <th className="py-2 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {unifiedCatalogue.map((c) => (
+            <tr key={`${c.kind}_${c.id}`} className={"border-b border-line last:border-0 " + (c.active ? "" : "opacity-60")}>
+              <td className="py-2 pr-4 text-ink">
+                {c.name}
+                {c.scope ? <span className="ml-1.5 text-xs text-muted">· {c.scope}</span> : null}
+              </td>
+              <td className="py-2 pr-4"><span className={"rounded-full px-2 py-0.5 text-[10px] font-bold uppercase " + TYPE_BADGE[c.typeLabel]}>{c.typeLabel}</span></td>
+              <td className="py-2 pr-4 text-muted">{c.category ?? "—"}</td>
+              <td className="py-2 pr-4"><span className="rounded-full bg-navy-50 px-2 py-0.5 text-xs font-semibold text-navy-700">{CLAIM_TYPE_LABEL[c.claimType]}</span></td>
+              <td className="py-2 pr-4 text-center">{check(c.eligibleFullTime)}</td>
+              <td className="py-2 pr-4 text-center">{check(c.eligiblePartTime)}</td>
+              <td className="py-2 pr-4 text-right tabular-nums text-ink">{c.coverage}</td>
+              <td className="py-2 text-muted">{c.status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-3 text-xs text-muted">FT / PT decide who each benefit is shown to. Amounts (guaranteed band figures, pool, rate card) live on the <strong>Amounts</strong> tab.</p>
+    </div>
+  );
+
+  const catalogueEdit = (
+    <div className="space-y-2">
+      {unifiedCatalogue.map((c) => (
+        <div key={`${c.kind}_${c.id}`} className={"rounded-lg border border-line p-3 " + (c.active ? "" : "opacity-60")}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium text-ink">{c.name}</span>
+            <span className={"rounded-full px-2 py-0.5 text-[10px] font-bold uppercase " + TYPE_BADGE[c.typeLabel]}>{c.typeLabel}</span>
+            {c.scope ? <span className="text-xs text-muted">· {c.scope}</span> : null}
+          </div>
+
+          {/* Flexible items keep the full edit form (name / category / order / coverage). */}
+          {c.kind === "catalog" && !c.isMedical ? (
+            <form action={updateCatalogItem} className="mt-2 flex flex-wrap items-end gap-2">
+              <input type="hidden" name="id" value={c.id} />
+              <div className="min-w-[150px] flex-1">
+                <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Name</label>
+                <input name="name" defaultValue={c.name} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
+              </div>
+              <div className="min-w-[140px]">
+                <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Category</label>
+                <input name="category" defaultValue={c.category ?? ""} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
+              </div>
+              <div className="w-16">
+                <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Order</label>
+                <input name="order" type="number" min={0} defaultValue={c.order} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums" />
+              </div>
+              <div className="w-20">
+                <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Coverage %</label>
+                <input name="coverageRate" type="number" min={1} max={100} defaultValue={parseInt(c.coverage, 10)} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums" />
+              </div>
+              <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">Save</button>
+            </form>
+          ) : (
+            <p className="mt-1 text-xs text-muted">{c.kind === "guaranteed" ? "Amounts on the Amounts tab." : "Medical is 100% covered; premiums on the Amounts tab."}</p>
+          )}
+
+          <div className="mt-2 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-wide text-muted">Eligible</span>
+              <EligibilityToggles kind={c.kind} id={c.id} ft={c.eligibleFullTime} pt={c.eligiblePartTime} />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-wide text-muted">Claim requirement</span>
+              {typeSelect(c.kind, c.id, c.claimType)}
+            </div>
+            {c.kind === "catalog" ? (
+              <form action={toggleCatalogItem}>
+                <input type="hidden" name="id" value={c.id} />
+                <input type="hidden" name="active" value={c.active ? "false" : "true"} />
+                <button className="text-xs font-semibold text-navy-600 hover:text-navy-800">{c.active ? "Hide" : "Show"}</button>
+              </form>
+            ) : null}
+          </div>
+        </div>
+      ))}
+      <form action={createCatalogItem} className="mt-2 flex flex-wrap items-end gap-2 border-t border-line pt-4">
         <div className="min-w-[160px] flex-1">
           <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">New flexible item name</label>
           <input name="name" placeholder="e.g. Eyewear allowance" className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
@@ -412,7 +520,16 @@ export default async function AdminBenefitsPage({
         </div>
         <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">Add item</button>
       </form>
-    </section>
+    </div>
+  );
+
+  const cataloguePanel = (
+    <EditableSection
+      title="Benefits Catalogue"
+      description="Every benefit employees can receive — guaranteed, flexible, and medical. Set who's eligible (FT / PT) and how it's claimed here; amounts live on the Amounts tab. Hidden items stay out of the basket but are never deleted."
+      readView={catalogueRead}
+      editView={catalogueEdit}
+    />
   );
 
   // ── Tab 3: Amounts ──────────────────────────────────────────────────────

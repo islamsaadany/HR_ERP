@@ -99,6 +99,64 @@ export async function setEligibility(formData: FormData): Promise<void> {
   revalidatePath("/benefits");
 }
 
+export type CellResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Inline-edit a single cell in the unified Benefits Catalogue grid (spec 021). Routes by field and
+ * kind; server-authoritative (validates coverage 1–100, blocks coverage on medical, guards kinds).
+ * Mirrors the employee registry's per-cell save (`updateEmployeeField`).
+ */
+export async function updateCatalogueCell(
+  kind: "guaranteed" | "catalog",
+  id: string,
+  key: string,
+  value: string
+): Promise<CellResult> {
+  await requireAdmin();
+  if (!id) return { ok: false, error: "Missing benefit id." };
+
+  try {
+    if (key === "name") {
+      const name = value.trim();
+      if (!name) return { ok: false, error: "Name can't be empty." };
+      if (kind === "guaranteed") await prisma.guaranteedBenefit.update({ where: { id }, data: { name } });
+      else await prisma.benefitCatalogItem.update({ where: { id }, data: { name } });
+    } else if (key === "category") {
+      const category = value.trim() || null;
+      if (kind === "guaranteed") await prisma.guaranteedBenefit.update({ where: { id }, data: { category } });
+      else await prisma.benefitCatalogItem.update({ where: { id }, data: { category } });
+    } else if (key === "claimType") {
+      if (!["NONE", "NOTE", "PROOF"].includes(value)) return { ok: false, error: "Invalid claim requirement." };
+      const claimType = value as "NONE" | "NOTE" | "PROOF";
+      if (kind === "guaranteed") await prisma.guaranteedBenefit.update({ where: { id }, data: { claimType } });
+      else await prisma.benefitCatalogItem.update({ where: { id }, data: { claimType } });
+    } else if (key === "eligibleFullTime" || key === "eligiblePartTime") {
+      const v = value === "true";
+      const data = key === "eligibleFullTime" ? { eligibleFullTime: v } : { eligiblePartTime: v };
+      if (kind === "guaranteed") await prisma.guaranteedBenefit.update({ where: { id }, data });
+      else await prisma.benefitCatalogItem.update({ where: { id }, data });
+    } else if (key === "coverageRate") {
+      if (kind !== "catalog") return { ok: false, error: "Coverage applies to flexible benefits only." };
+      const item = await prisma.benefitCatalogItem.findUnique({ where: { id }, select: { isMedical: true } });
+      if (!item) return { ok: false, error: "Benefit not found." };
+      if (item.isMedical) return { ok: false, error: "Medical is always 100% covered." };
+      const n = Math.round(Number(value));
+      if (!Number.isFinite(n) || n < 1 || n > 100) return { ok: false, error: "Coverage must be 1–100%." };
+      await prisma.benefitCatalogItem.update({ where: { id }, data: { coverageRate: n } });
+    } else if (key === "active") {
+      if (kind !== "catalog") return { ok: false, error: "Only flexible/medical items can be hidden." };
+      await prisma.benefitCatalogItem.update({ where: { id }, data: { active: value === "true" } });
+    } else {
+      return { ok: false, error: "Unknown field." };
+    }
+  } catch {
+    return { ok: false, error: "Save failed — try again." };
+  }
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+  return { ok: true };
+}
+
 function slugify(s: string): string {
   return (
     s

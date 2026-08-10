@@ -345,6 +345,10 @@ model GuaranteedBenefit {
   id               String         @id @default(cuid())
   name             String
   note             String?
+  /// Grouping category shown in the unified catalogue (spec 021), aligned with the flexible
+  /// benefit categories (e.g. "Life & family", "Personal growth"). Distinct from `note` (a short
+  /// description). Null falls back to "Other".
+  category         String?
   /// Who this benefit is available to. Drives what each employee sees by their employment type.
   eligibleFullTime Boolean        @default(true)
   eligiblePartTime Boolean        @default(true)

@@ -26,7 +26,8 @@
 - [x] Admin UI (mockup-approved): unified **Benefits Catalogue** table (Type chip + FT/PT `EligibilityToggles` + claim requirement), **Amounts** tab stripped to numbers only; `setEligibility` action.
 - [x] Employee UI: benefits filtered by eligibility; single medical section with Personal/Family behaviour (dependant pickers only when Family-eligible).
 - [x] `npx tsc --noEmit` + `npm run build` green. UI snapshots in `ui-versions/`. Docs updated (this file, PROJECT_DETAILS, spec 021).
-- [ ] **Apply `032_*.sql` to Neon** (paste after `031`). Clear any existing medical commitments first (Danger-zone reset on the employee page), then set FT/PT eligibility per benefit in the Catalogue.
+- [x] Follow-up: **inline-edit Catalogue grid** (`CatalogueGrid`, mirrors the employee registry — click-to-edit cells via `updateCatalogueCell`, click-to-sort, drag-reorder columns persisted, frozen header row + Benefit column); **guaranteed `category`** added (migration `033`, verified on throwaway Postgres) with the note kept as a description. `tsc` + `build` green.
+- [ ] **Apply `032_*.sql` then `033_*.sql` to Neon** (paste after `031`). Clear any existing medical commitments first (Danger-zone reset on the employee page), then set FT/PT eligibility per benefit in the Catalogue.
 
 ## Spec 019 — Mid-year starter proration (built, pending Neon migration)
 - [x] Spec + `/speckit-plan` + `/speckit-tasks` + `/speckit-implement` (`specs/019-mid-year-proration/`).

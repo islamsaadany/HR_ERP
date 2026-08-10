@@ -47,3 +47,8 @@ Storage stays split underneath (guaranteed and catalog remain separate Prisma ta
 - `MedicalCommitment`: **unchanged** (dependants present ⇒ Family; the split is expressed by the catalogue item + eligibility, not a new column).
 
 Migration `prisma/sql/032_benefit_eligibility_and_medical_split.sql` folds each guaranteed benefit's FT/PT sibling rows into one row (repointing any claims/releases), tags the existing medical item as Personal, and adds the Family medical item. Verified on a throwaway Postgres against the full migration chain.
+
+## Follow-up (same feature)
+
+- **Inline-edit catalogue grid.** The admin Catalogue is a client grid (`CatalogueGrid`) mirroring the employee registry: click a cell to edit (name, category, claim requirement, FT/PT, coverage %, status — each saved per-cell via `updateCatalogueCell`), click a header to sort, drag headers to reorder columns (layout persisted to `localStorage`), and the header row + Benefit column are frozen (`ff-data-table`). Coverage is editable for flexible items only; guaranteed shows Fixed/Salary and medical 100% (read-only — amounts on the Amounts tab). Replaces the previous read-view + card-edit toggle.
+- **Guaranteed categories.** `GuaranteedBenefit` gained a real `category` (migration `033_guaranteed_benefit_categories.sql`) aligned with the flexible categories — Marriage/Special events → *Life & family*, Professional development → *Personal growth*, plus two new categories *Allowances & bonuses* (Summer allowance) and *Financial support* (Loans). The `note` stays as a short description shown under the name. Fixes the earlier bug where the note was shown as the category.
