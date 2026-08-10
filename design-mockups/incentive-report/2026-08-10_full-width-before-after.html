@@ -1,0 +1,154 @@
+<title>Incentive report — full-width (Before / After)</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-300:#7d97ba; --navy-500:#2f4d78;
+    --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-400:#d4ac39; --gold-600:#a8821e;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  .wrap { max-width:1280px; margin:0 auto; padding:28px 20px 60px; }
+  h2.tag { font-family:Georgia,serif; font-weight:400; font-size:22px; margin:0 0 4px; }
+  .lead { color:var(--muted); margin:0 0 18px; font-size:14px; max-width:70ch; line-height:1.6; }
+
+  .panel { border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:18px 0 34px;
+    box-shadow:0 1px 3px #0f244412; background:var(--surface); }
+  .panel-label { display:flex; align-items:center; gap:8px; padding:10px 16px; font-size:12px;
+    font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .panel-label.before { background:#fbecec; color:#8a2b2b; }
+  .panel-label.after  { background:#e7f2ea; color:#1f6b43; }
+  .panel-label .dot { width:8px; height:8px; border-radius:50%; }
+  .before .dot { background:#c0392b; } .after .dot { background:#1f8a4c; }
+
+  /* Simulated app screen */
+  .screen { display:flex; background:var(--paper); }
+  aside { width:56px; flex:none; background:var(--navy-900); display:flex; flex-direction:column;
+    align-items:center; gap:16px; padding:14px 0; }
+  aside .logo { width:28px; height:28px; border-radius:7px; background:var(--navy-800);
+    display:grid; place-items:center; font-family:Georgia,serif; color:var(--gold-400); font-size:15px; }
+  aside .ic { width:16px; height:16px; border-radius:4px; background:#ffffff22; }
+  aside .ic.on { background:var(--gold-400); }
+  .screenmain { flex:1; min-width:0; padding:22px; }
+
+  .eyebrow { font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+  h1 { font-family:Georgia,serif; font-weight:400; font-size:24px; margin:5px 0 0; }
+  .inputs { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+  .card { border:1px solid var(--line); border-radius:11px; background:var(--surface); padding:14px; }
+  .card .ct { font-size:13px; font-weight:600; }
+  .card .cl { font-size:11px; color:var(--muted); margin-top:6px; line-height:1.5; }
+  .miniform { height:9px; border-radius:5px; background:var(--navy-50); margin-top:9px; }
+  .miniform.w70 { width:70%; } .miniform.w50 { width:50%; }
+
+  .sec-h { font-family:Georgia,serif; font-size:16px; margin:22px 0 3px; }
+  .sec-sub { font-size:11px; color:var(--muted); margin:0 0 8px; }
+
+  .tablebox { border:1px solid var(--line); border-radius:11px; background:var(--surface); overflow-x:auto; }
+  table { border-collapse:collapse; font-size:12px; }
+  thead tr { background:#eceff566; border-bottom:1px solid var(--line); }
+  th { text-align:left; font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--muted); padding:7px 10px; white-space:nowrap; }
+  th.r, td.r { text-align:right; }
+  td { padding:7px 10px; white-space:nowrap; border-bottom:1px solid var(--line); }
+  tbody tr:last-child td { border-bottom:none; }
+  .num { font-variant-numeric:tabular-nums; }
+  .tot td { background:#eceff566; font-weight:700; }
+
+  .callout { font-size:12px; color:var(--muted); margin-top:10px; display:flex; align-items:center; gap:6px; }
+  .callout b { color:var(--ink); }
+  .emptyband { background:repeating-linear-gradient(45deg,#f0ede6,#f0ede6 8px,#e7e3da 8px,#e7e3da 9px);
+    border-radius:8px; flex:none; display:grid; place-items:center; color:#a49b88; font-size:11px; font-weight:600; }
+  .scrollnote { font-size:11px; color:#8a2b2b; font-weight:600; margin-top:6px; }
+</style>
+
+<div class="wrap">
+  <h2 class="tag">Incentive report — full-width fix</h2>
+  <p class="lead">The report has wide financial tables (up to 10 columns). Today the whole page is capped at ~1150px,
+    so the wide tables scroll sideways inside their box <em>and</em> leave the right third of the screen empty.
+    The fix lets this page use the full screen width — only the report tables get wider; the input cards at the top
+    stay a sensible size.</p>
+
+  <!-- ───────────── BEFORE ───────────── -->
+  <div class="panel">
+    <div class="panel-label before"><span class="dot"></span> Before — capped at 1150px, wide table overflows</div>
+    <div class="screen">
+      <aside><div class="logo">F</div><div class="ic"></div><div class="ic on"></div><div class="ic"></div></aside>
+      <div class="screenmain">
+        <div style="display:flex; gap:14px;">
+          <!-- capped content column -->
+          <div style="width:760px; flex:none;">
+            <p class="eyebrow">Super User · Confidential</p>
+            <h1>Q2 2026 · Incentive cycle</h1>
+            <div class="inputs">
+              <div class="card"><div class="ct">Firm figures</div><div class="cl">Revenue · delivery cost · expenses</div><div class="miniform w70"></div><div class="miniform w50"></div></div>
+              <div class="card"><div class="ct">Upload sheets (CSV)</div><div class="cl">people · assignments · contributions</div><div class="miniform w70"></div><div class="miniform w50"></div></div>
+            </div>
+
+            <div class="sec-h">Business Partner Fee</div>
+            <p class="sec-sub">Payable assignments · envelope = 3% of Gross Profit, gated at 70% margin.</p>
+            <div class="tablebox">
+              <!-- table forced wider than the 760px column → inner scroll, columns clipped -->
+              <table style="width:940px;">
+                <thead><tr>
+                  <th>Client</th><th>Type</th><th class="r">GP</th><th class="r">GP%</th><th class="r">Envelope</th>
+                  <th class="r">Ded</th><th>Lead</th><th class="r">Lead fee</th><th class="r">Contributor</th><th class="r">Firm</th>
+                </tr></thead>
+                <tbody>
+                  <tr><td>Acme Holding</td><td>Retainer</td><td class="r num">1,240,000</td><td class="r num">72.4%</td><td class="r num">37,200</td><td class="r num">—</td><td>N. Hazem</td><td class="r num">18,600</td><td class="r num">11,160</td><td class="r num">7,440</td></tr>
+                  <tr><td>Beta Retail</td><td>Project</td><td class="r num">880,500</td><td class="r num">68.1%</td><td class="r num">26,415</td><td class="r num">5.0%</td><td>O. Alaa</td><td class="r num">13,207</td><td class="r num">7,925</td><td class="r num">5,283</td></tr>
+                  <tr><td>Cairo Media</td><td>Retainer</td><td class="r num">2,010,000</td><td class="r num">75.0%</td><td class="r num">60,300</td><td class="r num">—</td><td>R. Sarhan</td><td class="r num">30,150</td><td class="r num">18,090</td><td class="r num">12,060</td></tr>
+                  <tr class="tot"><td colspan="7">Total</td><td class="r num">61,957</td><td class="r num">37,175</td><td class="r num">24,783</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="scrollnote">↔ columns run off the edge — you must scroll the table sideways to see “Contributor” and “Firm”.</p>
+          </div>
+          <!-- wasted space -->
+          <div class="emptyband" style="flex:1; min-height:340px;">empty · unused screen</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────── AFTER ───────────── -->
+  <div class="panel">
+    <div class="panel-label after"><span class="dot"></span> After — full-width page, table fits without scrolling</div>
+    <div class="screen">
+      <aside><div class="logo">F</div><div class="ic"></div><div class="ic on"></div><div class="ic"></div></aside>
+      <div class="screenmain">
+        <p class="eyebrow">Super User · Confidential</p>
+        <h1>Q2 2026 · Incentive cycle</h1>
+        <!-- input cards kept at a sensible max width so they don't stretch -->
+        <div class="inputs" style="max-width:760px;">
+          <div class="card"><div class="ct">Firm figures</div><div class="cl">Revenue · delivery cost · expenses</div><div class="miniform w70"></div><div class="miniform w50"></div></div>
+          <div class="card"><div class="ct">Upload sheets (CSV)</div><div class="cl">people · assignments · contributions</div><div class="miniform w70"></div><div class="miniform w50"></div></div>
+        </div>
+
+        <div class="sec-h">Business Partner Fee</div>
+        <p class="sec-sub">Payable assignments · envelope = 3% of Gross Profit, gated at 70% margin.</p>
+        <div class="tablebox">
+          <table style="width:100%;">
+            <thead><tr>
+              <th>Client</th><th>Type</th><th class="r">GP</th><th class="r">GP%</th><th class="r">Envelope</th>
+              <th class="r">Ded</th><th>Lead</th><th class="r">Lead fee</th><th class="r">Contributor</th><th class="r">Firm</th>
+            </tr></thead>
+            <tbody>
+              <tr><td>Acme Holding</td><td>Retainer</td><td class="r num">1,240,000</td><td class="r num">72.4%</td><td class="r num">37,200</td><td class="r num">—</td><td>N. Hazem</td><td class="r num">18,600</td><td class="r num">11,160</td><td class="r num">7,440</td></tr>
+              <tr><td>Beta Retail</td><td>Project</td><td class="r num">880,500</td><td class="r num">68.1%</td><td class="r num">26,415</td><td class="r num">5.0%</td><td>O. Alaa</td><td class="r num">13,207</td><td class="r num">7,925</td><td class="r num">5,283</td></tr>
+              <tr><td>Cairo Media</td><td>Retainer</td><td class="r num">2,010,000</td><td class="r num">75.0%</td><td class="r num">60,300</td><td class="r num">—</td><td>R. Sarhan</td><td class="r num">30,150</td><td class="r num">18,090</td><td class="r num">12,060</td></tr>
+              <tr class="tot"><td colspan="7">Total</td><td class="r num">61,957</td><td class="r num">37,175</td><td class="r num">24,783</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="callout"><b>✓ Fills the screen</b> — all 10 columns visible at once, no sideways scroll, no empty band on the right.</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="lead" style="margin-top:8px;">
+    Scope: this changes only <b>/incentive/[id]</b> (the cycle report) — same mechanism as the registry fix
+    (opt out of the shared max-width). Every other page keeps its current width. The 7 report tables all benefit;
+    the top input cards are capped so they stay readable.
+  </p>
+</div>

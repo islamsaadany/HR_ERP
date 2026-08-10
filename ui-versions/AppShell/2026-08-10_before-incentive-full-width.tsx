@@ -22,14 +22,6 @@ const STORAGE_KEY = "ff-sidebar-collapsed";
 const isWideRoute = (path: string) =>
   path.startsWith("/handbook") || path.startsWith("/knowledge");
 
-/**
- * Routes that opt out of the shared max-width cap and use the full screen width.
- * These are the many-column data pages (the employee registry and each incentive
- * cycle report) whose wide tables need the room. Everything else stays centered.
- */
-const isFullWidthRoute = (path: string) =>
-  path === "/admin/employees" || path.startsWith("/incentive/");
-
 export function AppShell({
   name,
   email,
@@ -291,9 +283,9 @@ export function AppShell({
         <main
           className={
             "w-full flex-1 p-6 md:p-10 " +
-            // Wide, many-column data pages (registry, incentive report) use the
-            // full screen width; every other page keeps the centered max-width.
-            (isFullWidthRoute(pathname) ? "" : "max-w-6xl")
+            // The employee registry is a wide, many-column table — let it use the
+            // full screen width. Every other page keeps the centered max-width.
+            (pathname === "/admin/employees" ? "" : "max-w-6xl")
           }
         >
           {children}
