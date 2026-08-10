@@ -9,6 +9,7 @@ import { getActivePlanYear, amountForBand, getMedicalCommitment, planYearWindow 
 import { tracker } from "@/lib/benefits/claims";
 import { evaluateClaim, type AllowanceContext } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate } from "@/lib/benefits/proration";
+import { deriveTenureBand } from "@/lib/tenure";
 
 /** Pool / Professional-development eligibility unlocks at 6 months of service. */
 const POOL_THRESHOLD_MONTHS = 6;
@@ -39,7 +40,11 @@ export async function createClaim(formData: FormData): Promise<void> {
     where: { id: me.id },
     select: { employmentType: true, tenureBand: true, monthlySalary: true, startDate: true },
   });
-  if (!user?.employmentType || !user?.tenureBand) fail("Your profile isn't set — contact HR.");
+  if (!user?.employmentType) fail("Your profile isn't set — contact HR.");
+  // Tenure band is derived from the hire date so claim-time enforcement always
+  // uses the current band (never a stale stored value).
+  const tenureBand = deriveTenureBand(user.startDate).band;
+  if (!tenureBand) fail("Your profile isn't set — contact HR.");
 
   // Mid-year starter proration (spec 019): scale the pool ceiling / Professional-development
   // allocation by the whole months left in the plan year from the 6-month eligibility date.
@@ -54,7 +59,7 @@ export async function createClaim(formData: FormData): Promise<void> {
     if (!gb || gb.employmentType !== user.employmentType) fail("That benefit isn't available to you.");
     claimType = gb.claimType;
     if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
-    const bandAmount = amountForBand(user.tenureBand, gb) ?? user.monthlySalary ?? null;
+    const bandAmount = amountForBand(tenureBand, gb) ?? user.monthlySalary ?? null;
     // Only benefits flagged `prorated` (Professional development) shrink for mid-year
     // starters; event/season gifts (marriage, summer, special events, loans) stay full.
     const allocated =
@@ -91,7 +96,7 @@ export async function createClaim(formData: FormData): Promise<void> {
       where: {
         employmentType_tenureBand: {
           employmentType: user.employmentType,
-          tenureBand: user.tenureBand,
+          tenureBand,
         },
       },
     });

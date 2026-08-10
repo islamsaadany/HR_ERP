@@ -5,6 +5,7 @@ import { getActivePlanYear, getMedicalRate, amountForBand, getMedicalCommitment,
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { flexCap } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate } from "@/lib/benefits/proration";
+import { deriveTenureBand } from "@/lib/tenure";
 import {
   BenefitsBoard,
   type BoardClaim,
@@ -25,7 +26,7 @@ export default async function BenefitsPage({
   const me = await requireUser();
   await requireModuleEnabled("benefits");
   const { claimError, claimOk } = await searchParams;
-  const user = await prisma.user.findUnique({
+  const dbUser = await prisma.user.findUnique({
     where: { id: me.id },
     select: {
       name: true,
@@ -36,6 +37,11 @@ export default async function BenefitsPage({
       benefitsOrientationSeenAt: true,
     },
   });
+  // Tenure band is derived from the hire date so the whole page (ceiling, band
+  // amounts, labels) always reflects the current band, not a stale stored value.
+  const user = dbUser
+    ? { ...dbUser, tenureBand: deriveTenureBand(dbUser.startDate).band }
+    : null;
 
   const eyebrow = (
     <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Benefits</p>

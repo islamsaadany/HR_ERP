@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/roles";
 import { getActivePlanYear, getMedicalRate, planYearWindow, poolCeilingFor } from "@/lib/benefits/config";
 import { computeMedicalPremium, type MedicalConfig } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate } from "@/lib/benefits/proration";
+import { deriveTenureBand } from "@/lib/tenure";
 
 /** Medical insurance unlocks at 3 months of service (spec 019), before the 6-month basket. */
 const MEDICAL_THRESHOLD_MONTHS = 3;
@@ -54,8 +55,9 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
   }
 
   const [ceilingAmount, medicalRate, existing] = await Promise.all([
-    // Entry-tier (6mo–2y) fallback when a sub-6-month employee has no band yet.
-    poolCeilingFor(user.employmentType, user.tenureBand),
+    // Tenure band is derived from the hire date so it's always current (entry-tier
+    // 6mo–2y fallback inside poolCeilingFor when a sub-6-month employee has no band).
+    poolCeilingFor(user.employmentType, deriveTenureBand(user.startDate).band),
     getMedicalRate(),
     prisma.medicalCommitment.findUnique({
       where: { userId_planYearId: { userId: me.id, planYearId: planYear.id } },
