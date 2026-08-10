@@ -39,7 +39,6 @@ export function AppShell({
   email,
   showAdmin,
   showIncentive,
-  showPayments = false,
   hiddenNav = [],
   navBadges = {},
   companyName = "Forefront HR",
@@ -51,7 +50,6 @@ export function AppShell({
   email?: string | null;
   showAdmin: boolean;
   showIncentive: boolean;
-  showPayments?: boolean;
   hiddenNav?: string[];
   navBadges?: Record<string, number>;
   companyName?: string;
@@ -158,21 +156,6 @@ export function AppShell({
                   <NavIcon name="benefits" />
                 </Link>
               ) : null}
-              {showPayments ? (
-                <Link
-                  href="/finance"
-                  title="Payments"
-                  aria-label="Payments"
-                  className={
-                    "mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive("/finance")
-                      ? "bg-navy-800 text-gold-300"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  <NavIcon name="payments" />
-                </Link>
-              ) : null}
               {showAdmin ? (
                 <Link
                   href="/admin"
@@ -266,20 +249,6 @@ export function AppShell({
                   }
                 >
                   Incentive Scheme
-                </Link>
-              ) : null}
-              {showPayments ? (
-                <Link
-                  href="/finance"
-                  aria-current={isActive("/finance") ? "page" : undefined}
-                  className={
-                    "relative mt-2 block rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/finance")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  Payments
                 </Link>
               ) : null}
               {showAdmin ? (
@@ -388,10 +357,6 @@ function NavIcon({ name }: { name: string }) {
     case "profile":
       return (
         <svg {...common}><circle cx="12" cy="8" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
-      );
-    case "payments":
-      return (
-        <svg {...common}><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6 9v6M18 9v6" /></svg>
       );
     case "admin":
       return (

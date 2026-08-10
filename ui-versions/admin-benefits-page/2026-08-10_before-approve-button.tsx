@@ -13,7 +13,7 @@ import {
   editMedicalCommitment,
   removeMedicalCommitment,
   setClaimType,
-  approveClaim,
+  releaseClaim,
   rejectClaim,
 } from "./actions";
 import {
@@ -258,9 +258,9 @@ export default async function AdminBenefitsPage({
                   </a>
                 ) : null}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <form action={approveClaim}>
+                  <form action={releaseClaim}>
                     <input type="hidden" name="id" value={c.id} />
-                    <button className="rounded-lg bg-navy-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-navy-700">Approve</button>
+                    <button className="rounded-lg bg-navy-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-navy-700">Release payment</button>
                   </form>
                   <details>
                     <summary className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">Reject</summary>

@@ -169,7 +169,6 @@ export function EmployeeGrid({
         options: [
           { value: "EMPLOYEE", label: ROLE_LABEL.EMPLOYEE },
           { value: "HR_ADMIN", label: ROLE_LABEL.HR_ADMIN },
-          { value: "FINANCE", label: ROLE_LABEL.FINANCE },
           { value: "SUPER_USER", label: ROLE_LABEL.SUPER_USER },
         ],
         editable: canEditRole,

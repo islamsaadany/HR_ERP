@@ -182,7 +182,7 @@ HR_ERP/
 - **Benefits rules are server-side (spec 018)** — pool ceiling (type × tenure), the 50%-per-benefit cap (on cumulative claims, full- **and** part-time), and medical handling are validated at claim/commit time in `src/lib/benefits/` (`evaluateClaim`). The client mirrors them for UX only. The benefit-count limit is retained behind `COUNT_LIMIT_ENABLED` (default off).
 - **Plan-year window** — an admin opens/closes a benefits cycle; employees can only claim / commit medical while it is open. **Medical is committed once** (a `MedicalCommitment` row) and then locked — only HR can change/remove it. **Flexible benefits are claimed as-you-go** (`BenefitClaim` linked directly to the catalog item); there is no basket to submit and no per-benefit allocation. (Superseded the old basket/`BenefitSelection` model.)
 - **Placeholder benefits data** — real rate card, pool ceilings, and tenure bands arrive later; until then an admin config screen + seeded placeholders drive the module. Placeholder figures must never be presented as final.
-- **No emails, ever (v1)** — no invitations, reminders, or notifications.
+- **Email is limited to the benefit-claim workflow (spec 020)** — the original "no emails, ever (v1)" rule was **reversed for this one workflow** (approved 2026-08-10). Transactional claim notifications (submit→HR, approve→Finance, reject/reimburse→employee) send via **Resend**, **env-gated** (`RESEND_API_KEY`/`EMAIL_FROM`) and **fire-and-forget** (never block a state change), configurable + master-toggleable at **Admin → Notifications**. Still **no** invitations, reminders, marketing, or other notifications outside this workflow.
 
 ---
 

@@ -64,12 +64,12 @@ description: "Task list for spec 020 — Claim Reimbursement Workflow & Email No
 
 **Independent Test**: Approve one claim (→ Approved, Finance gets T2), reject another with a reason (→ Rejected, employee gets T3, allowance freed).
 
-- [ ] T018 [P] [US2] Mockup gate: admin submissions tab controls renamed to **Approve** / **Reject** (from the old release control), showing the new states — sign-off. `design-mockups/admin-benefits-claims/`.
-- [ ] T019 [US2] Implement `approveClaim(claimId)` (`requireAdmin`, guard `status==SUBMITTED` → `APPROVED`, set reviewer/decidedAt) + dispatch T2 to Finance inbox.
-- [ ] T020 [US2] Implement `rejectClaim(claimId, reason?)` (`requireAdmin`, guard `status==SUBMITTED` → `REJECTED`, set `decisionNote`/reviewer/decidedAt) + dispatch T3 to employee.
-- [ ] T021 [US2] Update the admin submissions UI (`src/app/(app)/admin/benefits/*`, components) to the approved Approve/Reject controls and show state; snapshot before editing.
-- [ ] T022 [US2] Update `recordManualRelease` (spec 016) to create the claim directly as `REIMBURSED` with **no** emails.
-- [ ] T023 [US2] Verify: `tsc` + `build`; quickstart Scenario B + access checks for HR actions.
+- [X] T018 [P] [US2] Mockup gate: admin submissions tab controls renamed to **Approve** / **Reject** (from the old release control), showing the new states — sign-off. `design-mockups/admin-benefits-claims/`.
+- [X] T019 [US2] Implement `approveClaim(claimId)` (`requireAdmin`, guard `status==SUBMITTED` → `APPROVED`, set reviewer/decidedAt) + dispatch T2 to Finance inbox.
+- [X] T020 [US2] Implement `rejectClaim(claimId, reason?)` (`requireAdmin`, guard `status==SUBMITTED` → `REJECTED`, set `decisionNote`/reviewer/decidedAt) + dispatch T3 to employee.
+- [X] T021 [US2] Update the admin submissions UI (`src/app/(app)/admin/benefits/*`, components) to the approved Approve/Reject controls and show state; snapshot before editing.
+- [X] T022 [US2] Update `recordManualRelease` (spec 016) to create the claim directly as `REIMBURSED` with **no** emails.
+- [X] T023 [US2] Verify: `tsc` + `build`; quickstart Scenario B + access checks for HR actions.
 
 **Checkpoint**: HR decisions work and notify the right party; caps update on rejection.
 
@@ -81,12 +81,12 @@ description: "Task list for spec 020 — Claim Reimbursement Workflow & Email No
 
 **Independent Test**: As Finance, confirm a payment → Reimbursed + fields recorded + employee gets T4; a plain HR/Employee is denied the queue.
 
-- [ ] T024 [P] [US3] Mockup gate: Finance **payments queue** + confirm-payment form (amount + transfer date) under `design-mockups/finance-queue/` — sign-off, including where it sits in nav.
-- [ ] T025 [US3] Add the Finance route/section (e.g. `src/app/(app)/finance/page.tsx`) listing `status==APPROVED` claims (payee, benefit, covered amount, approval date), gated by `requireFinance`.
-- [ ] T026 [US3] Create `src/components/finance/PaymentsQueue.tsx` per the approved mockup.
-- [ ] T027 [US3] Implement `confirmPayment(claimId, amountTransferred, transferDate)` (`requireFinance`, guard `status==APPROVED`, amount>0, date not future → `REIMBURSED`, set paidBy/paidAt/transferDate/amountTransferred) + dispatch T4 to employee.
-- [ ] T028 [US3] Add the Finance queue to nav for Finance/Super User only (`src/components/AppShell.tsx` nav gating + layout role plumbing).
-- [ ] T029 [US3] Verify: `tsc` + `build`; quickstart Scenario A (steps 2–4), Scenario C (access control), Scenario D (Resend failure still reimburses).
+- [X] T024 [P] [US3] Mockup gate: Finance **payments queue** + confirm-payment form (amount + transfer date) under `design-mockups/finance-queue/` — sign-off, including where it sits in nav.
+- [X] T025 [US3] Add the Finance route/section (e.g. `src/app/(app)/finance/page.tsx`) listing `status==APPROVED` claims (payee, benefit, covered amount, approval date), gated by `requireFinance`.
+- [X] T026 [US3] Create `src/components/finance/PaymentsQueue.tsx` per the approved mockup.
+- [X] T027 [US3] Implement `confirmPayment(claimId, amountTransferred, transferDate)` (`requireFinance`, guard `status==APPROVED`, amount>0, date not future → `REIMBURSED`, set paidBy/paidAt/transferDate/amountTransferred) + dispatch T4 to employee.
+- [X] T028 [US3] Add the Finance queue to nav for Finance/Super User only (`src/components/AppShell.tsx` nav gating + layout role plumbing).
+- [X] T029 [US3] Verify: `tsc` + `build`; quickstart Scenario A (steps 2–4), Scenario C (access control), Scenario D (Resend failure still reimburses).
 
 **Checkpoint**: Full Employee→HR→Finance→Employee loop closes with notifications.
 
@@ -109,9 +109,9 @@ description: "Task list for spec 020 — Claim Reimbursement Workflow & Email No
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T034 Update steering docs in the same change: `CLAUDE.md` (qualify "No emails, ever (v1)"), `PROJECT_DETAILS.md` (claims workflow + FINANCE role + NotificationSettings), `IMPLEMENTATION_PLAN.md` (decision log: email reversal), `IMPLEMENTATION_PROGRESS.md` (feature status).
-- [ ] T035 Amend `.specify/memory/constitution.md`: reverse the "No email in v1" technology constraint (user-approved), bump version, keep CLAUDE.md in sync (Governance clause).
-- [ ] T036 Grep for any remaining `PENDING`/`RELEASED` claim-status references across `src/` (labels, filters, admin pills, dashboard counts) and update to the new vocabulary.
+- [X] T034 Update steering docs in the same change: `CLAUDE.md` (qualify "No emails, ever (v1)"), `PROJECT_DETAILS.md` (claims workflow + FINANCE role + NotificationSettings), `IMPLEMENTATION_PLAN.md` (decision log: email reversal), `IMPLEMENTATION_PROGRESS.md` (feature status).
+- [X] T035 Amend `.specify/memory/constitution.md`: reverse the "No email in v1" technology constraint (user-approved), bump version, keep CLAUDE.md in sync (Governance clause).
+- [X] T036 Grep for any remaining `PENDING`/`RELEASED` claim-status references across `src/` (labels, filters, admin pills, dashboard counts) and update to the new vocabulary.
 - [ ] T037 Full run of `quickstart.md` Scenarios A–F; final `tsc` + `build`; hand-off note listing the exact Neon SQL file order and the Vercel env vars to set.
 
 ---

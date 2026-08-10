@@ -204,7 +204,6 @@ export function EmployeeForm({
             >
               <option value="EMPLOYEE">Employee</option>
               <option value="HR_ADMIN">HR Admin</option>
-              <option value="FINANCE">Finance</option>
               <option value="SUPER_USER">Super User</option>
             </select>
           </div>

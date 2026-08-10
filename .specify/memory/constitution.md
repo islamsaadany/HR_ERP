@@ -43,7 +43,10 @@ clever compression. Aim for "engineered enough": neither fragile nor over-abstra
 ## Technology & Data Constraints
 - Stack: Next.js 16 (App Router) + React 19 + TypeScript; PostgreSQL (Neon) + Prisma;
   NextAuth v5 Google provider (domain-locked to the company domain); Tailwind CSS;
-  Vercel Blob for files; Vercel deploy. No email in v1.
+  Vercel Blob for files; Vercel deploy. Email: **limited to the benefit-claim
+  workflow (spec 020)** via Resend — env-gated (`RESEND_API_KEY`/`EMAIL_FROM`),
+  fire-and-forget, master-toggleable. (Amends the original "no email in v1"
+  constraint, approved 2026-08-10.) No other emails.
 - Roles: `EMPLOYEE`, `HR_ADMIN`, `SUPER_USER` (superset of HR Admin). A `manager`
   capability derives from the org chart (an employee with direct reports).
 - Sessions do not hold the production `DATABASE_URL`. Schema/data reach the DB only via
@@ -64,4 +67,5 @@ This constitution supersedes conflicting practices. Amendments require explicit 
 approval and must be reflected in `CLAUDE.md` and any dependent spec-kit templates in the
 same change. All spec-kit commands and reviews check work against these principles.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-27 | **Last Amended**: 2026-07-27
+**Version**: 1.1.0 | **Ratified**: 2026-07-27 | **Last Amended**: 2026-08-10
+(1.1.0 — email allowed for the spec 020 benefit-claim workflow; see Technology & Data Constraints.)

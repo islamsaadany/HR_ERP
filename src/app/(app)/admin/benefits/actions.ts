@@ -7,6 +7,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
 import { getMedicalRate } from "@/lib/benefits/config";
 import { computeMedicalPremium } from "@/lib/benefits/rules";
+import { getNotificationSettings } from "@/lib/notifications/settings";
+import { sendEmail } from "@/lib/email/client";
+import { claimApprovedToFinance, claimRejectedToEmployee } from "@/lib/email/templates";
 
 /** Parse a yyyy-mm-dd form value to a Date, or null if absent/invalid. */
 function parseDate(raw: FormDataEntryValue | null): Date | null {
@@ -144,33 +147,59 @@ export async function setClaimType(formData: FormData): Promise<void> {
   revalidatePath("/benefits");
 }
 
-// ── Claim review (release / reject) ──
-export async function releaseClaim(formData: FormData): Promise<void> {
+// ── Claim review (approve → Finance / reject → employee) — spec 020 ──
+const CLAIM_WITH_PARTIES = {
+  user: { select: { name: true, email: true } },
+  guaranteedBenefit: { select: { name: true } },
+  catalogItem: { select: { name: true } },
+} as const;
+
+const benefitNameOf = (c: {
+  guaranteedBenefit: { name: string } | null;
+  catalogItem: { name: string } | null;
+}) => c.guaranteedBenefit?.name ?? c.catalogItem?.name ?? "a benefit";
+
+/** HR approves a claim → Approved (awaiting Finance payment); the Finance inbox is emailed. */
+export async function approveClaim(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
   const id = formData.get("id") as string;
   if (!id) return;
-  const claim = await prisma.benefitClaim.findUnique({ where: { id } });
-  // Accept the new SUBMITTED status as well as the legacy PENDING (transitional
-  // until US2 replaces this with the Approve → Finance step).
+  const claim = await prisma.benefitClaim.findUnique({ where: { id }, include: CLAIM_WITH_PARTIES });
+  // Accept the new SUBMITTED status and the legacy PENDING.
   if (!claim || (claim.status !== "PENDING" && claim.status !== "SUBMITTED")) return;
   await prisma.benefitClaim.update({
     where: { id },
-    data: { status: "REIMBURSED", reviewedById: admin.id, decidedAt: new Date() },
+    data: { status: "APPROVED", reviewedById: admin.id, decidedAt: new Date() },
+  });
+  const settings = await getNotificationSettings();
+  await sendEmail({
+    to: settings.financeInbox,
+    ...claimApprovedToFinance({
+      employeeName: claim.user.name ?? claim.user.email,
+      benefitName: benefitNameOf(claim),
+      coveredAmount: claim.amount,
+    }),
   });
   revalidatePath("/admin/benefits");
+  revalidatePath("/finance");
   revalidatePath("/benefits");
 }
 
+/** HR rejects a claim → Rejected; the employee is emailed the reason (if given). */
 export async function rejectClaim(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
   const id = formData.get("id") as string;
   const reason = (formData.get("reason") as string | null)?.trim() || null;
   if (!id) return;
-  const claim = await prisma.benefitClaim.findUnique({ where: { id } });
+  const claim = await prisma.benefitClaim.findUnique({ where: { id }, include: CLAIM_WITH_PARTIES });
   if (!claim || (claim.status !== "PENDING" && claim.status !== "SUBMITTED")) return;
   await prisma.benefitClaim.update({
     where: { id },
     data: { status: "REJECTED", decisionNote: reason, reviewedById: admin.id, decidedAt: new Date() },
+  });
+  await sendEmail({
+    to: claim.user.email,
+    ...claimRejectedToEmployee({ benefitName: benefitNameOf(claim), reason }),
   });
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
