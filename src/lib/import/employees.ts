@@ -15,6 +15,7 @@ import type {
   TenureBand,
 } from "@prisma/client";
 import { parseDelimited } from "./csv";
+import { deriveTenureBand } from "@/lib/tenure";
 
 // ─── Dates ──────────────────────────────────────────────────────────────
 
@@ -153,24 +154,10 @@ export function parseFlexibleDate(rawInput: string): ParsedDate {
   );
 }
 
-// ─── Tenure band (derived from hire date) ───────────────────────────────
-
-export function deriveTenureBand(
-  hire: Date | null,
-  now: Date = new Date()
-): { band: TenureBand | null; note?: string } {
-  if (!hire) return { band: null };
-  const years =
-    (now.getTime() - hire.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-  if (years < 0) return { band: null, note: "future hire date — no tenure band yet" };
-  if (years < 0.5)
-    return { band: null, note: "under 6 months — not yet benefits-eligible" };
-  if (years < 2) return { band: "BAND_6MO_2Y" };
-  if (years < 4) return { band: "BAND_2_4Y" };
-  if (years < 7) return { band: "BAND_4_7Y" };
-  if (years <= 10) return { band: "BAND_7_10Y" };
-  return { band: "BAND_7_10Y", note: "over 10 years — capped at the top band" };
-}
+// Tenure band derivation lives in the shared, client-safe module `@/lib/tenure`
+// (imported above) so the registry grid can mirror it for instant feedback.
+// Re-exported here for existing callers.
+export { deriveTenureBand };
 
 // ─── Enum normalisation ─────────────────────────────────────────────────
 

@@ -6,6 +6,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isSuperUser, canSeeSalary } from "@/lib/roles";
 import { employeeSchema } from "@/lib/validation";
+import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
 
 function parseForm(formData: FormData) {
   const raw: Record<string, unknown> = Object.fromEntries(formData.entries());
@@ -72,12 +73,14 @@ export async function createEmployee(
       title: data.title ?? null,
       role,
       employmentType: data.employmentType ?? null,
-      tenureBand: data.tenureBand ?? null,
+      // Tenure band and status are derived, never hand-entered: band from the
+      // hire date, status from the end date.
+      tenureBand: deriveTenureBand(data.startDate ?? null).band,
       startDate: data.startDate ?? null,
       endDate: data.endDate ?? null,
       // Salary is confidential — only a Super User may set it; HR-created records start with none.
       monthlySalary: canSeeSalary(actor.role) ? (data.monthlySalary ?? null) : null,
-      status: data.status,
+      status: statusFromEndDate(data.endDate ?? null),
       dateOfBirth: data.dateOfBirth ?? null,
       maritalStatus: data.maritalStatus ?? null,
       emergencyContactName: data.emergencyContactName ?? null,
@@ -141,10 +144,11 @@ export async function updateEmployee(
         title: data.title ?? null,
         role,
         employmentType: data.employmentType ?? null,
-        tenureBand: data.tenureBand ?? null,
+        // Derived, never hand-entered (band from hire date, status from end date).
+        tenureBand: deriveTenureBand(data.startDate ?? null).band,
         startDate: data.startDate ?? null,
         endDate: data.endDate ?? null,
-        status: data.status,
+        status: statusFromEndDate(data.endDate ?? null),
         dateOfBirth: data.dateOfBirth ?? null,
         maritalStatus: data.maritalStatus ?? null,
         emergencyContactName: data.emergencyContactName ?? null,
@@ -183,11 +187,11 @@ const FIELD_SCHEMAS = {
   title: employeeSchema.shape.title,
   role: employeeSchema.shape.role,
   employmentType: employeeSchema.shape.employmentType,
-  tenureBand: employeeSchema.shape.tenureBand,
+  // tenureBand and status are NOT directly editable — they are derived from
+  // startDate and endDate respectively (see the derive-on-write below).
   startDate: employeeSchema.shape.startDate,
   endDate: employeeSchema.shape.endDate,
   monthlySalary: employeeSchema.shape.monthlySalary,
-  status: employeeSchema.shape.status,
   dateOfBirth: employeeSchema.shape.dateOfBirth,
   maritalStatus: employeeSchema.shape.maritalStatus,
   emergencyContactName: employeeSchema.shape.emergencyContactName,
@@ -218,9 +222,13 @@ export async function updateEmployeeField(
   if (key === "monthlySalary" && !canSeeSalary(actor.role)) {
     return { ok: false, error: "Only a Super User can view or change salary." };
   }
-  // Guard against locking yourself out via a stray inline edit.
-  if (id === actor.id && (key === "role" || key === "status")) {
-    return { ok: false, error: "You can't change your own role or status here." };
+  // Guard against locking yourself out via a stray inline edit. An end date on
+  // your own record would flip you to LEFT (status is derived from it).
+  if (id === actor.id && key === "role") {
+    return { ok: false, error: "You can't change your own role here." };
+  }
+  if (id === actor.id && key === "endDate" && value) {
+    return { ok: false, error: "You can't set your own end date here (it would mark you as Left)." };
   }
 
   const parsed = FIELD_SCHEMAS[key].safeParse(value);
@@ -250,10 +258,17 @@ export async function updateEmployeeField(
     }
   }
 
-  await prisma.user.update({
-    where: { id },
-    data: { [key]: next ?? null } as Prisma.UserUpdateInput,
-  });
+  const updateData: Prisma.UserUpdateInput = { [key]: next ?? null };
+  // Editing a date recomputes the value it drives: hire date → tenure band,
+  // end date → Active/Left status.
+  if (key === "startDate") {
+    updateData.tenureBand = deriveTenureBand((next as Date | null) ?? null).band;
+  }
+  if (key === "endDate") {
+    updateData.status = statusFromEndDate((next as Date | null) ?? null);
+  }
+
+  await prisma.user.update({ where: { id }, data: updateData });
 
   revalidatePath("/admin/employees");
   revalidatePath(`/admin/employees/${id}`);

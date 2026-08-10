@@ -11,7 +11,6 @@ import {
   ROLE_LABEL,
 } from "@/lib/labels";
 import { updateEmployeeField } from "@/app/(app)/admin/employees/actions";
-import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
 
 // Serializable row shape passed from the server page (dates as YYYY-MM-DD).
 export type GridRow = {
@@ -125,8 +124,7 @@ export function EmployeeGrid({
         label: "Tenure",
         type: "select",
         options: [blank(), ...TENURE_BAND_ORDER.map((b) => ({ value: b, label: TENURE_BAND_LABEL[b] }))],
-        // Derived from the hire date — not editable.
-        editable: false,
+        editable: true,
         hideable: true,
       },
       { key: "startDate", label: "Start date", type: "date", editable: true, hideable: true },
@@ -158,8 +156,7 @@ export function EmployeeGrid({
           { value: "ACTIVE", label: STATUS_LABEL.ACTIVE },
           { value: "LEFT", label: STATUS_LABEL.LEFT },
         ],
-        // Derived from the end date (an end date ⇒ Left) — not editable.
-        editable: false,
+        editable: true,
         hideable: true,
       },
       {
@@ -343,15 +340,6 @@ export function EmployeeGrid({
     if (key === "reportsToId") {
       const name = managers.find((m) => m.id === value)?.name ?? "";
       return { ...row, reportsToId: value, reportsToName: name };
-    }
-    // Editing a date recomputes the read-only column it drives, so the grid
-    // reflects the change instantly (the server persists the same derivation).
-    if (key === "startDate") {
-      const band = deriveTenureBand(value ? new Date(value) : null).band ?? "";
-      return { ...row, startDate: value, tenureBand: band as GridRow["tenureBand"] };
-    }
-    if (key === "endDate") {
-      return { ...row, endDate: value, status: statusFromEndDate(value ? new Date(value) : null) };
     }
     return { ...row, [key]: value } as GridRow;
   }

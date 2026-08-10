@@ -2,7 +2,6 @@ import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { toDateInput } from "@/lib/labels";
 import { getDepartments, unionDepartments } from "@/lib/departments";
-import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
 import { BackLink } from "@/components/admin/BackLink";
 import { EmployeeGrid, type GridRow } from "@/components/admin/EmployeeGrid";
 import { RegistryHeader } from "@/components/admin/RegistryHeader";
@@ -54,9 +53,7 @@ export default async function EmployeesPage() {
     department: e.department ?? "",
     phone: e.phone ?? "",
     employmentType: e.employmentType ?? "",
-    // Tenure band and status are derived (never hand-entered) so the grid is
-    // always current: band from the hire date, status from the end date.
-    tenureBand: deriveTenureBand(e.startDate).band ?? "",
+    tenureBand: e.tenureBand ?? "",
     startDate: toDateInput(e.startDate),
     endDate: toDateInput(e.endDate),
     // Confidential: never send salary to the client for a non-Super-User.
@@ -66,7 +63,7 @@ export default async function EmployeesPage() {
     emergencyContactName: e.emergencyContactName ?? "",
     emergencyContactRelationship: e.emergencyContactRelationship ?? "",
     emergencyContactPhone: e.emergencyContactPhone ?? "",
-    status: statusFromEndDate(e.endDate),
+    status: e.status,
     role: e.role,
     reportsToId: e.reportsToId ?? "",
     reportsToName: e.reportsTo?.name ?? "",

@@ -2,8 +2,6 @@
 
 import { useActionState, useState } from "react";
 import type { ActionState } from "@/app/(app)/admin/employees/actions";
-import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
-import { TENURE_BAND_LABEL, STATUS_LABEL } from "@/lib/labels";
 
 type Dep = { name: string | null; dateOfBirth: string };
 
@@ -60,14 +58,6 @@ export function EmployeeForm({
     values.department && !departments.includes(values.department)
       ? [values.department, ...departments]
       : departments;
-
-  // Tenure band and status are derived, not entered: band from the start date,
-  // status from the end date. Track the dates so the read-only displays update live.
-  const [startDate, setStartDate] = useState(values.startDate ?? "");
-  const [endDate, setEndDate] = useState(values.endDate ?? "");
-  const derivedBand = deriveTenureBand(startDate ? new Date(startDate) : null).band;
-  const derivedStatus = statusFromEndDate(endDate ? new Date(endDate) : null);
-  const RO = "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink";
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     action,
     null
@@ -146,31 +136,21 @@ export function EmployeeForm({
           </div>
           <div>
             <label className={L}>Tenure band</label>
-            <div className={RO} aria-readonly="true">
-              {derivedBand ? TENURE_BAND_LABEL[derivedBand] : "—"}
-            </div>
-            <p className="mt-1 text-[11px] text-muted">Calculated automatically from the start date.</p>
+            <select name="tenureBand" defaultValue={values.tenureBand ?? ""} className={I}>
+              <option value="">—</option>
+              <option value="BAND_6MO_2Y">6 months – 2 years</option>
+              <option value="BAND_2_4Y">2 – 4 years</option>
+              <option value="BAND_4_7Y">4 – 7 years</option>
+              <option value="BAND_7_10Y">7 – 10 years</option>
+            </select>
           </div>
           <div>
             <label className={L}>Start date</label>
-            <input
-              name="startDate"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className={I}
-            />
+            <input name="startDate" type="date" defaultValue={values.startDate ?? ""} className={I} />
           </div>
           <div>
             <label className={L}>End date</label>
-            <input
-              name="endDate"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className={I}
-            />
-            <p className="mt-1 text-[11px] text-muted">Setting an end date marks the employee as Left.</p>
+            <input name="endDate" type="date" defaultValue={values.endDate ?? ""} className={I} />
           </div>
           {canSeeSalary ? (
             <div>
@@ -180,8 +160,10 @@ export function EmployeeForm({
           ) : null}
           <div>
             <label className={L}>Status</label>
-            <div className={RO} aria-readonly="true">{STATUS_LABEL[derivedStatus]}</div>
-            <p className="mt-1 text-[11px] text-muted">Set automatically from the end date.</p>
+            <select name="status" defaultValue={values.status} className={I}>
+              <option value="ACTIVE">Active</option>
+              <option value="LEFT">Left</option>
+            </select>
           </div>
           <div>
             <label className={L}>Reports to</label>
