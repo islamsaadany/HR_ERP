@@ -1,14 +1,19 @@
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
-import { getActivePlanYear, amountForBand } from "@/lib/benefits/config";
+import { getActivePlanYear, amountForBand, isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL, STATUS_LABEL, toDateInput } from "@/lib/labels";
 import { ReleaseManager, type ReleaseBenefit, type ReleaseRow } from "@/components/benefits/ReleaseManager";
 import { BackLink } from "@/components/admin/BackLink";
 
 export const dynamic = "force-dynamic";
 
-const isSalaryDriven = (b: { band6mo2y: number | null; band2to4y: number | null; band4to7y: number | null; band7to10y: number | null }) =>
-  b.band6mo2y == null && b.band2to4y == null && b.band4to7y == null && b.band7to10y == null;
+/** Human label for who a benefit is available to (spec 021). */
+function eligibilityLabel(b: { eligibleFullTime: boolean; eligiblePartTime: boolean }): string {
+  if (b.eligibleFullTime && b.eligiblePartTime) return "Full-time & Part-time";
+  if (b.eligibleFullTime) return "Full-time";
+  if (b.eligiblePartTime) return "Part-time";
+  return "No one";
+}
 
 export default async function BenefitReleasePage({
   searchParams,
@@ -38,21 +43,26 @@ export default async function BenefitReleasePage({
 
   // Eligible = fixed-allowance guaranteed benefits (exclude salary-driven Loans).
   const allBenefits = await prisma.guaranteedBenefit.findMany({
-    orderBy: [{ employmentType: "asc" }, { order: "asc" }],
+    orderBy: [{ order: "asc" }, { name: "asc" }],
   });
   const eligible = allBenefits.filter((b) => !isSalaryDriven(b));
   const benefits: ReleaseBenefit[] = eligible.map((b) => ({
     id: b.id,
-    label: `${b.name} — ${EMPLOYMENT_TYPE_LABEL[b.employmentType]}`,
+    label: `${b.name} — ${eligibilityLabel(b)}`,
   }));
 
   const selected = benefitId ? eligible.find((b) => b.id === benefitId) ?? null : null;
 
   let rows: ReleaseRow[] = [];
   if (selected) {
+    // Only employees whose employment type is eligible for this benefit.
+    const typeIn = [
+      ...(selected.eligibleFullTime ? (["FULL_TIME"] as const) : []),
+      ...(selected.eligiblePartTime ? (["PART_TIME"] as const) : []),
+    ];
     const [employees, releases] = await Promise.all([
       prisma.user.findMany({
-        where: { status: "ACTIVE", employmentType: selected.employmentType },
+        where: { status: "ACTIVE", employmentType: { in: typeIn.length ? [...typeIn] : ["FULL_TIME", "PART_TIME"] } },
         orderBy: { name: "asc" },
         select: {
           id: true, name: true, email: true, department: true, title: true,
@@ -79,7 +89,7 @@ export default async function BenefitReleasePage({
       phone: e.phone ?? "",
       manager: e.reportsTo?.name ?? "",
       status: STATUS_LABEL[e.status],
-      amount: e.tenureBand ? amountForBand(e.tenureBand, selected) : null,
+      amount: e.tenureBand && e.employmentType ? amountForBand(e.employmentType, e.tenureBand, selected) : null,
       released: releasedBy.has(e.id),
       releasedAt: releasedBy.get(e.id) ?? "",
     }));

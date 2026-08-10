@@ -45,20 +45,25 @@ export async function updatePoolCeilings(formData: FormData): Promise<void> {
   revalidatePath("/benefits");
 }
 
-const GB_BANDS = ["band6mo2y", "band2to4y", "band4to7y", "band7to10y"] as const;
+// All eight per-employment-type × band amount columns on a guaranteed benefit (spec 021).
+const GB_AMOUNT_COLS = [
+  "ftBand6mo2y", "ftBand2to4y", "ftBand4to7y", "ftBand7to10y",
+  "ptBand6mo2y", "ptBand2to4y", "ptBand4to7y", "ptBand7to10y",
+] as const;
 
 /**
- * Save guaranteed-benefit amounts per tenure band. One form per employment type; the
- * action iterates every guaranteed benefit and updates only the band fields present in
- * this submission (so the FT form never touches PT rows, and vice-versa). Blank fields
- * are left unchanged — that's how salary-driven rows (Loans, all-null bands) stay null.
+ * Save guaranteed-benefit amounts (spec 021). One numbers-only form per employment type on the
+ * Amounts tab submits its four band cells per benefit (fields `gb_<id>_<column>`). The action
+ * iterates every benefit and updates only the columns present in this submission, so the FT form
+ * never touches PT columns and vice-versa. Blank fields are left unchanged — that's how
+ * salary-driven rows (Loans, all-null bands) stay null.
  */
 export async function updateGuaranteedAmounts(formData: FormData): Promise<void> {
   await requireAdmin();
   const items = await prisma.guaranteedBenefit.findMany({ select: { id: true } });
   for (const { id } of items) {
     const data: Record<string, number> = {};
-    for (const key of GB_BANDS) {
+    for (const key of GB_AMOUNT_COLS) {
       const raw = formData.get(`gb_${id}_${key}`);
       if (raw == null || String(raw).trim() === "") continue;
       const n = Number(raw);
@@ -71,6 +76,85 @@ export async function updateGuaranteedAmounts(formData: FormData): Promise<void>
   }
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
+}
+
+/**
+ * Set who a benefit is available to (spec 021) — the FT / PT eligibility checkboxes in the unified
+ * Benefits Catalogue. Works for both guaranteed benefits and flexible/medical catalog items. A
+ * checkbox that is unticked sends nothing, so absence = not eligible.
+ */
+export async function setEligibility(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const kind = String(formData.get("kind") ?? "");
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const eligibleFullTime = formData.get("eligibleFullTime") != null;
+  const eligiblePartTime = formData.get("eligiblePartTime") != null;
+  if (kind === "guaranteed") {
+    await prisma.guaranteedBenefit.update({ where: { id }, data: { eligibleFullTime, eligiblePartTime } });
+  } else {
+    await prisma.benefitCatalogItem.update({ where: { id }, data: { eligibleFullTime, eligiblePartTime } });
+  }
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+}
+
+export type CellResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Inline-edit a single cell in the unified Benefits Catalogue grid (spec 021). Routes by field and
+ * kind; server-authoritative (validates coverage 1–100, blocks coverage on medical, guards kinds).
+ * Mirrors the employee registry's per-cell save (`updateEmployeeField`).
+ */
+export async function updateCatalogueCell(
+  kind: "guaranteed" | "catalog",
+  id: string,
+  key: string,
+  value: string
+): Promise<CellResult> {
+  await requireAdmin();
+  if (!id) return { ok: false, error: "Missing benefit id." };
+
+  try {
+    if (key === "name") {
+      const name = value.trim();
+      if (!name) return { ok: false, error: "Name can't be empty." };
+      if (kind === "guaranteed") await prisma.guaranteedBenefit.update({ where: { id }, data: { name } });
+      else await prisma.benefitCatalogItem.update({ where: { id }, data: { name } });
+    } else if (key === "category") {
+      const category = value.trim() || null;
+      if (kind === "guaranteed") await prisma.guaranteedBenefit.update({ where: { id }, data: { category } });
+      else await prisma.benefitCatalogItem.update({ where: { id }, data: { category } });
+    } else if (key === "claimType") {
+      if (!["NONE", "NOTE", "PROOF"].includes(value)) return { ok: false, error: "Invalid claim requirement." };
+      const claimType = value as "NONE" | "NOTE" | "PROOF";
+      if (kind === "guaranteed") await prisma.guaranteedBenefit.update({ where: { id }, data: { claimType } });
+      else await prisma.benefitCatalogItem.update({ where: { id }, data: { claimType } });
+    } else if (key === "eligibleFullTime" || key === "eligiblePartTime") {
+      const v = value === "true";
+      const data = key === "eligibleFullTime" ? { eligibleFullTime: v } : { eligiblePartTime: v };
+      if (kind === "guaranteed") await prisma.guaranteedBenefit.update({ where: { id }, data });
+      else await prisma.benefitCatalogItem.update({ where: { id }, data });
+    } else if (key === "coverageRate") {
+      if (kind !== "catalog") return { ok: false, error: "Coverage applies to flexible benefits only." };
+      const item = await prisma.benefitCatalogItem.findUnique({ where: { id }, select: { isMedical: true } });
+      if (!item) return { ok: false, error: "Benefit not found." };
+      if (item.isMedical) return { ok: false, error: "Medical is always 100% covered." };
+      const n = Math.round(Number(value));
+      if (!Number.isFinite(n) || n < 1 || n > 100) return { ok: false, error: "Coverage must be 1–100%." };
+      await prisma.benefitCatalogItem.update({ where: { id }, data: { coverageRate: n } });
+    } else if (key === "active") {
+      if (kind !== "catalog") return { ok: false, error: "Only flexible/medical items can be hidden." };
+      await prisma.benefitCatalogItem.update({ where: { id }, data: { active: value === "true" } });
+    } else {
+      return { ok: false, error: "Unknown field." };
+    }
+  } catch {
+    return { ok: false, error: "Save failed — try again." };
+  }
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+  return { ok: true };
 }
 
 function slugify(s: string): string {

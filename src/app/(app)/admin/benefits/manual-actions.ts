@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isSuperUser } from "@/lib/roles";
-import { getActivePlanYear, amountForBand } from "@/lib/benefits/config";
+import { getActivePlanYear, amountForBand, isEligibleFor, isSalaryDriven } from "@/lib/benefits/config";
 import { flexCap } from "@/lib/benefits/rules";
 
 export type ManualResult = { ok: true } | { ok: false; error: string };
@@ -53,12 +53,13 @@ export async function recordManualRelease(formData: FormData): Promise<ManualRes
   if (kind === "guaranteed") {
     const gb = await prisma.guaranteedBenefit.findUnique({ where: { id } });
     if (!gb) return { ok: false, error: "Guaranteed benefit not found." };
-    if (user.employmentType && gb.employmentType !== user.employmentType) {
+    if (!user.employmentType) {
+      return { ok: false, error: "The employee has no employment type set." };
+    }
+    if (!isEligibleFor(user.employmentType, gb)) {
       return { ok: false, error: "That guaranteed benefit doesn't apply to this employee's employment type." };
     }
-    const salaryDriven =
-      gb.band6mo2y == null && gb.band2to4y == null && gb.band4to7y == null && gb.band7to10y == null;
-    if (salaryDriven) {
+    if (isSalaryDriven(gb)) {
       // Loans etc. — the allocation is the employee's monthly salary (confidential). Only a Super
       // User may record against it, so an HR Admin never sees the salary via the allocation.
       if (!isSuperUser(actor.role)) {
@@ -70,7 +71,7 @@ export async function recordManualRelease(formData: FormData): Promise<ManualRes
       allocation = user.monthlySalary;
     } else {
       if (!user.tenureBand) return { ok: false, error: "The employee has no tenure band set." };
-      allocation = amountForBand(user.tenureBand, gb);
+      allocation = amountForBand(user.employmentType, user.tenureBand, gb);
     }
     claimWhere.guaranteedBenefitId = id;
   } else if (kind === "catalog") {

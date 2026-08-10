@@ -3,7 +3,6 @@ import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { EmployeeForm } from "@/components/admin/EmployeeForm";
 import { AdminPasswordCard } from "@/components/admin/AdminPasswordCard";
-import { ResetBenefitsCard } from "@/components/admin/ResetBenefitsCard";
 import { getDepartments } from "@/lib/departments";
 import { BackLink } from "@/components/admin/BackLink";
 import { updateEmployee } from "../actions";
@@ -19,7 +18,7 @@ export default async function EditEmployeePage({
   const actor = await requireAdmin();
   const { id } = await params;
 
-  const [employee, managers, departments, claimAgg, medicalCount, proofCount] = await Promise.all([
+  const [employee, managers, departments] = await Promise.all([
     prisma.user.findUnique({
       where: { id },
       include: { dependants: { orderBy: { dateOfBirth: "asc" } } },
@@ -30,10 +29,6 @@ export default async function EditEmployeePage({
       select: { id: true, name: true },
     }),
     getDepartments(),
-    // Benefits-data counts for the reset card (all plan years).
-    prisma.benefitClaim.aggregate({ where: { userId: id }, _count: true, _sum: { amount: true } }),
-    prisma.medicalCommitment.count({ where: { userId: id } }),
-    prisma.benefitClaim.count({ where: { userId: id, proofUrl: { not: null } } }),
   ]);
 
   if (!employee) notFound();
@@ -86,17 +81,6 @@ export default async function EditEmployeePage({
 
       <div className="mt-8">
         <AdminPasswordCard userId={employee.id} name={employee.name} />
-      </div>
-
-      <div className="mt-8">
-        <ResetBenefitsCard
-          userId={employee.id}
-          name={employee.name}
-          claims={claimAgg._count}
-          claimsTotal={claimAgg._sum.amount ?? 0}
-          medical={medicalCount}
-          proofFiles={proofCount}
-        />
       </div>
     </div>
   );

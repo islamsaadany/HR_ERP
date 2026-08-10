@@ -77,11 +77,12 @@ async function createClaimImpl(formData: FormData): Promise<void> {
 
   if (kind === "guaranteed") {
     const gb = await prisma.guaranteedBenefit.findUnique({ where: { id: benefitId } });
-    if (!gb || gb.employmentType !== user.employmentType) fail("That benefit isn't available to you.");
+    const gbEligible = gb && (user.employmentType === "FULL_TIME" ? gb.eligibleFullTime : gb.eligiblePartTime);
+    if (!gb || !gbEligible) fail("That benefit isn't available to you.");
     benefitName = gb.name;
     claimType = gb.claimType;
     if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
-    const bandAmount = amountForBand(tenureBand, gb) ?? user.monthlySalary ?? null;
+    const bandAmount = amountForBand(user.employmentType, tenureBand, gb) ?? user.monthlySalary ?? null;
     // Only benefits flagged `prorated` (Professional development) shrink for mid-year
     // starters; event/season gifts (marriage, summer, special events, loans) stay full.
     const allocated =
@@ -110,6 +111,8 @@ async function createClaimImpl(formData: FormData): Promise<void> {
   } else if (kind === "catalog") {
     const item = await prisma.benefitCatalogItem.findUnique({ where: { id: benefitId } });
     if (!item || !item.active) fail("That benefit isn't available.");
+    const itemEligible = user.employmentType === "FULL_TIME" ? item.eligibleFullTime : item.eligiblePartTime;
+    if (!itemEligible) fail("That benefit isn't available to you.");
     if (item.isMedical) fail("Medical cover doesn't need a claim.");
     benefitName = item.name;
     claimType = item.claimType;

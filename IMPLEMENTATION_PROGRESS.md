@@ -18,6 +18,17 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Spec 021 — Unified catalogue: FT/PT eligibility + medical split (built, pending Neon migration)
+- [x] Spec `specs/021-benefit-eligibility-medical-split/spec.md`.
+- [x] Schema: `GuaranteedBenefit` → one row per benefit (`eligibleFullTime`/`eligiblePartTime`, `ftBand*`/`ptBand*`; dropped `employmentType` + `band*`); `BenefitCatalogItem` + `eligibleFullTime`/`eligiblePartTime`/`medicalScope`; new enum `MedicalScope`. Migration `prisma/sql/032_benefit_eligibility_and_medical_split.sql` — **verified on a throwaway Postgres across the full 000→032 chain**: 8 guaranteed rows folded to 5 (Marriage/ProfDev/Special-events carry FT+PT amounts; Summer/Loans FT-only), old columns dropped, medical split into Personal+Family, no orphaned rows, columns match schema.
+- [x] Lib: `amountForBand(employmentType, band, row)`, shared `isSalaryDriven`/`isEligibleFor`/`eligibilityWhere`/`medicalScopeFor` in `config.ts`.
+- [x] Server (authoritative): eligibility enforced in `createClaim` (guaranteed + catalog) and `commitMedical` (Personal-only rejects dependants); `release`/`manual`/`release-actions` updated to per-type amounts + eligibility.
+- [x] Admin UI (mockup-approved): unified **Benefits Catalogue** table (Type chip + FT/PT `EligibilityToggles` + claim requirement), **Amounts** tab stripped to numbers only; `setEligibility` action.
+- [x] Employee UI: benefits filtered by eligibility; single medical section with Personal/Family behaviour (dependant pickers only when Family-eligible).
+- [x] `npx tsc --noEmit` + `npm run build` green. UI snapshots in `ui-versions/`. Docs updated (this file, PROJECT_DETAILS, spec 021).
+- [x] Follow-up: **inline-edit Catalogue grid** (`CatalogueGrid`, mirrors the employee registry — click-to-edit cells via `updateCatalogueCell`, click-to-sort, drag-reorder columns persisted, frozen header row + Benefit column); **guaranteed `category`** added (migration `033`, verified on throwaway Postgres) with the note kept as a description. `tsc` + `build` green.
+- [ ] **Apply `032_*.sql` then `033_*.sql` to Neon** (paste after `031`). Clear any existing medical commitments first (Danger-zone reset on the employee page), then set FT/PT eligibility per benefit in the Catalogue.
+
 ## Spec 019 — Mid-year starter proration (built, pending Neon migration)
 - [x] Spec + `/speckit-plan` + `/speckit-tasks` + `/speckit-implement` (`specs/019-mid-year-proration/`).
 - [x] Schema: `PlanYear.startDate`/`endDate` + `GuaranteedBenefit.prorated`; migration `prisma/sql/027_plan_year_window.sql` (**applied cleanly on a throwaway local Postgres, 000→027; profdev flag + entry-tier ceilings verified**).

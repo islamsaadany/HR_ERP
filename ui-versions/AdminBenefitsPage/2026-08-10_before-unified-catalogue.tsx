@@ -6,30 +6,32 @@ import {
   TENURE_BAND_LABEL,
   TENURE_BAND_ORDER,
 } from "@/lib/labels";
-import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS } from "@/lib/benefits/claims";
+import { CLAIM_TYPE_LABEL, CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS } from "@/lib/benefits/claims";
 import { BackLink } from "@/components/admin/BackLink";
 import type { EmploymentType, TenureBand } from "@prisma/client";
 import {
   editMedicalCommitment,
   removeMedicalCommitment,
+  setClaimType,
   approveClaim,
   rejectClaim,
 } from "./actions";
 import {
   updatePoolCeilings,
   updateGuaranteedAmounts,
+  updateCatalogItem,
+  toggleCatalogItem,
   createCatalogItem,
   updateMedicalRateCard,
 } from "./config-actions";
-import { isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
 import { PlanYearDialog } from "@/components/admin/PlanYearDialog";
 import { AdminBenefitsTabs } from "@/components/admin/AdminBenefitsTabs";
 import { EditableSection } from "@/components/admin/EditableSection";
 import { ManualReleaseModal } from "@/components/admin/ManualReleaseModal";
-import { CatalogueGrid, type CatalogueGridRow } from "@/components/admin/CatalogueGrid";
 
 export const dynamic = "force-dynamic";
 const egp = (n: number) => "EGP " + n.toLocaleString();
+const CLAIM_TYPES = ["NONE", "NOTE", "PROOF"] as const;
 
 export default async function AdminBenefitsPage({
   searchParams,
@@ -62,7 +64,7 @@ export default async function AdminBenefitsPage({
             orderBy: { createdAt: "desc" },
           })
         : Promise.resolve([]),
-      prisma.guaranteedBenefit.findMany({ orderBy: [{ order: "asc" }, { name: "asc" }] }),
+      prisma.guaranteedBenefit.findMany({ orderBy: [{ employmentType: "asc" }, { order: "asc" }] }),
       prisma.benefitCatalogItem.findMany({ orderBy: { order: "asc" } }),
       prisma.poolCeiling.findMany(),
       prisma.user.findMany({
@@ -81,23 +83,25 @@ export default async function AdminBenefitsPage({
   const ceilOf = (t: EmploymentType, b: TenureBand) =>
     poolCeilings.find((c) => c.employmentType === t && c.tenureBand === b)?.amount ?? "";
 
-  // Per-employment-type × band amount columns for the numbers-only guaranteed grid (spec 021).
   const GB_BAND_COLS = [
-    { ft: "ftBand6mo2y", pt: "ptBand6mo2y", band: "BAND_6MO_2Y" },
-    { ft: "ftBand2to4y", pt: "ptBand2to4y", band: "BAND_2_4Y" },
-    { ft: "ftBand4to7y", pt: "ptBand4to7y", band: "BAND_4_7Y" },
-    { ft: "ftBand7to10y", pt: "ptBand7to10y", band: "BAND_7_10Y" },
+    { key: "band6mo2y", band: "BAND_6MO_2Y" },
+    { key: "band2to4y", band: "BAND_2_4Y" },
+    { key: "band4to7y", band: "BAND_4_7Y" },
+    { key: "band7to10y", band: "BAND_7_10Y" },
   ] as const;
-  const colFor = (t: EmploymentType, c: (typeof GB_BAND_COLS)[number]) => (t === "FULL_TIME" ? c.ft : c.pt);
 
-  const eligibilityText = (b: { eligibleFullTime: boolean; eligiblePartTime: boolean }) =>
-    b.eligibleFullTime && b.eligiblePartTime ? "Full-time & Part-time" : b.eligibleFullTime ? "Full-time" : b.eligiblePartTime ? "Part-time" : "No one";
+  const isSalaryDriven = (g: {
+    band6mo2y: number | null;
+    band2to4y: number | null;
+    band4to7y: number | null;
+    band7to10y: number | null;
+  }) => g.band6mo2y == null && g.band2to4y == null && g.band4to7y == null && g.band7to10y == null;
 
   // ── Manual-entry benefit list: guaranteed + active catalog items ─────────
   const manualBenefits = [
     ...guaranteedBenefits.map((g) => ({
       value: `guaranteed:${g.id}`,
-      label: `${g.name} (${eligibilityText(g)})`,
+      label: `${g.name} (${EMPLOYMENT_TYPE_LABEL[g.employmentType]})`,
       group: "Guaranteed" as const,
     })),
     ...catalogItems
@@ -106,10 +110,8 @@ export default async function AdminBenefitsPage({
   ];
 
   // ── Edit forms (server-action) reused inside EditableSection editViews ───
-  // Numbers-only guaranteed amounts grid (spec 021): one form per employment type, listing every
-  // benefit eligible for that type; cells write the ft*/pt* columns via `gb_<id>_<column>`.
   const guaranteedEditTable = (t: EmploymentType) => {
-    const rows = guaranteedBenefits.filter((g) => isEligibleFor(t, g));
+    const rows = guaranteedBenefits.filter((g) => g.employmentType === t);
     return (
       <form action={updateGuaranteedAmounts} className="mt-3">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">{EMPLOYMENT_TYPE_LABEL[t]}</h3>
@@ -119,14 +121,12 @@ export default async function AdminBenefitsPage({
               <tr className="text-left text-xs uppercase tracking-wide text-muted">
                 <th className="py-2 pr-6 font-medium">Benefit</th>
                 {GB_BAND_COLS.map((c) => (
-                  <th key={c.band} className="py-2 pr-4 font-medium">{TENURE_BAND_LABEL[c.band]}</th>
+                  <th key={c.key} className="py-2 pr-4 font-medium">{TENURE_BAND_LABEL[c.band]}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 ? (
-                <tr><td colSpan={5} className="py-3 text-xs text-muted">No {EMPLOYMENT_TYPE_LABEL[t].toLowerCase()} benefits — tick eligibility in the Catalogue.</td></tr>
-              ) : rows.map((g) => (
+              {rows.map((g) => (
                 <tr key={g.id} className="border-t border-line align-top">
                   <td className="py-2 pr-6">
                     <div className="text-ink">{g.name}</div>
@@ -136,14 +136,13 @@ export default async function AdminBenefitsPage({
                     <td colSpan={4} className="py-2 text-xs text-muted">Salary-driven — 1 month salary (not a fixed amount)</td>
                   ) : (
                     GB_BAND_COLS.map((c) => {
-                      const col = colFor(t, c);
-                      const v = g[col] ?? "";
+                      const v = g[c.key] ?? "";
                       return (
-                        <td key={c.band} className="py-2 pr-4">
+                        <td key={c.key} className="py-2 pr-4">
                           <input
-                            key={`${g.id}_${col}-${v}`}
+                            key={`${g.id}_${c.key}-${v}`}
                             type="number"
-                            name={`gb_${g.id}_${col}`}
+                            name={`gb_${g.id}_${c.key}`}
                             defaultValue={v}
                             min={0}
                             step={500}
@@ -167,7 +166,7 @@ export default async function AdminBenefitsPage({
 
   // Read-only guaranteed table.
   const guaranteedReadTable = (t: EmploymentType) => {
-    const rows = guaranteedBenefits.filter((g) => isEligibleFor(t, g));
+    const rows = guaranteedBenefits.filter((g) => g.employmentType === t);
     return (
       <div className="mt-3">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">{EMPLOYMENT_TYPE_LABEL[t]}</h3>
@@ -177,14 +176,12 @@ export default async function AdminBenefitsPage({
               <tr className="text-left text-xs uppercase tracking-wide text-muted">
                 <th className="py-2 pr-6 font-medium">Benefit</th>
                 {GB_BAND_COLS.map((c) => (
-                  <th key={c.band} className="py-2 pr-4 font-medium text-right">{TENURE_BAND_LABEL[c.band]}</th>
+                  <th key={c.key} className="py-2 pr-4 font-medium text-right">{TENURE_BAND_LABEL[c.band]}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {rows.length === 0 ? (
-                <tr><td colSpan={5} className="py-3 text-xs text-muted">No {EMPLOYMENT_TYPE_LABEL[t].toLowerCase()} benefits.</td></tr>
-              ) : rows.map((g) => (
+              {rows.map((g) => (
                 <tr key={g.id} className="border-t border-line align-top">
                   <td className="py-2 pr-6">
                     <div className="text-ink">{g.name}</div>
@@ -193,14 +190,11 @@ export default async function AdminBenefitsPage({
                   {isSalaryDriven(g) ? (
                     <td colSpan={4} className="py-2 text-xs text-muted">Salary-driven</td>
                   ) : (
-                    GB_BAND_COLS.map((c) => {
-                      const v = g[colFor(t, c)];
-                      return (
-                        <td key={c.band} className="py-2 pr-4 text-right tabular-nums text-ink">
-                          {v != null ? v.toLocaleString() : "—"}
-                        </td>
-                      );
-                    })
+                    GB_BAND_COLS.map((c) => (
+                      <td key={c.key} className="py-2 pr-4 text-right tabular-nums text-ink">
+                        {g[c.key] != null ? (g[c.key] as number).toLocaleString() : "—"}
+                      </td>
+                    ))
                   )}
                 </tr>
               ))}
@@ -210,6 +204,24 @@ export default async function AdminBenefitsPage({
       </div>
     );
   };
+
+  const typeSelect = (kind: string, id: string, current: string) => (
+    <form action={setClaimType} className="flex items-center gap-1.5">
+      <input type="hidden" name="kind" value={kind} />
+      <input type="hidden" name="id" value={id} />
+      <select
+        key={`${id}-${current}`}
+        name="claimType"
+        defaultValue={current}
+        className="rounded-lg border border-line bg-surface px-2 py-1 text-sm"
+      >
+        {CLAIM_TYPES.map((t) => (
+          <option key={t} value={t}>{CLAIM_TYPE_LABEL[t]}</option>
+        ))}
+      </select>
+      <button className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-navy-700 hover:bg-navy-50">Set</button>
+    </form>
+  );
 
   // ── Tab 1: Submissions & Claims ─────────────────────────────────────────
   const submissionsPanel = (
@@ -359,47 +371,78 @@ export default async function AdminBenefitsPage({
     </div>
   );
 
-  // ── Tab 2: Benefits Catalogue (unified inline grid) ─────────────────────
-  const catalogueRows: CatalogueGridRow[] = [
-    ...guaranteedBenefits.map((g): CatalogueGridRow => ({
-      kind: "guaranteed", id: g.id, name: g.name, note: g.note ?? "",
-      typeLabel: "Guaranteed", scope: "",
-      category: g.category ?? "", claimType: g.claimType,
-      eligibleFullTime: g.eligibleFullTime, eligiblePartTime: g.eligiblePartTime,
-      coverage: isSalaryDriven(g) ? "Salary" : "Fixed", coverageEditable: false, coverageRate: 0,
-      active: true, statusEditable: false, order: g.order,
-    })),
-    ...catalogItems.map((c): CatalogueGridRow => ({
-      kind: "catalog", id: c.id, name: c.name, note: c.description ?? "",
-      typeLabel: c.isMedical ? "Medical" : "Flexible",
-      scope: c.isMedical ? (c.medicalScope === "FAMILY" ? "Family" : "Personal") : "",
-      category: c.category ?? "", claimType: c.claimType,
-      eligibleFullTime: c.eligibleFullTime, eligiblePartTime: c.eligiblePartTime,
-      coverage: c.isMedical ? "100%" : `${c.coverageRate}%`, coverageEditable: !c.isMedical, coverageRate: c.coverageRate,
-      active: c.active, statusEditable: true, order: c.order,
-    })),
-  ];
-  // Category suggestions: the aligned set (spec 021) plus anything already in use.
-  const KNOWN_CATEGORIES = [
-    "Health & protection", "Wellbeing", "Life & family", "Personal growth",
-    "Lifestyle & flexibility", "Allowances & bonuses", "Financial support",
-  ];
-  const catalogueCategories = Array.from(
-    new Set([...KNOWN_CATEGORIES, ...catalogueRows.map((r) => r.category).filter(Boolean)])
-  ).sort();
+  // ── Tab 2: Benefits Catalogue (one table, view-first) ───────────────────
+  const catalogueRead = (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
+            <th className="py-2 pr-4 font-medium">Name</th>
+            <th className="py-2 pr-4 font-medium">Category</th>
+            <th className="py-2 pr-4 font-medium text-right">Order</th>
+            <th className="py-2 pr-4 font-medium">Claim requirement</th>
+            <th className="py-2 pr-4 font-medium text-right">Coverage %</th>
+            <th className="py-2 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {catalogItems.map((c) => (
+            <tr key={c.id} className={"border-b border-line last:border-0 " + (c.active ? "" : "opacity-60")}>
+              <td className="py-2 pr-4 text-ink">
+                {c.name}
+                {c.isMedical ? <span className="ml-1.5 rounded-full bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold text-navy-700">Medical</span> : null}
+              </td>
+              <td className="py-2 pr-4 text-muted">{c.category ?? "—"}</td>
+              <td className="py-2 pr-4 text-right tabular-nums text-muted">{c.order}</td>
+              <td className="py-2 pr-4"><span className="rounded-full bg-navy-50 px-2 py-0.5 text-xs font-semibold text-navy-700">{CLAIM_TYPE_LABEL[c.claimType]}</span></td>
+              <td className="py-2 pr-4 text-right tabular-nums text-ink">{c.isMedical ? "100%" : `${c.coverageRate}%`}</td>
+              <td className="py-2 text-muted">{c.active ? "Visible" : "Hidden"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 
-  const cataloguePanel = (
-    <section className="rounded-xl border border-line bg-surface p-6">
-      <h2 className="font-serif text-lg text-ink">Benefits Catalogue</h2>
-      <p className="mt-1 max-w-[80ch] text-sm text-muted">
-        Every benefit employees can receive — guaranteed, flexible, and medical. Edit inline: set who&apos;s
-        eligible (FT / PT) and how it&apos;s claimed here; amounts live on the Amounts tab. Hidden items stay
-        out of the basket but are never deleted.
-      </p>
-      <CatalogueGrid rows={catalogueRows} categories={catalogueCategories} />
-      <form action={createCatalogItem} className="mt-4 flex flex-wrap items-end gap-2 border-t border-line pt-4">
+  const catalogueEdit = (
+    <div className="space-y-2">
+      {catalogItems.map((c) => (
+        <div key={c.id} className={"rounded-lg border border-line p-3 " + (c.active ? "" : "opacity-60")}>
+          <form action={updateCatalogItem} className="flex flex-wrap items-end gap-2">
+            <input type="hidden" name="id" value={c.id} />
+            <div className="min-w-[150px] flex-1">
+              <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Name</label>
+              <input name="name" defaultValue={c.name} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
+            </div>
+            <div className="min-w-[140px]">
+              <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Category</label>
+              <input name="category" defaultValue={c.category ?? ""} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
+            </div>
+            <div className="w-16">
+              <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Order</label>
+              <input name="order" type="number" min={0} defaultValue={c.order} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums" />
+            </div>
+            <div className="w-20" title={c.isMedical ? "Medical is always 100% covered" : "Company coverage % (0–100)"}>
+              <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Coverage %</label>
+              <input name="coverageRate" type="number" min={1} max={100} defaultValue={c.coverageRate} disabled={c.isMedical} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums disabled:opacity-60" />
+            </div>
+            <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">Save</button>
+          </form>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <span className="text-[11px] uppercase tracking-wide text-muted">Claim requirement</span>
+            {typeSelect("catalog", c.id, c.claimType)}
+            <span className="text-xs text-muted">· {c.active ? "Visible" : "Hidden"}</span>
+            <form action={toggleCatalogItem}>
+              <input type="hidden" name="id" value={c.id} />
+              <input type="hidden" name="active" value={c.active ? "false" : "true"} />
+              <button className="text-xs font-semibold text-navy-600 hover:text-navy-800">{c.active ? "Hide" : "Show"}</button>
+            </form>
+          </div>
+        </div>
+      ))}
+      <form action={createCatalogItem} className="mt-2 flex flex-wrap items-end gap-2 border-t border-line pt-4">
         <div className="min-w-[160px] flex-1">
-          <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">New flexible item name</label>
+          <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">New item name</label>
           <input name="name" placeholder="e.g. Eyewear allowance" className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
         </div>
         <div className="min-w-[150px]">
@@ -412,7 +455,16 @@ export default async function AdminBenefitsPage({
         </div>
         <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">Add item</button>
       </form>
-    </section>
+    </div>
+  );
+
+  const cataloguePanel = (
+    <EditableSection
+      title="Benefits Catalogue"
+      description="The flexible benefits employees can pick — name, category, order, claim requirement, and company coverage %. Hidden items stay out of the basket but are never deleted."
+      readView={catalogueRead}
+      editView={catalogueEdit}
+    />
   );
 
   // ── Tab 3: Amounts ──────────────────────────────────────────────────────
@@ -532,6 +584,27 @@ export default async function AdminBenefitsPage({
     </form>
   );
 
+  const guaranteedReqRead = (
+    <ul className="divide-y divide-line">
+      {guaranteedBenefits.map((g) => (
+        <li key={g.id} className="flex items-center justify-between gap-3 py-2.5">
+          <span className="text-sm text-ink">{g.name} <span className="text-xs text-muted">({EMPLOYMENT_TYPE_LABEL[g.employmentType]})</span></span>
+          <span className="rounded-full bg-navy-50 px-2 py-0.5 text-xs font-semibold text-navy-700">{CLAIM_TYPE_LABEL[g.claimType]}</span>
+        </li>
+      ))}
+    </ul>
+  );
+  const guaranteedReqEdit = (
+    <ul className="divide-y divide-line">
+      {guaranteedBenefits.map((g) => (
+        <li key={g.id} className="flex items-center justify-between gap-3 py-2.5">
+          <span className="text-sm text-ink">{g.name} <span className="text-xs text-muted">({EMPLOYMENT_TYPE_LABEL[g.employmentType]})</span></span>
+          {typeSelect("guaranteed", g.id, g.claimType)}
+        </li>
+      ))}
+    </ul>
+  );
+
   const amountsPanel = (
     <div className="space-y-6">
       <EditableSection
@@ -542,9 +615,15 @@ export default async function AdminBenefitsPage({
       />
       <EditableSection
         title="Guaranteed amounts"
-        description="Fixed entitlements by tenure band, per employment type — just the numbers. Who's eligible and how it's claimed is set on the Catalogue tab. Loans are salary-driven."
+        description="Fixed entitlements each employee receives automatically, by tenure band — separate from the flexible basket. Loans are salary-driven."
         readView={<>{guaranteedReadTable("FULL_TIME")}<div className="mt-4">{guaranteedReadTable("PART_TIME")}</div></>}
         editView={<>{guaranteedEditTable("FULL_TIME")}<div className="mt-6">{guaranteedEditTable("PART_TIME")}</div></>}
+      />
+      <EditableSection
+        title="Guaranteed claim requirements"
+        description="What each guaranteed benefit needs before it's reimbursed: Automatic (paid, no claim), Request (optional note), or Proof required."
+        readView={guaranteedReqRead}
+        editView={guaranteedReqEdit}
       />
       <EditableSection
         title="Medical rate card"

@@ -1,0 +1,285 @@
+<title>Benefits rework — unified catalogue, FT/PT eligibility, medical split (mockup)</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-500:#2f4d78; --navy-600:#1f3a63;
+    --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-50:#fbf7ea; --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-600:#a8821e; --gold-700:#85641b; --gold-800:#6f521c;
+    --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da; --page:#f4f2ec;
+    --green-50:#f0f7f0; --green-200:#bfdabf; --green-700:#2f6b32;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font); line-height:1.5; -webkit-font-smoothing:antialiased; padding:32px 18px 80px; }
+  .wrap { max-width:1000px; margin:0 auto; }
+  .eyebrow { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.16em; color:var(--gold-600); margin:0; }
+  h1 { font-family:var(--serif); font-size:30px; margin:6px 0 4px; font-weight:600; }
+  .lede { color:var(--muted); font-size:15px; max-width:70ch; margin:0 0 8px; }
+  .note-legend { font-size:12.5px; color:var(--muted); background:var(--gold-50); border:1px solid var(--gold-100); border-radius:8px; padding:8px 12px; display:inline-block; margin-top:10px; }
+
+  .tabs { display:flex; gap:4px; margin:28px 0 0; border-bottom:1px solid var(--line); }
+  .tab { padding:9px 16px; font-size:13.5px; font-weight:600; color:var(--muted); border:1px solid transparent; border-bottom:none; border-radius:8px 8px 0 0; }
+  .tab.active { color:var(--navy-800); background:var(--surface); border-color:var(--line); position:relative; top:1px; }
+
+  .panel { background:var(--surface); border:1px solid var(--line); border-top:none; border-radius:0 0 12px 12px; padding:22px; }
+  .panel h2 { font-family:var(--serif); font-size:19px; margin:0 0 2px; }
+  .panel .desc { color:var(--muted); font-size:13.5px; margin:0 0 16px; max-width:75ch; }
+
+  .section-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--navy-700); margin:26px 0 10px; }
+
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  thead th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600; padding:8px 12px; border-bottom:1px solid var(--line); }
+  thead th.num, td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  thead th.ctr, td.ctr { text-align:center; }
+  tbody td { padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  .tbl-scroll { overflow-x:auto; border:1px solid var(--line); border-radius:10px; }
+
+  .bname { font-weight:600; color:var(--ink); }
+  .bsub { font-size:12px; color:var(--muted); }
+
+  .chip { display:inline-block; border-radius:999px; padding:2px 9px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+  .chip-guar { background:var(--gold-50); color:var(--gold-800); border:1px solid var(--gold-100); }
+  .chip-flex { background:var(--navy-50); color:var(--navy-700); }
+  .chip-med  { background:#efe9f7; color:#5b3fa0; }
+  .chip-claim { background:var(--navy-50); color:var(--navy-700); font-weight:600; text-transform:none; letter-spacing:0; }
+  .chip-cat { color:var(--muted); font-size:12.5px; }
+
+  /* checkbox cells */
+  .cbx { width:18px; height:18px; border-radius:5px; border:1.5px solid var(--navy-300,#7d97ba); display:inline-grid; place-items:center; background:var(--surface); }
+  .cbx.on { background:var(--navy-700); border-color:var(--navy-700); color:#fff; }
+  .cbx svg { width:12px; height:12px; }
+  .cbx.off { background:var(--surface); }
+
+  .muted { color:var(--muted); }
+  .callout { margin-top:18px; display:flex; gap:10px; background:var(--gold-50); border:1px solid var(--gold-100); border-radius:10px; padding:12px 14px; font-size:13px; color:var(--gold-800); }
+  .callout b { color:var(--ink); }
+
+  .before-after { display:grid; gap:14px; grid-template-columns:1fr; margin-top:6px; }
+  .ba-card { border:1px dashed var(--line); border-radius:10px; padding:14px; background:#fbfaf7; }
+  .ba-card h4 { margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+
+  /* employee medical cards */
+  .emp-grid { display:grid; gap:18px; grid-template-columns:1fr; }
+  @media (min-width:820px){ .emp-grid{ grid-template-columns:1fr 1fr; } }
+  .modal { border:1px solid var(--line); border-radius:16px; background:var(--surface); padding:20px; box-shadow:0 8px 30px -12px rgba(15,36,68,.18); }
+  .modal h3 { font-family:var(--serif); font-size:18px; margin:0; }
+  .modal p.sub { font-size:13px; color:var(--muted); margin:6px 0 0; }
+  .dep-row { display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px solid var(--line); border-radius:10px; padding:11px 14px; margin-top:10px; }
+  .dep-row .t { font-size:13.5px; font-weight:500; }
+  .dep-row .p { font-size:12px; color:var(--muted); }
+  .dep-row.disabled { opacity:.4; }
+  .premium { display:flex; align-items:center; justify-content:space-between; background:var(--navy-50); border-radius:10px; padding:11px 14px; margin-top:14px; }
+  .premium .lab { font-size:13px; font-weight:600; color:var(--navy-800); }
+  .premium .val { font-family:var(--serif); font-size:18px; color:var(--navy-800); font-variant-numeric:tabular-nums; }
+  .pill-scope { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:2px 8px; border-radius:999px; background:#efe9f7; color:#5b3fa0; margin-left:6px; }
+  .btn-navy { border:none; border-radius:8px; background:var(--navy-800); color:#fff; padding:9px 16px; font-size:13.5px; font-weight:600; margin-top:16px; }
+  .cnt { display:inline-flex; align-items:center; gap:10px; }
+  .cnt .b { width:26px; height:26px; border-radius:7px; border:1px solid var(--line); background:var(--surface); font-weight:700; color:var(--navy-700); display:grid; place-items:center; }
+  .tag-elig { font-size:11px; color:var(--muted); }
+  .divider { height:1px; background:var(--line); margin:30px 0; border:0; }
+  .step { display:inline-block; font-size:11px; font-weight:700; color:#fff; background:var(--navy-700); border-radius:999px; padding:2px 10px; letter-spacing:.04em; }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Admin · Benefits · Proposed</p>
+  <h1>Benefits rework — one catalogue, FT/PT eligibility, split medical</h1>
+  <p class="lede">Mockup for sign-off. Nothing is built yet. Three views: the unified <b>Benefits Catalogue</b>, the numbers-only <b>Amounts</b> tab, and the employee <b>medical setup</b> under the Personal / Family split. Real palette, illustrative figures.</p>
+  <span class="note-legend">Legend — <b>Type</b> chip: <span class="chip chip-guar">Guaranteed</span> fixed amount · <span class="chip chip-flex">Flexible</span> % coverage · <span class="chip chip-med">Medical</span> committed. FT / PT columns are the new eligibility checkboxes.</span>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab">Submissions &amp; Claims</div>
+    <div class="tab active">Benefits Catalogue</div>
+    <div class="tab">Amounts</div>
+  </div>
+
+  <!-- TAB 2: unified catalogue -->
+  <div class="panel">
+    <h2>Benefits Catalogue</h2>
+    <p class="desc">Every benefit employees can receive — guaranteed, flexible, and medical — in one list. Set <b>who's eligible</b> (Full-time / Part-time) and <b>how it's claimed</b> here. The actual money (band amounts, coverage, rate card) is set on the <b>Amounts</b> tab.</p>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Benefit</th>
+            <th>Type</th>
+            <th>Category</th>
+            <th>Claim requirement</th>
+            <th class="ctr">FT</th>
+            <th class="ctr">PT</th>
+            <th class="num">Order</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="bname">Professional development</div><div class="bsub">Courses, certifications, conferences.</div></td>
+            <td><span class="chip chip-guar">Guaranteed</span></td>
+            <td class="chip-cat">Growth</td>
+            <td><span class="chip chip-claim">Proof required</span></td>
+            <td class="ctr"><span class="cbx on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg></span></td>
+            <td class="ctr"><span class="cbx on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg></span></td>
+            <td class="num">1</td>
+            <td class="muted">Visible</td>
+          </tr>
+          <tr>
+            <td><div class="bname">Marriage gift</div><div class="bsub">One-off on marriage.</div></td>
+            <td><span class="chip chip-guar">Guaranteed</span></td>
+            <td class="chip-cat">Life events</td>
+            <td><span class="chip chip-claim">Note</span></td>
+            <td class="ctr"><span class="cbx on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg></span></td>
+            <td class="ctr"><span class="cbx off"></span></td>
+            <td class="num">2</td>
+            <td class="muted">Visible</td>
+          </tr>
+          <tr>
+            <td><div class="bname">Sports expenses</div><div class="bsub">Equipment, classes, activities.</div></td>
+            <td><span class="chip chip-flex">Flexible</span></td>
+            <td class="chip-cat">Wellbeing</td>
+            <td><span class="chip chip-claim">Proof required</span></td>
+            <td class="ctr"><span class="cbx on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg></span></td>
+            <td class="ctr"><span class="cbx on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg></span></td>
+            <td class="num">3</td>
+            <td class="muted">Visible</td>
+          </tr>
+          <tr>
+            <td><div class="bname">Personal medical insurance</div><div class="bsub">Covers the employee only.</div></td>
+            <td><span class="chip chip-med">Medical</span></td>
+            <td class="chip-cat">Health</td>
+            <td><span class="chip chip-claim">Committed</span></td>
+            <td class="ctr"><span class="cbx on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg></span></td>
+            <td class="ctr"><span class="cbx on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg></span></td>
+            <td class="num">4</td>
+            <td class="muted">Visible</td>
+          </tr>
+          <tr>
+            <td><div class="bname">Family medical insurance</div><div class="bsub">Employee + spouse + children.</div></td>
+            <td><span class="chip chip-med">Medical</span></td>
+            <td class="chip-cat">Health</td>
+            <td><span class="chip chip-claim">Committed</span></td>
+            <td class="ctr"><span class="cbx on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg></span></td>
+            <td class="ctr"><span class="cbx off"></span></td>
+            <td class="num">5</td>
+            <td class="muted">Visible</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <span>ⓘ&nbsp;</span>
+      <span>In this example a <b>Part-timer</b> would <b>not</b> see “Marriage gift” or “Family medical” (PT unticked), but would see everything else. Toggling a checkbox is what connects a benefit to each employment type — no more separate FT/PT rows.</span>
+    </div>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- TAB 3: amounts, numbers only -->
+  <p class="step">Amounts tab</p>
+  <div class="panel" style="border-top:1px solid var(--line); border-radius:12px; margin-top:12px;">
+    <h2>Amounts <span class="muted" style="font-family:var(--font); font-size:13px; font-weight:400;">— numbers only</span></h2>
+    <p class="desc">Just the figures. No names, claim rules, or eligibility here (those live in the Catalogue). Guaranteed amounts stay separate for Full-time and Part-time, exactly as today.</p>
+
+    <div class="section-label">Pool ceiling — per tenure band</div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Tenure band</th><th class="num">Full-time</th><th class="num">Part-time</th></tr></thead>
+        <tbody>
+          <tr><td>6 months – 2 years</td><td class="num">EGP 40,000</td><td class="num">EGP 20,000</td></tr>
+          <tr><td>2 – 4 years</td><td class="num">EGP 55,000</td><td class="num">EGP 27,500</td></tr>
+          <tr><td>4 – 7 years</td><td class="num">EGP 70,000</td><td class="num">EGP 35,000</td></tr>
+          <tr><td>7 – 10 years</td><td class="num">EGP 85,000</td><td class="num">EGP 42,500</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-label">Guaranteed benefit amounts — Full-time</div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Benefit</th><th class="num">6mo–2y</th><th class="num">2–4y</th><th class="num">4–7y</th><th class="num">7–10y</th></tr></thead>
+        <tbody>
+          <tr><td>Professional development</td><td class="num">10,000</td><td class="num">14,000</td><td class="num">18,000</td><td class="num">22,000</td></tr>
+          <tr><td>Marriage gift</td><td class="num">8,000</td><td class="num">8,000</td><td class="num">8,000</td><td class="num">8,000</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-label">Guaranteed benefit amounts — Part-time</div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Benefit</th><th class="num">6mo–2y</th><th class="num">2–4y</th><th class="num">4–7y</th><th class="num">7–10y</th></tr></thead>
+        <tbody>
+          <tr><td>Professional development</td><td class="num">5,000</td><td class="num">7,000</td><td class="num">9,000</td><td class="num">11,000</td></tr>
+          <tr><td class="muted">Marriage gift</td><td class="num muted" colspan="4" style="text-align:left;">Not eligible for Part-time (unticked in Catalogue)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-label">Medical rate card — annual premium per person</div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Self</th><th class="num">Spouse</th><th class="num">Child under 18</th><th class="num">Child 18+</th></tr></thead>
+        <tbody><tr><td class="num" style="text-align:left;">EGP 12,000</td><td class="num">EGP 9,000</td><td class="num">EGP 6,000</td><td class="num">EGP 7,000</td></tr></tbody>
+      </table>
+    </div>
+    <p class="muted" style="font-size:12.5px; margin-top:10px;">Personal medical uses <b>Self</b> only. Family medical adds spouse / children from the same card.</p>
+  </div>
+
+  <hr class="divider" />
+
+  <!-- Employee medical split -->
+  <p class="step">Employee view — medical setup</p>
+  <h2 style="font-family:var(--serif); font-size:20px; margin:14px 0 4px;">What the employee sees, driven by eligibility</h2>
+  <p class="lede">The dependant pickers appear only when the employee is eligible for <b>Family</b> medical. Otherwise it's self-only.</p>
+
+  <div class="emp-grid">
+    <!-- Personal only -->
+    <div class="modal">
+      <h3>Medical insurance <span class="pill-scope">Personal</span></h3>
+      <p class="sub">You're covered. This employee is eligible for <b>Personal</b> medical only — no dependants.</p>
+      <div class="dep-row">
+        <div><div class="t">You</div><div class="p">EGP 12,000</div></div>
+        <span class="p">Included</span>
+      </div>
+      <div class="dep-row disabled">
+        <div><div class="t">Spouse / children</div><div class="p">Available on Family cover</div></div>
+        <span class="p">Not eligible</span>
+      </div>
+      <div class="premium"><span class="lab">Annual premium (100% covered)</span><span class="val">EGP 12,000</span></div>
+      <button class="btn-navy">Commit medical</button>
+      <p class="tag-elig" style="margin-top:8px;">Shown to: Part-timer eligible for Personal only.</p>
+    </div>
+
+    <!-- Family -->
+    <div class="modal">
+      <h3>Medical insurance <span class="pill-scope">Family</span></h3>
+      <p class="sub">You're always covered. Add dependants below. 100% company-covered; locked once committed.</p>
+      <div class="dep-row">
+        <div><div class="t">You</div><div class="p">EGP 12,000</div></div>
+        <span class="p">Included</span>
+      </div>
+      <label class="dep-row">
+        <div><div class="t">Spouse</div><div class="p">EGP 9,000</div></div>
+        <span class="cbx on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg></span>
+      </label>
+      <div class="dep-row">
+        <div><div class="t">Children under 18</div><div class="p">EGP 6,000 each</div></div>
+        <span class="cnt"><span class="b">–</span><b>2</b><span class="b">+</span></span>
+      </div>
+      <div class="dep-row">
+        <div><div class="t">Children 18+</div><div class="p">EGP 7,000 each</div></div>
+        <span class="cnt"><span class="b">–</span><b>0</b><span class="b">+</span></span>
+      </div>
+      <div class="premium"><span class="lab">Annual premium (100% covered)</span><span class="val">EGP 33,000</span></div>
+      <button class="btn-navy">Commit medical</button>
+      <p class="tag-elig" style="margin-top:8px;">Shown to: Full-timer eligible for Family.</p>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:22px;">
+    <span>ⓘ&nbsp;</span>
+    <span><b>Open question for you:</b> if an employee is eligible for <b>both</b> Personal and Family, my default is a <b>single</b> medical section that behaves like the Family card (dependants optional — leave them empty for personal-only). The alternative is showing two separate rows to choose from. Tell me which you prefer.</span>
+  </div>
+</div>

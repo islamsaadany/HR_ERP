@@ -3,19 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
-import { getActivePlanYear, amountForBand } from "@/lib/benefits/config";
+import { getActivePlanYear, amountForBand, isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
 
 export type ReleaseResult = { ok: boolean; error?: string };
-
-/** A guaranteed benefit is salary-driven (Loans) when all four band amounts are null. */
-function isSalaryDriven(b: {
-  band6mo2y: number | null;
-  band2to4y: number | null;
-  band4to7y: number | null;
-  band7to10y: number | null;
-}): boolean {
-  return b.band6mo2y == null && b.band2to4y == null && b.band4to7y == null && b.band7to10y == null;
-}
 
 /**
  * Mark (or un-mark) a set of employees as "Released" for a fixed-allowance guaranteed benefit,
@@ -41,13 +31,19 @@ export async function setReleased(
   if (userIds.length === 0) return { ok: true };
 
   if (released) {
-    // Only active employees of this benefit's employment type, with a resolvable band amount.
+    // Only active employees whose employment type is eligible for this benefit, with a resolvable band amount.
     const users = await prisma.user.findMany({
-      where: { id: { in: userIds }, status: "ACTIVE", employmentType: benefit.employmentType },
-      select: { id: true, tenureBand: true },
+      where: { id: { in: userIds }, status: "ACTIVE" },
+      select: { id: true, tenureBand: true, employmentType: true },
     });
     const data = users
-      .map((u) => ({ id: u.id, amount: u.tenureBand ? amountForBand(u.tenureBand, benefit) : null }))
+      .map((u) => ({
+        id: u.id,
+        amount:
+          u.tenureBand && u.employmentType && isEligibleFor(u.employmentType, benefit)
+            ? amountForBand(u.employmentType, u.tenureBand, benefit)
+            : null,
+      }))
       .filter((x): x is { id: string; amount: number } => x.amount != null)
       .map((x) => ({
         userId: x.id,

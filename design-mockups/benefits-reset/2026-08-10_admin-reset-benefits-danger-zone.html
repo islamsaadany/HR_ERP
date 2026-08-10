@@ -1,0 +1,120 @@
+<title>Admin — Reset benefits data (mockup)</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-500:#2f4d78; --navy-600:#1f3a63;
+    --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-50:#fbf7ea; --gold-300:#e0c05a; --gold-600:#a8821e; --gold-700:#85641b;
+    --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --page:#f4f2ec;
+    --red-50:#fef2f2; --red-100:#fee2e2; --red-200:#fecaca; --red-300:#fca5a5;
+    --red-500:#ef4444; --red-600:#dc2626; --red-700:#b91c1c; --red-800:#991b1b;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:var(--font); line-height:1.5;
+         -webkit-font-smoothing:antialiased; padding:40px 20px; }
+  .wrap { max-width:760px; margin:0 auto; }
+  .eyebrow { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.15em; color:var(--gold-600); margin:0; }
+  h1.page { font-family:var(--serif); font-size:30px; margin:6px 0 28px; font-weight:600; color:var(--ink); }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .card h2 { font-family:var(--serif); font-size:18px; margin:0; font-weight:600; }
+  .card p.sub { font-size:14px; color:var(--muted); margin:6px 0 0; }
+  .muted-note { color:var(--muted); }
+  .stack { display:flex; flex-direction:column; gap:24px; }
+
+  /* existing password card look (context only) */
+  .row-form { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px; margin-top:16px; }
+  label.lbl { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:4px; }
+  .input { width:100%; border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:8px 12px; font-size:14px; color:var(--ink); font-family:inherit; }
+  .input:focus { outline:none; border-color:var(--navy-500); }
+  .field { flex:1; min-width:220px; }
+  .btn-navy { border:none; border-radius:8px; background:var(--navy-800); color:#fff; padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer; }
+  .btn-navy:hover { background:var(--navy-700); }
+
+  /* danger zone */
+  .danger { border:1px solid var(--red-200); background:linear-gradient(180deg,var(--red-50), var(--surface) 70%); }
+  .danger .tag { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--red-700); }
+  .danger .tag .dot { width:7px; height:7px; border-radius:50%; background:var(--red-500); }
+  .danger h2 { color:var(--ink); margin-top:8px; }
+  .summary { margin-top:16px; border:1px solid var(--red-100); background:var(--surface); border-radius:10px; padding:14px 16px; }
+  .summary .row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:6px 0; font-size:14px; }
+  .summary .row + .row { border-top:1px dashed var(--line); }
+  .summary .k { color:var(--muted); }
+  .summary .v { font-weight:600; font-variant-numeric:tabular-nums; }
+  .keep { color:var(--muted); font-size:12.5px; margin-top:12px; }
+
+  .confirm { margin-top:18px; }
+  .confirm .lbl b { color:var(--ink); }
+  .confirm .input { max-width:340px; border-color:var(--red-200); }
+  .confirm .input:focus { border-color:var(--red-500); }
+
+  .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:18px; }
+  .btn-reset { border:1px solid var(--red-300); background:var(--surface); color:var(--red-700); border-radius:8px; padding:10px 16px; font-size:14px; font-weight:600; cursor:not-allowed; opacity:.55; }
+  .btn-erase { border:none; background:var(--red-600); color:#fff; border-radius:8px; padding:10px 16px; font-size:14px; font-weight:600; cursor:not-allowed; opacity:.55; }
+  .btn-help { flex-basis:100%; font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .btn-help b { color:var(--ink); }
+
+  .callout { margin-top:16px; display:flex; gap:10px; align-items:flex-start; background:var(--red-50); border:1px solid var(--red-100); border-radius:10px; padding:12px 14px; font-size:13px; color:var(--red-800); }
+  .callout svg { flex-shrink:0; margin-top:1px; }
+
+  .divider-note { text-align:center; font-size:12px; color:var(--muted); margin:4px 0 -6px; }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Admin · Registry</p>
+  <h1 class="page">Edit — Omar Hassan</h1>
+
+  <div class="stack">
+
+    <!-- existing card, shown only for context (unchanged) -->
+    <div class="card" style="opacity:.72;">
+      <h2>Sign-in password</h2>
+      <p class="sub">Set a password for Omar Hassan, or leave it blank to generate a temporary one. <span class="muted-note">(existing card — unchanged, shown for context)</span></p>
+      <div class="row-form">
+        <div class="field">
+          <label class="lbl">New password (optional)</label>
+          <input class="input" placeholder="Leave blank to generate" />
+        </div>
+        <button class="btn-navy" type="button">Set / reset password</button>
+      </div>
+    </div>
+
+    <p class="divider-note">▼ new card below ▼</p>
+
+    <!-- NEW: danger zone -->
+    <div class="card danger">
+      <span class="tag"><span class="dot"></span> Danger zone</span>
+      <h2>Reset benefits data</h2>
+      <p class="sub">Removes <b>Omar Hassan</b>&rsquo;s benefit claims and medical commitment across <b>all plan years</b>, so you can re-test from a clean slate. This does <b>not</b> touch their profile, role, password, or documents.</p>
+
+      <div class="summary">
+        <div class="row"><span class="k">Benefit claims (all statuses, all years)</span><span class="v">3 claims · EGP 12,000</span></div>
+        <div class="row"><span class="k">Medical commitment</span><span class="v">1 committed</span></div>
+        <div class="row"><span class="k">Uploaded proof files</span><span class="v">2 files</span></div>
+      </div>
+
+      <div class="confirm">
+        <label class="lbl">Type <b>Omar Hassan</b> to confirm</label>
+        <input class="input" placeholder="Omar Hassan" />
+      </div>
+
+      <div class="actions">
+        <button class="btn-reset" type="button" disabled>Reset — keep uploaded files</button>
+        <button class="btn-erase" type="button" disabled>Full erase — also delete files</button>
+        <p class="btn-help">
+          <b>Reset</b> deletes the claim &amp; medical records but leaves the 2 proof files in storage.
+          <b>Full erase</b> also deletes those files permanently. Both give the employee a clean slate.
+          Buttons stay disabled until the name matches.
+        </p>
+      </div>
+
+      <div class="callout">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>This permanently deletes data and can&rsquo;t be undone. Intended for clearing test data.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
