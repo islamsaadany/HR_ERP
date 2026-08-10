@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useCallback, useContext, createContext, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { ClaimType, ClaimStatus } from "@prisma/client";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS, tracker } from "@/lib/benefits/claims";
@@ -11,30 +11,6 @@ import { createClaim } from "@/app/(app)/benefits/claim-actions";
 import { commitMedical } from "@/app/(app)/benefits/actions";
 
 const egp = (n: number) => "EGP " + Math.round(n).toLocaleString();
-
-// Lightweight success-toast plumbing: a claim form calls notify(text); toasts
-// float top-right and auto-dismiss. Errors stay inline near the form.
-const ToastContext = createContext<(text: string) => void>(() => {});
-
-type Toast = { id: number; text: string };
-function ToastRegion({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
-  if (toasts.length === 0) return null;
-  return (
-    <div className="fixed right-4 top-4 z-[60] flex flex-col gap-2">
-      {toasts.map((t) => (
-        <button
-          key={t.id}
-          type="button"
-          onClick={() => onDismiss(t.id)}
-          className="ff-toast flex items-center gap-2.5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-left text-sm font-semibold text-green-700 shadow-lg"
-        >
-          <span className="h-2 w-2 shrink-0 rounded-full bg-green-600" aria-hidden="true" />
-          <span>✓ {t.text}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export type BoardClaim = {
   amount: number;
@@ -125,17 +101,15 @@ export function BenefitsBoard({
   const [medOpen, setMedOpen] = useState(false);
   const [gClaim, setGClaim] = useState<BoardGuaranteed | null>(null);
   const pct = ceiling > 0 ? Math.min(100, (poolUsed / ceiling) * 100) : 0;
-
-  // Floating success toasts (replaces the old redirect banner). notify() is shared
-  // with the claim forms via ToastContext; each toast auto-dismisses.
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const toastId = useRef(0);
-  const dismissToast = useCallback((id: number) => setToasts((t) => t.filter((x) => x.id !== id)), []);
-  const notify = useCallback((text: string) => {
-    const id = ++toastId.current;
-    setToasts((t) => [...t, { id, text }]);
-    setTimeout(() => dismissToast(id), 4000);
-  }, [dismissToast]);
+  const successBanner = claimSuccess ? (
+    <p className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+      <span aria-hidden="true" className="font-bold">✓</span>
+      <span>
+        <strong>Claim submitted.</strong> HR will review it and release your reimbursement — you&apos;ll see it
+        move to <em>Released</em> here once approved.
+      </span>
+    </p>
+  ) : null;
   const proratedBadge = proration ? (
     <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-800">
       Prorated · {proration.months} of 12 mo
@@ -152,6 +126,7 @@ export function BenefitsBoard({
             <h2 className="font-serif text-xl">Personal medical insurance</h2>
           </div>
           <div className="space-y-3 bg-surface p-5">
+            {successBanner}
             {error ? <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
             <MedicalRow committed={medicalCommitted} onSetup={() => setMedOpen(true)} />
             {medicalProration ? (
@@ -178,7 +153,7 @@ export function BenefitsBoard({
   }
 
   return (
-    <ToastContext.Provider value={notify}>
+    <>
       {/* Guaranteed band — full width, above the two columns */}
       <section className="mt-6 overflow-hidden rounded-2xl border border-line">
         <div className="bg-navy-900 px-6 py-4 text-white">
@@ -219,6 +194,7 @@ export function BenefitsBoard({
         benefit, and only that covered share draws from your pool.
       </p>
 
+      {claimSuccess ? <div className="mt-4">{successBanner}</div> : null}
       {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
       {automatic.length > 0 ? (
         <p className="mt-4 rounded-lg bg-navy-50 px-4 py-3 text-sm text-navy-700">
@@ -304,9 +280,7 @@ export function BenefitsBoard({
 
       {/* Guaranteed claim modal */}
       {gClaim ? <GuaranteedClaimModal benefit={gClaim} onClose={() => setGClaim(null)} /> : null}
-
-      <ToastRegion toasts={toasts} onDismiss={dismissToast} />
-    </ToastContext.Provider>
+    </>
   );
 }
 
@@ -352,14 +326,8 @@ function FlexRow({ item }: { item: BoardFlex }) {
   const t = tracker(item.allocated, item.claims);
   const remaining = t.remaining ?? 0;
   const fullyClaimed = item.allocated != null && remaining <= 0;
-  // Controlled open state so the card stays expanded through a soft refresh after submitting.
-  const [open, setOpen] = useState(false);
   return (
-    <details
-      open={open}
-      onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
-      className="group rounded-xl border border-line bg-surface open:border-navy-700"
-    >
+    <details className="group rounded-xl border border-line bg-surface open:border-navy-700">
       <summary className="cursor-pointer list-none p-4 [&::-webkit-details-marker]:hidden">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -413,10 +381,9 @@ function FlexRow({ item }: { item: BoardFlex }) {
 /** Full-price claim form for a flexible benefit with a live covered preview. */
 function FlexClaimForm({ item, remaining }: { item: BoardFlex; remaining: number }) {
   const router = useRouter();
-  const notify = useContext(ToastContext);
   const [fullCost, setFullCost] = useState(0);
   const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const covered = coveredAmount(fullCost, item.coverageRate);
   const over = covered > remaining;
 
@@ -424,16 +391,16 @@ function FlexClaimForm({ item, remaining }: { item: BoardFlex; remaining: number
     e.preventDefault();
     const form = e.currentTarget;
     const data = new FormData(form);
-    setError(null);
+    setMsg(null);
     startTransition(async () => {
       const res = await createClaim(data);
       if (res.ok) {
-        notify("Claim submitted — awaiting HR review."); // floating toast
+        setMsg({ ok: true, text: "Claim submitted — awaiting HR review." });
         setFullCost(0);
         form.reset(); // clears the file input / note; amount is controlled and set above
-        router.refresh(); // soft-refresh: this card's history/status updates in place; card stays open
+        router.refresh(); // soft-refresh: this card's history/status updates in place, no full reload
       } else {
-        setError(res.error);
+        setMsg({ ok: false, text: res.error });
       }
     });
   }
@@ -471,8 +438,16 @@ function FlexClaimForm({ item, remaining }: { item: BoardFlex; remaining: number
       <button disabled={pending || fullCost <= 0 || over} className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50">
         {pending ? "Submitting…" : "Submit claim"}
       </button>
-      {error ? (
-        <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{error}</p>
+      {msg ? (
+        <p
+          className={
+            "mt-2 rounded-lg px-3 py-2 text-xs font-medium " +
+            (msg.ok ? "bg-navy-50 text-navy-700" : "bg-red-50 text-red-700")
+          }
+        >
+          {msg.ok ? "✓ " : ""}
+          {msg.text}
+        </p>
       ) : null}
     </form>
   );
@@ -582,7 +557,6 @@ function MedicalModal({ rate, ceiling, premiumFraction = 1, onClose }: { rate: B
 /** Modal to claim/request a guaranteed benefit. */
 function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; onClose: () => void }) {
   const router = useRouter();
-  const notify = useContext(ToastContext);
   const t = tracker(benefit.allocated, benefit.claims);
   const isProof = benefit.claimType === "PROOF";
   const [pending, startTransition] = useTransition();
@@ -595,7 +569,6 @@ function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; 
     startTransition(async () => {
       const res = await createClaim(data);
       if (res.ok) {
-        notify("Claim submitted — awaiting HR review.");
         router.refresh(); // the underlying benefit card updates in place
         onClose();
       } else {

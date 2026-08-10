@@ -14,36 +14,30 @@ export default async function FinancePage({
   const { paid, error } = await searchParams;
 
   const claims = await prisma.benefitClaim.findMany({
-    where: { status: { in: ["APPROVED", "REIMBURSED"] } },
+    where: { status: "APPROVED" },
     include: {
       user: { select: { name: true } },
       guaranteedBenefit: { select: { name: true } },
       catalogItem: { select: { name: true } },
     },
-    orderBy: { decidedAt: "desc" },
+    orderBy: { decidedAt: "asc" },
   });
 
-  const rows: PaymentRow[] = claims
-    // Awaiting-payment (APPROVED) first, then the reimbursed history.
-    .sort((a, b) => (a.status === "APPROVED" ? 0 : 1) - (b.status === "APPROVED" ? 0 : 1))
-    .map((c) => ({
-      id: c.id,
-      status: c.status === "REIMBURSED" ? "REIMBURSED" : "APPROVED",
-      employee: c.user.name,
-      benefit: c.guaranteedBenefit?.name ?? c.catalogItem?.name ?? "—",
-      covered: c.amount,
-      approvedAt: c.decidedAt ? formatDate(c.decidedAt) : "—",
-      paidAmount: c.amountTransferred ?? null,
-      paidDate: c.transferDate ? formatDate(c.transferDate) : null,
-    }));
+  const rows: PaymentRow[] = claims.map((c) => ({
+    id: c.id,
+    employee: c.user.name,
+    benefit: c.guaranteedBenefit?.name ?? c.catalogItem?.name ?? "—",
+    covered: c.amount,
+    approvedAt: c.decidedAt ? formatDate(c.decidedAt) : "—",
+  }));
 
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Finance · Payments</p>
-      <h1 className="mt-1 font-serif text-3xl text-ink">Payments</h1>
+      <h1 className="mt-1 font-serif text-3xl text-ink">Awaiting payment</h1>
       <p className="mt-1 text-muted">
-        Approved claims to pay — transfer the covered amount, then confirm it here (the employee is emailed). Reimbursed
-        claims stay listed below for reference.
+        Claims HR approved. Transfer the covered amount, then confirm it here — the employee is emailed that their claim
+        was reimbursed.
       </p>
 
       {paid ? (

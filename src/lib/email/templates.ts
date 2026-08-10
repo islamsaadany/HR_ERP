@@ -14,9 +14,11 @@ const PAPER = "#f5f3ee";
 const egp = (n: number) => "EGP " + n.toLocaleString("en-US");
 const link = (path: string) => `${appBaseUrl}${path}`;
 
-function layout(heading: string, bodyRows: string, cta?: { href: string; label: string }): string {
-  const button = cta
-    ? `<tr><td style="padding:22px 0 4px;"><a href="${cta.href}" style="background:${NAVY};color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 20px;border-radius:8px;display:inline-block;">${cta.label}</a></td></tr>`
+function layout(heading: string, bodyHtml: string, cta?: { href: string; label: string }): string {
+  // Only render the CTA when it's an absolute URL — a relative link breaks in mail clients.
+  const showButton = cta && /^https?:\/\//.test(cta.href);
+  const button = showButton
+    ? `<div style="padding-top:16px;"><a href="${cta!.href}" style="background:${NAVY};color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 20px;border-radius:8px;display:inline-block;">${cta!.label}</a></div>`
     : "";
   return `
   <div style="background:${PAPER};padding:28px;font-family:Helvetica,Arial,sans-serif;color:${INK};">
@@ -25,11 +27,9 @@ function layout(heading: string, bodyRows: string, cta?: { href: string; label: 
         <span style="color:${GOLD};font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;">Forefront HR · Benefits</span>
       </td></tr>
       <tr><td style="padding:24px;">
-        <h1 style="margin:0 0 12px;font-size:19px;color:${INK};">${heading}</h1>
-        <table role="presentation" cellpadding="0" cellspacing="0" style="font-size:14px;line-height:1.6;color:${INK};">
-          ${bodyRows}
-          ${button}
-        </table>
+        <h1 style="margin:0 0 14px;font-size:19px;color:${INK};">${heading}</h1>
+        ${bodyHtml}
+        ${button}
       </td></tr>
       <tr><td style="padding:14px 24px;border-top:1px solid ${LINE};color:${MUTED};font-size:11px;">
         Automated notification from the Forefront HR benefits workflow.
@@ -38,9 +38,10 @@ function layout(heading: string, bodyRows: string, cta?: { href: string; label: 
   </div>`;
 }
 
+// One detail line: "Label: value" — renders reliably in every mail client.
 const row = (label: string, value: string) =>
-  `<tr><td style="color:${MUTED};padding:2px 16px 2px 0;white-space:nowrap;">${label}</td><td style="font-weight:600;">${value}</td></tr>`;
-const para = (text: string) => `<tr><td colspan="2" style="padding:0 0 10px;">${text}</td></tr>`;
+  `<p style="margin:0 0 7px;font-size:14px;line-height:1.5;color:${INK};"><span style="color:${MUTED};">${label}:</span> <strong>${value}</strong></p>`;
+const para = (text: string) => `<p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:${INK};">${text}</p>`;
 
 /** T1 — new claim submitted → HR inbox. */
 export function claimSubmittedToHR(d: {

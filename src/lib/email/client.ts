@@ -18,8 +18,18 @@ export type EmailInput = {
   html: string;
 };
 
-/** The public app base for links in emails (best-effort; empty → relative links). */
-export const appBaseUrl = (process.env.NEXTAUTH_URL ?? "").replace(/\/$/, "");
+/**
+ * Absolute base URL for links in emails. Emails have no request context, so a
+ * relative link (e.g. "/admin/benefits") would break in a mail client — we must
+ * emit a full https URL. Honors an explicit APP_URL / NEXTAUTH_URL / AUTH_URL, and
+ * otherwise auto-detects the Vercel deployment URL so it works with no extra config.
+ */
+export const appBaseUrl = (() => {
+  const explicit = process.env.APP_URL || process.env.NEXTAUTH_URL || process.env.AUTH_URL;
+  if (explicit) return explicit.replace(/\/$/, "");
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  return vercel ? `https://${vercel}` : "";
+})();
 
 /** True when the sending secrets are present (key + from-address). Toggle is separate. */
 export function emailConfigured(): boolean {
