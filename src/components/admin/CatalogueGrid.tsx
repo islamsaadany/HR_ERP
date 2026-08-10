@@ -309,7 +309,7 @@ function CatCell({
 
   // ── Status: Visible/Hidden toggle (flexible/medical only) ─────────────────
   if (colKey === "status") {
-    if (!row.statusEditable) return <span className={"text-xs text-muted" + dim}>Visible</span>;
+    if (!row.statusEditable) return <span className={"text-xs italic text-muted" + dim}>Always on</span>;
     return (
       <button
         type="button"
