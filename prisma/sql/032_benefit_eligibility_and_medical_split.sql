@@ -1,7 +1,9 @@
 -- Spec 021 — Unified benefits catalogue: FT/PT eligibility + Personal/Family medical split.
--- Run after 031. Safe to run once (guards where practical). Restructures GuaranteedBenefit from
--- one-row-per-(benefit × employmentType) to one-row-per-benefit with FT/PT eligibility flags and
--- per-type band amounts, and splits medical into Personal (self) and Family (self + dependants).
+-- Run after 031. Idempotent and self-adapting: the legacy guaranteed-benefit data migration
+-- (one-row-per-(benefit × employmentType) → one-row-per-benefit) only runs when the old
+-- `employmentType` column is still present. If the schema was already advanced by a `prisma db
+-- push` (new columns present, `employmentType` gone), that block is skipped and only the medical
+-- split is applied. Safe to re-run.
 BEGIN;
 
 -- ── Medical cover scope enum ────────────────────────────────────────────────
@@ -10,7 +12,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null;
 END $$;
 
--- ── BenefitCatalogItem: eligibility flags + medical scope ───────────────────
+-- ── BenefitCatalogItem: eligibility flags + medical scope (idempotent) ──────
 ALTER TABLE "BenefitCatalogItem"
   ADD COLUMN IF NOT EXISTS "medicalScope" "MedicalScope",
   ADD COLUMN IF NOT EXISTS "eligibleFullTime" boolean NOT NULL DEFAULT true,
@@ -32,7 +34,7 @@ VALUES
    'Health & protection', true, 'FAMILY', true, true, 1, true, 'NOTE', 100)
 ON CONFLICT (key) DO NOTHING;
 
--- ── GuaranteedBenefit: one row per benefit, FT/PT eligibility + per-type amounts ──
+-- ── GuaranteedBenefit: ensure the new columns exist (idempotent) ─────────────
 ALTER TABLE "GuaranteedBenefit"
   ADD COLUMN IF NOT EXISTS "eligibleFullTime" boolean NOT NULL DEFAULT true,
   ADD COLUMN IF NOT EXISTS "eligiblePartTime" boolean NOT NULL DEFAULT true,
@@ -45,46 +47,72 @@ ALTER TABLE "GuaranteedBenefit"
   ADD COLUMN IF NOT EXISTS "ptBand4to7y" integer,
   ADD COLUMN IF NOT EXISTS "ptBand7to10y" integer;
 
--- Move each existing row's band amounts into its own employment type's columns, and set its
--- eligibility to that one type (merging siblings happens next).
-UPDATE "GuaranteedBenefit" SET
-  "ftBand6mo2y"  = CASE WHEN "employmentType" = 'FULL_TIME' THEN "band6mo2y"  END,
-  "ftBand2to4y"  = CASE WHEN "employmentType" = 'FULL_TIME' THEN "band2to4y"  END,
-  "ftBand4to7y"  = CASE WHEN "employmentType" = 'FULL_TIME' THEN "band4to7y"  END,
-  "ftBand7to10y" = CASE WHEN "employmentType" = 'FULL_TIME' THEN "band7to10y" END,
-  "ptBand6mo2y"  = CASE WHEN "employmentType" = 'PART_TIME' THEN "band6mo2y"  END,
-  "ptBand2to4y"  = CASE WHEN "employmentType" = 'PART_TIME' THEN "band2to4y"  END,
-  "ptBand4to7y"  = CASE WHEN "employmentType" = 'PART_TIME' THEN "band4to7y"  END,
-  "ptBand7to10y" = CASE WHEN "employmentType" = 'PART_TIME' THEN "band7to10y" END,
-  "eligibleFullTime" = ("employmentType" = 'FULL_TIME'),
-  "eligiblePartTime" = ("employmentType" = 'PART_TIME');
+-- ── Legacy data migration — ONLY if the old per-type columns still exist ─────
+-- Statements referencing `employmentType`/`band*` are only planned when the branch runs, so this
+-- is safe on a DB where those columns were already dropped.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'GuaranteedBenefit' AND column_name = 'employmentType'
+  ) THEN
+    -- (a) Move each row's band amounts into its own type's columns; eligibility = that one type.
+    UPDATE "GuaranteedBenefit" SET
+      "ftBand6mo2y"  = CASE WHEN "employmentType" = 'FULL_TIME' THEN "band6mo2y"  END,
+      "ftBand2to4y"  = CASE WHEN "employmentType" = 'FULL_TIME' THEN "band2to4y"  END,
+      "ftBand4to7y"  = CASE WHEN "employmentType" = 'FULL_TIME' THEN "band4to7y"  END,
+      "ftBand7to10y" = CASE WHEN "employmentType" = 'FULL_TIME' THEN "band7to10y" END,
+      "ptBand6mo2y"  = CASE WHEN "employmentType" = 'PART_TIME' THEN "band6mo2y"  END,
+      "ptBand2to4y"  = CASE WHEN "employmentType" = 'PART_TIME' THEN "band2to4y"  END,
+      "ptBand4to7y"  = CASE WHEN "employmentType" = 'PART_TIME' THEN "band4to7y"  END,
+      "ptBand7to10y" = CASE WHEN "employmentType" = 'PART_TIME' THEN "band7to10y" END,
+      "eligibleFullTime" = ("employmentType" = 'FULL_TIME'),
+      "eligiblePartTime" = ("employmentType" = 'PART_TIME');
 
--- Pair a FT row with the PT row of the same name (the seed uses matching names), fold the PT
--- amounts into the FT (canonical) row, repoint any claims/releases, then drop the PT row.
-CREATE TEMP TABLE gb_merge ON COMMIT DROP AS
-SELECT ft.id AS keep_id, pt.id AS drop_id,
-       pt."ptBand6mo2y" AS b1, pt."ptBand2to4y" AS b2, pt."ptBand4to7y" AS b3, pt."ptBand7to10y" AS b4
-  FROM "GuaranteedBenefit" ft
-  JOIN "GuaranteedBenefit" pt
-    ON pt.name = ft.name
-   AND ft."eligibleFullTime" AND NOT ft."eligiblePartTime"
-   AND pt."eligiblePartTime" AND NOT pt."eligibleFullTime";
+    -- (b) Repoint claims from each PT row to its FT sibling (by name), before mutating eligibility.
+    UPDATE "BenefitClaim" bc SET "guaranteedBenefitId" = ft.id
+      FROM "GuaranteedBenefit" pt, "GuaranteedBenefit" ft
+     WHERE bc."guaranteedBenefitId" = pt.id
+       AND ft.name = pt.name
+       AND pt."eligiblePartTime" AND NOT pt."eligibleFullTime"
+       AND ft."eligibleFullTime" AND NOT ft."eligiblePartTime";
 
-UPDATE "GuaranteedBenefit" g SET
-  "ptBand6mo2y" = m.b1, "ptBand2to4y" = m.b2, "ptBand4to7y" = m.b3, "ptBand7to10y" = m.b4,
-  "eligiblePartTime" = true
-  FROM gb_merge m WHERE g.id = m.keep_id;
+    -- (c) Repoint releases similarly — first drop any that would collide with an FT-row release.
+    DELETE FROM "BenefitRelease" br
+      USING "GuaranteedBenefit" pt, "GuaranteedBenefit" ft
+     WHERE br."guaranteedBenefitId" = pt.id
+       AND ft.name = pt.name
+       AND pt."eligiblePartTime" AND NOT pt."eligibleFullTime"
+       AND ft."eligibleFullTime" AND NOT ft."eligiblePartTime"
+       AND EXISTS (SELECT 1 FROM "BenefitRelease" k
+                    WHERE k."guaranteedBenefitId" = ft.id AND k."userId" = br."userId" AND k."planYearId" = br."planYearId");
+    UPDATE "BenefitRelease" br SET "guaranteedBenefitId" = ft.id
+      FROM "GuaranteedBenefit" pt, "GuaranteedBenefit" ft
+     WHERE br."guaranteedBenefitId" = pt.id
+       AND ft.name = pt.name
+       AND pt."eligiblePartTime" AND NOT pt."eligibleFullTime"
+       AND ft."eligibleFullTime" AND NOT ft."eligiblePartTime";
 
-UPDATE "BenefitClaim"   bc SET "guaranteedBenefitId" = m.keep_id FROM gb_merge m WHERE bc."guaranteedBenefitId" = m.drop_id;
-UPDATE "BenefitRelease" br SET "guaranteedBenefitId" = m.keep_id FROM gb_merge m WHERE br."guaranteedBenefitId" = m.drop_id;
-DELETE FROM "GuaranteedBenefit" g USING gb_merge m WHERE g.id = m.drop_id;
+    -- (d) Fold PT amounts into the FT (canonical) row and mark it PT-eligible.
+    UPDATE "GuaranteedBenefit" ft SET
+      "ptBand6mo2y" = pt."ptBand6mo2y", "ptBand2to4y" = pt."ptBand2to4y",
+      "ptBand4to7y" = pt."ptBand4to7y", "ptBand7to10y" = pt."ptBand7to10y",
+      "eligiblePartTime" = true
+      FROM "GuaranteedBenefit" pt
+     WHERE pt.name = ft.name
+       AND pt."eligiblePartTime" AND NOT pt."eligibleFullTime"
+       AND ft."eligibleFullTime" AND NOT ft."eligiblePartTime";
 
--- Retire the old per-type columns now that data has moved.
-ALTER TABLE "GuaranteedBenefit"
-  DROP COLUMN IF EXISTS "employmentType",
-  DROP COLUMN IF EXISTS "band6mo2y",
-  DROP COLUMN IF EXISTS "band2to4y",
-  DROP COLUMN IF EXISTS "band4to7y",
-  DROP COLUMN IF EXISTS "band7to10y";
+    -- (e) Delete the now-merged PT rows.
+    DELETE FROM "GuaranteedBenefit" pt
+     WHERE pt."eligiblePartTime" AND NOT pt."eligibleFullTime"
+       AND EXISTS (SELECT 1 FROM "GuaranteedBenefit" ft WHERE ft.name = pt.name AND ft."eligibleFullTime");
+
+    -- (f) Retire the legacy per-type columns.
+    ALTER TABLE "GuaranteedBenefit"
+      DROP COLUMN "employmentType",
+      DROP COLUMN "band6mo2y", DROP COLUMN "band2to4y", DROP COLUMN "band4to7y", DROP COLUMN "band7to10y";
+  END IF;
+END $$;
 
 COMMIT;
