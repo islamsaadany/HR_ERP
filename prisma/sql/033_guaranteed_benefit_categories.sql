@@ -8,7 +8,7 @@ ALTER TABLE "GuaranteedBenefit" ADD COLUMN IF NOT EXISTS "category" text;
 UPDATE "GuaranteedBenefit" SET "category" = 'Life & family'         WHERE name = 'Marriage allowance';
 UPDATE "GuaranteedBenefit" SET "category" = 'Life & family'         WHERE name = 'Special events';
 UPDATE "GuaranteedBenefit" SET "category" = 'Personal growth'       WHERE name = 'Professional development';
-UPDATE "GuaranteedBenefit" SET "category" = 'Allowances & bonuses'  WHERE name = 'Summer allowance';
+UPDATE "GuaranteedBenefit" SET "category" = 'Allowances'            WHERE name = 'Summer allowance';
 UPDATE "GuaranteedBenefit" SET "category" = 'Financial support'     WHERE name = 'Loans';
 
 COMMIT;

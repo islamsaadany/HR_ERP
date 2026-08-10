@@ -111,6 +111,34 @@ body {
   box-shadow: 1px 0 0 var(--color-line), 6px 0 8px -6px rgba(15, 36, 68, 0.16);
 }
 
+/*
+  Benefits catalogue: freeze BOTH the row-number (1st) and Benefit (2nd) columns.
+  The 1st column is a narrow, fixed-width index; the shadow that marks the frozen
+  edge moves to the 2nd column so the pair reads as one frozen block.
+*/
+.ff-catalogue tr > :first-child {
+  width: 3rem;
+  min-width: 3rem;
+}
+.ff-catalogue tbody tr > :first-child,
+.ff-catalogue thead tr > :first-child {
+  box-shadow: none;
+}
+.ff-catalogue tr > :nth-child(2) {
+  position: sticky;
+  left: 3rem;
+  background: var(--color-surface);
+}
+.ff-catalogue tbody tr > :nth-child(2) {
+  z-index: 1;
+  box-shadow: 1px 0 0 var(--color-line), 6px 0 8px -6px rgba(15, 36, 68, 0.16);
+}
+.ff-catalogue thead tr > :nth-child(2) {
+  z-index: 3;
+  background: var(--color-navy-50);
+  box-shadow: 1px 0 0 var(--color-line), 6px 0 8px -6px rgba(15, 36, 68, 0.16);
+}
+
 /* Staggered page-load reveal (used by dashboard/admin tiles) */
 @keyframes ff-fade-up {
   from {
