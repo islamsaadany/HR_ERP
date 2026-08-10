@@ -1,0 +1,117 @@
+<title>Unified table treatment — full-width + frozen header + frozen first column</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-300:#7d97ba; --navy-500:#2f4d78;
+    --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-400:#d4ac39; --gold-600:#a8821e;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  .wrap { max-width:1000px; margin:0 auto; padding:26px 20px 70px; }
+  h2.tag { font-family:Georgia,serif; font-weight:400; font-size:23px; margin:0 0 6px; }
+  .lead { color:var(--muted); margin:0 0 6px; font-size:14px; max-width:74ch; line-height:1.6; }
+  .hint { font-size:12px; color:var(--gold-600); font-weight:600; margin:2px 0 18px; }
+  .legend { display:flex; flex-wrap:wrap; gap:16px; margin:10px 0 22px; font-size:12.5px; }
+  .legend span { display:inline-flex; align-items:center; gap:7px; color:var(--muted); }
+  .chip { width:22px; height:12px; border-radius:3px; display:inline-block; }
+  .c-full { background:linear-gradient(90deg,var(--navy-100),var(--navy-300)); }
+  .c-head { background:var(--navy-800); }
+  .c-col  { background:var(--gold-400); }
+
+  .panel { border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:14px 0 30px;
+    background:var(--surface); box-shadow:0 1px 3px #0f244412; }
+  .panel-label { padding:10px 16px; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    display:flex; align-items:center; gap:8px; }
+  .before { background:#fbecec; color:#8a2b2b; } .after { background:#e7f2ea; color:#1f6b43; }
+  .dot { width:8px; height:8px; border-radius:50%; } .before .dot{background:#c0392b;} .after .dot{background:#1f8a4c;}
+
+  /* Fixed-height viewport so BOTH scroll directions are demonstrable */
+  .scroller { height:300px; overflow:auto; }
+  table { border-collapse:separate; border-spacing:0; font-size:12.5px; width:1240px; }
+  th, td { padding:9px 12px; white-space:nowrap; border-bottom:1px solid var(--line); text-align:left; }
+  th { font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted);
+    background:#eceff5; }
+  th.r, td.r { text-align:right; }
+  .num { font-variant-numeric:tabular-nums; }
+  tbody tr:hover td { background:#eceff53f; }
+
+  /* ── AFTER treatment ── */
+  .after-tbl thead th { position:sticky; top:0; z-index:3; }
+  .after-tbl th:first-child, .after-tbl td:first-child {
+    position:sticky; left:0; z-index:2; background:var(--surface);
+    box-shadow:1px 0 0 var(--line), 6px 0 8px -6px #0f244433;
+  }
+  .after-tbl td:first-child { font-weight:600; }
+  .after-tbl thead th:first-child { z-index:4; background:#eceff5; } /* corner: sticky both ways */
+
+  .cap { font-size:12px; color:var(--muted); padding:11px 16px 14px; }
+  .cap b { color:var(--ink); } .cap.bad b { color:#8a2b2b; }
+</style>
+
+<div class="wrap">
+  <h2 class="tag">One consistent table treatment — for every data table</h2>
+  <p class="lead">Applied the same way to the registry, the incentive report, and the rest, whatever the first column
+    is called. Three behaviors bundled together:</p>
+  <div class="legend">
+    <span><i class="chip c-full"></i> <b style="color:var(--ink)">Full width</b> — fills the screen (page-level)</span>
+    <span><i class="chip c-head"></i> <b style="color:var(--ink)">Frozen header row</b> — stays on vertical scroll</span>
+    <span><i class="chip c-col"></i> <b style="color:var(--ink)">Frozen first column</b> — stays on horizontal scroll</span>
+  </div>
+  <p class="hint">↕ Scroll each box down to test the header · ↔ scroll it sideways to test the first column.</p>
+
+  <!-- BEFORE -->
+  <div class="panel">
+    <div class="panel-label before"><span class="dot"></span> Before — header and first column both scroll away</div>
+    <div class="scroller">
+      <table>
+        <thead><tr>
+          <th>Name</th><th>Email</th><th>Department</th><th>Type</th><th>Tenure</th>
+          <th>Start date</th><th class="r">Monthly salary</th><th>Manager</th><th>Status</th><th>Role</th>
+        </tr></thead>
+        <tbody id="b-body"></tbody>
+      </table>
+    </div>
+    <p class="cap bad">Scroll down and the <b>headers vanish</b>; scroll right and the <b>Name column vanishes</b> — numbers and cells lose their meaning.</p>
+  </div>
+
+  <!-- AFTER -->
+  <div class="panel">
+    <div class="panel-label after"><span class="dot"></span> After — full width, header pinned, first column pinned</div>
+    <div class="scroller">
+      <table class="after-tbl">
+        <thead><tr>
+          <th>Name</th><th>Email</th><th>Department</th><th>Type</th><th>Tenure</th>
+          <th>Start date</th><th class="r">Monthly salary</th><th>Manager</th><th>Status</th><th>Role</th>
+        </tr></thead>
+        <tbody id="a-body"></tbody>
+      </table>
+    </div>
+    <p class="cap">Scroll any direction — the <b>header row</b> and the <b>first column</b> stay put (first column carries a soft right-edge shadow). At full page width, sideways scrolling is rarely needed at all.</p>
+  </div>
+
+  <p class="lead"><b>How it rolls out:</b> a shared table style (not six hand-made copies) so every table looks and behaves
+    identically. Full width is applied per page; the frozen header + frozen first column apply to every data table.
+    The registry and incentive report already got full width — this adds the frozen header/column and brings the
+    others (Directory, Admin Time-off, Benefit Release, …) into the same pattern.</p>
+</div>
+
+<script>
+  const first = ["Ahmed Galal","Alaa Allam","Aley eldeen Mahmoud","Islam Saadany","Michle Magdy","Mohamed Essam","Mohamed Selim","Momen Zaki","Nermine Hazem","Noran Essam","Omar Alaa","Passant Mohammed","Raneem Sarhan","Reem El Barbary","Salma Adel","Samaa Hussein","Yosra El-Tobgy","Marwa Abdelazeem"];
+  const dep = ["Consulting Department","Marketing & Community","Data Management Unit","Top Management","Financial Department"];
+  const ten = ["6 months – 2 years","2 – 4 years","4 – 7 years","7 – 10 years"];
+  const rowsHtml = first.map((n,i)=>{
+    const email = n.toLowerCase().replace(/[^a-z]+/g,".")+"@forefront.consulting";
+    const salary = (18000 + (i*1373)%60000).toLocaleString("en-US");
+    const type = i%3===0 ? "Part-time":"Full-time";
+    const status = i%7===3 ? "Left":"Active";
+    return `<tr>
+      <td>${n}</td><td>${email}</td><td>${dep[i%dep.length]}</td><td>${type}</td><td>${ten[i%ten.length]}</td>
+      <td class="num">0${(i%9)+1}/0${(i%8)+1}/2022</td><td class="r num">${salary}</td>
+      <td>${first[(i+4)%first.length]}</td><td>${status}</td><td>${i%6===0?"HR Admin":"Employee"}</td>
+    </tr>`;
+  }).join("");
+  document.getElementById("b-body").innerHTML = rowsHtml;
+  document.getElementById("a-body").innerHTML = rowsHtml;
+</script>

@@ -71,46 +71,6 @@ body {
   border-radius: 3px;
 }
 
-/*
-  Shared data-table treatment (one consistent behavior for every data table):
-  a scroll viewport that fills the screen, a frozen header row (stays put on
-  vertical scroll) and a frozen first column (stays put on horizontal scroll).
-  Opt in by putting `ff-data-scroll` on the wrapper and `ff-data-table` on the
-  <table>. The sticky cells paint an opaque `surface` background so rows never
-  show through, with a soft right-edge shadow marking the frozen column.
-*/
-.ff-data-scroll {
-  /* Fill the viewport; tall tables scroll inside this box, short ones don't. */
-  max-height: calc(100vh - 11rem);
-  overflow: auto;
-}
-.ff-data-table {
-  width: 100%;
-}
-/* Frozen header row (subtle navy tint, consistent across every data table) */
-.ff-data-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--color-navy-50);
-}
-/* Frozen first column (both header and body cells) */
-.ff-data-table tr > :first-child {
-  position: sticky;
-  left: 0;
-  background: var(--color-surface);
-}
-.ff-data-table tbody tr > :first-child,
-.ff-data-table tfoot tr > :first-child {
-  z-index: 1;
-  box-shadow: 1px 0 0 var(--color-line), 6px 0 8px -6px rgba(15, 36, 68, 0.16);
-}
-/* Top-left corner cell: sticky in both directions, above everything else */
-.ff-data-table thead tr > :first-child {
-  z-index: 3;
-  box-shadow: 1px 0 0 var(--color-line), 6px 0 8px -6px rgba(15, 36, 68, 0.16);
-}
-
 /* Staggered page-load reveal (used by dashboard/admin tiles) */
 @keyframes ff-fade-up {
   from {

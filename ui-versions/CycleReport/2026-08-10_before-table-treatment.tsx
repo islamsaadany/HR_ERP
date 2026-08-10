@@ -8,7 +8,7 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
     <section className="mt-8">
       <h2 className="font-serif text-xl text-ink">{title}</h2>
       {subtitle ? <p className="mt-0.5 text-sm text-muted">{subtitle}</p> : null}
-      <div className="mt-3 ff-data-scroll rounded-xl border border-line bg-surface">{children}</div>
+      <div className="mt-3 overflow-x-auto rounded-xl border border-line bg-surface">{children}</div>
     </section>
   );
 }
@@ -41,7 +41,7 @@ export function CycleReportView({ report }: { report: CycleReport }) {
 
       {/* Business Partner Fee */}
       <Section title="Business Partner Fee" subtitle="Payable assignments · envelope = 3% of Gross Profit, gated at 70% margin.">
-        <table className="ff-data-table min-w-full divide-y divide-line">
+        <table className="min-w-full divide-y divide-line">
           <thead className="bg-navy-50/40">
             <tr>
               <th className={th}>Client</th><th className={th}>Type</th>
@@ -81,7 +81,7 @@ export function CycleReportView({ report }: { report: CycleReport }) {
 
       {/* Contributor detail */}
       <Section title="Contributor detail">
-        <table className="ff-data-table min-w-full divide-y divide-line">
+        <table className="min-w-full divide-y divide-line">
           <thead className="bg-navy-50/40">
             <tr>
               <th className={th}>Client</th><th className={th}>Person</th>
@@ -108,7 +108,7 @@ export function CycleReportView({ report }: { report: CycleReport }) {
 
       {/* Fee by person */}
       <Section title="By person" subtitle="Released compensation (excludes commission, which is protected).">
-        <table className="ff-data-table min-w-full divide-y divide-line">
+        <table className="min-w-full divide-y divide-line">
           <thead className="bg-navy-50/40">
             <tr>
               <th className={th}>Person</th><th className={th + " text-right"}>Salary</th>
@@ -136,7 +136,7 @@ export function CycleReportView({ report }: { report: CycleReport }) {
       {/* Firm P&L */}
       {r.firm && (
         <Section title="Firm P&L" subtitle="Profit before and after the scheme.">
-          <table className="ff-data-table min-w-full divide-y divide-line">
+          <table className="min-w-full divide-y divide-line">
             <tbody className="divide-y divide-line">
               <tr><td className={td}>Revenue</td><td className={tdr}>{m(r.firm.revenue)}</td></tr>
               <tr><td className={td}>Delivery cost</td><td className={tdr}>{m(r.firm.deliveryCost)}</td></tr>
@@ -153,7 +153,7 @@ export function CycleReportView({ report }: { report: CycleReport }) {
       {/* Commission */}
       {r.commissionByPerson.length > 0 && (
         <Section title="Commission by person" subtitle="Protected — independent of the gates.">
-          <table className="ff-data-table min-w-full divide-y divide-line">
+          <table className="min-w-full divide-y divide-line">
             <tbody className="divide-y divide-line">
               {r.commissionByPerson.map((c) => (
                 <tr key={c.name}><td className={td}>{c.name}</td><td className={tdr}>{m(c.amount)}</td></tr>
@@ -172,7 +172,7 @@ export function CycleReportView({ report }: { report: CycleReport }) {
           ) : !r.profitShare.gateMet ? (
             <p className="text-muted">Net margin {pct(r.profitShare.netMarginPct)} is below the 15% gate — Profit Share is nil.</p>
           ) : (
-            <table className="ff-data-table min-w-full divide-y divide-line">
+            <table className="min-w-full divide-y divide-line">
               <thead><tr><th className={th}>Person</th><th className={th + " text-right"}>Entitlement</th><th className={th + " text-right"}>Offset</th><th className={th + " text-right"}>Net</th></tr></thead>
               <tbody className="divide-y divide-line">
                 {r.profitShare.rows.map((p) => (
@@ -186,7 +186,7 @@ export function CycleReportView({ report }: { report: CycleReport }) {
 
       {/* Cost recovery */}
       <Section title="Cost recovery" subtitle="GP generated (contribution-weighted) vs six-month salary. Per-hour metrics need an hours column.">
-        <table className="ff-data-table min-w-full divide-y divide-line">
+        <table className="min-w-full divide-y divide-line">
           <thead className="bg-navy-50/40">
             <tr>
               <th className={th}>Person</th><th className={th + " text-right"}>6-mo salary</th>

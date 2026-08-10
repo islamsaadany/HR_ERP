@@ -204,8 +204,8 @@ export function ReleaseManager({
           </div>
 
           {/* Employee table */}
-          <div className="ff-data-scroll rounded-xl border border-line bg-surface">
-            <table className="ff-data-table text-sm">
+          <div className="overflow-x-auto rounded-xl border border-line">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-surface text-left text-xs uppercase tracking-wide text-muted">
                   <th className="px-3 py-2"><input type="checkbox" checked={allReleasableSelected} onChange={toggleAll} aria-label="Select all" /></th>

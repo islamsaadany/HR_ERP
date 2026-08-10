@@ -438,8 +438,8 @@ export function EmployeeGrid({
         ) : null}
       </div>
 
-      <div className="mt-3 ff-data-scroll rounded-xl border border-line bg-surface">
-        <table className="ff-data-table text-sm">
+      <div className="mt-3 overflow-x-auto rounded-xl border border-line bg-surface">
+        <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
               {visibleCols.map((col) => {

@@ -28,7 +28,11 @@ const isWideRoute = (path: string) =>
  * cycle report) whose wide tables need the room. Everything else stays centered.
  */
 const isFullWidthRoute = (path: string) =>
-  path === "/admin/employees" || path.startsWith("/incentive/");
+  path === "/admin/employees" ||
+  path.startsWith("/incentive/") ||
+  path === "/directory" ||
+  path === "/admin/time-off" ||
+  path === "/admin/benefits/release";
 
 export function AppShell({
   name,
