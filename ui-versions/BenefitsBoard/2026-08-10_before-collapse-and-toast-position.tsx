@@ -13,14 +13,14 @@ import { commitMedical } from "@/app/(app)/benefits/actions";
 const egp = (n: number) => "EGP " + Math.round(n).toLocaleString();
 
 // Lightweight success-toast plumbing: a claim form calls notify(text); toasts
-// float bottom-left and auto-dismiss. Errors stay inline near the form.
+// float top-right and auto-dismiss. Errors stay inline near the form.
 const ToastContext = createContext<(text: string) => void>(() => {});
 
 type Toast = { id: number; text: string };
 function ToastRegion({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
   if (toasts.length === 0) return null;
   return (
-    <div className="fixed bottom-4 left-4 z-[60] flex flex-col gap-2">
+    <div className="fixed right-4 top-4 z-[60] flex flex-col gap-2">
       {toasts.map((t) => (
         <button
           key={t.id}
@@ -403,7 +403,7 @@ function FlexRow({ item }: { item: BoardFlex }) {
         {fullyClaimed ? (
           <p className="rounded-lg border border-line bg-surface px-3 py-3 text-sm text-muted">Fully claimed — nothing left on this benefit.</p>
         ) : (
-          <FlexClaimForm item={item} remaining={remaining} onSubmitted={() => setOpen(false)} />
+          <FlexClaimForm item={item} remaining={remaining} />
         )}
       </div>
     </details>
@@ -411,7 +411,7 @@ function FlexRow({ item }: { item: BoardFlex }) {
 }
 
 /** Full-price claim form for a flexible benefit with a live covered preview. */
-function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; remaining: number; onSubmitted: () => void }) {
+function FlexClaimForm({ item, remaining }: { item: BoardFlex; remaining: number }) {
   const router = useRouter();
   const notify = useContext(ToastContext);
   const [fullCost, setFullCost] = useState(0);
@@ -431,8 +431,7 @@ function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; rema
         notify("Claim submitted — awaiting HR review."); // floating toast
         setFullCost(0);
         form.reset(); // clears the file input / note; amount is controlled and set above
-        router.refresh(); // soft-refresh: this card's history/status updates in place
-        onSubmitted(); // collapse the card now that the claim is in
+        router.refresh(); // soft-refresh: this card's history/status updates in place; card stays open
       } else {
         setError(res.error);
       }
