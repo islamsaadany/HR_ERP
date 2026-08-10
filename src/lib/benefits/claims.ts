@@ -6,15 +6,24 @@ export const CLAIM_TYPE_LABEL: Record<ClaimType, string> = {
   PROOF: "Proof required",
 };
 
+// Spec 020 staged workflow labels/colors. Legacy PENDING/RELEASED retained for
+// old rows during the migration. Chip colors are placeholders pending the US1
+// status-chip mockup sign-off (constitution II) before they render anywhere new.
 export const CLAIM_STATUS_LABEL: Record<ClaimStatus, string> = {
-  PENDING: "Pending review",
-  RELEASED: "Reimbursed",
+  PENDING: "Pending review", // legacy
+  RELEASED: "Reimbursed", // legacy
+  SUBMITTED: "Submitted",
+  APPROVED: "Approved",
+  REIMBURSED: "Reimbursed",
   REJECTED: "Rejected",
 };
 
 export const CLAIM_STATUS_CLASS: Record<ClaimStatus, string> = {
-  PENDING: "bg-gold-100 text-gold-800",
-  RELEASED: "bg-navy-50 text-navy-700",
+  PENDING: "bg-gold-100 text-gold-800", // legacy
+  RELEASED: "bg-navy-50 text-navy-700", // legacy
+  SUBMITTED: "bg-gold-100 text-gold-800",
+  APPROVED: "bg-navy-100 text-navy-800",
+  REIMBURSED: "bg-navy-50 text-navy-700",
   REJECTED: "bg-red-50 text-red-700",
 };
 

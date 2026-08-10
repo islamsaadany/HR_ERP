@@ -32,7 +32,7 @@ export type GridRow = {
   emergencyContactRelationship: string;
   emergencyContactPhone: string;
   status: "ACTIVE" | "LEFT";
-  role: "EMPLOYEE" | "HR_ADMIN" | "SUPER_USER";
+  role: "EMPLOYEE" | "HR_ADMIN" | "SUPER_USER" | "FINANCE";
   reportsToId: string;
   reportsToName: string;
 };

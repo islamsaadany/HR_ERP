@@ -18,8 +18,8 @@ description: "Task list for spec 020 — Claim Reimbursement Workflow & Email No
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Add the `resend` dependency to `package.json` (server-only email SDK) and install.
-- [ ] T002 [P] Document the new env vars (`RESEND_API_KEY`, `EMAIL_FROM`) wherever env is documented (e.g. `.env.example` / README) — values are set by the user in Vercel, never committed.
+- [X] T001 Add the `resend` dependency to `package.json` (server-only email SDK) and install.
+- [X] T002 [P] Document the new env vars (`RESEND_API_KEY`, `EMAIL_FROM`) wherever env is documented (e.g. `.env.example` / README) — values are set by the user in Vercel, never committed.
 
 ---
 
@@ -27,15 +27,15 @@ description: "Task list for spec 020 — Claim Reimbursement Workflow & Email No
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 Extend `Role` enum with `FINANCE` in `prisma/schema.prisma`.
+- [X] T003 Extend `Role` enum with `FINANCE` in `prisma/schema.prisma`.
 - [ ] T004 Rename/extend `ClaimStatus` in `prisma/schema.prisma` to `SUBMITTED | APPROVED | REIMBURSED | REJECTED`; set `BenefitClaim.status` default to `SUBMITTED`.
-- [ ] T005 Add payment columns to `BenefitClaim` in `prisma/schema.prisma`: `paidById`/`paidBy` (User rel `"ClaimPayer"`), `paidAt`, `transferDate`, `amountTransferred` (all nullable).
-- [ ] T006 [P] Add the `NotificationSettings` singleton model (`id="singleton"`, `emailEnabled`, `hrInbox`, `financeInbox`, `fromName`, `updatedAt`) in `prisma/schema.prisma`.
-- [ ] T007 Author `prisma/sql/0NN_claim_reimbursement_workflow.sql`: add the enum values + backfill (`PENDING→SUBMITTED`, `RELEASED→REIMBURSED`), add the `BenefitClaim` columns, create the `NotificationSettings` table with its singleton row. Verify by applying to a throwaway local Postgres and querying the migrated rows. Commit the SQL in the same commit as the schema change.
-- [ ] T008 [P] Add `isFinance(role)` and `requireFinance()` to `src/lib/roles.ts` (Finance or Super User); add `FINANCE` to any role label map.
-- [ ] T009 [P] Create `src/lib/email/client.ts`: env-gated `sendEmail()` — inert when `RESEND_API_KEY` unset or `emailEnabled` false, skip on empty recipient, fire-and-forget (catch + log, never rethrow).
-- [ ] T010 [P] Create `src/lib/email/templates.ts` with the four transactional templates T1–T4 (per `contracts/emails.md`), plain navy/gold, EGP-formatted.
-- [ ] T011 [P] Create `src/lib/notifications/settings.ts`: cached read + upsert of `NotificationSettings` (pattern of `src/lib/brand.ts`).
+- [X] T005 Add payment columns to `BenefitClaim` in `prisma/schema.prisma`: `paidById`/`paidBy` (User rel `"ClaimPayer"`), `paidAt`, `transferDate`, `amountTransferred` (all nullable).
+- [X] T006 [P] Add the `NotificationSettings` singleton model (`id="singleton"`, `emailEnabled`, `hrInbox`, `financeInbox`, `fromName`, `updatedAt`) in `prisma/schema.prisma`.
+- [X] T007 Author `prisma/sql/0NN_claim_reimbursement_workflow.sql`: add the enum values + backfill (`PENDING→SUBMITTED`, `RELEASED→REIMBURSED`), add the `BenefitClaim` columns, create the `NotificationSettings` table with its singleton row. Verify by applying to a throwaway local Postgres and querying the migrated rows. Commit the SQL in the same commit as the schema change.
+- [X] T008 [P] Add `isFinance(role)` and `requireFinance()` to `src/lib/roles.ts` (Finance or Super User); add `FINANCE` to any role label map.
+- [X] T009 [P] Create `src/lib/email/client.ts`: env-gated `sendEmail()` — inert when `RESEND_API_KEY` unset or `emailEnabled` false, skip on empty recipient, fire-and-forget (catch + log, never rethrow).
+- [X] T010 [P] Create `src/lib/email/templates.ts` with the four transactional templates T1–T4 (per `contracts/emails.md`), plain navy/gold, EGP-formatted.
+- [X] T011 [P] Create `src/lib/notifications/settings.ts`: cached read + upsert of `NotificationSettings` (pattern of `src/lib/brand.ts`).
 - [ ] T012 Update `src/lib/benefits/claims.ts`: `CLAIM_STATUS_LABEL`/`CLAIM_STATUS_CLASS` for the four statuses; `claimTotals` treats `SUBMITTED + APPROVED` as in-progress and `REIMBURSED` as paid.
 - [ ] T013 Update every money-cap call-site that builds `claimedByBenefit` / sums consumed allowance so it counts **all non-rejected** claims (`SUBMITTED + APPROVED + REIMBURSED`); `rules.ts` math stays unchanged. Grep for `RELEASED`/`PENDING` across `src/lib/benefits/` and `src/app/(app)/**/actions*` and update each.
 
