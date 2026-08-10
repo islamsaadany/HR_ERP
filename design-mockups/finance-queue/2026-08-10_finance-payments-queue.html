@@ -1,0 +1,94 @@
+<title>Finance · Payments queue (mockup)</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-300:#7d97ba; --navy-500:#2f4d78; --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-100:#f6ecca; --gold-400:#d4ac39; --gold-600:#a8821e;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da; --green-tx:#1f6b43;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  .shell { display:flex; min-height:100vh; }
+  aside { width:60px; flex:none; background:var(--navy-900); display:flex; flex-direction:column; align-items:center; gap:18px; padding:16px 0; }
+  aside .logo { width:30px; height:30px; border-radius:8px; background:var(--navy-800); display:grid; place-items:center; font-family:Georgia,serif; color:var(--gold-400); }
+  aside .ic { width:18px; height:18px; border-radius:5px; background:#ffffff22; } aside .ic.on{background:var(--gold-400);}
+  .main { flex:1; min-width:0; padding:34px 40px; }
+
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+  h1 { font-family:Georgia,serif; font-weight:400; font-size:30px; margin:6px 0 2px; }
+  .sub { color:var(--muted); margin:0 0 18px; font-size:14px; }
+
+  .card { border:1px solid var(--line); background:var(--surface); border-radius:14px; overflow:hidden; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th { text-align:left; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); padding:11px 14px; background:var(--navy-50); border-bottom:1px solid var(--line); white-space:nowrap; }
+  th.r,td.r{text-align:right;} td { padding:12px 14px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  .num { font-variant-numeric:tabular-nums; }
+  .who { font-weight:600; } .muted { color:var(--muted); }
+  .confirm { display:flex; gap:6px; align-items:center; justify-content:flex-end; }
+  .in { border:1px solid var(--line); border-radius:8px; padding:6px 8px; font-size:12.5px; }
+  .in.amt { width:96px; text-align:right; } .in.date { width:130px; }
+  .btn { background:var(--navy-800); color:#fff; border:0; border-radius:8px; padding:7px 12px; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .empty { padding:34px; text-align:center; color:var(--muted); font-size:14px; }
+  .note { margin-top:14px; font-size:12px; color:var(--muted); line-height:1.6; max-width:74ch; }
+  .okmsg { margin-bottom:14px; font-size:13px; color:var(--green-tx); background:#e7f2ea; padding:8px 12px; border-radius:9px; }
+</style>
+
+<div class="shell">
+  <aside>
+    <div class="logo">F</div>
+    <div class="ic"></div><div class="ic"></div><div class="ic on"></div><div class="ic"></div>
+  </aside>
+  <div class="main">
+    <p class="eyebrow">Finance · Payments</p>
+    <h1>Awaiting payment</h1>
+    <p class="sub">Claims HR approved. Transfer the covered amount, then confirm it here — the employee is emailed that their claim was reimbursed.</p>
+
+    <div class="okmsg">✓ Payment confirmed for Salma Adel. The employee has been notified.</div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Employee</th><th>Benefit</th><th class="r">Amount to transfer</th><th>Approved</th><th class="r">Confirm payment</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="who">Omar Alaa</span></td>
+            <td class="muted">Course — Advanced Excel</td>
+            <td class="r num">EGP 6,000</td>
+            <td class="muted">09/08/2026</td>
+            <td class="r"><div class="confirm">
+              <input class="in amt num" value="6,000"><input class="in date" value="10/08/2026"><button class="btn">Confirm</button>
+            </div></td>
+          </tr>
+          <tr>
+            <td><span class="who">Raneem Sarhan</span></td>
+            <td class="muted">Books &amp; learning</td>
+            <td class="r num">EGP 1,440</td>
+            <td class="muted">09/08/2026</td>
+            <td class="r"><div class="confirm">
+              <input class="in amt num" value="1,440"><input class="in date" value="dd/mm/yyyy"><button class="btn">Confirm</button>
+            </div></td>
+          </tr>
+          <tr>
+            <td><span class="who">Momen Zaki</span></td>
+            <td class="muted">Gym membership</td>
+            <td class="r num">EGP 2,800</td>
+            <td class="muted">08/08/2026</td>
+            <td class="r"><div class="confirm">
+              <input class="in amt num" value="2,800"><input class="in date" value="dd/mm/yyyy"><button class="btn">Confirm</button>
+            </div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note">
+      New <b>Finance</b> role (Super User can also access). The amount defaults to the covered figure but is editable if the
+      actual transfer differed. Confirming records the amount + date, marks the claim <b>Reimbursed</b>, and emails the employee.
+      A new <b>Payments</b> item appears in the left nav for Finance/Super-User only. When the queue is empty it reads
+      &ldquo;No claims awaiting payment.&rdquo;
+    </p>
+  </div>
+</div>
