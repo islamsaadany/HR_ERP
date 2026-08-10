@@ -1,7 +1,7 @@
 import { requireUser, isAdmin } from "@/lib/roles";
 import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
-import { getActivePlanYear, getMedicalRate, amountForBand, getMedicalCommitment, planYearWindow, poolCeilingFor } from "@/lib/benefits/config";
+import { getActivePlanYear, getMedicalRate, amountForBand, getMedicalCommitment, planYearWindow, poolCeilingFor, eligibilityWhere, isSalaryDriven, medicalScopeFor } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { flexCap } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate } from "@/lib/benefits/proration";
@@ -92,10 +92,11 @@ export default async function BenefitsPage({
         </div>
       );
     }
-    const [entryCeiling, medRate, medCommitment] = await Promise.all([
+    const [entryCeiling, medRate, medCommitment, medScope] = await Promise.all([
       poolCeilingFor(user.employmentType, null),
       getMedicalRate(),
       getMedicalCommitment(me.id, medPlanYear.id),
+      medicalScopeFor(user.employmentType),
     ]);
     if (entryCeiling == null || !medRate) {
       return (
@@ -111,6 +112,8 @@ export default async function BenefitsPage({
         <BenefitsBoard
           medicalOnly
           ceiling={prorate(entryCeiling, medicalEligibility.fraction)}
+          medicalOffered={medScope.offered}
+          familyMedical={medScope.family}
           medicalPremiumFraction={medicalEligibility.fraction}
           medicalProration={medicalEligibility.status === "PRORATED" ? { months: medicalEligibility.remainingWholeMonths } : null}
           poolUsed={0}
@@ -145,8 +148,8 @@ export default async function BenefitsPage({
       prisma.poolCeiling.findUnique({
         where: { employmentType_tenureBand: { employmentType: user.employmentType, tenureBand: user.tenureBand } },
       }),
-      prisma.guaranteedBenefit.findMany({ where: { employmentType: user.employmentType }, orderBy: { order: "asc" } }),
-      prisma.benefitCatalogItem.findMany({ where: { active: true }, orderBy: { order: "asc" } }),
+      prisma.guaranteedBenefit.findMany({ where: eligibilityWhere(user.employmentType), orderBy: { order: "asc" } }),
+      prisma.benefitCatalogItem.findMany({ where: { active: true, ...eligibilityWhere(user.employmentType) }, orderBy: { order: "asc" } }),
       getMedicalRate(),
     ]);
     medicalCommitment = planYear ? await getMedicalCommitment(me.id, planYear.id) : null;
@@ -172,11 +175,11 @@ export default async function BenefitsPage({
     employmentTypeLabel: EMPLOYMENT_TYPE_LABEL[user.employmentType],
     tenureBandLabel: TENURE_BAND_LABEL[user.tenureBand],
     ceiling: ceilingRow ? prorate(ceilingRow.amount, poolEligibility.fraction) : null,
-    guaranteed: guaranteed.map((g) => {
-      const salaryDriven =
-        g.band6mo2y == null && g.band2to4y == null && g.band4to7y == null && g.band7to10y == null;
-      return { name: g.name, amount: amountForBand(user.tenureBand!, g), salaryDriven };
-    }),
+    guaranteed: guaranteed.map((g) => ({
+      name: g.name,
+      amount: amountForBand(user.employmentType!, user.tenureBand!, g),
+      salaryDriven: isSalaryDriven(g),
+    })),
     categories: Array.from(new Set(catalog.map((c) => c.category).filter((c): c is string => !!c))),
     autoOpen: !!(planYear && ceilingRow && medicalRate && catalog.length > 0) && !user.benefitsOrientationSeenAt,
   };
@@ -256,7 +259,7 @@ export default async function BenefitsPage({
   // Guaranteed band (all guaranteed benefits for this employment type). Only benefits flagged
   // `prorated` (Professional development) shrink for mid-year starters; the rest stay full.
   const guaranteedBoard: BoardGuaranteed[] = guaranteed.map((g) => {
-    const fullAmount = amountForBand(user.tenureBand!, g) ?? user.monthlySalary ?? null;
+    const fullAmount = amountForBand(user.employmentType!, user.tenureBand!, g) ?? user.monthlySalary ?? null;
     const allocated = g.prorated && fullAmount != null ? prorate(fullAmount, poolEligibility.fraction) : fullAmount;
     return {
       id: g.id,
@@ -269,13 +272,21 @@ export default async function BenefitsPage({
     };
   });
 
-  // Flexible catalog grouped by category (preserving catalog order). Medical is included (rendered as
-  // its commitment row); non-medical "automatic" (NONE) items are surfaced as a note, not claimable.
+  // Medical eligibility (spec 021): computed from the eligible, active medical catalogue items.
+  // Medical is rendered by the board's own single section, so it is excluded from the flex groups.
+  const medItems = catalog.filter((c) => c.isMedical);
+  const familyMedical = medItems.some((m) => m.medicalScope === "FAMILY");
+  const personalMedical = medItems.some((m) => m.medicalScope === "PERSONAL" || m.medicalScope == null);
+  const medicalOffered = familyMedical || personalMedical;
+
+  // Flexible catalog grouped by category (preserving catalog order). Non-medical "automatic"
+  // (NONE) items are surfaced as a note, not claimable.
   const automatic: string[] = [];
   const order: string[] = [];
   const groupMap = new Map<string, BoardFlex[]>();
   for (const item of catalog) {
-    if (!item.isMedical && item.claimType === "NONE") {
+    if (item.isMedical) continue; // medical has its own section
+    if (item.claimType === "NONE") {
       automatic.push(item.name);
       continue;
     }
@@ -289,10 +300,10 @@ export default async function BenefitsPage({
       key: item.key,
       name: item.name,
       description: item.description,
-      isMedical: item.isMedical,
+      isMedical: false,
       coverageRate: item.coverageRate,
       claimType: item.claimType,
-      allocated: item.isMedical ? null : cap,
+      allocated: cap,
       claims: byC.get(item.id) ?? [],
     });
   }
@@ -307,6 +318,8 @@ export default async function BenefitsPage({
         poolRemaining={poolRemaining}
         cap={cap}
         proration={isProrated ? { months: poolEligibility.remainingWholeMonths } : null}
+        medicalOffered={medicalOffered}
+        familyMedical={familyMedical}
         medicalPremiumFraction={medicalEligibility.fraction}
         guaranteed={guaranteedBoard}
         automatic={automatic}

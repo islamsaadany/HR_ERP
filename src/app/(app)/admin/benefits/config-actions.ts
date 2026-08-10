@@ -45,20 +45,25 @@ export async function updatePoolCeilings(formData: FormData): Promise<void> {
   revalidatePath("/benefits");
 }
 
-const GB_BANDS = ["band6mo2y", "band2to4y", "band4to7y", "band7to10y"] as const;
+// All eight per-employment-type × band amount columns on a guaranteed benefit (spec 021).
+const GB_AMOUNT_COLS = [
+  "ftBand6mo2y", "ftBand2to4y", "ftBand4to7y", "ftBand7to10y",
+  "ptBand6mo2y", "ptBand2to4y", "ptBand4to7y", "ptBand7to10y",
+] as const;
 
 /**
- * Save guaranteed-benefit amounts per tenure band. One form per employment type; the
- * action iterates every guaranteed benefit and updates only the band fields present in
- * this submission (so the FT form never touches PT rows, and vice-versa). Blank fields
- * are left unchanged — that's how salary-driven rows (Loans, all-null bands) stay null.
+ * Save guaranteed-benefit amounts (spec 021). One numbers-only form per employment type on the
+ * Amounts tab submits its four band cells per benefit (fields `gb_<id>_<column>`). The action
+ * iterates every benefit and updates only the columns present in this submission, so the FT form
+ * never touches PT columns and vice-versa. Blank fields are left unchanged — that's how
+ * salary-driven rows (Loans, all-null bands) stay null.
  */
 export async function updateGuaranteedAmounts(formData: FormData): Promise<void> {
   await requireAdmin();
   const items = await prisma.guaranteedBenefit.findMany({ select: { id: true } });
   for (const { id } of items) {
     const data: Record<string, number> = {};
-    for (const key of GB_BANDS) {
+    for (const key of GB_AMOUNT_COLS) {
       const raw = formData.get(`gb_${id}_${key}`);
       if (raw == null || String(raw).trim() === "") continue;
       const n = Number(raw);
@@ -68,6 +73,27 @@ export async function updateGuaranteedAmounts(formData: FormData): Promise<void>
     if (Object.keys(data).length) {
       await prisma.guaranteedBenefit.update({ where: { id }, data });
     }
+  }
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+}
+
+/**
+ * Set who a benefit is available to (spec 021) — the FT / PT eligibility checkboxes in the unified
+ * Benefits Catalogue. Works for both guaranteed benefits and flexible/medical catalog items. A
+ * checkbox that is unticked sends nothing, so absence = not eligible.
+ */
+export async function setEligibility(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const kind = String(formData.get("kind") ?? "");
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const eligibleFullTime = formData.get("eligibleFullTime") != null;
+  const eligiblePartTime = formData.get("eligiblePartTime") != null;
+  if (kind === "guaranteed") {
+    await prisma.guaranteedBenefit.update({ where: { id }, data: { eligibleFullTime, eligiblePartTime } });
+  } else {
+    await prisma.benefitCatalogItem.update({ where: { id }, data: { eligibleFullTime, eligiblePartTime } });
   }
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");

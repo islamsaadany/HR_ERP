@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
-import { getActivePlanYear, getMedicalRate, planYearWindow, poolCeilingFor } from "@/lib/benefits/config";
+import { getActivePlanYear, getMedicalRate, planYearWindow, poolCeilingFor, medicalScopeFor } from "@/lib/benefits/config";
 import { computeMedicalPremium, type MedicalConfig } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate } from "@/lib/benefits/proration";
 import { deriveTenureBand } from "@/lib/tenure";
@@ -41,6 +41,16 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
   });
   if (!user?.employmentType) {
     return { ok: false, errors: ["Your employment type isn't set — contact HR."], warnings: [] };
+  }
+
+  // Personal/Family gate (spec 021): only Family-eligible employees may add dependants.
+  const scope = await medicalScopeFor(user.employmentType);
+  if (!scope.offered) {
+    return { ok: false, errors: ["Medical insurance isn't available to you."], warnings: [] };
+  }
+  const wantsDependants = !!payload.spouse || payload.childrenUnder18 > 0 || payload.children18Plus > 0;
+  if (!scope.family && wantsDependants) {
+    return { ok: false, errors: ["You're eligible for personal medical only — remove spouse and children."], warnings: [] };
   }
 
   // Medical unlocks at 3 months of service (spec 019) — before the 6-month basket — and is

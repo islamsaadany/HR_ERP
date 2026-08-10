@@ -337,24 +337,35 @@ model PoolCeiling {
   @@unique([employmentType, tenureBand])
 }
 
-/// A fixed/guaranteed benefit (display-only), amounts per band, per employment type.
+/// A fixed/guaranteed benefit. One row per benefit (spec 021): eligibility is a pair of
+/// flags (Full-time / Part-time) shown in the unified Benefits Catalogue, and amounts are
+/// held per employment type × tenure band (ft* / pt* columns) on the numbers-only Amounts tab.
+/// Superseded the old "one row per (benefit × employmentType)" model.
 model GuaranteedBenefit {
-  id             String         @id @default(cuid())
-  name           String
-  note           String?
-  employmentType EmploymentType
-  band6mo2y      Int?
-  band2to4y      Int?
-  band4to7y      Int?
-  band7to10y     Int?
-  order          Int            @default(0)
-  claimType      ClaimType      @default(NOTE)
+  id               String         @id @default(cuid())
+  name             String
+  note             String?
+  /// Who this benefit is available to. Drives what each employee sees by their employment type.
+  eligibleFullTime Boolean        @default(true)
+  eligiblePartTime Boolean        @default(true)
+  /// Full-time amounts per tenure band (null = salary-driven / not set).
+  ftBand6mo2y      Int?
+  ftBand2to4y      Int?
+  ftBand4to7y      Int?
+  ftBand7to10y     Int?
+  /// Part-time amounts per tenure band (null = salary-driven / not set).
+  ptBand6mo2y      Int?
+  ptBand2to4y      Int?
+  ptBand4to7y      Int?
+  ptBand7to10y     Int?
+  order            Int            @default(0)
+  claimType        ClaimType      @default(NOTE)
   /// Whether this guaranteed benefit's annual budget is prorated for mid-year
   /// starters (spec 019). True only for Professional development; event/season
   /// gifts (marriage, summer, special events, loans) stay false = full-when-triggered.
-  prorated       Boolean        @default(false)
-  claims         BenefitClaim[]
-  releases       BenefitRelease[]
+  prorated         Boolean        @default(false)
+  claims           BenefitClaim[]
+  releases         BenefitRelease[]
 }
 
 /**
@@ -399,6 +410,12 @@ model MedicalRateCard {
   child18Plus  Int
 }
 
+/// Medical cover scope (spec 021). Personal = the employee only; Family = employee + spouse + children.
+enum MedicalScope {
+  PERSONAL
+  FAMILY
+}
+
 /// A selectable flexible-basket category. Medical is special (rate-card priced, cap-exempt).
 model BenefitCatalogItem {
   id          String          @id @default(cuid())
@@ -407,6 +424,11 @@ model BenefitCatalogItem {
   description String?
   category    String?
   isMedical   Boolean         @default(false)
+  /// For medical items only (spec 021): PERSONAL (self) or FAMILY (self + dependants). Null for non-medical.
+  medicalScope MedicalScope?
+  /// Who this benefit is available to. Drives what each employee sees by their employment type.
+  eligibleFullTime Boolean    @default(true)
+  eligiblePartTime Boolean    @default(true)
   order       Int             @default(0)
   active      Boolean         @default(true)
   claimType   ClaimType       @default(PROOF)
