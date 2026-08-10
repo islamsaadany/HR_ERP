@@ -18,7 +18,6 @@ import {
 import {
   updatePoolCeilings,
   updateGuaranteedAmounts,
-  createCatalogItem,
   updateMedicalRateCard,
 } from "./config-actions";
 import { isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
@@ -27,6 +26,7 @@ import { AdminBenefitsTabs } from "@/components/admin/AdminBenefitsTabs";
 import { EditableSection } from "@/components/admin/EditableSection";
 import { ManualReleaseModal } from "@/components/admin/ManualReleaseModal";
 import { CatalogueGrid, type CatalogueGridRow } from "@/components/admin/CatalogueGrid";
+import { AddCatalogItemModal } from "@/components/admin/AddCatalogItemModal";
 
 export const dynamic = "force-dynamic";
 const egp = (n: number) => "EGP " + n.toLocaleString();
@@ -382,37 +382,18 @@ export default async function AdminBenefitsPage({
   // Category suggestions: the aligned set (spec 021) plus anything already in use.
   const KNOWN_CATEGORIES = [
     "Health & protection", "Wellbeing", "Life & family", "Personal growth",
-    "Lifestyle & flexibility", "Allowances & bonuses", "Financial support",
+    "Lifestyle & flexibility", "Allowances", "Financial support",
   ];
   const catalogueCategories = Array.from(
     new Set([...KNOWN_CATEGORIES, ...catalogueRows.map((r) => r.category).filter(Boolean)])
   ).sort();
 
   const cataloguePanel = (
-    <section className="rounded-xl border border-line bg-surface p-6">
-      <h2 className="font-serif text-lg text-ink">Benefits Catalogue</h2>
-      <p className="mt-1 max-w-[80ch] text-sm text-muted">
-        Every benefit employees can receive — guaranteed, flexible, and medical. Edit inline: set who&apos;s
-        eligible (FT / PT) and how it&apos;s claimed here; amounts live on the Amounts tab. Hidden items stay
-        out of the basket but are never deleted.
-      </p>
-      <CatalogueGrid rows={catalogueRows} categories={catalogueCategories} />
-      <form action={createCatalogItem} className="mt-4 flex flex-wrap items-end gap-2 border-t border-line pt-4">
-        <div className="min-w-[160px] flex-1">
-          <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">New flexible item name</label>
-          <input name="name" placeholder="e.g. Eyewear allowance" className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
-        </div>
-        <div className="min-w-[150px]">
-          <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Category</label>
-          <input name="category" placeholder="e.g. Wellbeing" className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm" />
-        </div>
-        <div className="w-24">
-          <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">Coverage %</label>
-          <input name="coverageRate" type="number" min={1} max={100} defaultValue={100} className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums" />
-        </div>
-        <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">Add item</button>
-      </form>
-    </section>
+    <CatalogueGrid
+      rows={catalogueRows}
+      categories={catalogueCategories}
+      toolbarExtra={<AddCatalogItemModal categories={catalogueCategories} />}
+    />
   );
 
   // ── Tab 3: Amounts ──────────────────────────────────────────────────────
