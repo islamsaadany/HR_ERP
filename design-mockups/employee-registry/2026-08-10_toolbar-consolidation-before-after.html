@@ -1,0 +1,149 @@
+<title>Registry toolbar consolidation (Before / After)</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-300:#7d97ba; --navy-500:#2f4d78;
+    --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-400:#d4ac39; --gold-600:#a8821e;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red:#c0392b; --red-bg:#fbecec;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  .wrap { max-width:1040px; margin:0 auto; padding:26px 20px 70px; }
+  h2.tag { font-family:Georgia,serif; font-weight:400; font-size:23px; margin:0 0 6px; }
+  .lead { color:var(--muted); margin:0 0 18px; font-size:14px; max-width:74ch; line-height:1.6; }
+
+  .panel { border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:14px 0 30px;
+    background:var(--paper); box-shadow:0 1px 3px #0f244412; }
+  .panel-label { padding:10px 16px; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    display:flex; align-items:center; gap:8px; }
+  .before { background:#fbecec; color:#8a2b2b; } .after { background:#e7f2ea; color:#1f6b43; }
+  .dot { width:8px; height:8px; border-radius:50%; } .before .dot{background:#c0392b;} .after .dot{background:#1f8a4c;}
+  .stage { padding:20px; }
+
+  .eyebrow { font-size:10px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+  h1 { font-family:Georgia,serif; font-weight:400; font-size:26px; margin:5px 0 1px; }
+  .sub { color:var(--muted); margin:0; font-size:13px; }
+  .header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .actions { display:flex; align-items:center; gap:8px; }
+
+  .btn { border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    padding:9px 14px; border-radius:9px; font-weight:600; font-size:13px; cursor:pointer; white-space:nowrap; }
+  .btn.sm { padding:7px 12px; font-size:12.5px; }
+  .btn.primary { background:var(--navy-800); color:#fff; border-color:var(--navy-800); }
+  .btn.ghost { color:var(--navy-700); }
+
+  /* dropdown */
+  .dd { position:relative; display:inline-block; }
+  .menu { margin-top:6px; min-width:250px; border:1px solid var(--line); background:var(--surface);
+    border-radius:11px; box-shadow:0 10px 24px #0f244426; padding:6px; }
+  .mi { display:flex; align-items:flex-start; gap:10px; padding:9px 10px; border-radius:8px; cursor:pointer; }
+  .mi:hover { background:var(--navy-50); }
+  .mi .t { font-size:13px; font-weight:600; }
+  .mi .d { font-size:11px; color:var(--muted); margin-top:1px; line-height:1.4; }
+  .mi.danger .t { color:var(--red); }
+  .mi.danger:hover { background:var(--red-bg); }
+  .mi .ic { width:16px; height:16px; border-radius:4px; background:var(--navy-100); margin-top:2px; flex:none; }
+  .mi.danger .ic { background:#f3c9c4; }
+  .divider { height:1px; background:var(--line); margin:5px 4px; }
+
+  /* big before password card */
+  .pwcard { margin-top:18px; border:1px solid var(--line); background:var(--surface); border-radius:12px; padding:18px; }
+  .pwcard .pt { font-weight:600; }
+  .pwcard .pd { font-size:13px; color:var(--muted); margin-top:5px; line-height:1.5; max-width:80ch; }
+  .pwbtns { display:flex; gap:10px; margin-top:14px; }
+  .btn.big { padding:11px 16px; font-size:14px; }
+  .btn.danger { border-color:#e3b3ad; color:var(--red); background:var(--surface); }
+
+  .note { font-size:12px; color:var(--muted); margin:8px 16px 16px; line-height:1.6; }
+  .note b { color:var(--ink); }
+  .resultbox { margin-top:14px; border:1px dashed var(--line); border-radius:11px; background:var(--surface); padding:14px; }
+  .resultbox .rt { font-size:13px; font-weight:600; }
+  .tag2 { display:inline-block; font-size:11px; color:var(--gold-700,#85641b); background:#f6ecca; padding:2px 8px; border-radius:999px; }
+</style>
+
+<div class="wrap">
+  <h2 class="tag">Registry header — cleaner toolbar</h2>
+  <p class="lead">Combine the two CSV actions into one <b>CSV ▾</b> button and the two password actions into one
+    smaller <b>Passwords ▾</b> button, both sitting in the header next to <b>+ New employee</b>. The big always-on
+    “Temporary sign-in passwords” card goes away; its result (the one-time list + download + warning) appears only
+    after you run an action.</p>
+
+  <!-- BEFORE -->
+  <div class="panel">
+    <div class="panel-label before"><span class="dot"></span> Before — 2 CSV buttons + a big password card with 2 large buttons</div>
+    <div class="stage">
+      <div class="header">
+        <div>
+          <p class="eyebrow">Admin · Registry</p>
+          <h1>Employees</h1>
+          <p class="sub">21 records</p>
+        </div>
+        <div class="actions">
+          <button class="btn">Export CSV</button>
+          <button class="btn">Import CSV</button>
+          <button class="btn primary">+ New employee</button>
+        </div>
+      </div>
+      <div class="pwcard">
+        <div class="pt">Temporary sign-in passwords</div>
+        <div class="pd">Generate temporary passwords for active employees and download a one-time CSV (name · email · password) to hand out. Each person is asked to set their own password on first sign-in. Passwords are stored hashed — <b>this file can’t be downloaded again</b>.</div>
+        <div class="pwbtns">
+          <button class="btn big primary">Generate for employees without a password</button>
+          <button class="btn big danger">Reset ALL passwords</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AFTER -->
+  <div class="panel">
+    <div class="panel-label after"><span class="dot"></span> After — two compact dropdowns in the header, no standing card</div>
+    <div class="stage">
+      <div class="header">
+        <div>
+          <p class="eyebrow">Admin · Registry</p>
+          <h1>Employees</h1>
+          <p class="sub">21 records</p>
+        </div>
+        <div class="actions">
+          <!-- CSV dropdown (open) -->
+          <div class="dd">
+            <button class="btn sm ghost">CSV ▾</button>
+            <div class="menu">
+              <div class="mi"><span class="ic"></span><div><div class="t">Export CSV</div><div class="d">Download every employee in the import format.</div></div></div>
+              <div class="mi"><span class="ic"></span><div><div class="t">Import CSV</div><div class="d">Upload the sheet to add / update by email.</div></div></div>
+            </div>
+          </div>
+          <!-- Passwords dropdown (open) -->
+          <div class="dd">
+            <button class="btn sm ghost">Passwords ▾</button>
+            <div class="menu">
+              <div class="mi"><span class="ic"></span><div><div class="t">Generate for employees without a password</div><div class="d">One-time CSV for people who don’t have one yet.</div></div></div>
+              <div class="divider"></div>
+              <div class="mi danger"><span class="ic"></span><div><div class="t">Reset ALL passwords</div><div class="d">Everyone gets a new temporary password. <span class="tag2">Super User only</span></div></div></div>
+            </div>
+          </div>
+          <button class="btn primary">+ New employee</button>
+        </div>
+      </div>
+
+      <!-- Result appears only after an action runs -->
+      <div class="resultbox">
+        <div class="rt">↳ After you pick “Generate…”, the result drops in here:</div>
+        <div class="note" style="margin:8px 0 0;">
+          <b>12 temporary passwords generated.</b> &nbsp;<button class="btn sm">⬇ Download CSV</button><br>
+          <span style="color:var(--gold-700,#85641b)">Copy or download now — for security they can’t be shown again.</span>
+          <span> The name · email · password table shows below (same as today).</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="lead">
+    Notes: <b>Reset ALL passwords</b> stays red/destructive and <b>Super-User-only</b> (hidden for HR Admins), and still asks
+    for confirmation. The important “can’t be downloaded again” warning moves onto the result panel where it matters.
+    Nothing about the table below changes.
+  </p>
+</div>
