@@ -50,16 +50,6 @@ type Col = {
 const COL_STORAGE_KEY = "employees:grid:columns:v1";
 const FILTERS_STORAGE_KEY = "employees:grid:filters:v1";
 
-// Columns whose header title is clickable to sort the table (A→Z, then Z→A).
-const SORTABLE_KEYS = new Set<string>([
-  "name",
-  "department",
-  "employmentType",
-  "status",
-  "monthlySalary",
-  "startDate",
-]);
-
 // Default column order + which start visible (the rest are toggled on via "Columns").
 const DEFAULT_VISIBLE = new Set([
   "name",
@@ -198,8 +188,6 @@ export function EmployeeGrid({
   const [err, setErr] = useState<string | null>(null);
   const [colsOpen, setColsOpen] = useState(false);
   const [dragKey, setDragKey] = useState<string | null>(null);
-  // Active sort: which column and which direction (1 = A→Z, -1 = Z→A). null = server order.
-  const [sort, setSort] = useState<{ key: string; dir: 1 | -1 } | null>(null);
   const [, startTransition] = useTransition();
 
   // Filters
@@ -303,39 +291,6 @@ export function EmployeeGrid({
     });
   }, [rowsState, q, fDept, fStatus, fType, fRole]);
 
-  // Sort is a view-only layer over the filtered rows — it never changes data,
-  // and it re-runs whenever filters or the sort selection change.
-  const sorted = useMemo(() => {
-    if (!sort) return filtered;
-    const { key, dir } = sort;
-    const col = colByKey.get(key);
-    const valueOf = (row: GridRow): string | number => {
-      if (key === "monthlySalary") return parseFloat(row.monthlySalary) || 0;
-      if (key === "startDate") return row.startDate || ""; // ISO YYYY-MM-DD sorts chronologically
-      if (col?.type === "select") {
-        const raw = row[key as keyof GridRow] as string;
-        return col.options?.find((o) => o.value === raw)?.label || "";
-      }
-      return ((row[key as keyof GridRow] as string) || "").toLowerCase();
-    };
-    return [...filtered].sort((a, b) => {
-      const av = valueOf(a);
-      const bv = valueOf(b);
-      const c =
-        typeof av === "number" && typeof bv === "number"
-          ? av - bv
-          : String(av).localeCompare(String(bv), undefined, { sensitivity: "base" });
-      return c * dir;
-    });
-  }, [filtered, sort, colByKey]);
-
-  function onHeaderSort(key: string) {
-    if (!SORTABLE_KEYS.has(key)) return;
-    setSort((s) =>
-      s && s.key === key ? { key, dir: (s.dir === 1 ? -1 : 1) as 1 | -1 } : { key, dir: 1 }
-    );
-  }
-
   function applyLocal(row: GridRow, key: string, value: string): GridRow {
     if (key === "reportsToId") {
       const name = managers.find((m) => m.id === value)?.name ?? "";
@@ -431,7 +386,7 @@ export function EmployeeGrid({
 
       <div className="mt-3 flex items-center justify-between">
         <p className="text-xs text-muted">
-          {filtered.length} of {rowsState.length} · click a cell to edit · click a header to sort · drag a header to reorder
+          {filtered.length} of {rowsState.length} · click a cell to edit · drag a header to reorder
         </p>
         {err ? (
           <p className="rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700">{err}</p>
@@ -442,45 +397,27 @@ export function EmployeeGrid({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
-              {visibleCols.map((col) => {
-                const isSortable = SORTABLE_KEYS.has(col.key);
-                const isSorted = sort?.key === col.key;
-                return (
-                  <th
-                    key={col.key}
-                    draggable
-                    onDragStart={() => setDragKey(col.key)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => {
-                      if (dragKey) reorder(dragKey, col.key);
-                      setDragKey(null);
-                    }}
-                    onClick={() => onHeaderSort(col.key)}
-                    title={isSortable ? "Click to sort · drag to reorder" : "Drag to reorder"}
-                    aria-sort={isSorted ? (sort!.dir === 1 ? "ascending" : "descending") : undefined}
-                    className={
-                      "cursor-move select-none whitespace-nowrap px-3 py-3 font-medium " +
-                      (isSortable ? "hover:text-navy-700" : "")
-                    }
-                  >
-                    {col.label}
-                    {isSortable ? (
-                      <span
-                        className={
-                          "ml-1.5 text-[10px] " + (isSorted ? "text-gold-600" : "text-navy-300")
-                        }
-                      >
-                        {isSorted ? (sort!.dir === 1 ? "↑" : "↓") : "↕"}
-                      </span>
-                    ) : null}
-                  </th>
-                );
-              })}
+              {visibleCols.map((col) => (
+                <th
+                  key={col.key}
+                  draggable
+                  onDragStart={() => setDragKey(col.key)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    if (dragKey) reorder(dragKey, col.key);
+                    setDragKey(null);
+                  }}
+                  title="Drag to reorder"
+                  className="cursor-move whitespace-nowrap px-3 py-3 font-medium"
+                >
+                  {col.label}
+                </th>
+              ))}
               <th className="px-3 py-3" />
             </tr>
           </thead>
           <tbody>
-            {sorted.map((row) => (
+            {filtered.map((row) => (
               <tr key={row.id} className="border-b border-line last:border-b-0">
                 {visibleCols.map((col) => {
                   const cellId = `${row.id}:${col.key}`;
@@ -510,7 +447,7 @@ export function EmployeeGrid({
                 </td>
               </tr>
             ))}
-            {sorted.length === 0 ? (
+            {filtered.length === 0 ? (
               <tr>
                 <td colSpan={visibleCols.length + 1} className="px-3 py-10 text-center text-sm text-muted">
                   No employees match these filters.

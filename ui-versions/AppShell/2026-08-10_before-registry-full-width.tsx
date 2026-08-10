@@ -280,16 +280,7 @@ export function AppShell({
             </button>
           </form>
         </header>
-        <main
-          className={
-            "w-full flex-1 p-6 md:p-10 " +
-            // The employee registry is a wide, many-column table — let it use the
-            // full screen width. Every other page keeps the centered max-width.
-            (pathname === "/admin/employees" ? "" : "max-w-6xl")
-          }
-        >
-          {children}
-        </main>
+        <main className="w-full max-w-6xl flex-1 p-6 md:p-10">{children}</main>
       </div>
     </div>
   );
