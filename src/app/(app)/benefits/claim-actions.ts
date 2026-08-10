@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
@@ -17,17 +16,35 @@ import { claimSubmittedToHR } from "@/lib/email/templates";
 /** Pool / Professional-development eligibility unlocks at 6 months of service. */
 const POOL_THRESHOLD_MONTHS = 6;
 
+/** A user-facing validation failure — carries a message back to the client inline. */
+class ClaimError extends Error {}
 function fail(msg: string): never {
-  redirect("/benefits?claimError=" + encodeURIComponent(msg));
+  throw new ClaimError(msg);
+}
+
+export type ClaimResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * File a reimbursement claim (spec 018). Returns a result (no redirect) so the client can show an
+ * inline message and soft-refresh — the card the employee claimed updates in place, no full reload.
+ */
+export async function createClaim(formData: FormData): Promise<ClaimResult> {
+  try {
+    await createClaimImpl(formData);
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof ClaimError) return { ok: false, error: e.message };
+    throw e; // real errors (incl. auth redirects) propagate as before
+  }
 }
 
 /**
- * File a reimbursement claim (spec 018). Flexible (catalog) benefits are claimed directly — no
- * submitted basket — and the employee enters the FULL price paid (matching their proof); the server
- * computes the covered share and enforces the 50%-per-benefit cap (FT + PT) and the pool ceiling.
- * Guaranteed benefits are unchanged (partial PROOF up to allocation; NOTE takes the remainder).
+ * The claim logic. Flexible (catalog) benefits are claimed directly — the employee enters the FULL
+ * price paid (matching their proof); the server computes the covered share and enforces the
+ * 50%-per-benefit cap (FT + PT) and the pool ceiling. Guaranteed benefits are unchanged (partial
+ * PROOF up to allocation; NOTE takes the remainder). Throws ClaimError on any validation failure.
  */
-export async function createClaim(formData: FormData): Promise<void> {
+async function createClaimImpl(formData: FormData): Promise<void> {
   const me = await requireUser();
   const planYear = await getActivePlanYear();
   if (!planYear) fail("Benefits aren't open right now.");
@@ -204,5 +221,4 @@ export async function createClaim(formData: FormData): Promise<void> {
 
   revalidatePath("/benefits");
   revalidatePath("/admin/benefits");
-  redirect("/benefits?claimOk=1");
 }

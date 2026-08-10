@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { ClaimType, ClaimStatus } from "@prisma/client";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS, tracker } from "@/lib/benefits/claims";
@@ -380,33 +380,11 @@ function FlexRow({ item }: { item: BoardFlex }) {
 
 /** Full-price claim form for a flexible benefit with a live covered preview. */
 function FlexClaimForm({ item, remaining }: { item: BoardFlex; remaining: number }) {
-  const router = useRouter();
   const [fullCost, setFullCost] = useState(0);
-  const [pending, startTransition] = useTransition();
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const covered = coveredAmount(fullCost, item.coverageRate);
   const over = covered > remaining;
-
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const data = new FormData(form);
-    setMsg(null);
-    startTransition(async () => {
-      const res = await createClaim(data);
-      if (res.ok) {
-        setMsg({ ok: true, text: "Claim submitted — awaiting HR review." });
-        setFullCost(0);
-        form.reset(); // clears the file input / note; amount is controlled and set above
-        router.refresh(); // soft-refresh: this card's history/status updates in place, no full reload
-      } else {
-        setMsg({ ok: false, text: res.error });
-      }
-    });
-  }
-
   return (
-    <form onSubmit={onSubmit} className="rounded-lg border border-line bg-surface p-3">
+    <form action={createClaim} encType="multipart/form-data" className="rounded-lg border border-line bg-surface p-3">
       <input type="hidden" name="kind" value="catalog" />
       <input type="hidden" name="benefitId" value={item.id} />
       <div>
@@ -435,20 +413,9 @@ function FlexClaimForm({ item, remaining }: { item: BoardFlex; remaining: number
         <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Note (optional)</label>
         <input name="note" className="w-full max-w-[280px] rounded-lg border border-line px-3 py-2 text-sm" />
       </div>
-      <button disabled={pending || fullCost <= 0 || over} className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50">
-        {pending ? "Submitting…" : "Submit claim"}
+      <button disabled={fullCost <= 0 || over} className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50">
+        Submit claim
       </button>
-      {msg ? (
-        <p
-          className={
-            "mt-2 rounded-lg px-3 py-2 text-xs font-medium " +
-            (msg.ok ? "bg-navy-50 text-navy-700" : "bg-red-50 text-red-700")
-          }
-        >
-          {msg.ok ? "✓ " : ""}
-          {msg.text}
-        </p>
-      ) : null}
     </form>
   );
 }
@@ -556,27 +523,8 @@ function MedicalModal({ rate, ceiling, premiumFraction = 1, onClose }: { rate: B
 
 /** Modal to claim/request a guaranteed benefit. */
 function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; onClose: () => void }) {
-  const router = useRouter();
   const t = tracker(benefit.allocated, benefit.claims);
   const isProof = benefit.claimType === "PROOF";
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    setError(null);
-    startTransition(async () => {
-      const res = await createClaim(data);
-      if (res.ok) {
-        router.refresh(); // the underlying benefit card updates in place
-        onClose();
-      } else {
-        setError(res.error);
-      }
-    });
-  }
-
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-navy-950/60 p-4 backdrop-blur-md" onClick={onClose}>
       <div className="w-full max-w-md rounded-2xl bg-surface p-6" onClick={(e) => e.stopPropagation()}>
@@ -585,7 +533,7 @@ function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; 
           {isProof ? "Upload proof of your spend; you're reimbursed up to your allocation." : "Request this benefit — HR reviews and pays it out."}
           {benefit.allocated != null ? ` Up to ${egp(t.remaining ?? 0)} left.` : ""}
         </p>
-        <form onSubmit={onSubmit} className="mt-4">
+        <form action={createClaim} encType="multipart/form-data" className="mt-4">
           <input type="hidden" name="kind" value="guaranteed" />
           <input type="hidden" name="benefitId" value={benefit.id} />
           {isProof ? (
@@ -606,12 +554,9 @@ function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; 
               <input type="file" name="proof" required className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-navy-700" />
             </div>
           ) : null}
-          {error ? <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{error}</p> : null}
           <div className="flex justify-end gap-2">
             <button type="button" onClick={onClose} className="rounded-lg border border-line px-4 py-2 text-sm text-muted">Cancel</button>
-            <button disabled={pending} className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-60">
-              {pending ? "Submitting…" : isProof ? "Submit claim" : "Confirm request"}
-            </button>
+            <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">{isProof ? "Submit claim" : "Confirm request"}</button>
           </div>
         </form>
       </div>
