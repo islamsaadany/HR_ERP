@@ -39,7 +39,7 @@ export async function updateBrand(formData: FormData): Promise<void> {
     }
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     try {
-      const blob = await put(`brand/${safeName}`, file, { access: "public", addRandomSuffix: true });
+      const blob = await put(`brand/${safeName}`, file, { access: "private", addRandomSuffix: true });
       logoUrl = blob.url;
     } catch (err) {
       console.error("[brand] logo upload to Vercel Blob failed:", err);

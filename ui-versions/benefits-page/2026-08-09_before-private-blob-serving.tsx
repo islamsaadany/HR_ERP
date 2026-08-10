@@ -24,7 +24,7 @@ export default async function BenefitsPage({
 }) {
   const me = await requireUser();
   await requireModuleEnabled("benefits");
-  const { claimError, claimOk } = await searchParams;
+  const { claimError } = await searchParams;
   const user = await prisma.user.findUnique({
     where: { id: me.id },
     select: {
@@ -126,7 +126,6 @@ export default async function BenefitsPage({
           }
           planYearOpen
           error={claimError}
-          claimSuccess={claimOk === "1"}
         />
       </div>
     );
@@ -228,8 +227,7 @@ export default async function BenefitsPage({
       status: c.status,
       note: c.note,
       proofName: c.proofName,
-      // Proof lives in a private store; link to the authorized serving route.
-      proofUrl: c.proofUrl ? `/api/claims/${c.id}/proof` : null,
+      proofUrl: c.proofUrl,
       decisionNote: c.decisionNote,
       createdAt: c.createdAt,
     };
@@ -323,7 +321,6 @@ export default async function BenefitsPage({
         }
         planYearOpen={!!planYear}
         error={claimError}
-        claimSuccess={claimOk === "1"}
       />
     </div>
   );

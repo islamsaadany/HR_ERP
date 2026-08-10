@@ -12,17 +12,24 @@ type Benefit = { value: string; label: string; group: "Guaranteed" | "Flexible b
  * wraps the existing {@link ManualReleaseForm}; it stays open after a successful record (matching
  * the plan-year dialog) so HR can enter several in a row, and closes on ✕, Cancel, or click-outside.
  */
-export function ManualReleaseModal({ employees, benefits }: { employees: Emp[]; benefits: Benefit[] }) {
+export function ManualReleaseModal({
+  employees,
+  benefits,
+  triggerClassName = "mt-3 rounded-lg bg-gold-500 px-4 py-2 text-sm font-semibold text-navy-900 hover:bg-gold-600",
+  triggerLabel = "Record entry…",
+}: {
+  employees: Emp[];
+  benefits: Benefit[];
+  /** Lets the caller restyle/reposition the trigger (e.g. compact, in a section header). */
+  triggerClassName?: string;
+  triggerLabel?: string;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="mt-3 rounded-lg bg-gold-500 px-4 py-2 text-sm font-semibold text-navy-900 hover:bg-gold-600"
-      >
-        Record entry…
+      <button type="button" onClick={() => setOpen(true)} className={triggerClassName}>
+        {triggerLabel}
       </button>
 
       {open ? (

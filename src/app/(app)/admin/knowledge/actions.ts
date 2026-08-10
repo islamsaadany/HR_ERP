@@ -38,7 +38,7 @@ async function resolveDeck(
     if (file.size > MAX_DECK_BYTES) return { error: "The deck is too large (max 25MB)." };
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const blob = await put(`knowledge/${slug}/${safeName}`, file, {
-      access: "public",
+      access: "private",
       addRandomSuffix: true,
     });
     if (existing?.attachmentUrl) {

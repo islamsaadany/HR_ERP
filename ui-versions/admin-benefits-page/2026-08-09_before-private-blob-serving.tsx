@@ -222,19 +222,7 @@ export default async function AdminBenefitsPage({
     <div className="space-y-6">
       {/* Claims to review */}
       <section className="rounded-xl border border-line bg-surface p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-serif text-lg text-ink">Claims to review {pendingClaims.length ? `· ${pendingClaims.length}` : ""}</h2>
-          {/* Recording a past claim is an exception (HR back-filling a claim paid outside the
-              app), so it sits as a compact secondary action here rather than a full card. */}
-          {active ? (
-            <ManualReleaseModal
-              employees={employees}
-              benefits={manualBenefits}
-              triggerLabel="＋ Record entry…"
-              triggerClassName="rounded-lg bg-gold-500 px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-gold-600"
-            />
-          ) : null}
-        </div>
+        <h2 className="mb-4 font-serif text-lg text-ink">Claims to review {pendingClaims.length ? `· ${pendingClaims.length}` : ""}</h2>
         {pendingClaims.length === 0 ? (
           <p className="text-sm text-muted">No pending claims.</p>
         ) : (
@@ -252,7 +240,7 @@ export default async function AdminBenefitsPage({
                 </div>
                 {c.note ? <p className="mt-1 text-sm text-ink">“{c.note}”</p> : null}
                 {c.proofUrl ? (
-                  <a href={`/api/claims/${c.id}/proof`} target="_blank" rel="noopener" className="mt-1 inline-block text-sm text-navy-600 underline">
+                  <a href={c.proofUrl} target="_blank" rel="noopener" className="mt-1 inline-block text-sm text-navy-600 underline">
                     {c.proofName ?? "View proof"}
                   </a>
                 ) : null}
@@ -273,6 +261,20 @@ export default async function AdminBenefitsPage({
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      {/* Record a past claim / release (manual entry) */}
+      <section className="rounded-xl border border-gold-500 bg-surface p-6">
+        <h2 className="font-serif text-lg text-ink">Record a past claim / release</h2>
+        <p className="mt-1 text-sm text-muted">
+          Back-fill a claim that was already approved and paid outside the app. It&apos;s saved as released
+          (not queued) and counts against the benefit&apos;s allocation.
+        </p>
+        {active ? (
+          <ManualReleaseModal employees={employees} benefits={manualBenefits} />
+        ) : (
+          <p className="mt-3 text-sm text-muted">Open a plan year to record entries.</p>
         )}
       </section>
 
@@ -626,7 +628,7 @@ export default async function AdminBenefitsPage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin · Benefits</p>
-          <h1 className="mt-1 font-serif text-3xl text-ink">Benefits Management</h1>
+          <h1 className="mt-1 font-serif text-3xl text-ink">Benefits configuration</h1>
         </div>
         <div className="flex items-center gap-2">
           <a

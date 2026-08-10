@@ -75,7 +75,6 @@ export function BenefitsBoard({
   medicalPremiumFraction = 1,
   medicalProration,
   error,
-  claimSuccess,
 }: {
   ceiling: number;
   poolUsed: number;
@@ -95,21 +94,10 @@ export function BenefitsBoard({
   /** Badge data for a prorated medical premium. */
   medicalProration?: BoardProration;
   error?: string;
-  /** Shown after a claim is submitted (redirect `?claimOk=1`). */
-  claimSuccess?: boolean;
 }) {
   const [medOpen, setMedOpen] = useState(false);
   const [gClaim, setGClaim] = useState<BoardGuaranteed | null>(null);
   const pct = ceiling > 0 ? Math.min(100, (poolUsed / ceiling) * 100) : 0;
-  const successBanner = claimSuccess ? (
-    <p className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-      <span aria-hidden="true" className="font-bold">✓</span>
-      <span>
-        <strong>Claim submitted.</strong> HR will review it and release your reimbursement — you&apos;ll see it
-        move to <em>Released</em> here once approved.
-      </span>
-    </p>
-  ) : null;
   const proratedBadge = proration ? (
     <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-800">
       Prorated · {proration.months} of 12 mo
@@ -126,7 +114,6 @@ export function BenefitsBoard({
             <h2 className="font-serif text-xl">Personal medical insurance</h2>
           </div>
           <div className="space-y-3 bg-surface p-5">
-            {successBanner}
             {error ? <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
             <MedicalRow committed={medicalCommitted} onSetup={() => setMedOpen(true)} />
             {medicalProration ? (
@@ -194,7 +181,6 @@ export function BenefitsBoard({
         benefit, and only that covered share draws from your pool.
       </p>
 
-      {claimSuccess ? <div className="mt-4">{successBanner}</div> : null}
       {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
       {automatic.length > 0 ? (
         <p className="mt-4 rounded-lg bg-navy-50 px-4 py-3 text-sm text-navy-700">
@@ -284,41 +270,6 @@ export function BenefitsBoard({
   );
 }
 
-/**
- * Compact status summary for a collapsed benefit row: one chip per claim status
- * that has claims, with a count. Reuses the app's claim-pill colors. Employees
- * see where each benefit stands without expanding; exact amounts stay in the
- * expanded claim history.
- */
-const STATUS_CHIPS: { status: ClaimStatus; label: string; chip: string; dot: string }[] = [
-  { status: "PENDING", label: "pending", chip: "bg-gold-100 text-gold-800", dot: "bg-gold-500" },
-  { status: "RELEASED", label: "reimbursed", chip: "bg-navy-50 text-navy-700", dot: "bg-navy-700" },
-  { status: "REJECTED", label: "rejected", chip: "bg-red-50 text-red-700", dot: "bg-red-600" },
-];
-
-function ClaimStatusSummary({ claims }: { claims: BoardClaim[] }) {
-  if (claims.length === 0) {
-    return <p className="mt-2.5 text-xs italic text-muted">No claims yet.</p>;
-  }
-  const chips = STATUS_CHIPS.map((s) => ({
-    ...s,
-    count: claims.filter((c) => c.status === s.status).length,
-  })).filter((s) => s.count > 0);
-  return (
-    <div className="mt-2.5 flex flex-wrap gap-1.5">
-      {chips.map((s) => (
-        <span
-          key={s.status}
-          className={"inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold " + s.chip}
-        >
-          <span className={"h-1.5 w-1.5 rounded-full " + s.dot} aria-hidden="true" />
-          {s.count} {s.label}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 /** One flexible benefit — collapsed row that expands to a claim form. */
 function FlexRow({ item }: { item: BoardFlex }) {
   const t = tracker(item.allocated, item.claims);
@@ -326,24 +277,21 @@ function FlexRow({ item }: { item: BoardFlex }) {
   const fullyClaimed = item.allocated != null && remaining <= 0;
   return (
     <details className="group rounded-xl border border-line bg-surface open:border-navy-700">
-      <summary className="cursor-pointer list-none p-4 [&::-webkit-details-marker]:hidden">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 text-[15px] font-medium text-ink">
-              {item.name}
-              <span className="rounded bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-navy-700">{item.coverageRate}% covered</span>
-            </div>
-            {item.description ? <div className="mt-0.5 text-xs text-muted">{item.description}</div> : null}
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-4 p-4 [&::-webkit-details-marker]:hidden">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 text-[15px] font-medium text-ink">
+            {item.name}
+            <span className="rounded bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-navy-700">{item.coverageRate}% covered</span>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1.5 text-right">
-            <div className="text-xs text-ink">Left to claim <b className="tabular-nums">{egp(remaining)}</b></div>
-            <span className="rounded-lg bg-navy-50 px-3 py-1.5 text-xs font-semibold text-navy-700">
-              {fullyClaimed ? "View" : "Claim"}
-              <span className="ml-1 inline-block group-open:rotate-180">▾</span>
-            </span>
-          </div>
+          {item.description ? <div className="mt-0.5 text-xs text-muted">{item.description}</div> : null}
         </div>
-        <ClaimStatusSummary claims={item.claims} />
+        <div className="flex shrink-0 flex-col items-end gap-1.5 text-right">
+          <div className="text-xs text-ink">Left to claim <b className="tabular-nums">{egp(remaining)}</b></div>
+          <span className="rounded-lg bg-navy-50 px-3 py-1.5 text-xs font-semibold text-navy-700">
+            {fullyClaimed ? "View" : "Claim"}
+            <span className="ml-1 inline-block group-open:rotate-180">▾</span>
+          </span>
+        </div>
       </summary>
       <div className="mx-4 border-t border-dashed border-line py-4">
         {item.claims.length > 0 ? (

@@ -5,9 +5,9 @@ import { isAdmin } from "@/lib/roles";
 import { streamPrivateBlob } from "@/lib/blob-serve";
 
 /**
- * Authorized download: only the owner or HR/Super User may fetch the file.
- * The blob lives in a PRIVATE store, so we stream it through the server after
- * the permission check — the raw blob URL is never exposed to the browser.
+ * Authorized proof-of-payment download: the claim owner or HR/Super User only.
+ * Proof files live in a PRIVATE store and are streamed through the server after
+ * the permission check — the raw blob URL is never exposed.
  */
 export async function GET(
   _req: Request,
@@ -18,13 +18,13 @@ export async function GET(
     return NextResponse.redirect(new URL("/signin", process.env.NEXTAUTH_URL ?? "http://localhost:3000"));
   }
   const { id } = await params;
-  const doc = await prisma.personalDocument.findUnique({ where: { id } });
-  if (!doc) return new NextResponse("Not found", { status: 404 });
+  const claim = await prisma.benefitClaim.findUnique({ where: { id } });
+  if (!claim || !claim.proofUrl) return new NextResponse("Not found", { status: 404 });
 
-  const isOwner = doc.ownerId === session.user.id;
+  const isOwner = claim.userId === session.user.id;
   if (!isOwner && !isAdmin(session.user.role)) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
-  return streamPrivateBlob(doc.blobUrl, { fileName: doc.title });
+  return streamPrivateBlob(claim.proofUrl, { fileName: claim.proofName });
 }

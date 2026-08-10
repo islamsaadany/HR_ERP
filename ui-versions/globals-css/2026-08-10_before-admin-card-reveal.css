@@ -104,53 +104,6 @@ body {
   transform: translateY(-2px);
 }
 
-/* Admin cards — title leads; the description reveals on hover / keyboard focus.
-   Safeguards: touch (no-hover) devices show details by default, focus reveals
-   them, and motion is disabled under reduce-motion — nothing is hidden from
-   anyone who can't hover. */
-.ff-adcard {
-  position: relative;
-  overflow: hidden;
-  min-height: 118px;
-}
-.ff-adcard .ff-ad-title {
-  transition: transform 0.22s ease;
-}
-.ff-adcard .ff-ad-details {
-  position: absolute;
-  left: 20px;
-  right: 20px;
-  bottom: 18px;
-  margin: 0;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.22s ease, transform 0.22s ease;
-}
-@media (hover: hover) {
-  .ff-adcard:hover .ff-ad-title {
-    transform: translateY(-6px);
-  }
-  .ff-adcard:hover .ff-ad-details {
-    opacity: 1;
-    transform: none;
-  }
-}
-.ff-adcard:focus-within .ff-ad-details {
-  opacity: 1;
-  transform: none;
-}
-@media (hover: none) {
-  .ff-adcard {
-    min-height: 0;
-  }
-  .ff-adcard .ff-ad-details {
-    position: static;
-    opacity: 1;
-    transform: none;
-    margin-top: 8px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .ff-reveal,
   .ff-stagger > *,
@@ -159,17 +112,6 @@ body {
     transition: none;
   }
   .ff-card:hover {
-    transform: none;
-  }
-  .ff-adcard .ff-ad-title,
-  .ff-adcard .ff-ad-details {
-    transition: none;
-  }
-  .ff-adcard:hover .ff-ad-title {
-    transform: none;
-  }
-  .ff-adcard .ff-ad-details {
-    opacity: 1;
     transform: none;
   }
 }

@@ -77,12 +77,21 @@ Set these (see `.env.example` for the shape):
 
 ## 4. Vercel
 - [ ] Connect the `islamsaadany/HR_ERP` repo, set the env vars, deploy.
-- [ ] Add Vercel Blob storage (for My Documents / Resources uploads).
+- [ ] Add Vercel Blob storage (for My Documents / Resources / proof / logo uploads).
+      **Create the store with _Private_ access** — the app streams every file
+      through authorized server routes, so a private store is required. Connecting
+      the store sets `BLOB_READ_WRITE_TOKEN` automatically; **redeploy** after.
+      (A store's access mode can't be changed later — if you created a Public one,
+      make a new Private store and reconnect.)
 
 ## Notes
-- **Personal documents** are stored in Vercel Blob with public-but-unguessable URLs; the app only
-  ever exposes an authorized download route (`/api/documents/[id]`) that checks owner/HR. Good for
-  v1; if you need hard private storage later, revisit.
+- **File storage is a _private_ Vercel Blob store.** Nothing is served by raw blob URL — every
+  file is streamed through an authorized server route that checks permissions first, then fetches
+  the bytes with the store token (`src/lib/blob-serve.ts`). Routes: personal docs
+  `/api/documents/[id]` (owner/HR), resources `/api/resources/[id]` (any employee), benefit proofs
+  `/api/claims/[id]/proof` (owner/HR), knowledge decks `/api/knowledge/[id]/attachment` (any
+  employee), and the company logo `/api/brand/logo` (public — it shows pre-sign-in). The DB still
+  stores the blob's `url`; the routes pass it to `get()`.
 - Sign-in is refused for anyone without a matching, active employee record — seed the team first.
 - The 6 employees with placeholder external emails can't sign in until you set their real
   `@forefront.consulting` emails (update the seed or edit them in the app once you can sign in).

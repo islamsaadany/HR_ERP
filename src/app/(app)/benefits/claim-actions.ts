@@ -149,7 +149,7 @@ export async function createClaim(formData: FormData): Promise<void> {
     if (file.size > 10 * 1024 * 1024) fail("Proof file too large (max 10MB).");
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     try {
-      const blob = await put(`claims/${me.id}/${safeName}`, file, { access: "public", addRandomSuffix: true });
+      const blob = await put(`claims/${me.id}/${safeName}`, file, { access: "private", addRandomSuffix: true });
       proofUrl = blob.url;
       proofName = file.name;
     } catch (err) {

@@ -1,0 +1,174 @@
+<title>Admin cards + Your-benefits status — interactive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --navy-50:#eceff5; --navy-300:#7d97ba; --navy-500:#2f4d78; --navy-700:#163055; --navy-800:#0f2444;
+    --gold-100:#f6ecca; --gold-500:#c9a227; --gold-600:#a8821e; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-50:#fbecec; --red-600:#b23b3b; --red-700:#a83333;
+    --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --shadow:0 10px 30px -12px rgba(15,36,68,.30), 0 4px 10px -6px rgba(15,36,68,.18);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;
+    -webkit-font-smoothing:antialiased;padding:32px 20px 80px}
+  .wrap{max-width:1000px;margin:0 auto}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  h1{font-family:var(--serif);font-size:30px;margin:.2em 0 0}
+  .lead{color:var(--muted);max-width:66ch;margin:12px 0 0}
+  h2.sec{font-family:var(--serif);font-size:21px;margin:44px 0 2px}
+  .why{color:var(--muted);font-size:14px;margin:6px 0 16px;max-width:76ch}
+  .hint{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--gold-800);background:var(--gold-100);border:1px solid var(--gold-500);
+    border-radius:999px;padding:4px 12px;margin-bottom:18px}
+  .rec{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--gold-800);background:var(--gold-100);border:1px solid var(--gold-500);border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle}
+
+  /* ── PART 1 · admin cards ─────────────────────────── */
+  .grid{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+  @media (max-width:640px){.grid{grid-template-columns:1fr}}
+  .acard{position:relative;display:block;min-height:118px;background:var(--surface);border:1px solid var(--line);
+    border-radius:14px;padding:22px;text-decoration:none;color:inherit;overflow:hidden;
+    transition:box-shadow .22s ease, border-color .22s ease, transform .22s ease}
+  .acard .title{font-size:19px;font-weight:600;letter-spacing:-.01em;color:var(--ink);
+    transition:transform .22s ease}
+  .acard .details{position:absolute;left:22px;right:22px;bottom:20px;margin:0;font-size:13.5px;color:var(--muted);
+    opacity:0;transform:translateY(6px);transition:opacity .22s ease, transform .22s ease}
+  .acard .pill{position:absolute;top:18px;right:18px;display:inline-flex;align-items:center;gap:6px;
+    font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--gold-100);color:var(--gold-800)}
+  .acard .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--gold-500)}
+  @media (hover:hover){
+    .acard:hover{box-shadow:var(--shadow);border-color:var(--navy-300);transform:translateY(-3px)}
+    .acard:hover .title{transform:translateY(-6px)}
+    .acard:hover .details{opacity:1;transform:none}
+  }
+  /* keyboard focus reveals too */
+  .acard:focus-within{box-shadow:var(--shadow);border-color:var(--navy-300)}
+  .acard:focus-within .details{opacity:1;transform:none}
+  .acard:focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+  /* touch / no-hover devices: always show details (no hover to reveal them) */
+  @media (hover:none){ .acard .details{position:static;opacity:1;transform:none;margin-top:8px} .acard{min-height:0} }
+  @media (prefers-reduced-motion:reduce){ .acard,.acard *{transition:none!important} .acard:hover{transform:none} .acard:hover .title{transform:none} }
+
+  /* ── PART 2 · your benefits ───────────────────────── */
+  .brow{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:16px 18px;margin-bottom:12px}
+  .brow .top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .bname{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--ink)}
+  .cov{font-size:10px;font-weight:700;text-transform:uppercase;background:var(--navy-50);color:var(--navy-700);border-radius:5px;padding:2px 6px}
+  .bdesc{margin:3px 0 0;font-size:12px;color:var(--muted)}
+  .right{flex-shrink:0;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  .left2claim{font-size:12px;color:var(--ink)}
+  .left2claim b{font-variant-numeric:tabular-nums}
+  .claimbtn{background:var(--navy-50);color:var(--navy-700);border-radius:9px;padding:6px 12px;font-size:12px;font-weight:600}
+  .statusrow{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .chip .dot{width:7px;height:7px;border-radius:50%}
+  .chip.pend{background:var(--gold-100);color:var(--gold-800)} .chip.pend .dot{background:var(--gold-500)}
+  .chip.reim{background:var(--navy-50);color:var(--navy-700)} .chip.reim .dot{background:var(--navy-700)}
+  .chip.rej{background:var(--red-50);color:var(--red-700)} .chip.rej .dot{background:var(--red-600)}
+  .empty{font-size:12px;color:var(--muted);font-style:italic;margin-top:9px}
+  .callout{border-left:3px solid var(--gold-500);padding:2px 0 2px 14px;margin:12px 0 0;color:var(--muted);font-size:13px}
+  .note{background:var(--gold-100);border:1px solid var(--gold-500);color:var(--gold-800);border-radius:10px;padding:12px 16px;font-size:13.5px;margin-top:40px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">HR_ERP · design check</p>
+  <h1>Two things to sign off</h1>
+  <p class="lead">Part 1 is the admin card behavior (hover it). Part 2 is per-benefit status on the
+    employee “Your benefits” page. Nothing is built yet.</p>
+
+  <!-- PART 1 -->
+  <h2 class="sec">Part 1 · Admin cards — title-first, details on hover</h2>
+  <p class="why">No more repeated “Open →”. The title is larger and leads; the description fades in on
+    hover, and the card lifts with a shadow so it clearly reads as clickable. The Benefits card keeps its
+    gold <strong>“needs attention”</strong> pending pill (Option A), visible at all times.</p>
+  <p class="hint">↓ hover the cards</p>
+  <div class="grid">
+    <a class="acard" tabindex="0">
+      <span class="title">Employee Registry</span>
+      <p class="details">Create and edit employee records, employment, reporting lines, and roles.</p>
+    </a>
+    <a class="acard" tabindex="0">
+      <span class="pill"><span class="dot"></span>3 pending</span>
+      <span class="title">Benefits Management</span>
+      <p class="details">Plan-year window and submissions.</p>
+    </a>
+    <a class="acard" tabindex="0">
+      <span class="title">Handbook &amp; Resources</span>
+      <p class="details">Author handbook sections and upload resources.</p>
+    </a>
+    <a class="acard" tabindex="0">
+      <span class="title">Time-Off</span>
+      <p class="details">View all leave requests; approve or decline as a fallback.</p>
+    </a>
+  </div>
+  <p class="callout">Built-in safeguards: on touch devices (no hover) the details show by default, keyboard
+    focus reveals them too, and the motion is disabled for “reduce motion” users — so nothing is hidden
+    from anyone who can't hover.</p>
+
+  <!-- PART 2 -->
+  <h2 class="sec">Part 2 · “Your benefits” — status per benefit <span class="rec">Option B</span></h2>
+  <p class="why">Today an employee only sees a claim's status after expanding a benefit. This adds a compact
+    status summary right on the collapsed row, so they know where each benefit stands at a glance. Colors reuse
+    the app's existing claim pills — <strong>gold = pending review, navy = reimbursed, red = rejected</strong> —
+    with a count each. A benefit with no claims stays clean (no chips).</p>
+
+  <!-- benefit with pending + reimbursed -->
+  <div class="brow">
+    <div class="top">
+      <div>
+        <div class="bname">Professional development <span class="cov">80% covered</span></div>
+        <p class="bdesc">Courses, certifications, and conferences.</p>
+      </div>
+      <div class="right">
+        <div class="left2claim">Left to claim <b>EGP 4,200</b></div>
+        <span class="claimbtn">Claim ▾</span>
+      </div>
+    </div>
+    <div class="statusrow">
+      <span class="chip pend"><span class="dot"></span>1 pending</span>
+      <span class="chip reim"><span class="dot"></span>2 reimbursed</span>
+    </div>
+  </div>
+
+  <!-- benefit with a rejection -->
+  <div class="brow">
+    <div class="top">
+      <div>
+        <div class="bname">Wellness &amp; gym <span class="cov">50% covered</span></div>
+        <p class="bdesc">Gym memberships and wellness activities.</p>
+      </div>
+      <div class="right">
+        <div class="left2claim">Left to claim <b>EGP 1,500</b></div>
+        <span class="claimbtn">Claim ▾</span>
+      </div>
+    </div>
+    <div class="statusrow">
+      <span class="chip reim"><span class="dot"></span>1 reimbursed</span>
+      <span class="chip rej"><span class="dot"></span>1 rejected</span>
+    </div>
+  </div>
+
+  <!-- benefit with no claims -->
+  <div class="brow">
+    <div class="top">
+      <div>
+        <div class="bname">Home office <span class="cov">70% covered</span></div>
+        <p class="bdesc">Desk, chair, and equipment for remote work.</p>
+      </div>
+      <div class="right">
+        <div class="left2claim">Left to claim <b>EGP 3,000</b></div>
+        <span class="claimbtn">Claim ▾</span>
+      </div>
+    </div>
+    <p class="empty">No claims yet.</p>
+  </div>
+
+  <p class="callout">Amounts (e.g. “EGP 1,200 pending”) still live in the expanded claim history — the chips are a
+    quick status glance, and I can switch them to show amounts instead of counts if you prefer.</p>
+
+  <div class="note"><strong>Sign-off check.</strong> Approve Part 1 (card hover behavior + pending pill + rename)
+    and Part 2 (per-benefit status chips, counts, app colors). Tell me any tweak — chip wording, counts-vs-amounts,
+    hover feel — and I'll adjust here first, then implement, snapshot, build, and push.</p>
+</div>
