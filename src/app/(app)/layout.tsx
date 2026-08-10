@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/roles";
-import { isAdmin, isSuperUser } from "@/lib/roles";
+import { isAdmin, isSuperUser, isFinance } from "@/lib/roles";
 import { getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
 import { prisma } from "@/lib/prisma";
@@ -53,6 +53,7 @@ export default async function AppLayout({
       email={user.email}
       showAdmin={isAdmin(user.role)}
       showIncentive={isSuperUser(user.role)}
+      showPayments={isFinance(user.role)}
       hiddenNav={hiddenNav}
       navBadges={{ "/time-off": timeoffBadge }}
       companyName={brand.companyName}

@@ -1,0 +1,202 @@
+<title>Employee Registry — full-width + sortable headers (mockup)</title>
+<style>
+  :root {
+    --color-navy-50:#eceff5; --color-navy-100:#d6deea; --color-navy-500:#2f4d78;
+    --color-navy-600:#1f3a63; --color-navy-700:#163055; --color-navy-800:#0f2444;
+    --color-navy-900:#0a1a30;
+    --color-gold-100:#f6ecca; --color-gold-400:#d4ac39; --color-gold-600:#a8821e; --color-gold-800:#6f521c;
+    --color-paper:#f5f3ee; --color-surface:#fefdfb; --color-ink:#16202e;
+    --color-muted:#5f6472; --color-line:#e7e3da;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--color-paper); color:var(--color-ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size:14px;
+  }
+  .shell { display:flex; min-height:100vh; }
+  aside {
+    width:64px; flex:none; background:var(--color-navy-900); color:#fff;
+    display:flex; flex-direction:column; align-items:center; gap:22px; padding:18px 0;
+  }
+  aside .logo { width:34px; height:34px; border-radius:9px; background:var(--color-navy-800);
+    display:grid; place-items:center; font-family:Georgia,serif; color:var(--color-gold-400); font-size:18px; }
+  aside .ic { width:20px; height:20px; border-radius:5px; background:#ffffff22; }
+  aside .ic.on { background:var(--color-gold-400); }
+  .main { flex:1; min-width:0; padding:40px; }
+
+  /* ── The change: registry content spans the full available width (no 1150px cap) ── */
+  .content { width:100%; }
+
+  .eyebrow { font-size:11px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--color-gold-600); margin:0; }
+  h1 { font-family:Georgia,"Times New Roman",serif; font-weight:400; font-size:30px; margin:6px 0 2px; color:var(--color-ink); }
+  .sub { color:var(--color-muted); margin:0; }
+  .head-row { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .actions { display:flex; gap:8px; }
+  .btn { border:1px solid var(--color-line); background:var(--color-surface); color:var(--color-ink);
+    padding:9px 15px; border-radius:9px; font-weight:600; font-size:13px; cursor:pointer; }
+  .btn.primary { background:var(--color-navy-800); color:#fff; border-color:var(--color-navy-800); }
+
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; margin-top:22px; }
+  .toolbar input, .toolbar select {
+    border:1px solid var(--color-line); background:var(--color-surface); color:var(--color-ink);
+    padding:8px 11px; border-radius:9px; font-size:13px; }
+  .toolbar input { flex:1; min-width:200px; }
+  .meta { margin:12px 0; font-size:12px; color:var(--color-muted); }
+
+  .tablewrap { border:1px solid var(--color-line); background:var(--color-surface); border-radius:12px; overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  thead tr { border-bottom:1px solid var(--color-line); }
+  th { text-align:left; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--color-muted); padding:13px 14px; white-space:nowrap; }
+  /* Sortable headers: look clickable, show a direction caret */
+  th.sortable { cursor:pointer; user-select:none; }
+  th.sortable:hover { color:var(--color-navy-700); }
+  th .caret { display:inline-block; margin-left:6px; font-size:10px; color:var(--color-navy-400, #4f6d97); opacity:.35; }
+  th.sortable:hover .caret { opacity:.6; }
+  th.sorted .caret { opacity:1; color:var(--color-gold-600); }
+  td { padding:11px 14px; border-bottom:1px solid var(--color-line); vertical-align:middle; white-space:nowrap; }
+  tbody tr:last-child td { border-bottom:none; }
+  .cell-btn { display:block; width:100%; text-align:left; border:0; background:transparent; color:inherit;
+    padding:5px 8px; border-radius:6px; font:inherit; cursor:text; }
+  .cell-btn:hover { background:var(--color-navy-50); }
+  .muted { color:var(--color-muted); }
+  .pill { display:inline-block; border-radius:999px; padding:2px 9px; font-size:12px; }
+  .pill.active { background:var(--color-navy-50); color:var(--color-navy-700); }
+  .pill.left { background:#f0f0f0; color:var(--color-muted); }
+  .open-link { color:var(--color-navy-600); font-size:12px; font-weight:600; text-decoration:none; }
+  .num { font-variant-numeric: tabular-nums; }
+  .note { margin-top:18px; font-size:12px; color:var(--color-muted); line-height:1.6; max-width:70ch; }
+  .note b { color:var(--color-ink); }
+  .demo-input { border:1px solid var(--color-navy-500); border-radius:6px; padding:5px 8px; font:inherit; width:150px; }
+</style>
+
+<div class="shell">
+  <aside>
+    <div class="logo">F</div>
+    <div class="ic"></div><div class="ic"></div><div class="ic on"></div><div class="ic"></div><div class="ic"></div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="head-row">
+        <div>
+          <p class="eyebrow">Admin · Registry</p>
+          <h1>Employees</h1>
+          <p class="sub">20 records</p>
+        </div>
+        <div class="actions">
+          <button class="btn">Export CSV</button>
+          <button class="btn">Import CSV</button>
+          <button class="btn primary">+ New employee</button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <input placeholder="Search name, email, title…">
+        <select><option>All departments</option></select>
+        <select><option>All types</option></select>
+        <select><option>All statuses</option></select>
+        <select><option>All roles</option></select>
+        <button class="btn">Columns ▾</button>
+      </div>
+
+      <p class="meta">20 of 20 · click a cell to edit · <b>click a header title to sort A→Z, again for Z→A</b> · drag a header to reorder</p>
+
+      <div class="tablewrap">
+        <table id="grid">
+          <thead>
+            <tr>
+              <th class="sortable" data-key="name" data-type="text">Name <span class="caret">↕</span></th>
+              <th>Email</th>
+              <th class="sortable" data-key="department" data-type="text">Department <span class="caret">↕</span></th>
+              <th class="sortable" data-key="type" data-type="text">Type <span class="caret">↕</span></th>
+              <th class="sortable" data-key="status" data-type="text">Status <span class="caret">↕</span></th>
+              <th class="sortable" data-key="start" data-type="date">Start date <span class="caret">↕</span></th>
+              <th class="sortable" data-key="salary" data-type="num">Monthly salary <span class="caret">↕</span></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <p class="note">
+        <b>Two fixes shown here:</b><br>
+        1. <b>Full width</b> — the table now stretches to fill the screen; the empty band on the right is gone
+        (only the registry page changes; every other page keeps its current centered width).<br>
+        2. <b>Sortable headers</b> — Name, Department, Type, Status, Start date, Monthly salary are clickable:
+        first click sorts A→Z (↑), second click Z→A (↓); the active header shows a gold caret. Other headers
+        (e.g. Email) stay plain. Dragging a header to reorder still works — a click sorts, a drag reorders.<br>
+        3. Because the table now has room, clicking a date cell to edit no longer pops a scrollbar at the bottom —
+        e.g. <span class="demo-input" contenteditable="false">dd / mm / yyyy 📅</span> fits inside its column.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const DATA = [
+    {name:"Ahmed Galal", email:"ahmed.galal@forefront.consulting", department:"Consulting Department", type:"Full-time", status:"Active", start:"2024-02-01", salary:38000},
+    {name:"Alaa Allam", email:"alaa.allam@visualshiftconsulting.com", department:"Marketing & Community", type:"Part-time", status:"Active", start:"2021-06-15", salary:22000},
+    {name:"Aley eldeen Mahmoud", email:"aley.mahmoud@forefront.consulting", department:"Data Management Unit", type:"Full-time", status:"Active", start:"2021-01-10", salary:41000},
+    {name:"Islam Saadany", email:"islam.saadany@forefront.consulting", department:"Top Management", type:"Full-time", status:"Active", start:"2020-09-01", salary:75000},
+    {name:"Michle Magdy", email:"michael.magdy@forefront.consulting", department:"Data Management Unit", type:"Part-time", status:"Active", start:"", salary:19000},
+    {name:"Mohamed Essam", email:"mohamed.essam@forefront.consulting", department:"Consulting Department", type:"Full-time", status:"Active", start:"", salary:36000},
+    {name:"Mohamed Yahia Salama Selim", email:"mohamed.selim@forefront.consulting", department:"Financial Department", type:"Part-time", status:"Active", start:"2022-03-20", salary:28000},
+    {name:"Momen Mohamed Zaki", email:"momen.zaki@forefront.consulting", department:"Consulting Department", type:"Full-time", status:"Active", start:"2021-04-11", salary:40000},
+    {name:"Nermine Hazem", email:"nermine.hazem@thestrategy-community.com", department:"Marketing & Community", type:"Part-time", status:"Left", start:"", salary:21000},
+    {name:"Noran Essam", email:"noran.esam@forefront.consulting", department:"Consulting Department", type:"Full-time", status:"Active", start:"2024-05-02", salary:33000},
+    {name:"Omar Alaa", email:"omar.alaa@forefront.consulting", department:"Consulting Department", type:"Full-time", status:"Active", start:"2024-01-15", salary:34000},
+    {name:"Passant Mohammed", email:"passant@engageconsultings.com", department:"Top Management", type:"Part-time", status:"Active", start:"2024-07-01", salary:52000},
+    {name:"Raneem Sarhan", email:"raneem.sarhaan@forefront.consulting", department:"Marketing & Community", type:"Full-time", status:"Active", start:"2022-08-08", salary:30000},
+    {name:"Reem El Barbary", email:"reem.elbarbary@forefront.consulting", department:"Data Management Unit", type:"Part-time", status:"Active", start:"2021-02-18", salary:26000},
+    {name:"Salma Adel", email:"salma.adel@forefront.consulting", department:"Marketing & Community", type:"Full-time", status:"Active", start:"2022-11-01", salary:31000},
+    {name:"Samaa Hussein", email:"samaa.hussein@forefront.consulting", department:"Marketing & Community", type:"Full-time", status:"Active", start:"2024-03-12", salary:29000},
+    {name:"Yosra El-Tobgy", email:"yosra.eltopgy@forefront.consulting", department:"Marketing & Community", type:"Full-time", status:"Active", start:"2024-06-01", salary:32000},
+    {name:"Marwa Abdelazeem", email:"marwa.abdelazeem@forefront.consulting", department:"Marketing & Community", type:"Full-time", status:"Active", start:"2022-05-09", salary:33000},
+    {name:"Menna Helal", email:"menna.helal@forefront.consulting", department:"Marketing & Community", type:"Full-time", status:"Active", start:"2024-04-04", salary:30000},
+    {name:"Mohamed Magdy", email:"mohamed.magdy@forefront.consulting", department:"Consulting Department", type:"Part-time", status:"Active", start:"2022-09-30", salary:27000},
+  ];
+
+  let sortKey = null, sortDir = 1; // 1 = A→Z, -1 = Z→A
+  const tbody = document.querySelector("#grid tbody");
+
+  function fmtDate(s){ if(!s) return "—"; const [y,m,d]=s.split("-"); return `${d}/${m}/${y}`; }
+  function fmtSalary(n){ return n ? n.toLocaleString("en-US") : "—"; }
+
+  function render(rows){
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td><button class="cell-btn">${r.name}</button></td>
+        <td><button class="cell-btn muted">${r.email}</button></td>
+        <td><button class="cell-btn">${r.department}</button></td>
+        <td><button class="cell-btn">${r.type}</button></td>
+        <td><button class="cell-btn"><span class="pill ${r.status==='Active'?'active':'left'}">${r.status}</span></button></td>
+        <td><button class="cell-btn num ${r.start?'':'muted'}">${fmtDate(r.start)}</button></td>
+        <td><button class="cell-btn num ${r.salary?'':'muted'}">${fmtSalary(r.salary)}</button></td>
+        <td style="text-align:right"><a class="open-link" href="#">Open</a></td>
+      </tr>`).join("");
+  }
+
+  function sortBy(key, type){
+    if (sortKey === key) sortDir = -sortDir; else { sortKey = key; sortDir = 1; }
+    const rows = [...DATA].sort((a,b)=>{
+      let av=a[key], bv=b[key];
+      if (type==="num"){ av=av||0; bv=bv||0; return (av-bv)*sortDir; }
+      if (type==="date"){ av=av||""; bv=bv||""; return av.localeCompare(bv)*sortDir; } // blanks sort first
+      return String(av).localeCompare(String(bv), undefined, {sensitivity:"base"})*sortDir;
+    });
+    render(rows);
+    document.querySelectorAll("th.sortable").forEach(th=>{
+      const c = th.querySelector(".caret");
+      if (th.dataset.key === key){ th.classList.add("sorted"); c.textContent = sortDir===1?"↑":"↓"; }
+      else { th.classList.remove("sorted"); c.textContent = "↕"; }
+    });
+  }
+
+  document.querySelectorAll("th.sortable").forEach(th=>{
+    th.addEventListener("click", ()=> sortBy(th.dataset.key, th.dataset.type));
+  });
+
+  render(DATA);
+</script>

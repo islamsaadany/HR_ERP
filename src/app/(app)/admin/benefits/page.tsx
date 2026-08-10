@@ -6,14 +6,14 @@ import {
   TENURE_BAND_LABEL,
   TENURE_BAND_ORDER,
 } from "@/lib/labels";
-import { CLAIM_TYPE_LABEL } from "@/lib/benefits/claims";
+import { CLAIM_TYPE_LABEL, CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS } from "@/lib/benefits/claims";
 import { BackLink } from "@/components/admin/BackLink";
 import type { EmploymentType, TenureBand } from "@prisma/client";
 import {
   editMedicalCommitment,
   removeMedicalCommitment,
   setClaimType,
-  releaseClaim,
+  approveClaim,
   rejectClaim,
 } from "./actions";
 import {
@@ -54,13 +54,14 @@ export default async function AdminBenefitsPage({
         : Promise.resolve([]),
       active
         ? prisma.benefitClaim.findMany({
-            where: { planYearId: active.id, status: "PENDING" },
+            // All the plan year's claims — HR keeps visibility; only SUBMITTED ones are actionable.
+            where: { planYearId: active.id },
             include: {
               user: { select: { name: true } },
               guaranteedBenefit: { select: { name: true } },
               catalogItem: { select: { name: true } },
             },
-            orderBy: { createdAt: "asc" },
+            orderBy: { createdAt: "desc" },
           })
         : Promise.resolve([]),
       prisma.guaranteedBenefit.findMany({ orderBy: [{ employmentType: "asc" }, { order: "asc" }] }),
@@ -72,6 +73,11 @@ export default async function AdminBenefitsPage({
         select: { id: true, name: true },
       }),
     ]);
+  // SUBMITTED claims are the actionable ones (drive the tab badge); show them first.
+  const claimsToReview = pendingClaims.filter((c) => c.status === "SUBMITTED").length;
+  const sortedClaims = [...pendingClaims].sort(
+    (a, b) => (a.status === "SUBMITTED" ? 0 : 1) - (b.status === "SUBMITTED" ? 0 : 1)
+  );
   const rateCard = await prisma.medicalRateCard.findFirst();
 
   const ceilOf = (t: EmploymentType, b: TenureBand) =>
@@ -223,7 +229,7 @@ export default async function AdminBenefitsPage({
       {/* Claims to review */}
       <section className="rounded-xl border border-line bg-surface p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-serif text-lg text-ink">Claims to review {pendingClaims.length ? `· ${pendingClaims.length}` : ""}</h2>
+          <h2 className="font-serif text-lg text-ink">Claims {claimsToReview ? `· ${claimsToReview} to review` : ""}</h2>
           {/* Recording a past claim is an exception (HR back-filling a claim paid outside the
               app), so it sits as a compact secondary action here rather than a full card. */}
           {active ? (
@@ -235,11 +241,11 @@ export default async function AdminBenefitsPage({
             />
           ) : null}
         </div>
-        {pendingClaims.length === 0 ? (
-          <p className="text-sm text-muted">No pending claims.</p>
+        {sortedClaims.length === 0 ? (
+          <p className="text-sm text-muted">No claims yet.</p>
         ) : (
           <ul className="space-y-3">
-            {pendingClaims.map((c) => (
+            {sortedClaims.map((c) => (
               <li key={c.id} className="rounded-lg border border-line p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
@@ -248,28 +254,36 @@ export default async function AdminBenefitsPage({
                       {c.guaranteedBenefit?.name ?? c.catalogItem?.name} · <span className="tabular-nums">{egp(c.amount)}</span>
                     </span>
                   </div>
-                  <span className="text-xs text-muted">{formatDate(c.createdAt)}</span>
+                  <div className="flex items-center gap-2">
+                    <span className={"rounded-full px-2 py-0.5 text-xs font-semibold " + CLAIM_STATUS_CLASS[c.status]}>
+                      {CLAIM_STATUS_LABEL[c.status]}
+                    </span>
+                    <span className="text-xs text-muted">{formatDate(c.createdAt)}</span>
+                  </div>
                 </div>
                 {c.note ? <p className="mt-1 text-sm text-ink">“{c.note}”</p> : null}
+                {c.decisionNote ? <p className="mt-1 text-xs text-red-600">Rejected: {c.decisionNote}</p> : null}
                 {c.proofUrl ? (
                   <a href={`/api/claims/${c.id}/proof`} target="_blank" rel="noopener" className="mt-1 inline-block text-sm text-navy-600 underline">
                     {c.proofName ?? "View proof"}
                   </a>
                 ) : null}
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <form action={releaseClaim}>
-                    <input type="hidden" name="id" value={c.id} />
-                    <button className="rounded-lg bg-navy-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-navy-700">Release payment</button>
-                  </form>
-                  <details>
-                    <summary className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">Reject</summary>
-                    <form action={rejectClaim} className="mt-2 flex items-center gap-2">
+                {c.status === "SUBMITTED" ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <form action={approveClaim}>
                       <input type="hidden" name="id" value={c.id} />
-                      <input name="reason" placeholder="Reason (optional)" className="rounded-lg border border-line px-3 py-1.5 text-sm" />
-                      <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-red-600 hover:border-red-300">Confirm reject</button>
+                      <button className="rounded-lg bg-navy-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-navy-700">Approve</button>
                     </form>
-                  </details>
-                </div>
+                    <details>
+                      <summary className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">Reject</summary>
+                      <form action={rejectClaim} className="mt-2 flex items-center gap-2">
+                        <input type="hidden" name="id" value={c.id} />
+                        <input name="reason" placeholder="Reason (optional)" className="rounded-lg border border-line px-3 py-1.5 text-sm" />
+                        <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-red-600 hover:border-red-300">Confirm reject</button>
+                      </form>
+                    </details>
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -662,7 +676,7 @@ export default async function AdminBenefitsPage({
 
       <AdminBenefitsTabs
         tabs={[
-          { id: "submissions", label: "Submissions & Claims", badge: pendingClaims.length, node: submissionsPanel },
+          { id: "submissions", label: "Submissions & Claims", badge: claimsToReview, node: submissionsPanel },
           { id: "catalogue", label: "Benefits Catalogue", node: cataloguePanel },
           { id: "amounts", label: "Amounts", node: amountsPanel },
         ]}

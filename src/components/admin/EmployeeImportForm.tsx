@@ -66,8 +66,8 @@ export function EmployeeImportForm() {
             <Stat label="Children" value={state.dependantsCreated} />
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-line bg-surface">
-            <table className="w-full text-sm">
+          <div className="ff-data-scroll rounded-xl border border-line bg-surface">
+            <table className="ff-data-table text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
                   <th className="px-4 py-3 font-medium">Row</th>

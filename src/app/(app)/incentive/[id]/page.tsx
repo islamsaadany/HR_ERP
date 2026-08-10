@@ -62,51 +62,57 @@ export default async function CyclePage({
     { kind: "contributions", label: "Contributions", count: cycle.contributions.length },
   ];
 
+  const hasData = cycle.people.length > 0 || cycle.assignments.length > 0;
+
   return (
     <div>
-      <Link href="/incentive" className="text-sm text-muted hover:text-ink">← Incentive Scheme</Link>
-      <div className="mt-2 flex items-center gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Super User · Confidential</p>
-      </div>
-      <h1 className="mt-1 font-serif text-3xl text-ink">{cycle.label}</h1>
+      {/* Header + inputs stay at the normal reading width; only the wide report
+          tables below break out to the full-width page (see AppShell). */}
+      <div className="max-w-6xl">
+        <Link href="/incentive" className="text-sm text-muted hover:text-ink">← Incentive Scheme</Link>
+        <div className="mt-2 flex items-center gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Super User · Confidential</p>
+        </div>
+        <h1 className="mt-1 font-serif text-3xl text-ink">{cycle.label}</h1>
 
-      {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p> : null}
-      {warn ? <p className="mt-4 rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">Uploaded with notes: {warn}</p> : null}
+        {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p> : null}
+        {warn ? <p className="mt-4 rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">Uploaded with notes: {warn}</p> : null}
 
-      {/* Inputs: firm figures + sheet uploads */}
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <FirmFiguresCard
-          revenue={cycle.revenue}
-          deliveryCost={cycle.deliveryCost}
-          totalExpenses={cycle.totalExpenses}
-          action={saveFirm}
-        />
+        {/* Inputs: firm figures + sheet uploads */}
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <FirmFiguresCard
+            revenue={cycle.revenue}
+            deliveryCost={cycle.deliveryCost}
+            totalExpenses={cycle.totalExpenses}
+            action={saveFirm}
+          />
 
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm font-semibold text-ink">Upload sheets (CSV)</div>
-            <div className="flex gap-2 text-xs">
-              <a href="/api/incentive/template/people" className="text-navy-700 hover:underline">people</a>
-              <a href="/api/incentive/template/assignments" className="text-navy-700 hover:underline">assignments</a>
-              <a href="/api/incentive/template/contributions" className="text-navy-700 hover:underline">contributions</a>
+          <div className="rounded-xl border border-line bg-surface p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold text-ink">Upload sheets (CSV)</div>
+              <div className="flex gap-2 text-xs">
+                <a href="/api/incentive/template/people" className="text-navy-700 hover:underline">people</a>
+                <a href="/api/incentive/template/assignments" className="text-navy-700 hover:underline">assignments</a>
+                <a href="/api/incentive/template/contributions" className="text-navy-700 hover:underline">contributions</a>
+              </div>
+            </div>
+            <p className="mt-1 text-[11px] text-muted">Download a template, fill it, upload it back. Re-uploading replaces that sheet.</p>
+            <div className="mt-3 space-y-3">
+              {uploads.map((u) => (
+                <SheetUpload key={u.kind} cycleId={cycle.id} kind={u.kind} label={u.label} count={u.count} />
+              ))}
             </div>
           </div>
-          <p className="mt-1 text-[11px] text-muted">Download a template, fill it, upload it back. Re-uploading replaces that sheet.</p>
-          <div className="mt-3 space-y-3">
-            {uploads.map((u) => (
-              <SheetUpload key={u.kind} cycleId={cycle.id} kind={u.kind} label={u.label} count={u.count} />
-            ))}
-          </div>
         </div>
+
+        {!hasData ? (
+          <p className="mt-8 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
+            Upload the people, assignments, and contributions sheets to see the computed payout.
+          </p>
+        ) : null}
       </div>
 
-      {cycle.people.length === 0 && cycle.assignments.length === 0 ? (
-        <p className="mt-8 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
-          Upload the people, assignments, and contributions sheets to see the computed payout.
-        </p>
-      ) : (
-        <CycleReportView report={report} />
-      )}
+      {hasData ? <CycleReportView report={report} /> : null}
     </div>
   );
 }

@@ -1,11 +1,11 @@
-import Link from "next/link";
 import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { toDateInput } from "@/lib/labels";
 import { getDepartments, unionDepartments } from "@/lib/departments";
+import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
 import { BackLink } from "@/components/admin/BackLink";
 import { EmployeeGrid, type GridRow } from "@/components/admin/EmployeeGrid";
-import { TempPasswordsPanel } from "@/components/admin/TempPasswordsPanel";
+import { RegistryHeader } from "@/components/admin/RegistryHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +54,9 @@ export default async function EmployeesPage() {
     department: e.department ?? "",
     phone: e.phone ?? "",
     employmentType: e.employmentType ?? "",
-    tenureBand: e.tenureBand ?? "",
+    // Tenure band and status are derived (never hand-entered) so the grid is
+    // always current: band from the hire date, status from the end date.
+    tenureBand: deriveTenureBand(e.startDate).band ?? "",
     startDate: toDateInput(e.startDate),
     endDate: toDateInput(e.endDate),
     // Confidential: never send salary to the client for a non-Super-User.
@@ -64,7 +66,7 @@ export default async function EmployeesPage() {
     emergencyContactName: e.emergencyContactName ?? "",
     emergencyContactRelationship: e.emergencyContactRelationship ?? "",
     emergencyContactPhone: e.emergencyContactPhone ?? "",
-    status: e.status,
+    status: statusFromEndDate(e.endDate),
     role: e.role,
     reportsToId: e.reportsToId ?? "",
     reportsToName: e.reportsTo?.name ?? "",
@@ -79,37 +81,7 @@ export default async function EmployeesPage() {
   return (
     <div>
       <BackLink href="/admin" label="Admin" />
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
-            Admin · Registry
-          </p>
-          <h1 className="mt-1 font-serif text-3xl text-ink">Employees</h1>
-          <p className="mt-1 text-muted">{employees.length} records</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <a
-            href="/api/admin/employees/export"
-            className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-paper"
-          >
-            Export CSV
-          </a>
-          <Link
-            href="/admin/employees/import"
-            className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink hover:bg-paper"
-          >
-            Import CSV
-          </Link>
-          <Link
-            href="/admin/employees/new"
-            className="rounded-lg bg-navy-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-700"
-          >
-            + New employee
-          </Link>
-        </div>
-      </div>
-
-      <TempPasswordsPanel canResetAll={isSuperUser(actor.role)} />
+      <RegistryHeader employeeCount={employees.length} canResetAll={isSuperUser(actor.role)} />
 
       <EmployeeGrid
         rows={rows}

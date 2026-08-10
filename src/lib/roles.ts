@@ -6,6 +6,9 @@ import { redirect } from "next/navigation";
 export const isAdmin = (role?: Role) =>
   role === "HR_ADMIN" || role === "SUPER_USER";
 export const isSuperUser = (role?: Role) => role === "SUPER_USER";
+/** Finance can confirm benefit-claim payments (spec 020); Super User is a superset. */
+export const isFinance = (role?: Role) =>
+  role === "FINANCE" || role === "SUPER_USER";
 
 /** Salary is confidential — only a Super User may see or edit monthly salary. HR Admin cannot. */
 export const canSeeSalary = (role?: Role) => isSuperUser(role);
@@ -33,6 +36,13 @@ export async function requireAdmin() {
 export async function requireSuperUser() {
   const user = await requireUser();
   if (!isSuperUser(user.role)) redirect("/dashboard");
+  return user;
+}
+
+/** Require Finance (or Super User); redirect home otherwise. Gates the payments queue (spec 020). */
+export async function requireFinance() {
+  const user = await requireUser();
+  if (!isFinance(user.role)) redirect("/dashboard");
   return user;
 }
 

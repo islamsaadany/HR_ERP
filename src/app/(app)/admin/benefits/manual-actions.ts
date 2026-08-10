@@ -100,12 +100,12 @@ export async function recordManualRelease(formData: FormData): Promise<ManualRes
     return { ok: false, error: "No allocation exists for that benefit — nothing to release against." };
   }
 
-  // Cap: existing RELEASED + PENDING claims count against the allocation.
+  // Cap: every non-rejected claim counts against the allocation.
   const existing = await prisma.benefitClaim.findMany({
     where: {
       userId: user.id,
       planYearId: planYear.id,
-      status: { in: ["PENDING", "RELEASED"] },
+      status: { not: "REJECTED" },
       ...claimWhere,
     },
     select: { amount: true },
@@ -125,7 +125,8 @@ export async function recordManualRelease(formData: FormData): Promise<ManualRes
       planYearId: planYear.id,
       ...claimWhere,
       amount,
-      status: "RELEASED",
+      // Back-filled = a payment that already happened → straight to Reimbursed, no emails.
+      status: "REIMBURSED",
       decidedAt: approvalDate,
       reviewedById: actor.id,
       note: "Recorded by HR (back-filled)",

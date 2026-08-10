@@ -10,6 +10,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   EMPLOYEE: "Employee",
   HR_ADMIN: "HR Admin",
   SUPER_USER: "Super User",
+  FINANCE: "Finance",
 };
 
 export const EMPLOYMENT_TYPE_LABEL: Record<EmploymentType, string> = {

@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
@@ -9,21 +8,43 @@ import { getActivePlanYear, amountForBand, getMedicalCommitment, planYearWindow 
 import { tracker } from "@/lib/benefits/claims";
 import { evaluateClaim, type AllowanceContext } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate } from "@/lib/benefits/proration";
+import { deriveTenureBand } from "@/lib/tenure";
+import { getNotificationSettings } from "@/lib/notifications/settings";
+import { sendEmail } from "@/lib/email/client";
+import { claimSubmittedToHR } from "@/lib/email/templates";
 
 /** Pool / Professional-development eligibility unlocks at 6 months of service. */
 const POOL_THRESHOLD_MONTHS = 6;
 
+/** A user-facing validation failure — carries a message back to the client inline. */
+class ClaimError extends Error {}
 function fail(msg: string): never {
-  redirect("/benefits?claimError=" + encodeURIComponent(msg));
+  throw new ClaimError(msg);
+}
+
+export type ClaimResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * File a reimbursement claim (spec 018). Returns a result (no redirect) so the client can show an
+ * inline message and soft-refresh — the card the employee claimed updates in place, no full reload.
+ */
+export async function createClaim(formData: FormData): Promise<ClaimResult> {
+  try {
+    await createClaimImpl(formData);
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof ClaimError) return { ok: false, error: e.message };
+    throw e; // real errors (incl. auth redirects) propagate as before
+  }
 }
 
 /**
- * File a reimbursement claim (spec 018). Flexible (catalog) benefits are claimed directly — no
- * submitted basket — and the employee enters the FULL price paid (matching their proof); the server
- * computes the covered share and enforces the 50%-per-benefit cap (FT + PT) and the pool ceiling.
- * Guaranteed benefits are unchanged (partial PROOF up to allocation; NOTE takes the remainder).
+ * The claim logic. Flexible (catalog) benefits are claimed directly — the employee enters the FULL
+ * price paid (matching their proof); the server computes the covered share and enforces the
+ * 50%-per-benefit cap (FT + PT) and the pool ceiling. Guaranteed benefits are unchanged (partial
+ * PROOF up to allocation; NOTE takes the remainder). Throws ClaimError on any validation failure.
  */
-export async function createClaim(formData: FormData): Promise<void> {
+async function createClaimImpl(formData: FormData): Promise<void> {
   const me = await requireUser();
   const planYear = await getActivePlanYear();
   if (!planYear) fail("Benefits aren't open right now.");
@@ -39,7 +60,11 @@ export async function createClaim(formData: FormData): Promise<void> {
     where: { id: me.id },
     select: { employmentType: true, tenureBand: true, monthlySalary: true, startDate: true },
   });
-  if (!user?.employmentType || !user?.tenureBand) fail("Your profile isn't set — contact HR.");
+  if (!user?.employmentType) fail("Your profile isn't set — contact HR.");
+  // Tenure band is derived from the hire date so claim-time enforcement always
+  // uses the current band (never a stale stored value).
+  const tenureBand = deriveTenureBand(user.startDate).band;
+  if (!tenureBand) fail("Your profile isn't set — contact HR.");
 
   // Mid-year starter proration (spec 019): scale the pool ceiling / Professional-development
   // allocation by the whole months left in the plan year from the 6-month eligibility date.
@@ -47,14 +72,16 @@ export async function createClaim(formData: FormData): Promise<void> {
 
   let claimType: "NONE" | "NOTE" | "PROOF";
   let claimAmount: number; // the COVERED amount stored on the claim
+  let benefitName = ""; // for the HR notification email
   const link: { guaranteedBenefitId?: string; catalogItemId?: string } = {};
 
   if (kind === "guaranteed") {
     const gb = await prisma.guaranteedBenefit.findUnique({ where: { id: benefitId } });
     if (!gb || gb.employmentType !== user.employmentType) fail("That benefit isn't available to you.");
+    benefitName = gb.name;
     claimType = gb.claimType;
     if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
-    const bandAmount = amountForBand(user.tenureBand, gb) ?? user.monthlySalary ?? null;
+    const bandAmount = amountForBand(tenureBand, gb) ?? user.monthlySalary ?? null;
     // Only benefits flagged `prorated` (Professional development) shrink for mid-year
     // starters; event/season gifts (marriage, summer, special events, loans) stay full.
     const allocated =
@@ -64,7 +91,7 @@ export async function createClaim(formData: FormData): Promise<void> {
         userId: me.id,
         planYearId: planYear.id,
         guaranteedBenefitId: gb.id,
-        status: { in: ["PENDING", "RELEASED"] },
+        status: { not: "REJECTED" }, // every non-rejected claim consumes allowance
       },
       select: { amount: true, status: true },
     });
@@ -84,6 +111,7 @@ export async function createClaim(formData: FormData): Promise<void> {
     const item = await prisma.benefitCatalogItem.findUnique({ where: { id: benefitId } });
     if (!item || !item.active) fail("That benefit isn't available.");
     if (item.isMedical) fail("Medical cover doesn't need a claim.");
+    benefitName = item.name;
     claimType = item.claimType;
     if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
 
@@ -91,7 +119,7 @@ export async function createClaim(formData: FormData): Promise<void> {
       where: {
         employmentType_tenureBand: {
           employmentType: user.employmentType,
-          tenureBand: user.tenureBand,
+          tenureBand,
         },
       },
     });
@@ -106,7 +134,7 @@ export async function createClaim(formData: FormData): Promise<void> {
           userId: me.id,
           planYearId: planYear.id,
           catalogItemId: { not: null },
-          status: { in: ["PENDING", "RELEASED"] },
+          status: { not: "REJECTED" }, // every non-rejected claim consumes allowance
         },
         select: { catalogItemId: true, amount: true },
       }),
@@ -173,11 +201,24 @@ export async function createClaim(formData: FormData): Promise<void> {
       note,
       proofUrl,
       proofName,
-      status: "PENDING",
+      status: "SUBMITTED",
     },
+  });
+
+  // Notify the HR inbox that a new claim awaits review (fire-and-forget; inert if
+  // email is off/unconfigured, and never blocks the claim that was just saved).
+  const settings = await getNotificationSettings();
+  const amountClaimed = Number.isFinite(amount) && amount > 0 ? amount : claimAmount;
+  await sendEmail({
+    to: settings.hrInbox,
+    ...claimSubmittedToHR({
+      employeeName: me.name ?? me.email ?? "An employee",
+      benefitName,
+      amountClaimed,
+      coveredAmount: claimAmount,
+    }),
   });
 
   revalidatePath("/benefits");
   revalidatePath("/admin/benefits");
-  redirect("/benefits?claimOk=1");
 }

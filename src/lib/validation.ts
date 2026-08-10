@@ -42,7 +42,9 @@ export const employeeSchema = z.object({
     emptyToNull,
     z.coerce.number().int().min(0).nullable().optional()
   ),
-  status: z.enum(["ACTIVE", "LEFT"]),
+  // Status is derived from the end date (an end date ⇒ LEFT), not hand-entered;
+  // kept optional so the form can omit it. The server sets it from endDate.
+  status: z.enum(["ACTIVE", "LEFT"]).optional(),
   dateOfBirth: dateOrNull,
   maritalStatus: z.preprocess(
     emptyToNull,

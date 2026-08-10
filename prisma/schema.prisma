@@ -17,6 +17,7 @@ enum Role {
   EMPLOYEE
   HR_ADMIN
   SUPER_USER
+  FINANCE // confirms benefit-claim payments (spec 020); SUPER_USER is a superset
 }
 
 enum EmploymentType {
@@ -109,6 +110,7 @@ model User {
   committedMedical   MedicalCommitment[] @relation("MedicalCommitter")
   benefitClaims     BenefitClaim[] @relation("ClaimOwner")
   reviewedClaims    BenefitClaim[] @relation("ClaimReviewer")
+  paidClaims        BenefitClaim[] @relation("ClaimPayer")
   benefitReleases   BenefitRelease[] @relation("ReleaseSubject")
   releasesGiven     BenefitRelease[] @relation("ReleaseActor")
 
@@ -300,10 +302,14 @@ enum ClaimType {
   PROOF // mandatory proof-of-payment upload, reviewed before release
 }
 
+// Spec 020 staged workflow: Submitted (awaiting HR) → Approved (awaiting Finance
+// payment) → Reimbursed (paid); Rejected is terminal from Submitted. (The legacy
+// spec-018 PENDING/RELEASED values were retired by migration 031.)
 enum ClaimStatus {
-  PENDING // submitted, awaiting HR review
-  RELEASED // approved — payment released / reimbursed
-  REJECTED // declined (with a reason)
+  SUBMITTED
+  APPROVED
+  REIMBURSED
+  REJECTED
 }
 
 /// A benefits cycle. Employees can save/submit only while OPEN.
@@ -465,12 +471,18 @@ model BenefitClaim {
   note                String?
   proofUrl            String?
   proofName           String?
-  status              ClaimStatus        @default(PENDING)
-  decisionNote        String?
-  reviewedById        String?
+  status              ClaimStatus        @default(SUBMITTED)
+  decisionNote        String?            // HR rejection reason (optional)
+  reviewedById        String?            // HR approver/rejecter
   reviewedBy          User?              @relation("ClaimReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   createdAt           DateTime           @default(now())
-  decidedAt           DateTime?
+  decidedAt           DateTime?          // HR decision timestamp
+  // Finance payment step (spec 020) — set when a claim is confirmed reimbursed.
+  paidById            String?
+  paidBy              User?              @relation("ClaimPayer", fields: [paidById], references: [id], onDelete: SetNull)
+  paidAt              DateTime?          // when Finance confirmed the transfer
+  transferDate        DateTime?          // actual date money was transferred (Finance-entered)
+  amountTransferred   Int?               // actual amount transferred (Finance-entered)
 
   @@index([userId, planYearId])
   @@index([status])
@@ -570,4 +582,18 @@ model BrandSettings {
   primaryColor String   @default("#0f2444") // navy-800
   accentColor  String   @default("#c9a227") // gold-500
   updatedAt    DateTime @updatedAt @default(now())
+}
+
+// ─── Notification settings (super-user, spec 020) ───────────────────────────
+/// Single-row config for the claim-workflow emails. Non-secret only: the master
+/// on/off toggle, the HR and Finance team inboxes, and the outgoing from-name.
+/// The Resend API key and sender address live in env (RESEND_API_KEY, EMAIL_FROM),
+/// never here. With emails off or unconfigured the workflow still runs; nothing is sent.
+model NotificationSettings {
+  id            String   @id @default("singleton")
+  emailEnabled  Boolean  @default(false)
+  hrInbox       String?
+  financeInbox  String?
+  fromName      String?
+  updatedAt     DateTime @updatedAt @default(now())
 }

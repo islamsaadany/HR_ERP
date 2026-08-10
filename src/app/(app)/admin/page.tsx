@@ -25,7 +25,10 @@ async function pendingClaimCount(): Promise<number> {
   const planYears = await prisma.planYear.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, status: true } });
   const active = planYears.find((p) => p.status === "OPEN") ?? planYears[0];
   if (!active) return 0;
-  return prisma.benefitClaim.count({ where: { planYearId: active.id, status: "PENDING" } });
+  // Claims awaiting HR review.
+  return prisma.benefitClaim.count({
+    where: { planYearId: active.id, status: "SUBMITTED" },
+  });
 }
 
 export default async function AdminPage() {
@@ -50,6 +53,12 @@ export default async function AdminPage() {
           href: "/admin/brand",
           title: "Brand",
           body: "Company name, logo, and brand colors for this deployment.",
+          ready: true,
+        },
+        {
+          href: "/admin/notifications",
+          title: "Notifications",
+          body: "Claim-workflow emails: HR/Finance inboxes, on/off, and a test send.",
           ready: true,
         },
       ]

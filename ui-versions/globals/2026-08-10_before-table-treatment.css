@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+/*
+  HR_ERP design language: NAVY / GOLD (Forefront reference palette).
+  Tailwind v4 theme tokens — utilities like bg-navy-800, text-gold-500 derive from these.
+*/
+@theme {
+  /* Navy scale */
+  --color-navy-50: #eceff5;
+  --color-navy-100: #d6deea;
+  --color-navy-200: #aebfd6;
+  --color-navy-300: #7d97ba;
+  --color-navy-400: #4f6d97;
+  --color-navy-500: #2f4d78;
+  --color-navy-600: #1f3a63;
+  --color-navy-700: #163055;
+  --color-navy-800: #0f2444;
+  --color-navy-900: #0a1a30;
+  --color-navy-950: #061021;
+
+  /* Gold scale */
+  --color-gold-50: #fbf7ea;
+  --color-gold-100: #f6ecca;
+  --color-gold-200: #ecd894;
+  --color-gold-300: #e0c05a;
+  --color-gold-400: #d4ac39;
+  --color-gold-500: #c9a227;
+  --color-gold-600: #a8821e;
+  --color-gold-700: #85641b;
+  --color-gold-800: #6f521c;
+  --color-gold-900: #5f461c;
+
+  /* Neutrals / surface — subtly warm (refined-consulting feel, navy/gold safe) */
+  --color-paper: #f5f3ee;
+  --color-surface: #fefdfb;
+  --color-ink: #16202e;
+  --color-muted: #5f6472;
+  --color-line: #e7e3da;
+
+  /* Soft elevation for cards */
+  --shadow-card: 0 1px 2px rgba(16, 36, 68, 0.04), 0 1px 3px rgba(16, 36, 68, 0.06);
+  --shadow-card-hover: 0 4px 12px rgba(16, 36, 68, 0.08), 0 2px 4px rgba(16, 36, 68, 0.06);
+
+  /* Fonts — self-hosted via next/font (Fraunces display + Hanken Grotesk body),
+     with system fallbacks. The --font-*-next vars are set on <html> by next/font. */
+  --font-sans: var(--font-sans-next), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: var(--font-serif-next), "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Keyboard focus — gold ring, visible on both navy and light surfaces */
+:focus-visible {
+  outline: 2px solid var(--color-gold-400);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Staggered page-load reveal (used by dashboard/admin tiles) */
+@keyframes ff-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ff-reveal {
+  animation: ff-fade-up 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.ff-stagger > * {
+  animation: ff-fade-up 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.ff-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.ff-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.ff-stagger > *:nth-child(4) { animation-delay: 180ms; }
+.ff-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.ff-stagger > *:nth-child(6) { animation-delay: 300ms; }
+
+/* Soft card elevation + hover lift */
+.ff-card {
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+.ff-card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+/* Admin cards — title leads; the description reveals on hover / keyboard focus.
+   Safeguards: touch (no-hover) devices show details by default, focus reveals
+   them, and motion is disabled under reduce-motion — nothing is hidden from
+   anyone who can't hover. */
+.ff-adcard {
+  position: relative;
+  overflow: hidden;
+  min-height: 118px;
+}
+.ff-adcard .ff-ad-title {
+  transition: transform 0.22s ease;
+}
+.ff-adcard .ff-ad-details {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 18px;
+  margin: 0;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+@media (hover: hover) {
+  .ff-adcard:hover .ff-ad-title {
+    transform: translateY(-6px);
+  }
+  .ff-adcard:hover .ff-ad-details {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ff-adcard:focus-within .ff-ad-details {
+  opacity: 1;
+  transform: none;
+}
+@media (hover: none) {
+  .ff-adcard {
+    min-height: 0;
+  }
+  .ff-adcard .ff-ad-details {
+    position: static;
+    opacity: 1;
+    transform: none;
+    margin-top: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-reveal,
+  .ff-stagger > *,
+  .ff-card {
+    animation: none;
+    transition: none;
+  }
+  .ff-card:hover {
+    transform: none;
+  }
+  .ff-adcard .ff-ad-title,
+  .ff-adcard .ff-ad-details {
+    transition: none;
+  }
+  .ff-adcard:hover .ff-ad-title {
+    transform: none;
+  }
+  .ff-adcard .ff-ad-details {
+    opacity: 1;
+    transform: none;
+  }
+}
