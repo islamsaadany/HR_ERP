@@ -52,12 +52,6 @@ export default async function AdminPage() {
           body: "Company name, logo, and brand colors for this deployment.",
           ready: true,
         },
-        {
-          href: "/admin/notifications",
-          title: "Notifications",
-          body: "Claim-workflow emails: HR/Finance inboxes, on/off, and a test send.",
-          ready: true,
-        },
       ]
     : CARDS;
   return (

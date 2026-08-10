@@ -21,6 +21,46 @@ export type EmailInput = {
 /** The public app base for links in emails (best-effort; empty → relative links). */
 export const appBaseUrl = (process.env.NEXTAUTH_URL ?? "").replace(/\/$/, "");
 
+/** True when the sending secrets are present (key + from-address). Toggle is separate. */
+export function emailConfigured(): boolean {
+  return !!(apiKey && from);
+}
+
+/** The configured sender address, or null when unset (for the settings status readout). */
+export const emailFromAddress = from ?? null;
+
+/**
+ * Send a one-off test email. Unlike sendEmail this REPORTS success/failure (so the
+ * settings screen can show it) and IGNORES the master toggle — it only needs the
+ * env secrets, so an admin can verify delivery before turning notifications on.
+ */
+export async function sendTestEmail(to: string): Promise<{ ok: boolean; error?: string }> {
+  if (!resend || !from) {
+    return { ok: false, error: "Email isn't configured — set RESEND_API_KEY and EMAIL_FROM in the environment." };
+  }
+  const recipient = (to ?? "").trim();
+  if (!recipient) return { ok: false, error: "Enter a recipient address." };
+  const settings = await getNotificationSettings();
+  const fromHeader = settings.fromName ? `${settings.fromName} <${from}>` : from;
+  const html = `<div style="font-family:Helvetica,Arial,sans-serif;color:#16202e;padding:24px;">
+    <h2 style="margin:0 0 8px;">Test email ✓</h2>
+    <p>If you can read this, your Forefront HR email sending (Resend) is working.</p>
+    <p style="color:#5f6472;font-size:12px;">Sent from ${from}. This is only a test — no action needed.</p>
+  </div>`;
+  try {
+    const res = await resend.emails.send({
+      from: fromHeader,
+      to: recipient,
+      subject: "Test email — Forefront HR",
+      html,
+    });
+    if (res.error) return { ok: false, error: res.error.message ?? "Resend rejected the send." };
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Send failed." };
+  }
+}
+
 export async function sendEmail(input: EmailInput): Promise<void> {
   try {
     if (!resend || !from) {

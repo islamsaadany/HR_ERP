@@ -98,10 +98,10 @@ description: "Task list for spec 020 — Claim Reimbursement Workflow & Email No
 
 **Independent Test**: Toggle off → no emails sent while state changes still happen; set inboxes → hand-off emails go to those addresses; non-Super-User denied.
 
-- [ ] T030 [P] [US4] Mockup gate: notification-settings screen under `design-mockups/notification-settings/` — sign-off (fields: toggle, HR inbox, Finance inbox, from-name; note that the API key/from-address live in env, not shown).
-- [ ] T031 [US4] Implement `saveNotificationSettings(...)` (`requireSuperUser`, upsert singleton) and the settings page/component per the approved mockup; snapshot before editing.
-- [ ] T032 [US4] Ensure `sendEmail`/dispatch paths read `NotificationSettings` (toggle + inboxes) and surface a soft admin warning when a required inbox is blank while enabled (FR-020).
-- [ ] T033 [US4] Verify: `tsc` + `build`; quickstart Scenario D (toggle off, blank inbox).
+- [X] T030 [P] [US4] Mockup gate: notification-settings screen under `design-mockups/notification-settings/` — sign-off (fields: toggle, HR inbox, Finance inbox, from-name; note that the API key/from-address live in env, not shown).
+- [X] T031 [US4] Implement `saveNotificationSettings(...)` (`requireSuperUser`, upsert singleton) and the settings page/component per the approved mockup; snapshot before editing.
+- [X] T032 [US4] Ensure `sendEmail`/dispatch paths read `NotificationSettings` (toggle + inboxes) and surface a soft admin warning when a required inbox is blank while enabled (FR-020).
+- [X] T033 [US4] Verify: `tsc` + `build`; quickstart Scenario D (toggle off, blank inbox).
 
 **Checkpoint**: Notifications are configurable and safely default to off/inert.
 
