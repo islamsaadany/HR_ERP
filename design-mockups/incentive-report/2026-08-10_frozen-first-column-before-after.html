@@ -1,0 +1,94 @@
+<title>Frozen first column (Before / After)</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-300:#7d97ba; --navy-500:#2f4d78;
+    --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-400:#d4ac39; --gold-600:#a8821e;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  .wrap { max-width:900px; margin:0 auto; padding:28px 20px 60px; }
+  h2.tag { font-family:Georgia,serif; font-weight:400; font-size:22px; margin:0 0 4px; }
+  .lead { color:var(--muted); margin:0 0 8px; font-size:14px; max-width:70ch; line-height:1.6; }
+  .hint { font-size:12px; color:var(--gold-600); font-weight:600; margin:0 0 20px; }
+
+  .panel { border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:16px 0 32px;
+    background:var(--surface); box-shadow:0 1px 3px #0f244412; }
+  .panel-label { padding:10px 16px; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    display:flex; align-items:center; gap:8px; }
+  .before { background:#fbecec; color:#8a2b2b; } .after { background:#e7f2ea; color:#1f6b43; }
+  .dot { width:8px; height:8px; border-radius:50%; } .before .dot{background:#c0392b;} .after .dot{background:#1f8a4c;}
+
+  .tablebox { overflow-x:auto; }
+  table { border-collapse:separate; border-spacing:0; font-size:12.5px; width:1150px; }
+  thead tr { background:#eceff5; }
+  th { text-align:left; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--muted); padding:9px 12px; white-space:nowrap; border-bottom:1px solid var(--line); }
+  th.r, td.r { text-align:right; }
+  td { padding:9px 12px; white-space:nowrap; border-bottom:1px solid var(--line); }
+  tbody tr:last-child td { border-bottom:none; }
+  .num { font-variant-numeric:tabular-nums; }
+
+  /* AFTER: pin the first column */
+  .pinned th:first-child, .pinned td:first-child {
+    position:sticky; left:0; z-index:2;
+    background:var(--surface);
+    box-shadow:1px 0 0 var(--line), 6px 0 8px -6px #0f244433;
+  }
+  .pinned thead th:first-child { background:#eceff5; }
+
+  .cap { font-size:12px; color:var(--muted); padding:10px 16px 14px; }
+  .cap b { color:var(--ink); }
+  .cap.bad b { color:#8a2b2b; }
+</style>
+
+<div class="wrap">
+  <h2 class="tag">Freeze the first column</h2>
+  <p class="lead">On wide tables, when you scroll sideways the first column (Client / Name) scrolls off with everything
+    else, so you lose track of whose row you're reading. Freezing it pins it in place while the rest scrolls.</p>
+  <p class="hint">↔ Scroll each table sideways to compare.</p>
+
+  <!-- BEFORE -->
+  <div class="panel">
+    <div class="panel-label before"><span class="dot"></span> Before — first column scrolls away</div>
+    <div class="tablebox">
+      <table>
+        <thead><tr>
+          <th>Client</th><th>Type</th><th class="r">GP</th><th class="r">GP%</th><th class="r">Envelope</th>
+          <th class="r">Ded</th><th>Lead</th><th class="r">Lead fee</th><th class="r">Contributor</th><th class="r">Firm</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Acme Holding</td><td>Retainer</td><td class="r num">1,240,000</td><td class="r num">72.4%</td><td class="r num">37,200</td><td class="r num">—</td><td>N. Hazem</td><td class="r num">18,600</td><td class="r num">11,160</td><td class="r num">7,440</td></tr>
+          <tr><td>Beta Retail</td><td>Project</td><td class="r num">880,500</td><td class="r num">68.1%</td><td class="r num">26,415</td><td class="r num">5.0%</td><td>O. Alaa</td><td class="r num">13,207</td><td class="r num">7,925</td><td class="r num">5,283</td></tr>
+          <tr><td>Cairo Media</td><td>Retainer</td><td class="r num">2,010,000</td><td class="r num">75.0%</td><td class="r num">60,300</td><td class="r num">—</td><td>R. Sarhan</td><td class="r num">30,150</td><td class="r num">18,090</td><td class="r num">12,060</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap bad">Scroll right and <b>“Acme Holding / Beta Retail / Cairo Media” disappear</b> — the numbers lose their labels.</p>
+  </div>
+
+  <!-- AFTER -->
+  <div class="panel">
+    <div class="panel-label after"><span class="dot"></span> After — first column pinned</div>
+    <div class="tablebox">
+      <table class="pinned">
+        <thead><tr>
+          <th>Client</th><th>Type</th><th class="r">GP</th><th class="r">GP%</th><th class="r">Envelope</th>
+          <th class="r">Ded</th><th>Lead</th><th class="r">Lead fee</th><th class="r">Contributor</th><th class="r">Firm</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Acme Holding</td><td>Retainer</td><td class="r num">1,240,000</td><td class="r num">72.4%</td><td class="r num">37,200</td><td class="r num">—</td><td>N. Hazem</td><td class="r num">18,600</td><td class="r num">11,160</td><td class="r num">7,440</td></tr>
+          <tr><td>Beta Retail</td><td>Project</td><td class="r num">880,500</td><td class="r num">68.1%</td><td class="r num">26,415</td><td class="r num">5.0%</td><td>O. Alaa</td><td class="r num">13,207</td><td class="r num">7,925</td><td class="r num">5,283</td></tr>
+          <tr><td>Cairo Media</td><td>Retainer</td><td class="r num">2,010,000</td><td class="r num">75.0%</td><td class="r num">60,300</td><td class="r num">—</td><td>R. Sarhan</td><td class="r num">30,150</td><td class="r num">18,090</td><td class="r num">12,060</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="cap">Scroll right and <b>the Client column stays put</b> (with a soft shadow marking the edge) — every number keeps its label.</p>
+  </div>
+
+  <p class="lead"><b>Where it applies:</b> the incentive report tables (first column = Client) and, if you want, the
+    employee registry (first column = Name). The pinned column carries the same background as the table so rows
+    read cleanly, with a subtle right-edge shadow that only appears meaningful once you scroll.</p>
+</div>
