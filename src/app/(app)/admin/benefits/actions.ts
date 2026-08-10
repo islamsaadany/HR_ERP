@@ -150,10 +150,12 @@ export async function releaseClaim(formData: FormData): Promise<void> {
   const id = formData.get("id") as string;
   if (!id) return;
   const claim = await prisma.benefitClaim.findUnique({ where: { id } });
-  if (!claim || claim.status !== "PENDING") return;
+  // Accept the new SUBMITTED status as well as the legacy PENDING (transitional
+  // until US2 replaces this with the Approve → Finance step).
+  if (!claim || (claim.status !== "PENDING" && claim.status !== "SUBMITTED")) return;
   await prisma.benefitClaim.update({
     where: { id },
-    data: { status: "RELEASED", reviewedById: admin.id, decidedAt: new Date() },
+    data: { status: "REIMBURSED", reviewedById: admin.id, decidedAt: new Date() },
   });
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
@@ -165,7 +167,7 @@ export async function rejectClaim(formData: FormData): Promise<void> {
   const reason = (formData.get("reason") as string | null)?.trim() || null;
   if (!id) return;
   const claim = await prisma.benefitClaim.findUnique({ where: { id } });
-  if (!claim || claim.status !== "PENDING") return;
+  if (!claim || (claim.status !== "PENDING" && claim.status !== "SUBMITTED")) return;
   await prisma.benefitClaim.update({
     where: { id },
     data: { status: "REJECTED", decisionNote: reason, reviewedById: admin.id, decidedAt: new Date() },

@@ -290,13 +290,10 @@ export function BenefitsBoard({
  * see where each benefit stands without expanding; exact amounts stay in the
  * expanded claim history.
  */
-// Spec 020 lifecycle chips. Each entry may match more than one stored status so
-// legacy rows fold in (PENDING → Submitted, RELEASED → Reimbursed).
-const STATUS_CHIPS: { key: string; statuses: ClaimStatus[]; label: string; chip: string; dot: string }[] = [
-  { key: "submitted", statuses: ["SUBMITTED", "PENDING"], label: "submitted", chip: "bg-gold-100 text-gold-800", dot: "bg-gold-500" },
-  { key: "approved", statuses: ["APPROVED"], label: "approved", chip: "bg-navy-100 text-navy-800", dot: "bg-navy-600" },
-  { key: "reimbursed", statuses: ["REIMBURSED", "RELEASED"], label: "reimbursed", chip: "bg-navy-50 text-navy-700", dot: "bg-navy-700" },
-  { key: "rejected", statuses: ["REJECTED"], label: "rejected", chip: "bg-red-50 text-red-700", dot: "bg-red-600" },
+const STATUS_CHIPS: { status: ClaimStatus; label: string; chip: string; dot: string }[] = [
+  { status: "PENDING", label: "pending", chip: "bg-gold-100 text-gold-800", dot: "bg-gold-500" },
+  { status: "RELEASED", label: "reimbursed", chip: "bg-navy-50 text-navy-700", dot: "bg-navy-700" },
+  { status: "REJECTED", label: "rejected", chip: "bg-red-50 text-red-700", dot: "bg-red-600" },
 ];
 
 function ClaimStatusSummary({ claims }: { claims: BoardClaim[] }) {
@@ -305,13 +302,13 @@ function ClaimStatusSummary({ claims }: { claims: BoardClaim[] }) {
   }
   const chips = STATUS_CHIPS.map((s) => ({
     ...s,
-    count: claims.filter((c) => s.statuses.includes(c.status)).length,
+    count: claims.filter((c) => c.status === s.status).length,
   })).filter((s) => s.count > 0);
   return (
     <div className="mt-2.5 flex flex-wrap gap-1.5">
       {chips.map((s) => (
         <span
-          key={s.key}
+          key={s.status}
           className={"inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold " + s.chip}
         >
           <span className={"h-1.5 w-1.5 rounded-full " + s.dot} aria-hidden="true" />

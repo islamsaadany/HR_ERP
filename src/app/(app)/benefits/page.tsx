@@ -239,7 +239,7 @@ export default async function BenefitsPage({
       decisionNote: c.decisionNote,
       createdAt: c.createdAt,
     };
-    if (c.status === "PENDING" || c.status === "RELEASED") claimsCoveredTotal += c.amount;
+    if (c.status !== "REJECTED") claimsCoveredTotal += c.amount; // every non-rejected claim draws from the pool
     const map = c.guaranteedBenefitId ? byG : byC;
     const key = c.guaranteedBenefitId ?? c.catalogItemId ?? "";
     const arr = map.get(key) ?? [];

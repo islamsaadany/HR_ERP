@@ -36,8 +36,8 @@ description: "Task list for spec 020 — Claim Reimbursement Workflow & Email No
 - [X] T009 [P] Create `src/lib/email/client.ts`: env-gated `sendEmail()` — inert when `RESEND_API_KEY` unset or `emailEnabled` false, skip on empty recipient, fire-and-forget (catch + log, never rethrow).
 - [X] T010 [P] Create `src/lib/email/templates.ts` with the four transactional templates T1–T4 (per `contracts/emails.md`), plain navy/gold, EGP-formatted.
 - [X] T011 [P] Create `src/lib/notifications/settings.ts`: cached read + upsert of `NotificationSettings` (pattern of `src/lib/brand.ts`).
-- [ ] T012 Update `src/lib/benefits/claims.ts`: `CLAIM_STATUS_LABEL`/`CLAIM_STATUS_CLASS` for the four statuses; `claimTotals` treats `SUBMITTED + APPROVED` as in-progress and `REIMBURSED` as paid.
-- [ ] T013 Update every money-cap call-site that builds `claimedByBenefit` / sums consumed allowance so it counts **all non-rejected** claims (`SUBMITTED + APPROVED + REIMBURSED`); `rules.ts` math stays unchanged. Grep for `RELEASED`/`PENDING` across `src/lib/benefits/` and `src/app/(app)/**/actions*` and update each.
+- [X] T012 Update `src/lib/benefits/claims.ts`: `CLAIM_STATUS_LABEL`/`CLAIM_STATUS_CLASS` for the four statuses; `claimTotals` treats `SUBMITTED + APPROVED` as in-progress and `REIMBURSED` as paid.
+- [X] T013 Update every money-cap call-site that builds `claimedByBenefit` / sums consumed allowance so it counts **all non-rejected** claims (`SUBMITTED + APPROVED + REIMBURSED`); `rules.ts` math stays unchanged. Grep for `RELEASED`/`PENDING` across `src/lib/benefits/` and `src/app/(app)/**/actions*` and update each.
 
 **Checkpoint**: schema + email + roles + status vocabulary in place; money rules still enforced server-side.
 
@@ -49,10 +49,10 @@ description: "Task list for spec 020 — Claim Reimbursement Workflow & Email No
 
 **Independent Test**: Submit a claim → shows Submitted, counts toward caps, HR inbox gets T1 (or, email off, no send and no error).
 
-- [ ] T014 [P] [US1] Mockup gate: employee claim status chips (Submitted/Approved/Reimbursed/Rejected) under `design-mockups/benefits-claims/` — get sign-off.
-- [ ] T015 [US1] Update `submitClaim` (in `src/app/(app)/benefits/*actions*` / `src/lib/benefits/claims` create path) to set `status=SUBMITTED` and dispatch T1 to the HR inbox after the write (fire-and-forget).
-- [ ] T016 [US1] Apply the approved status chips in the employee benefits views/components (`src/components/benefits/*`), snapshotting each edited file to `ui-versions/` first.
-- [ ] T017 [US1] Verify: `tsc` + `build`; walk quickstart Scenario A step 1 and Scenario D (email off).
+- [X] T014 [P] [US1] Mockup gate: employee claim status chips (Submitted/Approved/Reimbursed/Rejected) under `design-mockups/benefits-claims/` — get sign-off.
+- [X] T015 [US1] Update `submitClaim` (in `src/app/(app)/benefits/*actions*` / `src/lib/benefits/claims` create path) to set `status=SUBMITTED` and dispatch T1 to the HR inbox after the write (fire-and-forget).
+- [X] T016 [US1] Apply the approved status chips in the employee benefits views/components (`src/components/benefits/*`), snapshotting each edited file to `ui-versions/` first.
+- [X] T017 [US1] Verify: `tsc` + `build`; walk quickstart Scenario A step 1 and Scenario D (email off).
 
 **Checkpoint**: Employees submit; HR is notified; statuses render.
 

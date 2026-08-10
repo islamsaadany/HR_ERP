@@ -10,6 +10,9 @@ import { tracker } from "@/lib/benefits/claims";
 import { evaluateClaim, type AllowanceContext } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate } from "@/lib/benefits/proration";
 import { deriveTenureBand } from "@/lib/tenure";
+import { getNotificationSettings } from "@/lib/notifications/settings";
+import { sendEmail } from "@/lib/email/client";
+import { claimSubmittedToHR } from "@/lib/email/templates";
 
 /** Pool / Professional-development eligibility unlocks at 6 months of service. */
 const POOL_THRESHOLD_MONTHS = 6;
@@ -52,11 +55,13 @@ export async function createClaim(formData: FormData): Promise<void> {
 
   let claimType: "NONE" | "NOTE" | "PROOF";
   let claimAmount: number; // the COVERED amount stored on the claim
+  let benefitName = ""; // for the HR notification email
   const link: { guaranteedBenefitId?: string; catalogItemId?: string } = {};
 
   if (kind === "guaranteed") {
     const gb = await prisma.guaranteedBenefit.findUnique({ where: { id: benefitId } });
     if (!gb || gb.employmentType !== user.employmentType) fail("That benefit isn't available to you.");
+    benefitName = gb.name;
     claimType = gb.claimType;
     if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
     const bandAmount = amountForBand(tenureBand, gb) ?? user.monthlySalary ?? null;
@@ -69,7 +74,7 @@ export async function createClaim(formData: FormData): Promise<void> {
         userId: me.id,
         planYearId: planYear.id,
         guaranteedBenefitId: gb.id,
-        status: { in: ["PENDING", "RELEASED"] },
+        status: { not: "REJECTED" }, // every non-rejected claim consumes allowance
       },
       select: { amount: true, status: true },
     });
@@ -89,6 +94,7 @@ export async function createClaim(formData: FormData): Promise<void> {
     const item = await prisma.benefitCatalogItem.findUnique({ where: { id: benefitId } });
     if (!item || !item.active) fail("That benefit isn't available.");
     if (item.isMedical) fail("Medical cover doesn't need a claim.");
+    benefitName = item.name;
     claimType = item.claimType;
     if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
 
@@ -111,7 +117,7 @@ export async function createClaim(formData: FormData): Promise<void> {
           userId: me.id,
           planYearId: planYear.id,
           catalogItemId: { not: null },
-          status: { in: ["PENDING", "RELEASED"] },
+          status: { not: "REJECTED" }, // every non-rejected claim consumes allowance
         },
         select: { catalogItemId: true, amount: true },
       }),
@@ -178,8 +184,22 @@ export async function createClaim(formData: FormData): Promise<void> {
       note,
       proofUrl,
       proofName,
-      status: "PENDING",
+      status: "SUBMITTED",
     },
+  });
+
+  // Notify the HR inbox that a new claim awaits review (fire-and-forget; inert if
+  // email is off/unconfigured, and never blocks the claim that was just saved).
+  const settings = await getNotificationSettings();
+  const amountClaimed = Number.isFinite(amount) && amount > 0 ? amount : claimAmount;
+  await sendEmail({
+    to: settings.hrInbox,
+    ...claimSubmittedToHR({
+      employeeName: me.name ?? me.email ?? "An employee",
+      benefitName,
+      amountClaimed,
+      coveredAmount: claimAmount,
+    }),
   });
 
   revalidatePath("/benefits");

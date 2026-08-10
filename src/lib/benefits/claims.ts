@@ -29,11 +29,24 @@ export const CLAIM_STATUS_CLASS: Record<ClaimStatus, string> = {
 
 export type ClaimLite = { amount: number; status: ClaimStatus };
 
-/** Reimbursement tracker for one benefit: reimbursed (released) + pending toward the allocation. */
+/** Paid statuses (REIMBURSED, plus the legacy RELEASED). */
+export const REIMBURSED_STATUSES: ClaimStatus[] = ["REIMBURSED", "RELEASED"];
+/** In-progress statuses that still consume allowance (SUBMITTED/APPROVED, plus legacy PENDING). */
+export const IN_PROGRESS_STATUSES: ClaimStatus[] = ["SUBMITTED", "APPROVED", "PENDING"];
+
+/**
+ * Reimbursement tracker for one benefit. Every non-rejected claim consumes the
+ * allocation: paid (reimbursed) + in-progress (submitted/approved). Rejected claims
+ * free their allowance.
+ */
 export function tracker(allocated: number | null, claims: ClaimLite[]) {
-  const reimbursed = claims.filter((c) => c.status === "RELEASED").reduce((s, c) => s + c.amount, 0);
-  const pending = claims.filter((c) => c.status === "PENDING").reduce((s, c) => s + c.amount, 0);
-  const claimed = reimbursed + pending; // counts against the allocation
+  const reimbursed = claims
+    .filter((c) => REIMBURSED_STATUSES.includes(c.status))
+    .reduce((s, c) => s + c.amount, 0);
+  const pending = claims
+    .filter((c) => IN_PROGRESS_STATUSES.includes(c.status))
+    .reduce((s, c) => s + c.amount, 0);
+  const claimed = reimbursed + pending; // counts against the allocation (all non-rejected)
   const remaining = allocated == null ? null : Math.max(0, allocated - claimed);
   return { reimbursed, pending, claimed, remaining };
 }
