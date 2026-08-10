@@ -460,10 +460,21 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     both the reader and the explorer. (`007_handbook_policies.sql`)
   - All verified on a local Postgres (fresh + existing paths); typecheck + build green.
 
+- **2026-08-10 — Admin home hover cards + per-benefit claim status (UI polish, mockup-approved):**
+  - **Admin home cards** are title-first: title leads (larger, semibold), description reveals on
+    hover, card lifts (shadow + navy border), "Open →" removed. Touch shows details by default,
+    focus reveals them, reduce-motion disables the animation (`.ff-adcard*` in `globals.css`).
+  - **Benefits** card renamed **"Benefits Management"** with an always-visible gold **"N pending"**
+    pill (pending claims in the active plan year; guarded for unmigrated DBs).
+  - **Your benefits** — each collapsed flexible-benefit row shows a compact **claim-status summary**
+    (chips with counts, app claim-pill colors: gold pending / navy reimbursed / red rejected; "No
+    claims yet." when empty). Guaranteed tiles unchanged; no money-rule change.
+  - No schema change. UI snapshots saved; typecheck + build green.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-08-03.*
+*Last Updated: 2026-08-10.*
