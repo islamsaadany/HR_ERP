@@ -1,0 +1,128 @@
+<title>Admin Benefits card — claim status designs</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --navy-50:#eceff5; --navy-300:#7d97ba; --navy-500:#2f4d78; --navy-700:#163055; --navy-800:#0f2444;
+    --gold-100:#f6ecca; --gold-500:#c9a227; --gold-600:#a8821e; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --green-50:#ecf6ee; --green-200:#bfe0c6; --green-700:#1f7a3d;
+    --red-50:#fbecec; --red-200:#eccbcb; --red-700:#b23b3b;
+    --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;
+    -webkit-font-smoothing:antialiased;padding:32px 20px 80px}
+  .wrap{max-width:1080px;margin:0 auto}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  h1{font-family:var(--serif);font-size:32px;margin:.2em 0 0;letter-spacing:-.01em}
+  .lead{color:var(--muted);max-width:66ch;margin:14px 0 8px}
+  h2.sec{font-family:var(--serif);font-size:20px;margin:40px 0 4px}
+  .why{color:var(--muted);font-size:14px;margin:0 0 18px;max-width:74ch}
+  .rec{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--gold-800);background:var(--gold-100);border:1px solid var(--gold-500);border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle}
+  /* the real card */
+  .card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;text-decoration:none;color:inherit;position:relative}
+  .card .title{font-weight:500;color:var(--ink)}
+  .card .body{margin-top:4px;font-size:14px;color:var(--muted)}
+  .card .open{margin-top:12px;font-size:12px;font-weight:600;color:var(--gold-600)}
+  .grid{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+  @media (max-width:720px){.grid{grid-template-columns:1fr}}
+  .opts{display:grid;gap:16px;grid-template-columns:1fr;max-width:520px}
+  /* status atoms */
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;border-radius:999px;padding:3px 10px;line-height:1.4;white-space:nowrap}
+  .chip .dot{width:7px;height:7px;border-radius:50%}
+  .chip.pend{background:var(--gold-100);color:var(--gold-800)} .chip.pend .dot{background:var(--gold-500)}
+  .chip.rel{background:var(--green-50);color:var(--green-700)} .chip.rel .dot{background:var(--green-700)}
+  .chip.rej{background:var(--red-50);color:var(--red-700)} .chip.rej .dot{background:var(--red-700)}
+  .chiprow{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .topright{position:absolute;top:16px;right:16px}
+  .countbadge{position:absolute;top:14px;right:14px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;
+    background:var(--gold-500);color:var(--navy-800);font-size:12px;font-weight:800;display:grid;place-items:center}
+  .cardhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  del{color:#b0a89a}
+  .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 8px}
+  .note{background:var(--gold-100);border:1px solid var(--gold-500);color:var(--gold-800);border-radius:10px;padding:12px 16px;font-size:13.5px;margin-top:36px}
+  .mini{max-width:520px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">HR Admin · Benefits</p>
+  <h1>Claim status on the Benefits card</h1>
+  <p class="lead">You're right — the admin home card still reads “Benefits Configuration.” I'll rename it
+    to <strong>Benefits Management</strong>. Below that, three ways to surface claim status on that card.
+    All counts would be live (this plan year). Pick one — or tell me to put it elsewhere.</p>
+
+  <!-- rename -->
+  <h2 class="sec">First: the rename</h2>
+  <div class="grid mini">
+    <div><p class="tag">Before</p>
+      <a class="card"><span class="title"><del>Benefits Configuration</del></span><span class="body">Plan-year window and submissions.</span><span class="open">Open →</span></a>
+    </div>
+    <div><p class="tag">After</p>
+      <a class="card"><span class="title">Benefits Management</span><span class="body">Plan-year window and submissions.</span><span class="open">Open →</span></a>
+    </div>
+  </div>
+
+  <!-- OPTION A -->
+  <h2 class="sec">Option A · “Needs attention” pill <span class="rec">Recommended</span></h2>
+  <p class="why">A single pill showing only what's actionable — the <strong>pending</strong> count HR needs to
+    review. It appears just when there are pending claims and stays quiet (no pill) when there are none, so the
+    card doesn't nag. Released/rejected are history and already live inside the page. Matches the app's existing
+    gold “needs attention” badge style.</p>
+  <div class="opts">
+    <a class="card">
+      <div class="cardhead">
+        <span class="title">Benefits Management</span>
+        <span class="chip pend"><span class="dot"></span>3 pending</span>
+      </div>
+      <span class="body">Plan-year window and submissions.</span>
+      <span class="open">Open →</span>
+    </a>
+    <a class="card">
+      <div class="cardhead">
+        <span class="title">Benefits Management</span>
+      </div>
+      <span class="body">Plan-year window and submissions.</span>
+      <span class="open">Open →</span>
+      <span class="body" style="margin-top:8px;font-style:italic;opacity:.7">(no pill when nothing is pending)</span>
+    </a>
+  </div>
+
+  <!-- OPTION B -->
+  <h2 class="sec">Option B · Full status breakdown</h2>
+  <p class="why">All three statuses as small semantic chips under the description: gold = pending, green = released,
+    red = rejected. The complete picture at a glance, at the cost of a little more visual weight on the home grid.</p>
+  <div class="opts">
+    <a class="card">
+      <span class="title">Benefits Management</span>
+      <span class="body">Plan-year window and submissions.</span>
+      <div class="chiprow">
+        <span class="chip pend"><span class="dot"></span>3 pending</span>
+        <span class="chip rel"><span class="dot"></span>12 released</span>
+        <span class="chip rej"><span class="dot"></span>1 rejected</span>
+      </div>
+      <span class="open">Open →</span>
+    </a>
+  </div>
+
+  <!-- OPTION C -->
+  <h2 class="sec">Option C · Notification-style count</h2>
+  <p class="why">A small count badge in the card corner — like an unread count — showing pending only. The most
+    minimal; quick to spot, but it needs the card context to read as “pending claims” (no label of its own).</p>
+  <div class="opts">
+    <a class="card">
+      <span class="countbadge">3</span>
+      <span class="title">Benefits Management</span>
+      <span class="body">Plan-year window and submissions.</span>
+      <span class="open">Open →</span>
+    </a>
+  </div>
+
+  <div class="note">
+    <strong>Did you mean the card, or per-benefit?</strong> This mockup surfaces an aggregate on the admin
+    <em>home</em> card (matching your screenshot). If you instead want each individual benefit's claim status shown
+    inside the <em>Benefits Management</em> page (per benefit / per claim), say so — the page already has a
+    “Claims to review” queue, and I can add status pills per benefit there. Tell me which, and I'll wire it up.
+  </div>
+</div>
