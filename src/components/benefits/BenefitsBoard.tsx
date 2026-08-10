@@ -290,12 +290,11 @@ export function BenefitsBoard({
  * see where each benefit stands without expanding; exact amounts stay in the
  * expanded claim history.
  */
-// Spec 020 lifecycle chips. Each entry may match more than one stored status so
-// legacy rows fold in (PENDING → Submitted, RELEASED → Reimbursed).
+// Spec 020 lifecycle chips.
 const STATUS_CHIPS: { key: string; statuses: ClaimStatus[]; label: string; chip: string; dot: string }[] = [
-  { key: "submitted", statuses: ["SUBMITTED", "PENDING"], label: "submitted", chip: "bg-gold-100 text-gold-800", dot: "bg-gold-500" },
+  { key: "submitted", statuses: ["SUBMITTED"], label: "submitted", chip: "bg-gold-100 text-gold-800", dot: "bg-gold-500" },
   { key: "approved", statuses: ["APPROVED"], label: "approved", chip: "bg-navy-100 text-navy-800", dot: "bg-navy-600" },
-  { key: "reimbursed", statuses: ["REIMBURSED", "RELEASED"], label: "reimbursed", chip: "bg-navy-50 text-navy-700", dot: "bg-navy-700" },
+  { key: "reimbursed", statuses: ["REIMBURSED"], label: "reimbursed", chip: "bg-navy-50 text-navy-700", dot: "bg-navy-700" },
   { key: "rejected", statuses: ["REJECTED"], label: "rejected", chip: "bg-red-50 text-red-700", dot: "bg-red-600" },
 ];
 

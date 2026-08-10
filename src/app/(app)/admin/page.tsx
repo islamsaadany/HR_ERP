@@ -25,9 +25,9 @@ async function pendingClaimCount(): Promise<number> {
   const planYears = await prisma.planYear.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, status: true } });
   const active = planYears.find((p) => p.status === "OPEN") ?? planYears[0];
   if (!active) return 0;
-  // Claims awaiting HR review (new SUBMITTED + legacy PENDING).
+  // Claims awaiting HR review.
   return prisma.benefitClaim.count({
-    where: { planYearId: active.id, status: { in: ["SUBMITTED", "PENDING"] } },
+    where: { planYearId: active.id, status: "SUBMITTED" },
   });
 }
 

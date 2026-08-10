@@ -6,12 +6,8 @@ export const CLAIM_TYPE_LABEL: Record<ClaimType, string> = {
   PROOF: "Proof required",
 };
 
-// Spec 020 staged workflow labels/colors. Legacy PENDING/RELEASED retained for
-// old rows during the migration. Chip colors are placeholders pending the US1
-// status-chip mockup sign-off (constitution II) before they render anywhere new.
+// Spec 020 staged workflow labels/colors (navy/gold, signed off).
 export const CLAIM_STATUS_LABEL: Record<ClaimStatus, string> = {
-  PENDING: "Pending review", // legacy
-  RELEASED: "Reimbursed", // legacy
   SUBMITTED: "Submitted",
   APPROVED: "Approved",
   REIMBURSED: "Reimbursed",
@@ -19,8 +15,6 @@ export const CLAIM_STATUS_LABEL: Record<ClaimStatus, string> = {
 };
 
 export const CLAIM_STATUS_CLASS: Record<ClaimStatus, string> = {
-  PENDING: "bg-gold-100 text-gold-800", // legacy
-  RELEASED: "bg-navy-50 text-navy-700", // legacy
   SUBMITTED: "bg-gold-100 text-gold-800",
   APPROVED: "bg-navy-100 text-navy-800",
   REIMBURSED: "bg-navy-50 text-navy-700",
@@ -29,10 +23,10 @@ export const CLAIM_STATUS_CLASS: Record<ClaimStatus, string> = {
 
 export type ClaimLite = { amount: number; status: ClaimStatus };
 
-/** Paid statuses (REIMBURSED, plus the legacy RELEASED). */
-export const REIMBURSED_STATUSES: ClaimStatus[] = ["REIMBURSED", "RELEASED"];
-/** In-progress statuses that still consume allowance (SUBMITTED/APPROVED, plus legacy PENDING). */
-export const IN_PROGRESS_STATUSES: ClaimStatus[] = ["SUBMITTED", "APPROVED", "PENDING"];
+/** Paid statuses. */
+export const REIMBURSED_STATUSES: ClaimStatus[] = ["REIMBURSED"];
+/** In-progress statuses that still consume allowance. */
+export const IN_PROGRESS_STATUSES: ClaimStatus[] = ["SUBMITTED", "APPROVED"];
 
 /**
  * Reimbursement tracker for one benefit. Every non-rejected claim consumes the

@@ -54,8 +54,8 @@ export default async function AdminBenefitsPage({
         : Promise.resolve([]),
       active
         ? prisma.benefitClaim.findMany({
-            // Claims awaiting HR review: new SUBMITTED + legacy PENDING.
-            where: { planYearId: active.id, status: { in: ["SUBMITTED", "PENDING"] } },
+            // Claims awaiting HR review.
+            where: { planYearId: active.id, status: "SUBMITTED" },
             include: {
               user: { select: { name: true } },
               guaranteedBenefit: { select: { name: true } },

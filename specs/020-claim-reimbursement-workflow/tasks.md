@@ -28,7 +28,7 @@ description: "Task list for spec 020 — Claim Reimbursement Workflow & Email No
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
 - [X] T003 Extend `Role` enum with `FINANCE` in `prisma/schema.prisma`.
-- [ ] T004 Rename/extend `ClaimStatus` in `prisma/schema.prisma` to `SUBMITTED | APPROVED | REIMBURSED | REJECTED`; set `BenefitClaim.status` default to `SUBMITTED`.
+- [X] T004 Rename/extend `ClaimStatus` in `prisma/schema.prisma` to `SUBMITTED | APPROVED | REIMBURSED | REJECTED`; set `BenefitClaim.status` default to `SUBMITTED`.
 - [X] T005 Add payment columns to `BenefitClaim` in `prisma/schema.prisma`: `paidById`/`paidBy` (User rel `"ClaimPayer"`), `paidAt`, `transferDate`, `amountTransferred` (all nullable).
 - [X] T006 [P] Add the `NotificationSettings` singleton model (`id="singleton"`, `emailEnabled`, `hrInbox`, `financeInbox`, `fromName`, `updatedAt`) in `prisma/schema.prisma`.
 - [X] T007 Author `prisma/sql/0NN_claim_reimbursement_workflow.sql`: add the enum values + backfill (`PENDING→SUBMITTED`, `RELEASED→REIMBURSED`), add the `BenefitClaim` columns, create the `NotificationSettings` table with its singleton row. Verify by applying to a throwaway local Postgres and querying the migrated rows. Commit the SQL in the same commit as the schema change.

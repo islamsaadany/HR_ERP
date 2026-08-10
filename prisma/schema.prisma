@@ -302,17 +302,14 @@ enum ClaimType {
   PROOF // mandatory proof-of-payment upload, reviewed before release
 }
 
+// Spec 020 staged workflow: Submitted (awaiting HR) → Approved (awaiting Finance
+// payment) → Reimbursed (paid); Rejected is terminal from Submitted. (The legacy
+// spec-018 PENDING/RELEASED values were retired by migration 031.)
 enum ClaimStatus {
-  // Legacy values (spec 018) — retained during the spec-020 migration; existing
-  // rows are backfilled to SUBMITTED/REIMBURSED and no new rows use these.
-  PENDING // legacy → SUBMITTED
-  RELEASED // legacy → REIMBURSED
-  // Spec 020 staged workflow: Submitted (awaiting HR) → Approved (awaiting Finance
-  // payment) → Reimbursed (paid); Rejected is terminal from Submitted.
   SUBMITTED
   APPROVED
   REIMBURSED
-  REJECTED // declined (with a reason)
+  REJECTED
 }
 
 /// A benefits cycle. Employees can save/submit only while OPEN.
@@ -474,7 +471,7 @@ model BenefitClaim {
   note                String?
   proofUrl            String?
   proofName           String?
-  status              ClaimStatus        @default(PENDING)
+  status              ClaimStatus        @default(SUBMITTED)
   decisionNote        String?            // HR rejection reason (optional)
   reviewedById        String?            // HR approver/rejecter
   reviewedBy          User?              @relation("ClaimReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)

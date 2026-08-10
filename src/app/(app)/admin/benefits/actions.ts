@@ -166,7 +166,7 @@ export async function approveClaim(formData: FormData): Promise<void> {
   if (!id) return;
   const claim = await prisma.benefitClaim.findUnique({ where: { id }, include: CLAIM_WITH_PARTIES });
   // Accept the new SUBMITTED status and the legacy PENDING.
-  if (!claim || (claim.status !== "PENDING" && claim.status !== "SUBMITTED")) return;
+  if (!claim || claim.status !== "SUBMITTED") return;
   await prisma.benefitClaim.update({
     where: { id },
     data: { status: "APPROVED", reviewedById: admin.id, decidedAt: new Date() },
@@ -192,7 +192,7 @@ export async function rejectClaim(formData: FormData): Promise<void> {
   const reason = (formData.get("reason") as string | null)?.trim() || null;
   if (!id) return;
   const claim = await prisma.benefitClaim.findUnique({ where: { id }, include: CLAIM_WITH_PARTIES });
-  if (!claim || (claim.status !== "PENDING" && claim.status !== "SUBMITTED")) return;
+  if (!claim || claim.status !== "SUBMITTED") return;
   await prisma.benefitClaim.update({
     where: { id },
     data: { status: "REJECTED", decisionNote: reason, reviewedById: admin.id, decidedAt: new Date() },
