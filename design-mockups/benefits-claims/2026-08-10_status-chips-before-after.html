@@ -1,0 +1,81 @@
+<title>Claim status chips (Before / After)</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-700:#163055; --navy-800:#0f2444;
+    --gold-100:#f6ecca; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-bg:#fdecea; --red-tx:#b3261e;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  .wrap { max-width:820px; margin:0 auto; padding:28px 20px 60px; }
+  h2.tag { font-family:Georgia,serif; font-weight:400; font-size:23px; margin:0 0 6px; }
+  .lead { color:var(--muted); margin:0 0 18px; font-size:14px; max-width:72ch; line-height:1.6; }
+
+  .panel { border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:14px 0 26px; background:var(--surface); }
+  .panel-label { padding:10px 16px; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; display:flex; align-items:center; gap:8px; }
+  .before { background:#fbecec; color:#8a2b2b; } .after { background:#e7f2ea; color:#1f6b43; }
+  .dot { width:8px; height:8px; border-radius:50%; } .before .dot{background:#c0392b;} .after .dot{background:#1f8a4c;}
+  .stage { padding:18px; }
+
+  .chip { display:inline-block; border-radius:999px; padding:3px 11px; font-size:12px; font-weight:600; }
+  .c-gold { background:var(--gold-100); color:var(--gold-800); }
+  .c-navy1 { background:var(--navy-100); color:var(--navy-800); }
+  .c-navy0 { background:var(--navy-50); color:var(--navy-700); }
+  .c-red { background:var(--red-bg); color:var(--red-tx); }
+
+  .row { display:flex; align-items:center; justify-content:space-between; padding:12px 4px; border-bottom:1px solid var(--line); }
+  .row:last-child { border-bottom:none; }
+  .bn { font-weight:600; font-size:14px; } .bs { font-size:12px; color:var(--muted); }
+  .chips { display:flex; gap:6px; align-items:center; }
+  .legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:6px; }
+  .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin:2px 0 16px; }
+  .flow .chip { font-size:11px; }
+  .arrow { color:var(--muted); }
+</style>
+
+<div class="wrap">
+  <h2 class="tag">Employee claim status chips</h2>
+  <p class="lead">Today a claim is just Pending → Reimbursed (or Rejected). The new workflow adds a middle
+    <b>Approved</b> stage (HR approved, Finance paying), so the employee can see exactly where their claim is.
+    Same navy/gold chip style, one new state.</p>
+
+  <div class="flow">
+    The lifecycle:
+    <span class="chip c-gold">Submitted</span><span class="arrow">→</span>
+    <span class="chip c-navy1">Approved</span><span class="arrow">→</span>
+    <span class="chip c-navy0">Reimbursed</span>
+    <span class="arrow">·</span><span class="chip c-red">Rejected</span>
+  </div>
+
+  <!-- BEFORE -->
+  <div class="panel">
+    <div class="panel-label before"><span class="dot"></span> Before — Pending / Reimbursed / Rejected</div>
+    <div class="stage">
+      <div class="row"><div><div class="bn">Gym membership</div><div class="bs">Claimed EGP 4,000 · covered EGP 3,200</div></div><div class="chips"><span class="chip c-gold">Pending review</span></div></div>
+      <div class="row"><div><div class="bn">Course — Advanced Excel</div><div class="bs">Claimed EGP 6,000 · covered EGP 6,000</div></div><div class="chips"><span class="chip c-navy0">Reimbursed</span></div></div>
+      <div class="row"><div><div class="bn">Spa day</div><div class="bs">Claimed EGP 2,500</div></div><div class="chips"><span class="chip c-red">Rejected</span></div></div>
+    </div>
+  </div>
+
+  <!-- AFTER -->
+  <div class="panel">
+    <div class="panel-label after"><span class="dot"></span> After — Submitted / Approved / Reimbursed / Rejected</div>
+    <div class="stage">
+      <div class="row"><div><div class="bn">Gym membership</div><div class="bs">Claimed EGP 4,000 · covered EGP 3,200</div></div><div class="chips"><span class="chip c-gold">Submitted</span></div></div>
+      <div class="row"><div><div class="bn">Course — Advanced Excel</div><div class="bs">Claimed EGP 6,000 · covered EGP 6,000</div></div><div class="chips"><span class="chip c-navy1">Approved</span></div></div>
+      <div class="row"><div><div class="bn">Books &amp; learning</div><div class="bs">Claimed EGP 1,800 · covered EGP 1,440</div></div><div class="chips"><span class="chip c-navy0">Reimbursed</span></div></div>
+      <div class="row"><div><div class="bn">Spa day</div><div class="bs">Claimed EGP 2,500</div></div><div class="chips"><span class="chip c-red">Rejected</span></div></div>
+    </div>
+  </div>
+
+  <p class="lead">
+    Proposed chip colors (navy/gold, matching the current set):
+    <span class="chip c-gold">Submitted</span> gold (awaiting HR, like today's Pending) ·
+    <span class="chip c-navy1">Approved</span> stronger navy (with Finance) ·
+    <span class="chip c-navy0">Reimbursed</span> soft navy (paid, same as today's Reimbursed) ·
+    <span class="chip c-red">Rejected</span> red. The per-benefit claim summary (the little count chips on each
+    collapsed benefit row) uses the same colors. Tell me if you'd like different wording or colors for any state.
+  </p>
+</div>
