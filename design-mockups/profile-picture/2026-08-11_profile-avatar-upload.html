@@ -1,0 +1,103 @@
+<title>Profile picture — mockup for sign-off</title>
+<style>
+  :root{
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-500:#2f4d78;
+    --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-100:#f6ecca; --gold-500:#c9a227; --gold-600:#a8821e; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:900px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:66ch}
+  .proposal{margin-top:40px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px 36px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px}
+  .phead{display:flex;align-items:center;gap:20px}
+  .avatar{width:88px;height:88px;border-radius:999px;object-fit:cover;flex:0 0 auto}
+  .initials{width:88px;height:88px;border-radius:999px;background:var(--navy-700);color:#fff;display:grid;place-items:center;font-size:32px;font-weight:600;flex:0 0 auto}
+  .pname{font-family:Georgia,serif;font-size:26px}
+  .pmeta{color:var(--muted);font-size:14px;margin-top:2px}
+  .ctrls{margin-top:10px;display:flex;align-items:center;gap:10px}
+  .eyebrow2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600)}
+  .btn{border:0;border-radius:9px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn.navy{background:var(--navy-800);color:#fff}
+  .btn.ghost{background:var(--navy-50);color:var(--navy-700)}
+  .link{background:none;border:0;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit}
+  .link:hover{color:#dc2626}
+  .hint{font-size:12px;color:var(--muted);margin-top:10px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media (max-width:760px){.cols{grid-template-columns:1fr}}
+  .tag{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:6px;margin-bottom:8px}
+  .tag.a{background:var(--navy-50);color:var(--navy-700);border:1px solid var(--navy-100)}
+  .avatar-demo{background:linear-gradient(135deg,#c9b78f,#8a9bb5)}
+  footer{margin-top:56px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Profile · picture · design review</p>
+  <h1>Profile picture — for sign-off</h1>
+  <p class="lede">Employees add/change their own photo at the top of <strong>My Profile</strong>. It uses the existing circular avatar (initials when there's no photo), and once set it appears in the Team Directory and the nav avatar. Image only, max 5&nbsp;MB. Static mockup — nothing wired.</p>
+
+  <section class="proposal">
+    <h2><span class="num">1</span> Profile header · two states</h2>
+    <p class="sub">The avatar joins the existing name / title header. Change photo opens the file picker; Remove clears it back to initials.</p>
+    <div class="cols">
+      <div>
+        <span class="tag a">No photo yet (initials)</span>
+        <div class="card">
+          <div class="phead">
+            <div class="initials">LH</div>
+            <div>
+              <div class="eyebrow2">My Profile</div>
+              <div class="pname">Layla Hassan</div>
+              <div class="pmeta">Senior Consultant · Advisory</div>
+              <div class="ctrls">
+                <button class="btn navy">Upload photo</button>
+              </div>
+            </div>
+          </div>
+          <p class="hint">JPG or PNG, up to 5 MB. Shown to colleagues in the Team Directory.</p>
+        </div>
+      </div>
+      <div>
+        <span class="tag a">Photo set</span>
+        <div class="card">
+          <div class="phead">
+            <div class="avatar avatar-demo"></div>
+            <div>
+              <div class="eyebrow2">My Profile</div>
+              <div class="pname">Layla Hassan</div>
+              <div class="pmeta">Senior Consultant · Advisory</div>
+              <div class="ctrls">
+                <button class="btn ghost">Change photo</button>
+                <button class="link">Remove</button>
+              </div>
+            </div>
+          </div>
+          <p class="hint">JPG or PNG, up to 5 MB. Shown to colleagues in the Team Directory.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="proposal">
+    <h2><span class="num">2</span> Where it shows</h2>
+    <p class="sub">No new components — reuses the existing circular avatar everywhere it already appears.</p>
+    <div class="card" style="display:flex;gap:22px;align-items:center;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px"><div class="avatar avatar-demo" style="width:40px;height:40px"></div><span class="pmeta">Nav bar</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><div class="avatar avatar-demo" style="width:44px;height:44px"></div><span class="pmeta">Team Directory card</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><div class="initials" style="width:44px;height:44px;font-size:16px">MK</div><span class="pmeta">Colleague with no photo → initials (unchanged)</span></div>
+    </div>
+  </section>
+
+  <footer>
+    Static mockup for sign-off · navy/gold · HR_ERP Profile · 2026-08-11. Self-service upload on My Profile (image ≤ 5 MB, stored in Vercel Blob → <code>User.photoUrl</code>); reuses the existing Avatar. Approve and I'll build it.
+  </footer>
+</div>
