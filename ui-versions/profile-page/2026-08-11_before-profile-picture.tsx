@@ -10,7 +10,6 @@ import {
 } from "@/lib/labels";
 import { uploadMyDocument, deleteMyDocument } from "./documents-actions";
 import { ChangePasswordCard } from "@/components/ChangePasswordCard";
-import { ProfilePhotoHeader } from "@/components/ProfilePhotoHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -26,10 +25,10 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ docError?: string; photoError?: string }>;
+  searchParams: Promise<{ docError?: string }>;
 }) {
   const sessionUser = await requireUser();
-  const { docError, photoError } = await searchParams;
+  const { docError } = await searchParams;
   const me = await prisma.user.findUnique({
     where: { id: sessionUser.id },
     include: {
@@ -48,11 +47,14 @@ export default async function ProfilePage({
 
   return (
     <div className="max-w-3xl">
-      <ProfilePhotoHeader name={me.name} photoUrl={me.photoUrl} title={me.title} department={me.department} />
-
-      {photoError ? (
-        <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{photoError}</p>
-      ) : null}
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
+        My Profile
+      </p>
+      <h1 className="mt-1 font-serif text-3xl text-ink">{me.name}</h1>
+      <p className="mt-1 text-muted">
+        {me.title ?? "—"}
+        {me.department ? ` · ${me.department}` : ""}
+      </p>
 
       {/* Public / contact */}
       <section className="mt-8 rounded-xl border border-line bg-surface p-6">
