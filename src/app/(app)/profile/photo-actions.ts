@@ -5,10 +5,9 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
 
+// NB: a "use server" module must export ONLY async functions — no types/consts.
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const OK_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-
-export type PhotoResult = { error?: string };
 
 /** Only delete blobs we host (never an external Google photo URL). */
 function isOwnBlob(url: string | null | undefined): url is string {
@@ -20,7 +19,7 @@ function isOwnBlob(url: string | null | undefined): url is string {
  * Returns a friendly error string instead of throwing/redirecting — this action is called
  * imperatively from the client, where a thrown redirect would surface as a client-side crash.
  */
-export async function updateProfilePhoto(formData: FormData): Promise<PhotoResult> {
+export async function updateProfilePhoto(formData: FormData): Promise<{ error?: string }> {
   const me = await requireUser();
   const file = formData.get("photo");
   if (!(file instanceof File) || file.size === 0) return { error: "Choose an image to upload." };
@@ -50,7 +49,7 @@ export async function updateProfilePhoto(formData: FormData): Promise<PhotoResul
 }
 
 /** Employee self-service: remove their profile photo (falls back to initials). */
-export async function removeProfilePhoto(): Promise<PhotoResult> {
+export async function removeProfilePhoto(): Promise<{ error?: string }> {
   const me = await requireUser();
   try {
     const prev = await prisma.user.findUnique({ where: { id: me.id }, select: { photoUrl: true } });
