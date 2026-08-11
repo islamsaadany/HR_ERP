@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getActivePlanYear, getMedicalRate, amountForBand, getMedicalCommitment, planYearWindow, poolCeilingFor, eligibilityWhere, isSalaryDriven, medicalScopeFor } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { flexCap } from "@/lib/benefits/rules";
-import { classifyEligibility, prorate, poolCycleFraction, cycleWholeMonths } from "@/lib/benefits/proration";
+import { classifyEligibility, prorate } from "@/lib/benefits/proration";
 import { deriveTenureBand } from "@/lib/tenure";
 import {
   BenefitsBoard,
@@ -163,22 +163,18 @@ export default async function BenefitsPage({
     );
   }
 
-  // Cycle-length proration (spec 019, revised): the flexible pool and Professional-development
-  // budget scale to the LENGTH of the plan-year cycle (e.g. a 6-month cycle → 6/12), applied to
-  // every eligible employee. A not-yet-6-month employee still gets nothing (fraction 0).
-  const planWindow = planYearWindow(planYear);
-  const poolEligibility = classifyEligibility(user.startDate, 6, planWindow);
-  const poolFraction = poolCycleFraction(poolEligibility, planWindow);
-  const cycleMonths = cycleWholeMonths(planWindow);
-  const isProrated = poolFraction > 0 && poolFraction < 1;
-  // Medical uses the 3-month threshold and stays mid-cycle-joiner proration (not cycle-length).
-  const medicalEligibility = classifyEligibility(user.startDate, 3, planWindow);
+  // Mid-year starter proration (spec 019): the flexible pool and Professional-development
+  // budget scale to the whole months left in the plan year from the 6-month eligibility date.
+  const poolEligibility = classifyEligibility(user.startDate, 6, planYearWindow(planYear));
+  const isProrated = poolEligibility.status === "PRORATED";
+  // Medical uses the 3-month threshold, so its proration fraction can differ from the pool's.
+  const medicalEligibility = classifyEligibility(user.startDate, 3, planYearWindow(planYear));
 
   const orientation = {
     employeeName: user.name ?? "",
     employmentTypeLabel: EMPLOYMENT_TYPE_LABEL[user.employmentType],
     tenureBandLabel: TENURE_BAND_LABEL[user.tenureBand],
-    ceiling: ceilingRow ? prorate(ceilingRow.amount, poolFraction) : null,
+    ceiling: ceilingRow ? prorate(ceilingRow.amount, poolEligibility.fraction) : null,
     guaranteed: guaranteed.map((g) => ({
       name: g.name,
       amount: amountForBand(user.employmentType!, user.tenureBand!, g),
@@ -254,17 +250,17 @@ export default async function BenefitsPage({
     map.set(key, arr);
   }
 
-  const proratedCeiling = prorate(ceilingRow.amount, poolFraction);
+  const proratedCeiling = prorate(ceilingRow.amount, poolEligibility.fraction);
   const cap = flexCap(proratedCeiling);
   const medicalPremium = medicalCommitment?.premium ?? 0;
   const poolUsed = medicalPremium + claimsCoveredTotal;
   const poolRemaining = Math.max(0, proratedCeiling - poolUsed);
 
   // Guaranteed band (all guaranteed benefits for this employment type). Only benefits flagged
-  // `prorated` (Professional development) shrink to the cycle length; the rest stay full.
+  // `prorated` (Professional development) shrink for mid-year starters; the rest stay full.
   const guaranteedBoard: BoardGuaranteed[] = guaranteed.map((g) => {
     const fullAmount = amountForBand(user.employmentType!, user.tenureBand!, g) ?? user.monthlySalary ?? null;
-    const allocated = g.prorated && fullAmount != null ? prorate(fullAmount, poolFraction) : fullAmount;
+    const allocated = g.prorated && fullAmount != null ? prorate(fullAmount, poolEligibility.fraction) : fullAmount;
     return {
       id: g.id,
       name: g.name,
@@ -321,7 +317,7 @@ export default async function BenefitsPage({
         poolUsed={poolUsed}
         poolRemaining={poolRemaining}
         cap={cap}
-        proration={isProrated ? { months: cycleMonths } : null}
+        proration={isProrated ? { months: poolEligibility.remainingWholeMonths } : null}
         medicalOffered={medicalOffered}
         familyMedical={familyMedical}
         medicalPremiumFraction={medicalEligibility.fraction}

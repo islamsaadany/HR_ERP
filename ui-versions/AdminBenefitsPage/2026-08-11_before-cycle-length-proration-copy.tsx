@@ -567,11 +567,11 @@ export default async function AdminBenefitsPage({
       {active ? (
         active.startDate && active.endDate ? (
           <p className="mt-4 rounded-lg bg-navy-50 px-4 py-3 text-sm text-navy-700">
-            Proration window · <span className="font-semibold">{formatDate(active.startDate)} → {formatDate(active.endDate)}</span> · the flexible pool &amp; Professional development scale to this window&rsquo;s length; medical is prorated for mid-cycle joiners.
+            Proration window · <span className="font-semibold">{formatDate(active.startDate)} → {formatDate(active.endDate)}</span> · mid-year starters are prorated against this window.
           </p>
         ) : (
           <p className="mt-4 rounded-lg border border-gold-500 bg-gold-100 px-4 py-3 text-sm text-gold-800">
-            <strong>Proration off</strong> — “{active.name}” has no start/end dates, so full annual amounts apply to everyone. Set dates via <strong>Plan year</strong> to enable proration.
+            <strong>Proration off</strong> — “{active.name}” has no start/end dates, so mid-year starters receive full amounts. Set dates via <strong>Plan year</strong> to enable proration.
           </p>
         )
       ) : null}

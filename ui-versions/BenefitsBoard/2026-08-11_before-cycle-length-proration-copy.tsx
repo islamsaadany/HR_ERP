@@ -55,7 +55,7 @@ export type BoardGuaranteed = {
   proratedFrom?: number | null;
   claims: BoardClaim[];
 };
-/** Present when the pool is prorated to a short cycle (spec 019): the cycle's whole months (of 12). */
+/** Present only for a mid-year starter (spec 019): the prorated months of the plan year. */
 export type BoardProration = { months: number } | null;
 export type BoardFlex = {
   id: string;
@@ -276,8 +276,8 @@ export function BenefitsBoard({
             </div>
             {proration ? (
               <p className="mt-2 rounded-lg bg-navy-50 px-3 py-2 text-xs text-navy-700">
-                This benefits cycle runs {proration.months} of 12 {proration.months === 1 ? "month" : "months"}, so
-                your pool is scaled to that period. A full-length cycle carries the full annual amount.
+                You joined part-way through the plan year, so your pool covers the remaining {proration.months}{" "}
+                {proration.months === 1 ? "month" : "months"}. You&apos;ll get the full annual amount next plan year.
               </p>
             ) : null}
             <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">

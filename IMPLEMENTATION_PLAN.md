@@ -100,6 +100,19 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   6mo–2y tier; built now against the **placeholder** rate card with the operator's confirmed prorated premium figures
   a later non-blocking data swap. Realizes the approved "medical available at 3 months" mockup. Money-sensitive defaults
   (whole-month floor, ÷12, nearest-EGP rounding) recorded in the spec's Assumptions.
+- **2026-08-11 — Spec `019` revised: pool/Prof-dev prorate by CYCLE LENGTH (built).** Reported issue: opening a
+  half-year cycle left the flexible basket at the full annual amount. Root cause — spec 019 only prorated mid-year
+  *starters* and always divided by 12, so an existing (already-eligible) employee got `fraction = 1` regardless of
+  cycle length (by design, per the spec's "not silently rescaled" assumption). **Product decision:** the **flexible
+  pool** and **Professional development** now scale to the cycle length (`cycle whole months ÷ 12`) for **every**
+  eligible employee — a mid-cycle joiner gets the **same** cycle fraction (no extra reduction), and the 6-month
+  threshold still gates eligibility (under 6 months → 0). **Medical is deliberately excluded** — it keeps mid-cycle-
+  *joiner* proration (÷12 from its 3-month date); existing staff pay the full premium. New pure helpers
+  `cycleWholeMonths`/`cycleFraction`/`poolCycleFraction` in `proration.ts`; enforced server-side in `createClaim`;
+  employee + admin copy reworded (mockup approved 2026-08-11). Verified against the real functions via tsx (half-year
+  cycle → 10,000 of 20,000; medical unchanged). **Follow-up (separate spec):** replace the placeholder medical rate
+  card with the operator's **age-banded, per-person (by DOB) Tier-1** figures — priced as the sum of each covered
+  person's age-band annual premium, DOB-based picker (employee + spouse + children), prorated ÷12 for mid-cycle joiners.
 - **2026-08-05 — Backlog: HR bulk benefit release + export (not yet specced).** HR/Admin wants to release a single
   guaranteed benefit (e.g. **summer allowance**) to the **whole team at once** and **download a sheet** of employee
   name + amount-to-release for payroll/Finance. Distinct from the coverage work; to be specced next (own spec).
