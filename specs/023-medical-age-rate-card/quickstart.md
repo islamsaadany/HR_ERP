@@ -14,14 +14,16 @@ migration/seed on a throwaway Postgres.
 Exercise `src/lib/benefits/rates.ts` against the spec's worked examples (see
 `contracts/medical-pricing.md`). Expected:
 
-| Case | Annual (Decimal) | After proration | Committed (whole EGP) |
+Per-person rounds to whole EGP first (no cents): 7,181.70→7,182, 5,708.69→5,709, 3,990.72→3,991.
+
+| Case | Annual (whole EGP) | After proration | Committed (whole EGP) |
 |---|---|---|---|
-| Personal, emp 32 | 7,181.70 | ×1 | **7,182** |
-| Family: 32 + spouse 29 + child 10 | 16,881.11 | ×1 | **16,881** |
-| Mid-cycle joiner, annual 7,181.70, 3 mo left | 7,181.70 | ×3/12 = 1,795.425 | **1,795** |
-| Family minus the child | 12,890.39 | ×1 | **12,890** |
-| Age boundary: exactly 18 | prices in 18–24 (5,173.57) | — | — |
-| Age 80 (over top) | top band 70–75 (29,796.12) + overTop flag | — | — |
+| Personal, emp 32 | 7,182 | ×1 | **7,182** |
+| Family: 32 + spouse 29 + child 10 | 7,182+5,709+3,991 = 16,882 | ×1 | **16,882** |
+| Mid-cycle joiner, annual 16,882, 4 mo left | 16,882 | ×4/12 = 5,627.33 | **5,627** |
+| Family minus the child | 16,882 − 3,991 = 12,891 | ×1 | **12,891** |
+| Age boundary: exactly 18 | prices in 18–24 (5,173.57 → 5,174) | — | — |
+| Age 80 (over top) | top band 70–75 (29,796.12 → 29,796) + overTop flag | — | — |
 
 Run: `npx tsx <scratch>/verify-medical-rates.ts` → all rows PASS.
 

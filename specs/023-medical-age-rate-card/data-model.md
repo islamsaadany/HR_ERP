@@ -25,11 +25,13 @@ One row per age band. Replaces the single-row `MedicalRateCard`.
 
 ## Changed: `Dependant`
 
-Add a kind so a covered **spouse** is a dependant alongside children.
+Add a kind so a covered **spouse** is a dependant alongside children, **entered in the same place kids are**
+(the admin employee form's dependant list; the medical modal only selects, never creates — refinement
+2026-08-11).
 
 | Field | Type | Notes |
 |---|---|---|
-| `kind` | `DependantKind` enum `{ CHILD, SPOUSE }`, default `CHILD` | Existing rows → `CHILD` (safe default). At most one `SPOUSE` per user (app-enforced). |
+| `kind` | `DependantKind` enum `{ CHILD, SPOUSE }`, default `CHILD` | Existing rows → `CHILD` (safe default). At most one `SPOUSE` per user (app-enforced). Chosen via a type selector on each dependant row in the employee form. |
 
 `name` stays optional; `dateOfBirth` stays required (already). No other change.
 
@@ -60,7 +62,7 @@ locked). Makes the committed premium explainable (SC-006) and immune to later DO
 | `dependantId` | String? FK → `Dependant` (setNull) | `null` = the employee themselves. |
 | `label` | String | "Employee" or the dependant's name/kind, for the breakdown. |
 | `ageAtCommit` | Int | Completed years at commit date. |
-| `annualPremium` | Decimal `@db.Decimal(10,2)` | The band figure applied to this person. |
+| `premiumEGP` | Int | The band figure applied to this person, **rounded to whole EGP** (no cents; refinement 2026-08-11). Lines sum exactly to `MedicalCommitment.premium` for a full-year commit. |
 
 - **Index**: `@@index([commitmentId])`.
 
@@ -83,8 +85,8 @@ locked). Makes the committed premium explainable (SC-006) and immune to later DO
 - Every selected covered dependant has a DOB (schema guarantees) and a resolvable band.
 - At most one SPOUSE dependant per employee.
 - Age > 75 → top band + HR-review flag (FR-012).
-- Committed premium = `round( sum(annualPremium over covered people) × medicalFraction )`, capped at the
-  pool ceiling; medical excluded from the 50% cap (FR-008, FR-010, FR-011).
+- Per-person premium rounded to **whole EGP**; committed premium = `round( Σ perPersonEGP × medicalFraction )`,
+  capped at the pool ceiling; medical excluded from the 50% cap (FR-008, FR-010, FR-011).
 
 ## Migration ordering (SQL file)
 

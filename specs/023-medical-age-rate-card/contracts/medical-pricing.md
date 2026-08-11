@@ -14,11 +14,12 @@ bandFor(age: number, bands: Band[]): { band: Band; overTop: boolean }
   → age below the lowest minAge (shouldn't occur; minAge 0) → lowest band.
 
 annualPremiumForPerson(dob: Date, refDate: Date, bands: Band[]): { amount: Decimal; overTop: boolean }
-  → bandFor(ageAt(dob, refDate)).band.annualPremium
+  → bandFor(ageAt(dob, refDate)).band.annualPremium  (the rate-card decimal figure)
 
 sumMedicalPremium(people: {dob: Date}[], bands: Band[], refDate: Date):
-  { annual: Decimal; lines: {ageAtCommit, annualPremium, overTop}[]; anyOverTop: boolean }
-  → sum of annualPremiumForPerson over the employee + covered dependants, full precision.
+  { annualEGP: number; lines: {ageAtCommit, premiumEGP, overTop}[]; anyOverTop: boolean }
+  → per person: premiumEGP = Math.round(annualPremiumForPerson.amount)  ← whole EGP, no cents
+  → annualEGP = Σ premiumEGP  (so the breakdown sums exactly to the total)
 ```
 
 `Band = { tier, minAge, maxAge, annualPremium }`.
@@ -35,10 +36,11 @@ dependant IDs (spouse + children), the active plan year (window), the pool ceili
    Personal/Family scope (spec 021) unchanged: a Personal-only employee covers only themselves.
 3. refDate = now (the commit date). (FR-004, decision #1)
 4. people = [employee] + selected dependants (each {dob}).
-   { annual, lines, anyOverTop } = sumMedicalPremium(people, bands, refDate).
+   For each person: perPersonEGP = Math.round(annualPremiumForPerson(dob, refDate, bands)).  ← whole EGP, no cents
+   annualEGP = Σ perPersonEGP.  (lines carry the whole-EGP figure; anyOverTop flagged)
 5. Prorate: fraction = classifyEligibility(employee.startDate, 3, planYearWindow(planYear)).fraction  (spec 019)
-   proratedAnnual = annual × fraction        (Decimal, full precision)
-6. Round: premium = Math.round(proratedAnnual)  → whole EGP.   (FR-011, decision #3)
+   premium = Math.round(annualEGP × fraction)  → whole EGP.   (FR-011; whole-EGP refinement 2026-08-11)
+   (Per-person rounding first means the displayed breakdown sums exactly to annualEGP / the committed premium.)
 7. Cap at pool ceiling: committed = min(premium, ceiling); if premium > ceiling → warn "…capped, contact HR".
 8. Persist: MedicalCommitment { premium: committed, committedAt: refDate, … } +
    one MedicalCoveredPerson per line (dependantId null for the employee), storing ageAtCommit & annualPremium.
@@ -46,16 +48,15 @@ dependant IDs (spouse + children), the active plan year (window), the pool ceili
 9. Locked after commit (unchanged): employee cannot edit; HR edit/remove via admin. (FR-009)
 ```
 
-## Worked examples (from spec; must match in `tsx` verification)
+## Worked examples (whole-EGP, per-person round-then-sum; must match in `tsx` verification)
 
-Bands: 25–29 = 5,708.69 · 30–34 = 7,181.70 · 0–17 = 3,990.72.
+Bands: 25–29 = 5,708.69 · 30–34 = 7,181.70 · 0–17 = 3,990.72 · 18–24 = 5,173.57. Per-person rounds to
+whole EGP first: 7,181.70→**7,182**, 5,708.69→**5,709**, 3,990.72→**3,991**.
 
-- **Personal, employee age 32**: annual = 7,181.70. Full-year eligible → premium = round(7,181.70) = **7,182**.
-- **Family, emp 32 + spouse 29 + child 10**: annual = 7,181.70 + 5,708.69 + 3,990.72 = **16,881.11**.
-  Full-year → premium = round(16,881.11) = **16,881**.
-- **Mid-cycle joiner, annual 7,181.70, 3 whole months left**: proratedAnnual = 7,181.70 × 3/12 = 1,795.425
-  → premium = round(1,795.425) = **1,795**.
-- **Remove the child** from the family case: annual drops by exactly 3,990.72 → 12,890.39 → premium **12,890**.
+- **Personal, employee age 32**: perPerson 7,182 → annual 7,182. Full-year → premium **7,182**.
+- **Family, emp 32 + spouse 29 + child 10**: 7,182 + 5,709 + 3,991 = annual **16,882**. Full-year → premium **16,882**.
+- **Mid-cycle joiner, annual 16,882, 4 whole months left**: premium = round(16,882 × 4/12) = round(5,627.33) = **5,627**.
+- **Remove the child**: annual drops by exactly 3,991 → **12,891**.
 
 ## Admin rate-card contract (`admin/benefits/actions.ts`)
 

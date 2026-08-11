@@ -134,7 +134,7 @@ After commit, medical behaves exactly as today: **one commitment per plan year**
 - **FR-003**: The system MUST compute an employee's **annual medical premium** as the sum of the age-band annual premium of the **employee** plus each **covered dependant** (spouse + each covered child).
 - **FR-004**: The system MUST determine each person's age band from their **date of birth**, measured as completed years at the pricing reference date (see Assumptions).
 - **FR-005**: The system MUST require the **employee's date of birth** before medical can be committed, and MUST block commit with a clear message when it is missing.
-- **FR-006**: The system MUST collect a **date of birth for a covered spouse** and MUST let the employee choose covered children as **individual people with dates of birth** (reusing existing dependant records) rather than counts.
+- **FR-006**: The spouse and children MUST be entered as **dependant records with dates of birth in the employee data-entry surface where children are already entered** (a dependant **type** distinguishes spouse from child); the **medical modal only selects** which existing dependants to cover, and does not create them. At most one spouse per employee.
 - **FR-007**: The system MUST block covering any person (spouse or child) who lacks a date of birth, with a clear message, rather than guessing an age.
 - **FR-008**: For a **mid-cycle medical joiner**, the system MUST prorate the age-banded annual premium by `remaining whole months ÷ 12` from the 3-month medical eligibility date (unchanged from spec 019 except for the pricing source).
 - **FR-009**: Medical MUST remain **committed once per plan year and locked** after commit (employee cannot change; HR can edit/remove).
@@ -171,9 +171,9 @@ After commit, medical behaves exactly as today: **one commitment per plan year**
 - **Pricing reference date** *(confirmed 2026-08-11)*: A person's age is computed as **completed years at the employee's medical commit date**. The premium therefore reflects each covered person's age on the day the election is made (and is then locked). A person who crosses a band boundary before committing prices in the higher band.
 - **Age-band bounds**: Bands are inclusive by completed years — "0 days – 17" means age ≤ 17 (under 18); "18 – 24" means 18 ≤ age ≤ 24; and so on. A person turning 18 on/before the commit date prices in 18–24.
 - **Over-75 handling** *(confirmed 2026-08-11)*: A person older than 75 is priced at the **top band (70–75)** and flagged for HR review, rather than blocked or zero-priced.
-- **Rounding** *(confirmed 2026-08-11)*: Per-person annual premiums (which carry two decimals in the rate card) are summed at full precision; proration multiplies the summed annual by `months ÷ 12`; the **final committed premium is rounded to whole EGP**, matching the pool's existing integer math. (The rate-card amounts keep their two decimals; only the committed premium is a whole number.)
-- **Storage of decimals**: Rate-card **band amounts** are stored with two-decimal precision (the operator quotes cents). The **committed premium** is stored as a whole EGP integer (unchanged from today).
-- **Spouse as a dependant** *(confirmed 2026-08-11)*: The covered spouse becomes a proper **dependant record** (name + date of birth), consistent with children, rather than a boolean + separate DOB field. The dependant record gains a way to distinguish a spouse from a child so pricing and scope rules can tell them apart.
+- **Rounding — whole EGP, no cents shown to employees** *(refined 2026-08-11)*: Employees never see cents. Each covered person's premium is **rounded to whole EGP** for display and computation; the **annual premium** is the sum of those whole-EGP per-person figures; a mid-cycle joiner's **committed premium** is that annual × `months ÷ 12`, rounded to whole EGP. Because per-person figures are rounded first, the displayed breakdown always sums exactly to the annual/committed total (no off-by-a-cent mismatch). The pool's integer math is unaffected.
+- **Storage of decimals** *(refined 2026-08-11)*: The **rate-card band amounts** are stored with two-decimal precision — the operator quotes cents and HR edits the exact figure on the admin card (admin surface approved with cents). Everything **employee-facing** and the **committed premium** are whole EGP.
+- **Spouse as a dependant, entered in the profile like kids** *(confirmed + refined 2026-08-11)*: The covered spouse is a proper **dependant record** (name + date of birth), distinguished from a child by a dependant **type**. It is added/edited in the **employee data-entry surface where children are already entered** (the admin employee form / dependant list; CSV as a follow-in) — **not** created inside the medical modal. The medical modal only **selects** which existing dependants (spouse + children) to cover. At most one spouse per employee.
 - **Tiers**: Only Tier 1 is defined and assigned to all eligible employees for now; a tier-assignment rule (per employment type, plan, etc.) is out of scope until more tiers exist.
 - **Personal vs Family scope (spec 021) is unchanged**: A Personal-only employee is priced on themselves alone; Family-eligible employees can add spouse + children. The FT/PT eligibility gates are unchanged.
 - **Existing dependant records are reused**: Children already carry a DOB; this feature adds selection of which children are covered and a spouse DOB. It does not redesign the dependant registry.
@@ -187,7 +187,11 @@ The four money-/model-impacting choices are settled and folded into Assumptions 
 1. **Pricing reference date** → **commit date** (age at the day medical is committed; then locked). *(FR-004)*
 2. **Over-75 handling** → **top band (70–75) + HR flag**. *(FR-012)*
 3. **Rounding** → **final committed premium rounded to whole EGP**; rate-card band amounts keep two decimals. *(FR-011)*
-4. **Spouse DOB storage** → the **spouse becomes a proper dependant record** (name + DOB, distinguished from a child). *(FR-006, Key Entities)*
+4. **Spouse DOB storage** → the **spouse becomes a proper dependant record** (name + DOB, distinguished from a child by a type), **entered in the profile/employee dependant list like kids** — not in the medical modal, which only selects who to cover. *(FR-006, Key Entities)*
+
+### Post-mockup refinements (2026-08-11)
+
+The UI mockup was approved with two changes, folded into Assumptions/FRs above: **(a)** employees see **whole EGP, no cents** (per-person rounded then summed; admin card keeps the operator's two-decimal figures); **(b)** the **spouse is added in the employee profile dependant entry like kids**, and the medical modal only **selects** covered dependants.
 
 ## Dependencies
 

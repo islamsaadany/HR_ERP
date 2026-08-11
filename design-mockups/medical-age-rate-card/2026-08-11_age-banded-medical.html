@@ -78,7 +78,7 @@
   <p class="lede">Medical is now priced <strong>per person by age</strong> (spec 023). Only these two surfaces change shape; the modal's structure is ported faithfully from today's (per-person rows → live premium bar → Commit), recolored/extended, not redesigned. Static mockup — sample data, no wiring.</p>
 
   <div class="rulebox">
-    <strong>Sample used throughout:</strong> employee <b>Layla, age 32</b> (band 30–34 = 7,181.70) · spouse <b>Sara, age 29</b> (band 25–29 = 5,708.69) · child <b>Omar, age 10</b> (band 0–17 = 3,990.72). Premium = the sum of each covered person's age-band figure, then rounded to whole EGP at commit.
+    <strong>Sample used throughout:</strong> employee <b>Layla, age 32</b> (band 30–34) · spouse <b>Sara, age 29</b> (band 25–29) · child <b>Omar, age 10</b> (band 0–17). Premium = the sum of each covered person's age-band figure. <strong>Employees see whole EGP</strong> (no cents); HR keeps the exact operator figures on the admin card. Spouse &amp; children are entered in the employee's profile (like kids) — the modal only picks who to cover.
   </div>
 
   <!-- 1: employee modal -->
@@ -107,41 +107,42 @@
         <div class="stage">
           <div class="modal">
             <h3>Family medical insurance</h3>
-            <p class="intro">You are always covered. Add the people you want covered — each is priced by age. 100% company-covered; locked once committed.</p>
-            <div class="prow sel"><div><div class="pname">You · Layla</div><div class="pmeta">Age 32 · band 30–34</div></div><span class="pprice tabnum">EGP 7,181.70</span></div>
-            <div class="prow sel"><div style="display:flex;align-items:center;gap:10px"><span class="cb on">✓</span><div><div class="pname">Spouse · Sara</div><div class="pmeta">Age 29 · band 25–29</div></div></div><span class="pprice tabnum">EGP 5,708.69</span></div>
-            <div class="prow sel"><div style="display:flex;align-items:center;gap:10px"><span class="cb on">✓</span><div><div class="pname">Omar</div><div class="pmeta">Age 10 · band 0–17</div></div></div><span class="pprice tabnum">EGP 3,990.72</span></div>
-            <div class="prow"><div style="display:flex;align-items:center;gap:10px"><span class="cb off"></span><div><div class="pname">Nour</div><div class="pmeta">Age 19 · band 18–24</div></div></div><span class="pmeta tabnum">EGP 5,173.57</span></div>
+            <p class="intro">You are always covered. Tick the people you want covered — each is priced by age. Add or edit dependants in your profile. 100% company-covered; locked once committed.</p>
+            <div class="prow sel"><div><div class="pname">You · Layla</div><div class="pmeta">Age 32 · band 30–34</div></div><span class="pprice tabnum">EGP 7,182</span></div>
+            <div class="prow sel"><div style="display:flex;align-items:center;gap:10px"><span class="cb on">✓</span><div><div class="pname">Spouse · Sara</div><div class="pmeta">Age 29 · band 25–29</div></div></div><span class="pprice tabnum">EGP 5,709</span></div>
+            <div class="prow sel"><div style="display:flex;align-items:center;gap:10px"><span class="cb on">✓</span><div><div class="pname">Omar</div><div class="pmeta">Age 10 · band 0–17</div></div></div><span class="pprice tabnum">EGP 3,991</span></div>
+            <div class="prow"><div style="display:flex;align-items:center;gap:10px"><span class="cb off"></span><div><div class="pname">Nour</div><div class="pmeta">Age 19 · band 18–24</div></div></div><span class="pmeta tabnum">EGP 5,174</span></div>
             <div class="breakdown">
-              <div class="bd"><span>You · Layla</span><b class="tabnum">7,181.70</b></div>
-              <div class="bd"><span>Spouse · Sara</span><b class="tabnum">5,708.69</b></div>
-              <div class="bd"><span>Omar</span><b class="tabnum">3,990.72</b></div>
+              <div class="bd"><span>You · Layla</span><b class="tabnum">7,182</b></div>
+              <div class="bd"><span>Spouse · Sara</span><b class="tabnum">5,709</b></div>
+              <div class="bd"><span>Omar</span><b class="tabnum">3,991</b></div>
             </div>
-            <div class="subtotal"><span class="lbl">Annual premium (100% covered)</span><span class="amt tabnum">EGP 16,881</span></div>
+            <div class="subtotal"><span class="lbl">Annual premium (100% covered)</span><span class="amt tabnum">EGP 16,882</span></div>
             <div class="actions"><button class="btn line">Cancel</button><button class="btn navy">Commit medical</button></div>
           </div>
         </div>
-        <p class="sub" style="margin:8px 0 0">Each covered person shows age → band → price; the breakdown sums to 16,881.11 → committed <b>16,881</b> (whole EGP).</p>
+        <p class="sub" style="margin:8px 0 0">Each covered person shows age → band → <b>whole-EGP</b> price; the breakdown sums to the committed <b>EGP 16,882</b>. No cents shown to employees.</p>
       </div>
     </div>
   </section>
 
   <!-- 1b: states -->
   <section class="proposal">
-    <h2><span class="num">1b</span> Employee modal · three states</h2>
-    <p class="sub">Add-a-spouse, mid-cycle proration, and the missing-DOB block.</p>
+    <h2><span class="num">1b</span> Where the spouse is added · proration · missing DOB</h2>
+    <p class="sub">Spouse is entered in the employee's profile dependant list (like kids), not in the medical modal.</p>
     <div class="cols">
       <div>
-        <span class="tag after">Add spouse (needs a DOB)</span>
+        <span class="tag after">Profile · dependant entry (spouse added like a child)</span>
         <div class="card">
-          <div class="addrow"><div class="pname">Add spouse</div><button class="btn ghost">+ Add spouse</button></div>
-          <div class="prow sel" style="margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><span class="cb on">✓</span><div><div class="pname">Spouse</div><div class="pmeta">Enter date of birth to price</div></div></div><input class="dob" value="1997-04-12" readonly></div>
-          <p class="note navy">The spouse is saved to your record (name + date of birth) so their age-band price can be applied, like a child.</p>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">Dependants <button class="btn ghost" style="float:right;margin-top:-4px">+ Add dependant</button></div>
+          <div class="prow"><div style="display:flex;gap:8px;align-items:center"><span class="dob" style="width:88px;text-align:center">Spouse ▾</span><div><div class="pname">Sara</div></div></div><input class="dob" value="1997-04-12" readonly></div>
+          <div class="prow"><div style="display:flex;gap:8px;align-items:center"><span class="dob" style="width:88px;text-align:center">Child ▾</span><div><div class="pname">Omar</div></div></div><input class="dob" value="2016-02-20" readonly></div>
+          <p class="note navy">Each dependant row gains a <b>type</b> — Child or Spouse — with a name + date of birth, exactly like kids today. Medical then prices whoever is on file. (One spouse max.)</p>
         </div>
         <div class="card" style="margin-top:14px">
           <span class="tag after" style="margin:0 0 8px">Mid-cycle joiner (proration)</span>
-          <div class="subtotal"><span class="lbl">Prorated premium (3 of 12 mo)</span><span class="amt tabnum">EGP 4,220 <span class="strike">EGP 16,881</span></span></div>
-          <p class="note navy" style="margin-top:8px">You became medical-eligible part-way through the plan year, so your premium covers the remaining 3 months (16,881.11 × 3 ÷ 12 → 4,220).</p>
+          <div class="subtotal"><span class="lbl">Prorated premium (4 of 12 mo)</span><span class="amt tabnum">EGP 5,627 <span class="strike">EGP 16,882</span></span></div>
+          <p class="note navy" style="margin-top:8px">You became medical-eligible part-way through the plan year, so your premium covers the remaining 4 months (16,882 × 4 ÷ 12 → 5,627).</p>
         </div>
       </div>
       <div>

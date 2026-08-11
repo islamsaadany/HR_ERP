@@ -75,8 +75,10 @@ src/
 ├── app/(app)/admin/benefits/
 │   ├── actions.ts                    # edit rate-card bands
 │   └── page.tsx / AdminBenefitsPage  # Amounts tab: 12-band editor (replaces self/spouse/child)
+├── components/admin/
+│   └── EmployeeForm.tsx               # dependant rows gain a TYPE selector (Child/Spouse); spouse entered here like kids
 └── components/benefits/
-    └── BenefitsBoard.tsx / MedicalModal  # DOB-based spouse (as dependant) + individual child pickers, live per-person breakdown
+    └── BenefitsBoard.tsx / MedicalModal  # modal SELECTS existing dependants to cover (spouse + children); whole-EGP per-person breakdown (no cents); does not create dependants
 
 ui-versions/                          # snapshots of every touched UI file (mandatory)
 design-mockups/medical-age-rate-card/ # approved navy/gold mockup(s) before UI edits
