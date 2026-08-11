@@ -38,6 +38,9 @@ function profileData(r: ParsedRow) {
     startDate: r.startDate,
     dateOfBirth: r.dateOfBirth,
     maritalStatus: r.maritalStatus,
+    emergencyContactName: r.emergencyContactName,
+    emergencyContactRelationship: r.emergencyContactRelationship,
+    emergencyContactPhone: r.emergencyContactPhone,
   };
 }
 
@@ -110,6 +113,7 @@ export async function importEmployees(
         create: r.dependants.map((d) => ({
           name: d.name,
           dateOfBirth: d.dateOfBirth,
+          kind: d.kind,
         })),
       };
 
