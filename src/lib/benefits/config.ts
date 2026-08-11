@@ -1,6 +1,7 @@
 import type { EmploymentType, TenureBand } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { PlanYearWindow } from "@/lib/benefits/proration";
+import type { Band } from "@/lib/benefits/rates";
 
 /**
  * Pick a guaranteed-benefit amount for an employee, from the row's per-employment-type
@@ -113,8 +114,21 @@ export async function poolCeilingFor(
   return row?.amount ?? null;
 }
 
-export async function getMedicalRate() {
-  return prisma.medicalRateCard.findFirst();
+/**
+ * The age-banded medical rate card for a tier (spec 023), ordered youngest→oldest. Prisma returns
+ * `annualPremium` as a Decimal; convert to a plain number for the pure pricing helpers (`rates.ts`).
+ */
+export async function getMedicalRateBands(tier = 1): Promise<Band[]> {
+  const rows = await prisma.medicalRateBand.findMany({
+    where: { tier },
+    orderBy: { order: "asc" },
+  });
+  return rows.map((r) => ({
+    tier: r.tier,
+    minAge: r.minAge,
+    maxAge: r.maxAge,
+    annualPremium: Number(r.annualPremium),
+  }));
 }
 
 /**
@@ -134,9 +148,11 @@ export async function medicalScopeFor(
   return { personal, family, offered: personal || family };
 }
 
-/** The employee's committed medical election for a plan year, or null if not yet committed (spec 018). */
+/** The employee's committed medical election for a plan year, or null if not yet committed (spec 018).
+ *  Includes the per-covered-person snapshot (spec 023) for an explainable premium breakdown. */
 export async function getMedicalCommitment(userId: string, planYearId: string) {
   return prisma.medicalCommitment.findUnique({
     where: { userId_planYearId: { userId, planYearId } },
+    include: { coveredPeople: true },
   });
 }

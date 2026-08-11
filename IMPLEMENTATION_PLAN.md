@@ -113,6 +113,14 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   cycle → 10,000 of 20,000; medical unchanged). **Follow-up (separate spec):** replace the placeholder medical rate
   card with the operator's **age-banded, per-person (by DOB) Tier-1** figures — priced as the sum of each covered
   person's age-band annual premium, DOB-based picker (employee + spouse + children), prorated ÷12 for mid-cycle joiners.
+- **2026-08-11 — Spec `023` built: age-banded per-person medical rate card (Tier 1).** Replaced the relationship-based
+  medical card with per-person age-band pricing (new `MedicalRateBand` table + Tier-1 seed; `MedicalCoveredPerson`
+  commit snapshot; `Dependant.kind` CHILD/SPOUSE). Confirmed decisions: age at **commit date**; over-75 → top band +
+  HR flag; **cents dropped (truncate), not rounded** (employees see whole EGP; the admin card keeps the operator's
+  two-decimal figures); the **spouse is a dependant entered in the employee form like kids** (medical modal only
+  selects). DOB required to commit (blocked, never guessed). Migration `034` (verified on throwaway Postgres); pricing
+  verified end-to-end via `tsx` (family 16,879; mid-cycle 4/12 → 5,626). `tsc`/`build` green. Neon apply of `034` +
+  HR filling DOBs are the remaining hand-off steps.
 - **2026-08-05 — Backlog: HR bulk benefit release + export (not yet specced).** HR/Admin wants to release a single
   guaranteed benefit (e.g. **summer allowance**) to the **whole team at once** and **download a sheet** of employee
   name + amount-to-release for payroll/Finance. Distinct from the coverage work; to be specced next (own spec).

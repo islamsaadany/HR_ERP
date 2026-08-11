@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-11
 
-**Status**: Draft
+**Status**: Implemented 2026-08-11 (server + UI built; `tsc`/`build` green; migration `034` verified on a throwaway Postgres; pricing verified end-to-end via `tsx`). Pending: apply `034_medical_age_rate_card.sql` to Neon, and HR fills employee/spouse DOBs so employees can commit.
 
 **Input**: User description: "Age-banded per-person medical insurance rate card (Tier 1). Replace the current relationship-based medical rate card (self / spouse / childUnder18 / child18Plus flat figures) with a rate card priced per covered person by their exact age band … the employee's medical premium = the employee's own age-band annual premium + the sum of each covered dependant's age-band annual premium … collect DOB for everyone priced … only Tier 1 for now … mid-cycle joiners still prorated ÷12 from the 3-month medical eligibility date … medical committed once, locked, 50%-cap-exempt, draws from the pool … values carry decimals."
 

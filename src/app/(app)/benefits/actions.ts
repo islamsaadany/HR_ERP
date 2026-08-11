@@ -3,18 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
-import { getActivePlanYear, getMedicalRate, planYearWindow, poolCeilingFor, medicalScopeFor } from "@/lib/benefits/config";
-import { computeMedicalPremium, type MedicalConfig } from "@/lib/benefits/rules";
+import { getActivePlanYear, getMedicalRateBands, planYearWindow, poolCeilingFor, medicalScopeFor } from "@/lib/benefits/config";
 import { classifyEligibility, prorate } from "@/lib/benefits/proration";
+import { sumMedicalPremium, proratedPremiumEGP, type PricedPerson } from "@/lib/benefits/rates";
 import { deriveTenureBand } from "@/lib/tenure";
 
 /** Medical insurance unlocks at 3 months of service (spec 019), before the 6-month basket. */
 const MEDICAL_THRESHOLD_MONTHS = 3;
 
+/** The covered dependants (spouse + children) the employee ticked; the employee is always included. */
 export type MedicalPayload = {
-  spouse: boolean;
-  childrenUnder18: number;
-  children18Plus: number;
+  dependantIds: string[];
 };
 
 export type CommitResult = {
@@ -37,10 +36,25 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
 
   const user = await prisma.user.findUnique({
     where: { id: me.id },
-    select: { employmentType: true, tenureBand: true, startDate: true },
+    select: {
+      name: true,
+      employmentType: true,
+      tenureBand: true,
+      startDate: true,
+      dateOfBirth: true,
+      dependants: { select: { id: true, name: true, dateOfBirth: true, kind: true } },
+    },
   });
   if (!user?.employmentType) {
     return { ok: false, errors: ["Your employment type isn't set — contact HR."], warnings: [] };
+  }
+  // Age-band pricing needs the employee's DOB (spec 023) — block rather than guess.
+  if (!user.dateOfBirth) {
+    return {
+      ok: false,
+      errors: ["A date of birth is required to price medical. Contact HR to add your date of birth, then set up cover."],
+      warnings: [],
+    };
   }
 
   // Personal/Family gate (spec 021): only Family-eligible employees may add dependants.
@@ -48,8 +62,15 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
   if (!scope.offered) {
     return { ok: false, errors: ["Medical insurance isn't available to you."], warnings: [] };
   }
-  const wantsDependants = !!payload.spouse || payload.childrenUnder18 > 0 || payload.children18Plus > 0;
-  if (!scope.family && wantsDependants) {
+
+  // Resolve the ticked dependants against the employee's own records (spec 023). A selected id that
+  // isn't theirs — or a Personal-only employee selecting anyone — is rejected, never guessed.
+  const selectedIds = Array.from(new Set(payload.dependantIds ?? []));
+  const covered = user.dependants.filter((d) => selectedIds.includes(d.id));
+  if (covered.length !== selectedIds.length) {
+    return { ok: false, errors: ["One of the selected dependants isn't on your record. Refresh and try again."], warnings: [] };
+  }
+  if (!scope.family && covered.length > 0) {
     return { ok: false, errors: ["You're eligible for personal medical only — remove spouse and children."], warnings: [] };
   }
 
@@ -64,32 +85,30 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
     return { ok: false, errors: ["Medical insurance becomes available after 3 months of service."], warnings: [] };
   }
 
-  const [ceilingAmount, medicalRate, existing] = await Promise.all([
+  const [ceilingAmount, bands, existing] = await Promise.all([
     // Tenure band is derived from the hire date so it's always current (entry-tier
     // 6mo–2y fallback inside poolCeilingFor when a sub-6-month employee has no band).
     poolCeilingFor(user.employmentType, deriveTenureBand(user.startDate).band),
-    getMedicalRate(),
+    getMedicalRateBands(),
     prisma.medicalCommitment.findUnique({
       where: { userId_planYearId: { userId: me.id, planYearId: planYear.id } },
     }),
   ]);
-  if (ceilingAmount == null || !medicalRate) {
+  if (ceilingAmount == null || bands.length === 0) {
     return { ok: false, errors: ["Benefits aren't fully configured yet."], warnings: [] };
   }
   if (existing) {
     return { ok: false, errors: ["Medical is already committed. Contact HR to change it."], warnings: [] };
   }
 
-  const cfg: MedicalConfig = {
-    spouse: !!payload.spouse,
-    childrenUnder18: Math.max(0, Math.floor(payload.childrenUnder18)),
-    children18Plus: Math.max(0, Math.floor(payload.children18Plus)),
-  };
-  const rawPremium = computeMedicalPremium(medicalRate, cfg);
-  // Prorate both the annual premium and the pool cap by the medical eligibility fraction
-  // (fraction = 1 for a full-year employee, so this is a no-op for them).
+  // Price per person by age at the COMMIT DATE (spec 023). The employee is always covered.
+  const refDate = new Date();
+  const people: PricedPerson[] = [{ dob: user.dateOfBirth }, ...covered.map((d) => ({ dob: d.dateOfBirth }))];
+  const { annualEGP, lines, anyOverTop } = sumMedicalPremium(people, bands, refDate);
+
+  // Prorate the annual premium and the pool cap by the medical eligibility fraction (1 for a full year).
   const proratedCeiling = prorate(ceilingAmount, medicalEligibility.fraction);
-  const proratedPremium = prorate(rawPremium, medicalEligibility.fraction);
+  const proratedPremium = proratedPremiumEGP(annualEGP, medicalEligibility.fraction);
   const premium = Math.min(proratedPremium, proratedCeiling);
 
   const warnings: string[] = [];
@@ -98,15 +117,27 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
       `Your medical premium of EGP ${proratedPremium.toLocaleString()} exceeds your pool — capped at EGP ${proratedCeiling.toLocaleString()}. Contact HR.`
     );
   }
+  if (anyOverTop) {
+    warnings.push("A covered person is over 75 and was priced at the top age band — HR will review.");
+  }
+
+  // Build the covered-person snapshot (lines align 1:1 with `people`: index 0 = employee).
+  const coveredPeople = [
+    { dependantId: null as string | null, label: user.name ?? "Employee", ageAtCommit: lines[0].ageAtCommit, premiumEGP: lines[0].premiumEGP },
+    ...covered.map((d, i) => ({
+      dependantId: d.id,
+      label: `${d.kind === "SPOUSE" ? "Spouse" : "Child"}${d.name ? ` · ${d.name}` : ""}${lines[i + 1].overTop ? " (over 75 — top band)" : ""}`,
+      ageAtCommit: lines[i + 1].ageAtCommit,
+      premiumEGP: lines[i + 1].premiumEGP,
+    })),
+  ];
 
   await prisma.medicalCommitment.create({
     data: {
       userId: me.id,
       planYearId: planYear.id,
-      spouse: cfg.spouse,
-      childrenUnder18: cfg.childrenUnder18,
-      children18Plus: cfg.children18Plus,
       premium,
+      coveredPeople: { create: coveredPeople },
     },
   });
 

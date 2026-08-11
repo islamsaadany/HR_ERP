@@ -47,9 +47,9 @@ enum MaritalStatus {
 
 /// The employee registry — the backbone every module reads from.
 model User {
-  id      String @id @default(cuid())
-  email   String @unique // login identity (Google, company domain)
-  name    String
+  id       String  @id @default(cuid())
+  email    String  @unique // login identity (Google, company domain)
+  name     String
   photoUrl String?
 
   // Public directory fields
@@ -61,7 +61,7 @@ model User {
   role Role @default(EMPLOYEE)
 
   // Email + password sign-in (scrypt hash; null = password not set, Google-only).
-  passwordHash String?
+  passwordHash       String?
   // Set true when HR issues a temporary password; the employee is gated to
   // /set-password on next sign-in until they choose their own compliant one.
   mustChangePassword Boolean @default(false)
@@ -75,7 +75,7 @@ model User {
   tenureBand     TenureBand?
   startDate      DateTime?
   endDate        DateTime?
-  status         EmployeeStatus @default(ACTIVE)
+  status         EmployeeStatus  @default(ACTIVE)
   monthlySalary  Int? // HR-private; used for the Loans benefit ceiling (up to one month)
 
   // HR-private personal fields
@@ -108,11 +108,11 @@ model User {
   // Benefits
   medicalCommitments MedicalCommitment[] @relation("MedicalOwner")
   committedMedical   MedicalCommitment[] @relation("MedicalCommitter")
-  benefitClaims     BenefitClaim[] @relation("ClaimOwner")
-  reviewedClaims    BenefitClaim[] @relation("ClaimReviewer")
-  paidClaims        BenefitClaim[] @relation("ClaimPayer")
-  benefitReleases   BenefitRelease[] @relation("ReleaseSubject")
-  releasesGiven     BenefitRelease[] @relation("ReleaseActor")
+  benefitClaims      BenefitClaim[]      @relation("ClaimOwner")
+  reviewedClaims     BenefitClaim[]      @relation("ClaimReviewer")
+  paidClaims         BenefitClaim[]      @relation("ClaimPayer")
+  benefitReleases    BenefitRelease[]    @relation("ReleaseSubject")
+  releasesGiven      BenefitRelease[]    @relation("ReleaseActor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -122,16 +122,26 @@ model User {
   @@index([reportsToId])
 }
 
-/// A dependant (child) of an employee — name + DOB. Age is derived, never stored.
+/// A dependant of an employee — name + DOB, and a kind (CHILD or SPOUSE). Age is derived, never stored.
+/// The spouse is a dependant (kind = SPOUSE) so medical can price it by age like a child (spec 023).
 model Dependant {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String?
   dateOfBirth DateTime
-  createdAt   DateTime @default(now())
+  kind        DependantKind @default(CHILD)
+  createdAt   DateTime      @default(now())
+
+  medicalCoverage MedicalCoveredPerson[]
 
   @@index([userId])
+}
+
+/// Distinguishes a covered spouse from a child on a Dependant (spec 023). At most one SPOUSE per user.
+enum DependantKind {
+  CHILD
+  SPOUSE
 }
 
 /// A personal document owned by one employee (ID, certificate, contract, HR letter).
@@ -165,18 +175,18 @@ enum OnboardingTrackKey {
 
 /// An onboarding activity — the unit a joiner acknowledges (Policy) or completes (Action).
 model OnboardingActivity {
-  id          String             @id @default(cuid())
+  id          String               @id @default(cuid())
   title       String
   description String?
   type        ActivityType
-  stage       String             // free-text group label, e.g. "Week 1", "Check-ins"
-  track       OnboardingTrackKey @default(COMMON_CORE)
+  stage       String // free-text group label, e.g. "Week 1", "Check-ins"
+  track       OnboardingTrackKey   @default(COMMON_CORE)
   linkUrl     String? // deep link into another module or a resource
-  order       Int                @default(0)
-  active      Boolean            @default(true)
+  order       Int                  @default(0)
+  active      Boolean              @default(true)
   completions ActivityCompletion[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
   @@index([track, stage, order])
 }
@@ -314,17 +324,17 @@ enum ClaimStatus {
 
 /// A benefits cycle. Employees can save/submit only while OPEN.
 model PlanYear {
-  id         String             @id @default(cuid())
-  name       String
-  status     PlanYearStatus     @default(OPEN)
+  id                 String              @id @default(cuid())
+  name               String
+  status             PlanYearStatus      @default(OPEN)
   /// Proration window (spec 019). Admin-set; nullable for legacy rows / fallback.
   /// When either is null the year is treated as having no window → no proration.
-  startDate  DateTime?
-  endDate    DateTime?
-  createdAt  DateTime           @default(now())
+  startDate          DateTime?
+  endDate            DateTime?
+  createdAt          DateTime            @default(now())
   medicalCommitments MedicalCommitment[]
-  claims     BenefitClaim[]
-  releases   BenefitRelease[]
+  claims             BenefitClaim[]
+  releases           BenefitRelease[]
 }
 
 /// Pool ceiling per (employment type × tenure band). Max claimable for the year.
@@ -342,7 +352,7 @@ model PoolCeiling {
 /// held per employment type × tenure band (ft* / pt* columns) on the numbers-only Amounts tab.
 /// Superseded the old "one row per (benefit × employmentType)" model.
 model GuaranteedBenefit {
-  id               String         @id @default(cuid())
+  id               String           @id @default(cuid())
   name             String
   note             String?
   /// Grouping category shown in the unified catalogue (spec 021), aligned with the flexible
@@ -350,8 +360,8 @@ model GuaranteedBenefit {
   /// description). Null falls back to "Other".
   category         String?
   /// Who this benefit is available to. Drives what each employee sees by their employment type.
-  eligibleFullTime Boolean        @default(true)
-  eligiblePartTime Boolean        @default(true)
+  eligibleFullTime Boolean          @default(true)
+  eligiblePartTime Boolean          @default(true)
   /// Full-time amounts per tenure band (null = salary-driven / not set).
   ftBand6mo2y      Int?
   ftBand2to4y      Int?
@@ -362,12 +372,12 @@ model GuaranteedBenefit {
   ptBand2to4y      Int?
   ptBand4to7y      Int?
   ptBand7to10y     Int?
-  order            Int            @default(0)
-  claimType        ClaimType      @default(NOTE)
+  order            Int              @default(0)
+  claimType        ClaimType        @default(NOTE)
   /// Whether this guaranteed benefit's annual budget is prorated for mid-year
   /// starters (spec 019). True only for Professional development; event/season
   /// gifts (marriage, summer, special events, loans) stay false = full-when-triggered.
-  prorated         Boolean        @default(false)
+  prorated         Boolean          @default(false)
   claims           BenefitClaim[]
   releases         BenefitRelease[]
 }
@@ -405,13 +415,19 @@ model Department {
   createdAt DateTime @default(now())
 }
 
-/// Medical insurance rate card (single tier). One row.
-model MedicalRateCard {
-  id           String @id @default(cuid())
-  self         Int
-  spouse       Int
-  childUnder18 Int
-  child18Plus  Int
+/// Age-banded medical rate card (spec 023). One row per age band; premium is looked up by a covered
+/// person's age. `tier` allows more tiers later — only Tier 1 exists today. Amounts carry two decimals
+/// (the operator quotes cents); employee-facing figures drop the cents (truncate).
+model MedicalRateBand {
+  id            String  @id @default(cuid())
+  tier          Int     @default(1)
+  minAge        Int
+  maxAge        Int?
+  annualPremium Decimal @db.Decimal(10, 2)
+  order         Int     @default(0)
+
+  @@unique([tier, minAge])
+  @@index([tier])
 }
 
 /// Medical cover scope (spec 021). Personal = the employee only; Family = employee + spouse + children.
@@ -422,24 +438,24 @@ enum MedicalScope {
 
 /// A selectable flexible-basket category. Medical is special (rate-card priced, cap-exempt).
 model BenefitCatalogItem {
-  id          String          @id @default(cuid())
-  key         String          @unique
-  name        String
-  description String?
-  category    String?
-  isMedical   Boolean         @default(false)
+  id               String         @id @default(cuid())
+  key              String         @unique
+  name             String
+  description      String?
+  category         String?
+  isMedical        Boolean        @default(false)
   /// For medical items only (spec 021): PERSONAL (self) or FAMILY (self + dependants). Null for non-medical.
-  medicalScope MedicalScope?
+  medicalScope     MedicalScope?
   /// Who this benefit is available to. Drives what each employee sees by their employment type.
-  eligibleFullTime Boolean    @default(true)
-  eligiblePartTime Boolean    @default(true)
-  order       Int             @default(0)
-  active      Boolean         @default(true)
-  claimType   ClaimType       @default(PROOF)
+  eligibleFullTime Boolean        @default(true)
+  eligiblePartTime Boolean        @default(true)
+  order            Int            @default(0)
+  active           Boolean        @default(true)
+  claimType        ClaimType      @default(PROOF)
   /// Company coverage rate, percent 0–100 (spec 012). The covered (company) share = cost × rate/100
   /// draws from the pool; the employee pays the remainder. Medical is 100% (cost = covered).
-  coverageRate Int            @default(100)
-  claims      BenefitClaim[]
+  coverageRate     Int            @default(100)
+  claims           BenefitClaim[]
 }
 
 /// An employee's committed medical election for a plan year (spec 018) — the single commitment in
@@ -447,24 +463,44 @@ model BenefitCatalogItem {
 /// cannot edit or remove it after committing; only HR (admin) may, as an exception. Flexible
 /// benefits have no selection/allocation record — they are claimed directly (see BenefitClaim).
 model MedicalCommitment {
-  id              String   @id @default(cuid())
+  id              String                 @id @default(cuid())
   userId          String
-  user            User     @relation("MedicalOwner", fields: [userId], references: [id], onDelete: Cascade)
+  user            User                   @relation("MedicalOwner", fields: [userId], references: [id], onDelete: Cascade)
   planYearId      String
-  planYear        PlanYear @relation(fields: [planYearId], references: [id], onDelete: Cascade)
-  spouse          Boolean  @default(false)
-  childrenUnder18 Int      @default(0)
-  children18Plus  Int      @default(0)
-  /// Covered premium (100%) drawn from the pool; capped at the ceiling at commit time.
+  planYear        PlanYear               @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  /// LEGACY (spec 023): the old relationship-based selection. Nullable, no longer written for new
+  /// commits — retained so historical rows keep their record. Superseded by `coveredPeople`.
+  spouse          Boolean?
+  childrenUnder18 Int?
+  children18Plus  Int?
+  /// Covered premium (100%, whole EGP) drawn from the pool; capped at the ceiling at commit time.
   premium         Int
+  /// Per-covered-person snapshot at commit (spec 023) — age-band pricing, locked.
+  coveredPeople   MedicalCoveredPerson[]
   /// Set when HR commits/edits on the employee's behalf; null for a self-commit.
   committedById   String?
-  committedBy     User?    @relation("MedicalCommitter", fields: [committedById], references: [id], onDelete: SetNull)
-  committedAt     DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  committedBy     User?                  @relation("MedicalCommitter", fields: [committedById], references: [id], onDelete: SetNull)
+  committedAt     DateTime               @default(now())
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
 
   @@unique([userId, planYearId])
+}
+
+/// Immutable snapshot of one covered person on a medical commitment (spec 023). Captured at commit
+/// (age at the commit date; premium truncated to whole EGP), so the committed premium stays
+/// explainable and immune to later DOB/dependant edits. dependantId null = the employee themselves.
+model MedicalCoveredPerson {
+  id           String            @id @default(cuid())
+  commitmentId String
+  commitment   MedicalCommitment @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
+  dependantId  String?
+  dependant    Dependant?        @relation(fields: [dependantId], references: [id], onDelete: SetNull)
+  label        String
+  ageAtCommit  Int
+  premiumEGP   Int
+
+  @@index([commitmentId])
 }
 
 // ─── Dashboard (spec 006) ───────────────────────────────────────────────
@@ -483,32 +519,32 @@ model Announcement {
 /// A reimbursement claim against a benefit (guaranteed or basket) for a plan year.
 /// Multiple partial claims can be filed against one benefit, up to its allocation.
 model BenefitClaim {
-  id                  String             @id @default(cuid())
+  id                  String              @id @default(cuid())
   userId              String
-  user                User               @relation("ClaimOwner", fields: [userId], references: [id], onDelete: Cascade)
+  user                User                @relation("ClaimOwner", fields: [userId], references: [id], onDelete: Cascade)
   planYearId          String
-  planYear            PlanYear           @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  planYear            PlanYear            @relation(fields: [planYearId], references: [id], onDelete: Cascade)
   // Exactly one of these is set — the benefit being claimed.
   guaranteedBenefitId String?
-  guaranteedBenefit   GuaranteedBenefit? @relation(fields: [guaranteedBenefitId], references: [id], onDelete: Cascade)
+  guaranteedBenefit   GuaranteedBenefit?  @relation(fields: [guaranteedBenefitId], references: [id], onDelete: Cascade)
   catalogItemId       String?
   catalogItem         BenefitCatalogItem? @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
   amount              Int
   note                String?
   proofUrl            String?
   proofName           String?
-  status              ClaimStatus        @default(SUBMITTED)
-  decisionNote        String?            // HR rejection reason (optional)
-  reviewedById        String?            // HR approver/rejecter
-  reviewedBy          User?              @relation("ClaimReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  createdAt           DateTime           @default(now())
-  decidedAt           DateTime?          // HR decision timestamp
+  status              ClaimStatus         @default(SUBMITTED)
+  decisionNote        String? // HR rejection reason (optional)
+  reviewedById        String? // HR approver/rejecter
+  reviewedBy          User?               @relation("ClaimReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  createdAt           DateTime            @default(now())
+  decidedAt           DateTime? // HR decision timestamp
   // Finance payment step (spec 020) — set when a claim is confirmed reimbursed.
   paidById            String?
-  paidBy              User?              @relation("ClaimPayer", fields: [paidById], references: [id], onDelete: SetNull)
-  paidAt              DateTime?          // when Finance confirmed the transfer
-  transferDate        DateTime?          // actual date money was transferred (Finance-entered)
-  amountTransferred   Int?               // actual amount transferred (Finance-entered)
+  paidBy              User?               @relation("ClaimPayer", fields: [paidById], references: [id], onDelete: SetNull)
+  paidAt              DateTime? // when Finance confirmed the transfer
+  transferDate        DateTime? // actual date money was transferred (Finance-entered)
+  amountTransferred   Int? // actual amount transferred (Finance-entered)
 
   @@index([userId, planYearId])
   @@index([status])
@@ -538,14 +574,14 @@ model IncentiveCycle {
 
 /// A person in a cycle (from people.csv). Salary is sensitive.
 model IncentivePerson {
-  id               String    @id @default(cuid())
+  id               String         @id @default(cuid())
   cycleId          String
   cycle            IncentiveCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   name             String
   role             String?
   netMonthlySalary Float
   startDate        DateTime?
-  eligibleToLead   Boolean   @default(true) // stands in for the 50% utilisation gate
+  eligibleToLead   Boolean        @default(true) // stands in for the 50% utilisation gate
   utilization      Float? // overall/logged utilisation as a fraction 0..1
 
   @@unique([cycleId, name])
@@ -554,7 +590,7 @@ model IncentivePerson {
 
 /// An assignment in a cycle (from assignments.csv).
 model IncentiveAssignment {
-  id         String    @id @default(cuid())
+  id         String         @id @default(cuid())
   cycleId    String
   cycle      IncentiveCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   client     String
@@ -564,8 +600,8 @@ model IncentiveAssignment {
   leadSource String? // bd === leadSource ⇒ self-generated (5%), else referred (3%)
   revenue    Float?
   directCost Float? // null when "Pending" (in-progress)
-  vendorCost Float     @default(0)
-  markupPct  Float     @default(0)
+  vendorCost Float          @default(0)
+  markupPct  Float          @default(0)
   startDate  DateTime?
   closeDate  DateTime?
   status     String // closed | ongoing | in_progress | pending (derived at import)
@@ -576,7 +612,7 @@ model IncentiveAssignment {
 
 /// One person's contribution share on one assignment (from the contributions matrix).
 model IncentiveContribution {
-  id      String @id @default(cuid())
+  id      String         @id @default(cuid())
   cycleId String
   cycle   IncentiveCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   client  String
@@ -593,7 +629,7 @@ model IncentiveContribution {
 model ModuleFlag {
   key       String   @id // e.g. "benefits", "knowledge"
   enabled   Boolean  @default(true)
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 // ─── Branding (white-label per deployment, super-user) ──────────────────────
@@ -607,7 +643,7 @@ model BrandSettings {
   logoUrl      String?
   primaryColor String   @default("#0f2444") // navy-800
   accentColor  String   @default("#c9a227") // gold-500
-  updatedAt    DateTime @updatedAt @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
 }
 
 // ─── Notification settings (super-user, spec 020) ───────────────────────────
@@ -616,10 +652,10 @@ model BrandSettings {
 /// The Resend API key and sender address live in env (RESEND_API_KEY, EMAIL_FROM),
 /// never here. With emails off or unconfigured the workflow still runs; nothing is sent.
 model NotificationSettings {
-  id            String   @id @default("singleton")
-  emailEnabled  Boolean  @default(false)
-  hrInbox       String?
-  financeInbox  String?
-  fromName      String?
-  updatedAt     DateTime @updatedAt @default(now())
+  id           String   @id @default("singleton")
+  emailEnabled Boolean  @default(false)
+  hrInbox      String?
+  financeInbox String?
+  fromName     String?
+  updatedAt    DateTime @default(now()) @updatedAt
 }

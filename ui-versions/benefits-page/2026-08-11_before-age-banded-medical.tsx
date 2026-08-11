@@ -1,11 +1,10 @@
 import { requireUser, isAdmin } from "@/lib/roles";
 import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
-import { getActivePlanYear, getMedicalRateBands, amountForBand, getMedicalCommitment, planYearWindow, poolCeilingFor, eligibilityWhere, isSalaryDriven, medicalScopeFor } from "@/lib/benefits/config";
+import { getActivePlanYear, getMedicalRate, amountForBand, getMedicalCommitment, planYearWindow, poolCeilingFor, eligibilityWhere, isSalaryDriven, medicalScopeFor } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { flexCap } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate, poolCycleFraction, cycleWholeMonths } from "@/lib/benefits/proration";
-import { annualPremiumForPerson, type Band } from "@/lib/benefits/rates";
 import { deriveTenureBand } from "@/lib/tenure";
 import {
   BenefitsBoard,
@@ -13,49 +12,7 @@ import {
   type BoardGuaranteed,
   type BoardFlex,
   type BoardGroup,
-  type BoardMedicalPerson,
-  type BoardMedicalCommitted,
 } from "@/components/benefits/BenefitsBoard";
-
-/** Dependant shape used for medical pricing (spec 023). */
-type MedDependant = { id: string; name: string | null; dateOfBirth: Date; kind: "CHILD" | "SPOUSE" };
-
-/** Build the age-band priced people list for the board: the employee first, then each dependant. */
-function buildMedicalPeople(
-  dob: Date | null,
-  dependants: MedDependant[],
-  bands: Band[],
-  refDate: Date
-): BoardMedicalPerson[] {
-  if (!dob || bands.length === 0) return [];
-  const price = (d: Date): { age: number; bandLabel: string; premiumEGP: number } => {
-    const { amount, ageAtCommit, overTop } = annualPremiumForPerson(d, refDate, bands);
-    const band = bands.find((b) => ageAtCommit >= b.minAge && (b.maxAge == null || ageAtCommit <= b.maxAge))
-      ?? bands[bands.length - 1];
-    const bandLabel = `${band.minAge}–${band.maxAge ?? "+"}${overTop ? " (top)" : ""}`;
-    return { age: ageAtCommit, bandLabel, premiumEGP: Math.trunc(amount) };
-  };
-  const self = price(dob);
-  const employee: BoardMedicalPerson = { id: null, label: "You", kind: "SELF", ...self };
-  const deps = dependants.map((d): BoardMedicalPerson => ({
-    id: d.id,
-    label: `${d.kind === "SPOUSE" ? "Spouse" : "Child"}${d.name ? ` · ${d.name}` : ""}`,
-    kind: d.kind,
-    ...price(d.dateOfBirth),
-  }));
-  return [employee, ...deps];
-}
-
-/** Map a committed medical row (with its snapshot) to the board's committed shape — employee first. */
-function mapCommitted(
-  commitment: { premium: number; coveredPeople: { dependantId: string | null; label: string; premiumEGP: number }[] } | null
-): BoardMedicalCommitted {
-  if (!commitment) return null;
-  const self = commitment.coveredPeople.find((p) => !p.dependantId);
-  const others = commitment.coveredPeople.filter((p) => p.dependantId);
-  const people = [...(self ? [self] : []), ...others].map((p) => ({ label: p.label, premiumEGP: p.premiumEGP }));
-  return { premium: commitment.premium, people };
-}
 import { BenefitsOrientation } from "@/components/benefits/BenefitsOrientation";
 import { SetupNotice } from "@/components/SetupNotice";
 
@@ -77,9 +34,7 @@ export default async function BenefitsPage({
       tenureBand: true,
       monthlySalary: true,
       startDate: true,
-      dateOfBirth: true,
       benefitsOrientationSeenAt: true,
-      dependants: { select: { id: true, name: true, dateOfBirth: true, kind: true }, orderBy: { dateOfBirth: "asc" } },
     },
   });
   // Tenure band is derived from the hire date so the whole page (ceiling, band
@@ -137,21 +92,20 @@ export default async function BenefitsPage({
         </div>
       );
     }
-    const [entryCeiling, medBands, medCommitment, medScope] = await Promise.all([
+    const [entryCeiling, medRate, medCommitment, medScope] = await Promise.all([
       poolCeilingFor(user.employmentType, null),
-      getMedicalRateBands(),
+      getMedicalRate(),
       getMedicalCommitment(me.id, medPlanYear.id),
       medicalScopeFor(user.employmentType),
     ]);
-    if (entryCeiling == null || medBands.length === 0) {
+    if (entryCeiling == null || !medRate) {
       return (
         <div>
           {medHeader}
-          <SetupNotice module="Benefits" files="003_seed_benefits.sql + 034_medical_age_rate_card.sql" isAdmin={isAdmin(me.role)} />
+          <SetupNotice module="Benefits" files="003_seed_benefits.sql + 025_claim_based_allowance.sql" isAdmin={isAdmin(me.role)} />
         </div>
       );
     }
-    const medPeople = buildMedicalPeople(user.dateOfBirth, user.dependants, medBands, new Date());
     return (
       <div>
         {medHeader}
@@ -168,9 +122,17 @@ export default async function BenefitsPage({
           guaranteed={[]}
           automatic={[]}
           groups={[]}
-          medicalPeople={medPeople}
-          medicalMissingDob={!user.dateOfBirth}
-          medicalCommitted={mapCommitted(medCommitment)}
+          medicalRate={{ self: medRate.self, spouse: medRate.spouse, childUnder18: medRate.childUnder18, child18Plus: medRate.child18Plus }}
+          medicalCommitted={
+            medCommitment
+              ? {
+                  spouse: medCommitment.spouse,
+                  childrenUnder18: medCommitment.childrenUnder18,
+                  children18Plus: medCommitment.children18Plus,
+                  premium: medCommitment.premium,
+                }
+              : null
+          }
           planYearOpen
           error={claimError}
           claimSuccess={claimOk === "1"}
@@ -179,16 +141,16 @@ export default async function BenefitsPage({
     );
   }
 
-  let planYear, ceilingRow, guaranteed, catalog, medicalBands, medicalCommitment;
+  let planYear, ceilingRow, guaranteed, catalog, medicalRate, medicalCommitment;
   try {
-    [planYear, ceilingRow, guaranteed, catalog, medicalBands] = await Promise.all([
+    [planYear, ceilingRow, guaranteed, catalog, medicalRate] = await Promise.all([
       getActivePlanYear(),
       prisma.poolCeiling.findUnique({
         where: { employmentType_tenureBand: { employmentType: user.employmentType, tenureBand: user.tenureBand } },
       }),
       prisma.guaranteedBenefit.findMany({ where: eligibilityWhere(user.employmentType), orderBy: { order: "asc" } }),
       prisma.benefitCatalogItem.findMany({ where: { active: true, ...eligibilityWhere(user.employmentType) }, orderBy: { order: "asc" } }),
-      getMedicalRateBands(),
+      getMedicalRate(),
     ]);
     medicalCommitment = planYear ? await getMedicalCommitment(me.id, planYear.id) : null;
   } catch {
@@ -223,7 +185,7 @@ export default async function BenefitsPage({
       salaryDriven: isSalaryDriven(g),
     })),
     categories: Array.from(new Set(catalog.map((c) => c.category).filter((c): c is string => !!c))),
-    autoOpen: !!(planYear && ceilingRow && medicalBands.length > 0 && catalog.length > 0) && !user.benefitsOrientationSeenAt,
+    autoOpen: !!(planYear && ceilingRow && medicalRate && catalog.length > 0) && !user.benefitsOrientationSeenAt,
   };
 
   const header = (
@@ -254,7 +216,7 @@ export default async function BenefitsPage({
       </div>
     );
   }
-  if (!ceilingRow || medicalBands.length === 0 || catalog.length === 0) {
+  if (!ceilingRow || !medicalRate || catalog.length === 0) {
     return (
       <div>
         {header}
@@ -351,9 +313,6 @@ export default async function BenefitsPage({
   }
   const groups: BoardGroup[] = order.map((cat) => ({ category: cat, items: groupMap.get(cat)! }));
 
-  // Medical priced per person by age band (spec 023) — the employee + their dependants.
-  const medPeople = buildMedicalPeople(user.dateOfBirth, user.dependants, medicalBands, new Date());
-
   return (
     <div>
       {header}
@@ -369,9 +328,22 @@ export default async function BenefitsPage({
         guaranteed={guaranteedBoard}
         automatic={automatic}
         groups={groups}
-        medicalPeople={medPeople}
-        medicalMissingDob={!user.dateOfBirth}
-        medicalCommitted={mapCommitted(medicalCommitment)}
+        medicalRate={{
+          self: medicalRate.self,
+          spouse: medicalRate.spouse,
+          childUnder18: medicalRate.childUnder18,
+          child18Plus: medicalRate.child18Plus,
+        }}
+        medicalCommitted={
+          medicalCommitment
+            ? {
+                spouse: medicalCommitment.spouse,
+                childrenUnder18: medicalCommitment.childrenUnder18,
+                children18Plus: medicalCommitment.children18Plus,
+                premium: medicalCommitment.premium,
+              }
+            : null
+        }
         planYearOpen={!!planYear}
         error={claimError}
         claimSuccess={claimOk === "1"}

@@ -12,13 +12,13 @@ import type { EmploymentType, TenureBand } from "@prisma/client";
 import {
   editMedicalCommitment,
   removeMedicalCommitment,
-  updateMedicalRateBand,
   approveClaim,
   rejectClaim,
 } from "./actions";
 import {
   updatePoolCeilings,
   updateGuaranteedAmounts,
+  updateMedicalRateCard,
 } from "./config-actions";
 import { isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
 import { PlanYearDialog } from "@/components/admin/PlanYearDialog";
@@ -46,17 +46,7 @@ export default async function AdminBenefitsPage({
       active
         ? prisma.medicalCommitment.findMany({
             where: { planYearId: active.id },
-            include: {
-              user: {
-                select: {
-                  name: true,
-                  employmentType: true,
-                  tenureBand: true,
-                  dependants: { select: { id: true, name: true, kind: true }, orderBy: { dateOfBirth: "asc" } },
-                },
-              },
-              coveredPeople: true,
-            },
+            include: { user: { select: { name: true, employmentType: true, tenureBand: true } } },
             orderBy: { committedAt: "desc" },
           })
         : Promise.resolve([]),
@@ -86,7 +76,7 @@ export default async function AdminBenefitsPage({
   const sortedClaims = [...pendingClaims].sort(
     (a, b) => (a.status === "SUBMITTED" ? 0 : 1) - (b.status === "SUBMITTED" ? 0 : 1)
   );
-  const rateBands = await prisma.medicalRateBand.findMany({ where: { tier: 1 }, orderBy: { order: "asc" } });
+  const rateCard = await prisma.medicalRateCard.findFirst();
 
   const ceilOf = (t: EmploymentType, b: TenureBand) =>
     poolCeilings.find((c) => c.employmentType === t && c.tenureBand === b)?.amount ?? "";
@@ -322,32 +312,35 @@ export default async function AdminBenefitsPage({
               </thead>
               <tbody>
                 {medicalCommitments.map((m) => {
-                  // Covered people from the commit snapshot (spec 023); the employee is the first line.
-                  const others = m.coveredPeople.filter((p) => p.dependantId).map((p) => p.label);
-                  const coveredDepIds = new Set(m.coveredPeople.map((p) => p.dependantId).filter(Boolean) as string[]);
+                  const deps = [
+                    m.spouse ? "spouse" : null,
+                    m.childrenUnder18 + m.children18Plus > 0
+                      ? `${m.childrenUnder18 + m.children18Plus} child(ren)`
+                      : null,
+                  ].filter(Boolean);
                   return (
                     <tr key={m.id} className="border-b border-line align-top last:border-0">
                       <td className="py-2 pr-4 text-ink">{m.user.name}</td>
-                      <td className="py-2 pr-4 text-muted">You{others.length ? " + " + others.join(" + ") : ""}</td>
+                      <td className="py-2 pr-4 text-muted">You{deps.length ? " + " + deps.join(" + ") : ""}</td>
                       <td className="py-2 pr-4 tabular-nums text-ink">{egp(m.premium)}</td>
                       <td className="py-2 pr-4 text-muted">{formatDate(m.committedAt)}</td>
                       <td className="py-2">
                         <div className="flex flex-wrap items-end justify-end gap-2">
-                          <form action={editMedicalCommitment} className="flex flex-wrap items-end gap-1.5">
+                          <form action={editMedicalCommitment} className="flex items-end gap-1.5">
                             <input type="hidden" name="id" value={m.id} />
-                            {m.user.dependants.length > 0 ? (
-                              <div className="flex flex-wrap gap-2">
-                                {m.user.dependants.map((d) => (
-                                  <label key={d.id} className="flex items-center gap-1 text-xs text-muted">
-                                    <input type="checkbox" name="dependantIds" value={d.id} defaultChecked={coveredDepIds.has(d.id)} className="h-4 w-4" />
-                                    {d.kind === "SPOUSE" ? "Spouse" : "Child"}{d.name ? ` · ${d.name}` : ""}
-                                  </label>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted">No dependants on file</span>
-                            )}
-                            <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-navy-700 hover:bg-navy-50">Re-price</button>
+                            <label className="flex flex-col text-[10px] uppercase tracking-wide text-muted">
+                              Spouse
+                              <input type="checkbox" name="spouse" value="true" defaultChecked={m.spouse} className="mt-1 h-5 w-5" />
+                            </label>
+                            <label className="flex flex-col text-[10px] uppercase tracking-wide text-muted">
+                              &lt;18
+                              <input type="number" name="childrenUnder18" min={0} defaultValue={m.childrenUnder18} className="mt-1 w-14 rounded border border-line px-2 py-1 text-sm" />
+                            </label>
+                            <label className="flex flex-col text-[10px] uppercase tracking-wide text-muted">
+                              18+
+                              <input type="number" name="children18Plus" min={0} defaultValue={m.children18Plus} className="mt-1 w-14 rounded border border-line px-2 py-1 text-sm" />
+                            </label>
+                            <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-navy-700 hover:bg-navy-50">Save</button>
                           </form>
                           <form action={removeMedicalCommitment}>
                             <input type="hidden" name="id" value={m.id} />
@@ -470,53 +463,54 @@ export default async function AdminBenefitsPage({
     </form>
   );
 
-  // Age-banded rate card (spec 023). Admin keeps the operator's exact two-decimal figures.
-  const fmt2 = (n: unknown) => "EGP " + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const bandLabel = (b: { minAge: number; maxAge: number | null }) => `${b.minAge}–${b.maxAge ?? "+"}`;
-
   const rateCardRead = (
     <div className="overflow-x-auto">
       <table className="text-sm">
         <thead>
           <tr className="text-left text-xs uppercase tracking-wide text-muted">
-            <th className="py-2 pr-6 font-medium">Age band</th>
-            <th className="py-2 pr-6 font-medium text-right">Annual premium</th>
+            <th className="py-2 pr-6 font-medium text-right">Self</th>
+            <th className="py-2 pr-6 font-medium text-right">Spouse</th>
+            <th className="py-2 pr-6 font-medium text-right">Child &lt; 18</th>
+            <th className="py-2 pr-6 font-medium text-right">Child 18+</th>
           </tr>
         </thead>
         <tbody>
-          {rateBands.length === 0 ? (
-            <tr className="border-t border-line text-muted"><td className="py-2 pr-6" colSpan={2}>—</td></tr>
-          ) : (
-            rateBands.map((b) => (
-              <tr key={b.id} className="border-t border-line text-ink">
-                <td className="py-1.5 pr-6">{bandLabel(b)}</td>
-                <td className="py-1.5 pr-6 text-right tabular-nums">{fmt2(b.annualPremium)}</td>
-              </tr>
-            ))
-          )}
+          <tr className="border-t border-line tabular-nums text-ink">
+            <td className="py-2 pr-6 text-right">{rateCard ? egp(rateCard.self) : "—"}</td>
+            <td className="py-2 pr-6 text-right">{rateCard ? egp(rateCard.spouse) : "—"}</td>
+            <td className="py-2 pr-6 text-right">{rateCard ? egp(rateCard.childUnder18) : "—"}</td>
+            <td className="py-2 pr-6 text-right">{rateCard ? egp(rateCard.child18Plus) : "—"}</td>
+          </tr>
         </tbody>
       </table>
     </div>
   );
 
   const rateCardEdit = (
-    <div className="space-y-1.5">
-      {rateBands.map((b) => (
-        <form key={b.id} action={updateMedicalRateBand} className="flex items-center gap-2">
-          <input type="hidden" name="id" value={b.id} />
-          <span className="w-24 text-xs text-muted">{bandLabel(b)}</span>
+    <form action={updateMedicalRateCard} className="flex flex-wrap items-end gap-3">
+      {(
+        [
+          { name: "self", label: "Self", v: rateCard?.self },
+          { name: "spouse", label: "Spouse", v: rateCard?.spouse },
+          { name: "childUnder18", label: "Child < 18", v: rateCard?.childUnder18 },
+          { name: "child18Plus", label: "Child 18+", v: rateCard?.child18Plus },
+        ] as const
+      ).map((f) => (
+        <div key={f.name} className="w-32">
+          <label className="mb-0.5 block text-[11px] uppercase tracking-wide text-muted">{f.label}</label>
           <input
-            name="annualPremium"
-            type="text"
-            inputMode="decimal"
-            defaultValue={Number(b.annualPremium).toFixed(2)}
-            className="w-32 rounded-lg border border-line bg-surface px-2 py-1 text-right text-sm tabular-nums focus:border-navy-500 focus:outline-none"
+            key={`${f.name}-${f.v ?? ""}`}
+            name={f.name}
+            type="number"
+            min={0}
+            step={500}
+            defaultValue={f.v ?? ""}
+            className="w-full rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums focus:border-navy-500 focus:outline-none"
           />
-          <button className="rounded-lg border border-line px-3 py-1 text-xs font-semibold text-navy-700 hover:bg-navy-50">Save</button>
-        </form>
+        </div>
       ))}
-      <p className="pt-1 text-[11px] text-muted">Tier 1 · operator figures (two decimals). Someone over 75 is priced at the 70–75 band and flagged for HR.</p>
-    </div>
+      <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">Save rate card</button>
+    </form>
   );
 
   const amountsPanel = (

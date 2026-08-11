@@ -80,6 +80,7 @@ export default async function EditEmployeePage({
           dependants: employee.dependants.map((d) => ({
             name: d.name,
             dateOfBirth: toDateInput(d.dateOfBirth),
+            kind: d.kind,
           })),
         }}
       />

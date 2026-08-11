@@ -5,7 +5,7 @@ import type { ActionState } from "@/app/(app)/admin/employees/actions";
 import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
 import { TENURE_BAND_LABEL, STATUS_LABEL } from "@/lib/labels";
 
-type Dep = { name: string | null; dateOfBirth: string; kind: "CHILD" | "SPOUSE" };
+type Dep = { name: string | null; dateOfBirth: string };
 
 export type EmployeeFormValues = {
   name: string;
@@ -235,7 +235,7 @@ export function EmployeeForm({
             <label className={L}>Dependants</label>
             <button
               type="button"
-              onClick={() => setDeps([...deps, { name: "", dateOfBirth: "", kind: "CHILD" }])}
+              onClick={() => setDeps([...deps, { name: "", dateOfBirth: "" }])}
               className="text-xs font-semibold text-navy-600 hover:text-navy-800"
             >
               + Add dependant
@@ -247,18 +247,6 @@ export function EmployeeForm({
             ) : (
               deps.map((d, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <select
-                    value={d.kind}
-                    onChange={(e) => {
-                      const next = [...deps];
-                      next[i] = { ...next[i], kind: e.target.value as "CHILD" | "SPOUSE" };
-                      setDeps(next);
-                    }}
-                    className={`${I} w-28 shrink-0`}
-                  >
-                    <option value="CHILD">Child</option>
-                    <option value="SPOUSE">Spouse</option>
-                  </select>
                   <input
                     placeholder="Name"
                     value={d.name ?? ""}
@@ -291,7 +279,7 @@ export function EmployeeForm({
             )}
           </div>
           <p className="mt-1 text-xs text-muted">
-            A dependant needs a date of birth (age is calculated). Mark the spouse as <strong>Spouse</strong> (one max) so medical can price them.
+            A dependant needs a date of birth (age is calculated).
           </p>
         </div>
       </section>

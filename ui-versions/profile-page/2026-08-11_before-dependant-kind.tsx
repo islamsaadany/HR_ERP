@@ -114,9 +114,7 @@ export default async function ProfilePage({
               : me.dependants
                   .map((d) => {
                     const a = ageFromDob(d.dateOfBirth);
-                    const who = d.name ?? (d.kind === "SPOUSE" ? "Spouse" : "Child");
-                    const tag = d.kind === "SPOUSE" ? " · spouse" : "";
-                    return `${who}${a !== null ? ` (${a})` : ""}${tag}`;
+                    return `${d.name ?? "Child"}${a !== null ? ` (${a})` : ""}`;
                   })
                   .join(", ")
           }
