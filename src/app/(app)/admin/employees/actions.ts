@@ -56,6 +56,11 @@ export async function createEmployee(
   }
   const data = parsed.data;
 
+  // Spec 023: at most one dependant may be the spouse.
+  if (data.dependants.filter((d) => d.kind === "SPOUSE").length > 1) {
+    return { error: "Only one dependant can be the spouse." };
+  }
+
   // Only a Super User may grant elevated roles.
   const role = actor.role === "SUPER_USER" ? data.role : "EMPLOYEE";
 
@@ -91,6 +96,7 @@ export async function createEmployee(
         create: data.dependants.map((d) => ({
           name: d.name ?? null,
           dateOfBirth: d.dateOfBirth,
+          kind: d.kind,
         })),
       },
     },
@@ -111,6 +117,11 @@ export async function updateEmployee(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
   const data = parsed.data;
+
+  // Spec 023: at most one dependant may be the spouse.
+  if (data.dependants.filter((d) => d.kind === "SPOUSE").length > 1) {
+    return { error: "Only one dependant can be the spouse." };
+  }
 
   const current = await prisma.user.findUnique({ where: { id } });
   if (!current) return { error: "Employee not found." };
@@ -159,6 +170,7 @@ export async function updateEmployee(
           create: data.dependants.map((d) => ({
             name: d.name ?? null,
             dateOfBirth: d.dateOfBirth,
+            kind: d.kind,
           })),
         },
       },

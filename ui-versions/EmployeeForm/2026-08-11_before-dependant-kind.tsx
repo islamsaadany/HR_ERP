@@ -5,7 +5,7 @@ import type { ActionState } from "@/app/(app)/admin/employees/actions";
 import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
 import { TENURE_BAND_LABEL, STATUS_LABEL } from "@/lib/labels";
 
-type Dep = { name: string | null; dateOfBirth: string; kind: "CHILD" | "SPOUSE" };
+type Dep = { name: string | null; dateOfBirth: string };
 
 export type EmployeeFormValues = {
   name: string;
@@ -30,10 +30,8 @@ export type EmployeeFormValues = {
 };
 
 const L = "block text-xs font-medium uppercase tracking-wide text-muted mb-1";
-// Base input style (no width) + the default full-width variant used across the form.
-const IB =
-  "rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-navy-500 focus:outline-none";
-const I = `w-full ${IB}`;
+const I =
+  "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-navy-500 focus:outline-none";
 
 export function EmployeeForm({
   action,
@@ -237,7 +235,7 @@ export function EmployeeForm({
             <label className={L}>Dependants</label>
             <button
               type="button"
-              onClick={() => setDeps([...deps, { name: "", dateOfBirth: "", kind: "CHILD" }])}
+              onClick={() => setDeps([...deps, { name: "", dateOfBirth: "" }])}
               className="text-xs font-semibold text-navy-600 hover:text-navy-800"
             >
               + Add dependant
@@ -257,20 +255,8 @@ export function EmployeeForm({
                       next[i] = { ...next[i], name: e.target.value };
                       setDeps(next);
                     }}
-                    className={`${I} min-w-0 flex-1`}
+                    className={I}
                   />
-                  <select
-                    value={d.kind}
-                    onChange={(e) => {
-                      const next = [...deps];
-                      next[i] = { ...next[i], kind: e.target.value as "CHILD" | "SPOUSE" };
-                      setDeps(next);
-                    }}
-                    className={`${IB} w-28 shrink-0`}
-                  >
-                    <option value="CHILD">Child</option>
-                    <option value="SPOUSE">Spouse</option>
-                  </select>
                   <input
                     type="date"
                     value={d.dateOfBirth}
@@ -279,7 +265,7 @@ export function EmployeeForm({
                       next[i] = { ...next[i], dateOfBirth: e.target.value };
                       setDeps(next);
                     }}
-                    className={`${IB} w-40 shrink-0`}
+                    className={I}
                   />
                   <button
                     type="button"
@@ -293,7 +279,7 @@ export function EmployeeForm({
             )}
           </div>
           <p className="mt-1 text-xs text-muted">
-            A dependant needs a date of birth (age is calculated). Mark the spouse as <strong>Spouse</strong> (one max) so medical can price them.
+            A dependant needs a date of birth (age is calculated).
           </p>
         </div>
       </section>

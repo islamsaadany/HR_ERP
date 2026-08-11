@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ClaimType, ClaimStatus } from "@prisma/client";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS, tracker } from "@/lib/benefits/claims";
 import { coveredAmount } from "@/lib/benefits/coverage";
+import { computeMedicalPremium } from "@/lib/benefits/rules";
 import { formatDate } from "@/lib/labels";
 import { createClaim } from "@/app/(app)/benefits/claim-actions";
 import { commitMedical } from "@/app/(app)/benefits/actions";
@@ -54,7 +55,7 @@ export type BoardGuaranteed = {
   proratedFrom?: number | null;
   claims: BoardClaim[];
 };
-/** Present when the pool is prorated to a short cycle (spec 019): the cycle's whole months (of 12). */
+/** Present only for a mid-year starter (spec 019): the prorated months of the plan year. */
 export type BoardProration = { months: number } | null;
 export type BoardFlex = {
   id: string;
@@ -68,18 +69,12 @@ export type BoardFlex = {
   claims: BoardClaim[];
 };
 export type BoardGroup = { category: string; items: BoardFlex[] };
-/** A person the employee can cover, priced by age band (spec 023). `id` null = the employee (always covered). */
-export type BoardMedicalPerson = {
-  id: string | null;
-  label: string;
-  kind: "SELF" | "SPOUSE" | "CHILD";
-  age: number;
-  bandLabel: string;
-  premiumEGP: number; // whole EGP, cents dropped
-};
+export type BoardMedicalRate = { self: number; spouse: number; childUnder18: number; child18Plus: number };
 export type BoardMedicalCommitted = {
+  spouse: boolean;
+  childrenUnder18: number;
+  children18Plus: number;
   premium: number;
-  people: { label: string; premiumEGP: number }[];
 } | null;
 
 /**
@@ -96,9 +91,8 @@ export function BenefitsBoard({
   guaranteed,
   automatic,
   groups,
-  medicalPeople,
+  medicalRate,
   medicalCommitted,
-  medicalMissingDob = false,
   planYearOpen,
   proration,
   medicalOnly,
@@ -116,11 +110,8 @@ export function BenefitsBoard({
   guaranteed: BoardGuaranteed[];
   automatic: string[];
   groups: BoardGroup[];
-  /** The employee + their dependants, each priced by age band (spec 023). Employee is `id: null`. */
-  medicalPeople: BoardMedicalPerson[];
+  medicalRate: BoardMedicalRate;
   medicalCommitted: BoardMedicalCommitted;
-  /** True when the employee has no date of birth on file — medical can't be priced, so commit is blocked. */
-  medicalMissingDob?: boolean;
   planYearOpen: boolean;
   proration?: BoardProration;
   /** Sub-6-month employee (spec 019): only medical is available; the rest unlocks at 6 months. */
@@ -190,7 +181,7 @@ export function BenefitsBoard({
         </section>
 
         {medOpen ? (
-          <MedicalModal people={medicalPeople} missingDob={medicalMissingDob} ceiling={ceiling} familyMedical={familyMedical} premiumFraction={medicalPremiumFraction} onClose={() => setMedOpen(false)} />
+          <MedicalModal rate={medicalRate} ceiling={ceiling} familyMedical={familyMedical} premiumFraction={medicalPremiumFraction} onClose={() => setMedOpen(false)} />
         ) : null}
       </>
     );
@@ -285,8 +276,8 @@ export function BenefitsBoard({
             </div>
             {proration ? (
               <p className="mt-2 rounded-lg bg-navy-50 px-3 py-2 text-xs text-navy-700">
-                This benefits cycle runs {proration.months} of 12 {proration.months === 1 ? "month" : "months"}, so
-                your pool is scaled to that period. A full-length cycle carries the full annual amount.
+                You joined part-way through the plan year, so your pool covers the remaining {proration.months}{" "}
+                {proration.months === 1 ? "month" : "months"}. You&apos;ll get the full annual amount next plan year.
               </p>
             ) : null}
             <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
@@ -322,7 +313,7 @@ export function BenefitsBoard({
 
       {/* Medical modal */}
       {medOpen ? (
-        <MedicalModal people={medicalPeople} missingDob={medicalMissingDob} ceiling={ceiling} familyMedical={familyMedical} premiumFraction={medicalPremiumFraction} onClose={() => setMedOpen(false)} />
+        <MedicalModal rate={medicalRate} ceiling={ceiling} premiumFraction={medicalPremiumFraction} onClose={() => setMedOpen(false)} />
       ) : null}
 
       {/* Guaranteed claim modal */}
@@ -505,8 +496,10 @@ function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; rema
 /** Medical — a row that shows the committed state, or a "Set up cover" prompt opening the modal. */
 function MedicalRow({ committed, familyMedical = true, onSetup }: { committed: BoardMedicalCommitted; familyMedical?: boolean; onSetup: () => void }) {
   if (committed) {
-    // Covered people from the commit snapshot (spec 023): the employee is the first line.
-    const others = committed.people.slice(1).map((p) => p.label);
+    const deps = [
+      committed.spouse ? "spouse" : null,
+      committed.childrenUnder18 + committed.children18Plus > 0 ? `${committed.childrenUnder18 + committed.children18Plus} child(ren)` : null,
+    ].filter(Boolean);
     return (
       <div className="flex items-start justify-between gap-4 rounded-xl border border-navy-200 bg-navy-50 p-4">
         <div>
@@ -515,7 +508,7 @@ function MedicalRow({ committed, familyMedical = true, onSetup }: { committed: B
             <span className="rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gold-800">50% exempt</span>
             <span className="rounded bg-navy-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-navy-700">Committed</span>
           </div>
-          <div className="mt-0.5 text-xs text-navy-700">You{others.length ? " + " + others.join(" + ") : ""} · 100% covered · contact HR to change.</div>
+          <div className="mt-0.5 text-xs text-navy-700">You{deps.length ? " + " + deps.join(" + ") : ""} · 100% covered · contact HR to change.</div>
         </div>
         <div className="shrink-0 text-right">
           <div className="font-serif text-lg text-navy-800 tabular-nums">{egp(committed.premium)}</div>
@@ -542,51 +535,22 @@ function MedicalRow({ committed, familyMedical = true, onSetup }: { committed: B
   );
 }
 
-/**
- * Modal to commit medical (spec 023): tick which existing dependants to cover — each priced by age
- * band, whole EGP (cents dropped). The employee is always covered. Dependants are added/edited in the
- * profile, not here. Blocks with a message when the employee has no date of birth on file.
- */
-function MedicalModal({
-  people,
-  missingDob = false,
-  ceiling,
-  familyMedical = true,
-  premiumFraction = 1,
-  onClose,
-}: {
-  people: BoardMedicalPerson[];
-  missingDob?: boolean;
-  ceiling: number;
-  familyMedical?: boolean;
-  premiumFraction?: number;
-  onClose: () => void;
-}) {
+/** Modal to commit medical (dependant picker + live premium). */
+function MedicalModal({ rate, ceiling, familyMedical = true, premiumFraction = 1, onClose }: { rate: BoardMedicalRate; ceiling: number; familyMedical?: boolean; premiumFraction?: number; onClose: () => void }) {
   const router = useRouter();
-  const employee = people.find((p) => p.kind === "SELF") ?? people[0] ?? null;
-  const deps = people.filter((p) => p.id !== null && p.kind !== "SELF");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [spouse, setSpouse] = useState(false);
+  const [u18, setU18] = useState(0);
+  const [o18, setO18] = useState(0);
   const [msg, setMsg] = useState<{ errors: string[]; warnings: string[] } | null>(null);
   const [pending, startTransition] = useTransition();
-
-  // Live preview: employee + ticked dependants (already whole EGP), then prorate (truncate) to match
-  // the server for a mid-cycle joiner.
-  const annualPremium =
-    (employee?.premiumEGP ?? 0) + deps.filter((d) => selected.has(d.id!)).reduce((s, d) => s + d.premiumEGP, 0);
+  const annualPremium = computeMedicalPremium(rate, { spouse, childrenUnder18: u18, children18Plus: o18 });
+  // Preview the prorated premium the server will actually commit for a mid-year starter.
   const isPro = premiumFraction < 1;
-  const premium = Math.trunc(annualPremium * premiumFraction);
-
-  function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
+  const premium = Math.round(annualPremium * premiumFraction);
 
   function commit() {
     startTransition(async () => {
-      const res = await commitMedical({ dependantIds: [...selected] });
+      const res = await commitMedical({ spouse, childrenUnder18: u18, children18Plus: o18 });
       setMsg({ errors: res.errors, warnings: res.warnings });
       if (res.ok) { router.refresh(); onClose(); }
     });
@@ -597,59 +561,37 @@ function MedicalModal({
       <div className="w-full max-w-md rounded-2xl bg-surface p-6" onClick={(e) => e.stopPropagation()}>
         <h3 className="font-serif text-xl text-ink">{familyMedical ? "Family medical insurance" : "Personal medical insurance"}</h3>
         <p className="mt-1 text-sm text-muted">
-          You are always covered.{familyMedical ? " Tick the people you want covered — each is priced by age. Add or edit dependants in your profile." : " This is personal cover — just you."} 100% company-covered; once committed it&apos;s locked (HR-managed).
+          You are always covered.{familyMedical ? " Add dependants below." : " This is personal cover — just you."} Medical is 100% company-covered and, once committed, locked (HR-managed).
         </p>
-
-        {missingDob ? (
-          <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-            A date of birth is required to price medical. Contact HR to add your date of birth, then set up cover.
-          </p>
-        ) : (
-          <>
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center justify-between rounded-lg border border-navy-200 bg-navy-50 px-4 py-3">
-                <div>
-                  <div className="text-sm font-medium text-ink">You</div>
-                  <div className="text-xs text-muted">Age {employee?.age} · band {employee?.bandLabel}</div>
-                </div>
-                <div className="text-sm font-semibold text-navy-800 tabular-nums">{egp(employee?.premiumEGP ?? 0)}</div>
-              </div>
-              {familyMedical && deps.length > 0 ? (
-                deps.map((d) => (
-                  <label key={d.id} className={"flex items-center justify-between rounded-lg border px-4 py-3 " + (selected.has(d.id!) ? "border-navy-200 bg-navy-50" : "border-line")}>
-                    <div className="flex items-center gap-3">
-                      <input type="checkbox" checked={selected.has(d.id!)} onChange={() => toggle(d.id!)} className="h-5 w-5" />
-                      <div>
-                        <div className="text-sm font-medium text-ink">{d.label}</div>
-                        <div className="text-xs text-muted">Age {d.age} · band {d.bandLabel}</div>
-                      </div>
-                    </div>
-                    <div className="text-sm font-semibold text-navy-800 tabular-nums">{egp(d.premiumEGP)}</div>
-                  </label>
-                ))
-              ) : familyMedical ? (
-                <p className="rounded-lg border border-dashed border-line bg-paper px-4 py-3 text-xs text-muted">
-                  No dependants on file. Add your spouse or children in your profile to cover them.
-                </p>
-              ) : null}
-            </div>
-
-            <div className="mt-4 flex items-center justify-between rounded-lg bg-navy-50 px-4 py-3">
-              <span className="text-sm font-medium text-navy-800">{isPro ? "Prorated premium (100% covered)" : "Annual premium (100% covered)"}</span>
-              <span className="font-serif text-lg text-navy-800 tabular-nums">
-                {egp(premium)}
-                {isPro ? <span className="ml-1.5 align-middle text-xs font-normal text-muted line-through">{egp(annualPremium)}</span> : null}
-              </span>
-            </div>
-            {premium > ceiling ? <p className="mt-2 text-xs font-medium text-red-600">Premium exceeds your pool — it will be capped at {egp(ceiling)}; contact HR.</p> : null}
-          </>
-        )}
-
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between rounded-lg border border-line px-4 py-3">
+            <div><div className="text-sm font-medium text-ink">You</div><div className="text-xs text-muted">{egp(rate.self)}</div></div>
+            <span className="text-xs text-muted">Included</span>
+          </div>
+          {familyMedical ? (
+            <>
+              <label className="flex items-center justify-between rounded-lg border border-line px-4 py-3">
+                <div><div className="text-sm font-medium text-ink">Spouse</div><div className="text-xs text-muted">{egp(rate.spouse)}</div></div>
+                <input type="checkbox" checked={spouse} onChange={(e) => setSpouse(e.target.checked)} className="h-5 w-5" />
+              </label>
+              <Counter label="Children under 18" note={egp(rate.childUnder18) + " each"} value={u18} onChange={setU18} />
+              <Counter label="Children 18+" note={egp(rate.child18Plus) + " each"} value={o18} onChange={setO18} />
+            </>
+          ) : null}
+        </div>
+        <div className="mt-4 flex items-center justify-between rounded-lg bg-navy-50 px-4 py-3">
+          <span className="text-sm font-medium text-navy-800">{isPro ? "Prorated premium (100% covered)" : "Annual premium (100% covered)"}</span>
+          <span className="font-serif text-lg text-navy-800 tabular-nums">
+            {egp(premium)}
+            {isPro ? <span className="ml-1.5 align-middle text-xs font-normal text-muted line-through">{egp(annualPremium)}</span> : null}
+          </span>
+        </div>
+        {premium > ceiling ? <p className="mt-2 text-xs font-medium text-red-600">Premium exceeds your pool — it will be capped at {egp(ceiling)}; contact HR.</p> : null}
         {msg?.errors.length ? <div className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700"><ul className="list-disc pl-4">{msg.errors.map((e, i) => <li key={i}>{e}</li>)}</ul></div> : null}
         {msg && msg.warnings.length > 0 ? <div className="mt-3 rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">{msg.warnings.join(" ")}</div> : null}
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded-lg border border-line px-4 py-2 text-sm text-muted">Cancel</button>
-          <button type="button" onClick={commit} disabled={pending || missingDob} className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-60">
+          <button type="button" onClick={commit} disabled={pending} className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-60">
             {pending ? "Committing…" : "Commit medical"}
           </button>
         </div>
@@ -725,3 +667,15 @@ function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; 
   );
 }
 
+function Counter({ label, note, value, onChange }: { label: string; note: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-line px-4 py-3">
+      <div><div className="text-sm font-medium text-ink">{label}</div><div className="text-xs text-muted">{note}</div></div>
+      <div className="flex items-center gap-1">
+        <button type="button" onClick={() => onChange(Math.max(0, value - 1))} className="h-8 w-8 rounded-lg border border-line text-muted">−</button>
+        <span className="w-8 text-center text-sm font-semibold tabular-nums">{value}</span>
+        <button type="button" onClick={() => onChange(value + 1)} className="h-8 w-8 rounded-lg border border-line text-muted">+</button>
+      </div>
+    </div>
+  );
+}

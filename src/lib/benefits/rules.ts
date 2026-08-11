@@ -19,28 +19,9 @@ export function maxSelect(employmentType: EmploymentType): number {
   return employmentType === "FULL_TIME" ? MAX_SELECT_FULL_TIME : MAX_SELECT_PART_TIME;
 }
 
-export type MedicalConfig = {
-  spouse: boolean;
-  childrenUnder18: number;
-  children18Plus: number;
-};
-
-export type MedicalRate = {
-  self: number;
-  spouse: number;
-  childUnder18: number;
-  child18Plus: number;
-};
-
-/** Medical premium — self always included; dependants per the rate card. */
-export function computeMedicalPremium(rate: MedicalRate, cfg: MedicalConfig): number {
-  return (
-    rate.self +
-    (cfg.spouse ? rate.spouse : 0) +
-    rate.childUnder18 * Math.max(0, cfg.childrenUnder18) +
-    rate.child18Plus * Math.max(0, cfg.children18Plus)
-  );
-}
+// Medical premium is priced per-person by age band (spec 023) — see `src/lib/benefits/rates.ts`
+// (`sumMedicalPremium`). The old relationship-based `computeMedicalPremium`/`MedicalRate`/`MedicalConfig`
+// were removed with that change.
 
 /** The per-benefit ceiling (50% of the pool) — the only cap on a single flexible benefit. */
 export function flexCap(ceiling: number): number {

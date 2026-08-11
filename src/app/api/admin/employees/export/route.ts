@@ -34,12 +34,18 @@ export async function GET() {
       dateOfBirth: true,
       maritalStatus: true,
       reportsTo: { select: { email: true } },
-      dependants: { select: { dateOfBirth: true }, orderBy: { dateOfBirth: "asc" } },
+      dependants: { select: { name: true, dateOfBirth: true, kind: true }, orderBy: { dateOfBirth: "asc" } },
+      emergencyContactName: true,
+      emergencyContactRelationship: true,
+      emergencyContactPhone: true,
     },
   });
 
-  const maxKids = employees.reduce((m, e) => Math.max(m, e.dependants.length), 0);
-  const kidHeaders = Array.from({ length: maxKids }, (_, i) => `Kid ${i + 1} Date of Birth`);
+  // Split dependants: the spouse (kind SPOUSE, at most one) is its own pair; children get Kid N columns.
+  const childrenOf = (e: (typeof employees)[number]) => e.dependants.filter((d) => d.kind === "CHILD");
+  const spouseOf = (e: (typeof employees)[number]) => e.dependants.find((d) => d.kind === "SPOUSE") ?? null;
+  const maxKids = employees.reduce((m, e) => Math.max(m, childrenOf(e).length), 0);
+  const kidHeaders = Array.from({ length: maxKids }, (_, i) => [`Kid ${i + 1} Name`, `Kid ${i + 1} Date of Birth`]).flat();
 
   const header = [
     "Name",
@@ -52,12 +58,19 @@ export async function GET() {
     "Date of Birth",
     "Marital Status",
     "Manager Email",
+    "Spouse Name",
+    "Spouse Date of Birth",
     "Number of Kids",
     ...kidHeaders,
+    "Emergency Contact Name",
+    "Emergency Contact Relationship",
+    "Emergency Contact Phone",
   ];
 
   const lines = [header.map(csvCell).join(",")];
   for (const e of employees) {
+    const kids = childrenOf(e);
+    const spouse = spouseOf(e);
     const row = [
       e.name,
       e.email,
@@ -69,8 +82,13 @@ export async function GET() {
       iso(e.dateOfBirth),
       e.maritalStatus ? MARITAL_STATUS_LABEL[e.maritalStatus] : "",
       e.reportsTo?.email ?? "",
-      e.dependants.length ? String(e.dependants.length) : "",
-      ...Array.from({ length: maxKids }, (_, i) => iso(e.dependants[i]?.dateOfBirth ?? null)),
+      spouse?.name ?? "",
+      iso(spouse?.dateOfBirth ?? null),
+      kids.length ? String(kids.length) : "",
+      ...Array.from({ length: maxKids }, (_, i) => [kids[i]?.name ?? "", iso(kids[i]?.dateOfBirth ?? null)]).flat(),
+      e.emergencyContactName ?? "",
+      e.emergencyContactRelationship ?? "",
+      e.emergencyContactPhone ?? "",
     ];
     lines.push(row.map(csvCell).join(","));
   }

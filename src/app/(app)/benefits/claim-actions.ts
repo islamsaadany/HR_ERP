@@ -7,7 +7,7 @@ import { requireUser } from "@/lib/roles";
 import { getActivePlanYear, amountForBand, getMedicalCommitment, planYearWindow } from "@/lib/benefits/config";
 import { tracker } from "@/lib/benefits/claims";
 import { evaluateClaim, type AllowanceContext } from "@/lib/benefits/rules";
-import { classifyEligibility, prorate } from "@/lib/benefits/proration";
+import { classifyEligibility, prorate, poolCycleFraction } from "@/lib/benefits/proration";
 import { deriveTenureBand } from "@/lib/tenure";
 import { getNotificationSettings } from "@/lib/notifications/settings";
 import { sendEmail } from "@/lib/email/client";
@@ -66,9 +66,12 @@ async function createClaimImpl(formData: FormData): Promise<void> {
   const tenureBand = deriveTenureBand(user.startDate).band;
   if (!tenureBand) fail("Your profile isn't set — contact HR.");
 
-  // Mid-year starter proration (spec 019): scale the pool ceiling / Professional-development
-  // allocation by the whole months left in the plan year from the 6-month eligibility date.
-  const poolEligibility = classifyEligibility(user.startDate, POOL_THRESHOLD_MONTHS, planYearWindow(planYear));
+  // Cycle-length proration (spec 019, revised): scale the pool ceiling / Professional-development
+  // allocation by the LENGTH of the plan-year cycle, for every eligible employee (0 if not yet
+  // 6-month-eligible). Medical is unaffected and keeps its own mid-joiner fraction.
+  const poolWindow = planYearWindow(planYear);
+  const poolEligibility = classifyEligibility(user.startDate, POOL_THRESHOLD_MONTHS, poolWindow);
+  const poolFraction = poolCycleFraction(poolEligibility, poolWindow);
 
   let claimType: "NONE" | "NOTE" | "PROOF";
   let claimAmount: number; // the COVERED amount stored on the claim
@@ -83,10 +86,10 @@ async function createClaimImpl(formData: FormData): Promise<void> {
     claimType = gb.claimType;
     if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
     const bandAmount = amountForBand(user.employmentType, tenureBand, gb) ?? user.monthlySalary ?? null;
-    // Only benefits flagged `prorated` (Professional development) shrink for mid-year
-    // starters; event/season gifts (marriage, summer, special events, loans) stay full.
+    // Only benefits flagged `prorated` (Professional development) shrink to the cycle
+    // length; event/season gifts (marriage, summer, special events, loans) stay full.
     const allocated =
-      gb.prorated && bandAmount != null ? prorate(bandAmount, poolEligibility.fraction) : bandAmount;
+      gb.prorated && bandAmount != null ? prorate(bandAmount, poolFraction) : bandAmount;
     const existing = await prisma.benefitClaim.findMany({
       where: {
         userId: me.id,
@@ -150,8 +153,8 @@ async function createClaimImpl(formData: FormData): Promise<void> {
       if (k) claimedByBenefit[k] = (claimedByBenefit[k] ?? 0) + c.amount;
     }
     const ctx: AllowanceContext = {
-      // Prorated for mid-year starters (spec 019); full ceiling once eligible from day one.
-      ceiling: prorate(ceilingRow.amount, poolEligibility.fraction),
+      // Prorated to the plan-year cycle length (spec 019); full ceiling for a full-year cycle.
+      ceiling: prorate(ceilingRow.amount, poolFraction),
       medicalPremium: commitment?.premium ?? 0,
       claimedByBenefit,
       employmentType: user.employmentType,

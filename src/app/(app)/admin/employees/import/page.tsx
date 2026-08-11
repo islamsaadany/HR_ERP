@@ -25,12 +25,19 @@ export default async function ImportEmployeesPage() {
         <p className="font-medium">Columns the importer reads</p>
         <p className="mt-2 text-muted">
           Name, Department, Date of Hiring, Title, Contract Type, Email, Phone
-          Number, Date of Birth, Marital Status, Number of Kids, and
-          &ldquo;Kid (1) / Kid (2) Date of Birth&rdquo;. Only Name and Email are
-          required; everything else is optional. Extra columns are ignored.
+          Number, Date of Birth, Marital Status, Manager Email, Spouse Name,
+          Spouse Date of Birth, Number of Kids, &ldquo;Kid (N) Name / Kid (N)
+          Date of Birth&rdquo;, and Emergency Contact Name / Relationship /
+          Phone. Only Name and Email are required; everything else is optional.
+          Extra columns are ignored. (Export employees first to get every column
+          pre-filled in this exact format.)
         </p>
         <ul className="mt-3 list-disc space-y-1 pl-5 text-muted">
           <li>Contract Type: &ldquo;Full Time&rdquo; / &ldquo;Part Time&rdquo;.</li>
+          <li>
+            Spouse: give a Spouse Name and Spouse Date of Birth (the spouse is a
+            dependant so medical can price them). A spouse needs a date of birth.
+          </li>
           <li>
             Tenure band is calculated from Date of Hiring (people under 6 months
             are flagged).

@@ -230,33 +230,5 @@ export async function createCatalogItem(formData: FormData): Promise<void> {
   revalidatePath("/benefits");
 }
 
-/** Save the flat medical rate card (self · spouse · child<18 · child18+). Single row. */
-export async function updateMedicalRateCard(formData: FormData): Promise<void> {
-  await requireAdmin();
-  const fields = ["self", "spouse", "childUnder18", "child18Plus"] as const;
-  const data: Record<string, number> = {};
-  for (const f of fields) {
-    const raw = formData.get(f);
-    if (raw == null || String(raw).trim() === "") continue;
-    const n = Number(raw);
-    if (!Number.isFinite(n)) continue;
-    data[f] = Math.max(0, Math.round(n));
-  }
-  const existing = await prisma.medicalRateCard.findFirst();
-  if (existing) {
-    if (Object.keys(data).length) {
-      await prisma.medicalRateCard.update({ where: { id: existing.id }, data });
-    }
-  } else {
-    await prisma.medicalRateCard.create({
-      data: {
-        self: data.self ?? 0,
-        spouse: data.spouse ?? 0,
-        childUnder18: data.childUnder18 ?? 0,
-        child18Plus: data.child18Plus ?? 0,
-      },
-    });
-  }
-  revalidatePath("/admin/benefits");
-  revalidatePath("/benefits");
-}
+// The medical rate card is now age-banded (spec 023) — edited band-by-band via
+// `updateMedicalRateBand` in ./actions.ts. The old flat self/spouse/child updater was removed.

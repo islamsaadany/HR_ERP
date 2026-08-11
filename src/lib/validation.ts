@@ -16,6 +16,8 @@ const strOrNull = z.preprocess(
 export const dependantSchema = z.object({
   name: z.preprocess(emptyToNull, z.string().trim().nullable().optional()),
   dateOfBirth: z.coerce.date(),
+  // Spec 023: a covered spouse is a dependant (kind = SPOUSE); children default to CHILD.
+  kind: z.enum(["CHILD", "SPOUSE"]).default("CHILD"),
 });
 
 export const employeeSchema = z.object({

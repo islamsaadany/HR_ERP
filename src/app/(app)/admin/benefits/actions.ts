@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import type { ClaimType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
-import { getMedicalRate } from "@/lib/benefits/config";
-import { computeMedicalPremium } from "@/lib/benefits/rules";
+import { getMedicalRateBands } from "@/lib/benefits/config";
+import { sumMedicalPremium, type PricedPerson } from "@/lib/benefits/rates";
 import { getNotificationSettings } from "@/lib/notifications/settings";
 import { sendEmail } from "@/lib/email/client";
 import { claimApprovedToFinance, claimRejectedToEmployee } from "@/lib/email/templates";
@@ -86,16 +86,29 @@ export async function editMedicalCommitment(formData: FormData): Promise<void> {
 
   const commitment = await prisma.medicalCommitment.findUnique({
     where: { id },
-    include: { user: { select: { employmentType: true, tenureBand: true } } },
+    include: {
+      user: {
+        select: {
+          name: true,
+          dateOfBirth: true,
+          employmentType: true,
+          tenureBand: true,
+          dependants: { select: { id: true, name: true, dateOfBirth: true, kind: true } },
+        },
+      },
+    },
   });
   if (!commitment) redirect("/admin/benefits?error=" + encodeURIComponent("That medical commitment no longer exists."));
+  if (!commitment.user.dateOfBirth) {
+    redirect("/admin/benefits?error=" + encodeURIComponent("That employee has no date of birth on file — set it before pricing medical."));
+  }
 
-  const spouse = formData.get("spouse") === "on" || formData.get("spouse") === "true";
-  const childrenUnder18 = Math.max(0, Math.floor(Number(formData.get("childrenUnder18") ?? 0)));
-  const children18Plus = Math.max(0, Math.floor(Number(formData.get("children18Plus") ?? 0)));
+  // HR ticks which dependants are covered (age-band pricing, spec 023) — one checkbox per dependant.
+  const selectedIds = Array.from(new Set(formData.getAll("dependantIds").map(String)));
+  const covered = commitment.user.dependants.filter((d) => selectedIds.includes(d.id));
 
-  const [rate, ceilingRow] = await Promise.all([
-    getMedicalRate(),
+  const [bands, ceilingRow] = await Promise.all([
+    getMedicalRateBands(),
     commitment.user.employmentType && commitment.user.tenureBand
       ? prisma.poolCeiling.findUnique({
           where: {
@@ -107,16 +120,33 @@ export async function editMedicalCommitment(formData: FormData): Promise<void> {
         })
       : Promise.resolve(null),
   ]);
-  if (!rate || !ceilingRow) {
+  if (bands.length === 0 || !ceilingRow) {
     redirect("/admin/benefits?error=" + encodeURIComponent("Benefits aren't fully configured for that employee."));
   }
-  const rawPremium = computeMedicalPremium(rate, { spouse, childrenUnder18, children18Plus });
-  const premium = Math.min(rawPremium, ceilingRow.amount);
 
-  await prisma.medicalCommitment.update({
-    where: { id },
-    data: { spouse, childrenUnder18, children18Plus, premium, committedById: admin.id },
-  });
+  // Re-price by age at the edit date; cap at the full pool ceiling (HR override — unchanged behavior).
+  const refDate = new Date();
+  const people: PricedPerson[] = [{ dob: commitment.user.dateOfBirth }, ...covered.map((d) => ({ dob: d.dateOfBirth }))];
+  const { annualEGP, lines } = sumMedicalPremium(people, bands, refDate);
+  const premium = Math.min(annualEGP, ceilingRow.amount);
+
+  const coveredPeople = [
+    { dependantId: null as string | null, label: commitment.user.name ?? "Employee", ageAtCommit: lines[0].ageAtCommit, premiumEGP: lines[0].premiumEGP },
+    ...covered.map((d, i) => ({
+      dependantId: d.id,
+      label: `${d.kind === "SPOUSE" ? "Spouse" : "Child"}${d.name ? ` · ${d.name}` : ""}${lines[i + 1].overTop ? " (over 75 — top band)" : ""}`,
+      ageAtCommit: lines[i + 1].ageAtCommit,
+      premiumEGP: lines[i + 1].premiumEGP,
+    })),
+  ];
+
+  await prisma.$transaction([
+    prisma.medicalCoveredPerson.deleteMany({ where: { commitmentId: id } }),
+    prisma.medicalCommitment.update({
+      where: { id },
+      data: { premium, committedById: admin.id, coveredPeople: { create: coveredPeople } },
+    }),
+  ]);
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
 }
@@ -127,6 +157,29 @@ export async function removeMedicalCommitment(formData: FormData): Promise<void>
   const id = formData.get("id") as string;
   if (!id) return;
   await prisma.medicalCommitment.delete({ where: { id } });
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+}
+
+/**
+ * Edit one age band's annual premium on the medical rate card (spec 023). HR/Admin only. The amount is
+ * the operator's figure with up to two decimals (≥ 0); it is stored precisely — employee-facing figures
+ * drop the cents at pricing time.
+ */
+export async function updateMedicalRateBand(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = (formData.get("id") as string | null)?.trim();
+  const raw = (formData.get("annualPremium") as string | null)?.trim();
+  if (!id || raw == null) return;
+  const amount = Number(raw.replace(/,/g, ""));
+  if (!Number.isFinite(amount) || amount < 0) {
+    redirect("/admin/benefits?error=" + encodeURIComponent("Enter a valid premium (0 or more)."));
+  }
+  // Keep two decimals (money); Prisma accepts a number for a Decimal column.
+  await prisma.medicalRateBand.update({
+    where: { id },
+    data: { annualPremium: Math.round(amount * 100) / 100 },
+  });
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
 }

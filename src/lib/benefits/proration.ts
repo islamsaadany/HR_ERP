@@ -93,3 +93,30 @@ export function prorate(annual: number, fraction: number): number {
   if (annual <= 0 || fraction <= 0) return 0;
   return Math.round(annual * fraction);
 }
+
+/**
+ * Whole calendar months the plan-year cycle itself spans (spec 019 — cycle-length
+ * proration). A full-year cycle → 12; a half-year cycle (e.g. 1 Jan – 30 Jun) → 6.
+ * No window set → 12 (fail-safe to full amounts, matching classifyEligibility).
+ */
+export function cycleWholeMonths(window: PlanYearWindow): number {
+  if (!window) return 12;
+  return remainingWholeMonths(window.start, window.end);
+}
+
+/** cycleWholeMonths ÷ 12 — the fraction of a full year the cycle spans. 1 when no window. */
+export function cycleFraction(window: PlanYearWindow): number {
+  return cycleWholeMonths(window) / 12;
+}
+
+/**
+ * The proration fraction for the flexible pool and Professional development under
+ * cycle-length proration (spec 019, revised): scaled to the CYCLE's length for every
+ * eligible employee — existing staff and mid-cycle joiners alike, with no extra
+ * reduction for joining partway through the cycle. A not-yet-eligible employee still
+ * gets nothing. (Medical is unaffected — it keeps its own mid-joiner fraction.)
+ */
+export function poolCycleFraction(eligibility: Eligibility, window: PlanYearWindow): number {
+  if (eligibility.status === "NOT_YET") return 0;
+  return cycleFraction(window);
+}

@@ -195,7 +195,12 @@ type FieldKey =
   | "dateOfBirth"
   | "maritalStatus"
   | "numberOfKids"
-  | "managerEmail";
+  | "managerEmail"
+  | "spouseName"
+  | "spouseDob"
+  | "emergencyContactName"
+  | "emergencyContactRelationship"
+  | "emergencyContactPhone";
 
 const HEADER_ALIASES: Record<FieldKey, string[]> = {
   name: ["name", "full name", "employee name"],
@@ -214,6 +219,15 @@ const HEADER_ALIASES: Record<FieldKey, string[]> = {
     "number of kids", "no of kids", "kids", "children", "number of children",
   ],
   managerEmail: ["manager email", "reports to", "manager", "line manager"],
+  spouseName: ["spouse name", "spouse"],
+  spouseDob: ["spouse date of birth", "spouse dob", "spouse date of birth"],
+  emergencyContactName: ["emergency contact name", "emergency name", "emergency contact"],
+  emergencyContactRelationship: [
+    "emergency contact relationship", "emergency relationship", "relationship",
+  ],
+  emergencyContactPhone: [
+    "emergency contact phone", "emergency phone", "emergency contact number", "emergency phone number",
+  ],
 };
 
 function normHeader(h: string): string {
@@ -227,14 +241,21 @@ function normHeader(h: string): string {
 interface ColumnMap {
   fields: Partial<Record<FieldKey, number>>;
   kids: { index: number; col: number }[]; // "Kid (N) Date of Birth" columns
+  kidNames: { index: number; col: number }[]; // "Kid (N) Name" columns
 }
 
 function mapColumns(headerRow: string[]): ColumnMap {
   const fields: Partial<Record<FieldKey, number>> = {};
   const kids: { index: number; col: number }[] = [];
+  const kidNames: { index: number; col: number }[] = [];
 
   headerRow.forEach((rawHeader, col) => {
     const h = normHeader(rawHeader);
+    const kidNameMatch = h.match(/^kid\s*(\d+)\s*name$/);
+    if (kidNameMatch) {
+      kidNames.push({ index: Number(kidNameMatch[1]), col });
+      return;
+    }
     const kidMatch = h.match(/^kid\s*(\d+)\s*(?:date of birth|dob)$/);
     if (kidMatch) {
       kids.push({ index: Number(kidMatch[1]), col });
@@ -250,7 +271,8 @@ function mapColumns(headerRow: string[]): ColumnMap {
   });
 
   kids.sort((a, b) => a.index - b.index);
-  return { fields, kids };
+  kidNames.sort((a, b) => a.index - b.index);
+  return { fields, kids, kidNames };
 }
 
 // ─── Row parsing ────────────────────────────────────────────────────────
@@ -258,6 +280,7 @@ function mapColumns(headerRow: string[]): ColumnMap {
 export interface ParsedDependant {
   name: string | null;
   dateOfBirth: Date;
+  kind: "CHILD" | "SPOUSE";
 }
 
 export interface ParsedRow {
@@ -275,6 +298,9 @@ export interface ParsedRow {
   maritalStatus: MaritalStatus | null;
   managerEmail: string | null;
   dependants: ParsedDependant[];
+  emergencyContactName: string | null;
+  emergencyContactRelationship: string | null;
+  emergencyContactPhone: string | null;
   warnings: string[];
   errors: string[]; // non-empty → the row is skipped (not imported)
 }
@@ -310,7 +336,7 @@ export function parseEmployeesCsv(
   }
 
   const header = grid[0];
-  const { fields, kids } = mapColumns(header);
+  const { fields, kids, kidNames } = mapColumns(header);
   const headerErrors: string[] = [];
   if (fields.name === undefined)
     headerErrors.push('Missing a "Name" column.');
@@ -383,14 +409,18 @@ export function parseEmployeesCsv(
         `unrecognised contract type "${cell(raw, "employmentType")}" — left blank`
       );
 
-    // Dependants (kids) — one per Kid (N) DOB column that parses.
+    // Dependants — children (one per Kid (N) DOB column that parses) + an optional spouse.
     const dependants: ParsedDependant[] = [];
+    const kidNameFor = (index: number): string | null => {
+      const kn = kidNames.find((k) => k.index === index);
+      return kn ? (raw[kn.col] ?? "").trim() || null : null;
+    };
     for (const kid of kids) {
       const kidRaw = (raw[kid.col] ?? "").trim();
       if (!kidRaw || BLANKS.has(kidRaw.toLowerCase())) continue;
       const d = parseFlexibleDate(kidRaw);
       if (d.value) {
-        dependants.push({ name: null, dateOfBirth: d.value });
+        dependants.push({ name: kidNameFor(kid.index), dateOfBirth: d.value, kind: "CHILD" });
         if (d.status === "ambiguous")
           warnings.push(
             `kid ${kid.index} DOB "${d.raw}" read day-first as ${niceDate(d.value)} — verify`
@@ -399,15 +429,33 @@ export function parseEmployeesCsv(
         warnings.push(`kid ${kid.index} DOB "${d.raw}" couldn't be read — skipped`);
       }
     }
+
+    // Spouse — a dependant (kind SPOUSE) when a spouse date of birth is present (spec 023).
+    const spouseNameRaw = cell(raw, "spouseName");
+    const spouseDobRaw = cell(raw, "spouseDob");
+    if (spouseDobRaw && !BLANKS.has(spouseDobRaw.toLowerCase())) {
+      const sd = parseFlexibleDate(spouseDobRaw);
+      if (sd.value) {
+        dependants.push({ name: spouseNameRaw || null, dateOfBirth: sd.value, kind: "SPOUSE" });
+        if (sd.status === "ambiguous")
+          warnings.push(`spouse DOB "${sd.raw}" read day-first as ${niceDate(sd.value)} — verify`);
+      } else {
+        warnings.push(`spouse date of birth "${sd.raw}" couldn't be read — spouse skipped`);
+      }
+    } else if (spouseNameRaw && !BLANKS.has(spouseNameRaw.toLowerCase())) {
+      warnings.push(`spouse "${spouseNameRaw}" has no date of birth — add it in the profile so medical can price them`);
+    }
+
+    const childrenCount = dependants.filter((d) => d.kind === "CHILD").length;
     const kidsCountRaw = cell(raw, "numberOfKids");
     const kidsCount = Number(kidsCountRaw);
     if (
       Number.isFinite(kidsCount) &&
-      kidsCount > dependants.length &&
+      kidsCount > childrenCount &&
       !BLANKS.has(kidsCountRaw.toLowerCase())
     ) {
       warnings.push(
-        `sheet says ${kidsCount} kid(s) but ${dependants.length} valid date(s) found — add the rest in the profile`
+        `sheet says ${kidsCount} kid(s) but ${childrenCount} valid date(s) found — add the rest in the profile`
       );
     }
 
@@ -445,6 +493,9 @@ export function parseEmployeesCsv(
       maritalStatus: normalizeMaritalStatus(cell(raw, "maritalStatus")),
       managerEmail,
       dependants,
+      emergencyContactName: cell(raw, "emergencyContactName") || null,
+      emergencyContactRelationship: cell(raw, "emergencyContactRelationship") || null,
+      emergencyContactPhone: cell(raw, "emergencyContactPhone") || null,
       warnings,
       errors,
     });

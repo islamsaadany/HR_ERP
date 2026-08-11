@@ -4,7 +4,9 @@
 
 **Created**: 2026-08-09
 
-**Status**: Implemented 2026-08-09 (server + UI built and typechecked; pending Neon migration `027` and admin-set plan-year dates. Medical premium figures remain placeholders pending operator rates.)
+**Status**: Implemented 2026-08-09; **revised 2026-08-11** (see banner). Server + UI built and typechecked; pending Neon migration `027` and admin-set plan-year dates. Medical premium figures remain placeholders pending operator rates.
+
+> **⚠ Revision — 2026-08-11 (cycle-length proration).** The **flexible pool** and **guaranteed Professional development** no longer prorate only for mid-year *starters*; they now scale to the **length of the plan-year cycle** (`cycle whole months ÷ 12`), applied to **every** eligible employee. A shorter cycle (e.g. a half-year plan year) reduces the pool/Prof-dev allowance for existing staff too — this is the behaviour change that motivated the revision. A mid-cycle joiner receives the **same** cycle-length fraction as a day-one employee (no extra reduction); the 6-month threshold still gates *eligibility* (under 6 months → no pool/Prof-dev). **Medical is unchanged** by this revision: it keeps mid-cycle-**joiner** proration (`annual × remaining whole months ÷ 12` from the 3-month eligibility date), and existing staff pay the full premium regardless of cycle length. FR-005 and FR-006 below are superseded by this banner; FR-007/008/013 (medical + eligibility gating) still stand. A separate follow-up will replace the placeholder medical rate card with the operator's **age-banded, per-person (by DOB)** Tier-1 figures.
 
 **Input**: User description: "Mid-year starter proration for benefits. When an employee first becomes benefits-eligible partway through a plan year, their benefit for that year is prorated for the remaining months; from the next plan year onward they receive the full annual benefit."
 

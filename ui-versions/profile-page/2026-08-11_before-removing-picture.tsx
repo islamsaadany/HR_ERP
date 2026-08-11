@@ -10,6 +10,7 @@ import {
 } from "@/lib/labels";
 import { uploadMyDocument, deleteMyDocument } from "./documents-actions";
 import { ChangePasswordCard } from "@/components/ChangePasswordCard";
+import { ProfilePhotoHeader } from "@/components/ProfilePhotoHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -47,14 +48,7 @@ export default async function ProfilePage({
 
   return (
     <div className="max-w-3xl">
-      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
-        My Profile
-      </p>
-      <h1 className="mt-1 font-serif text-3xl text-ink">{me.name}</h1>
-      <p className="mt-1 text-muted">
-        {me.title ?? "—"}
-        {me.department ? ` · ${me.department}` : ""}
-      </p>
+      <ProfilePhotoHeader name={me.name} photoUrl={me.photoUrl} title={me.title} department={me.department} />
 
       {/* Public / contact */}
       <section className="mt-8 rounded-xl border border-line bg-surface p-6">

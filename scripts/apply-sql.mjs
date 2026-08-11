@@ -33,6 +33,76 @@ function fileNumber(name) {
   return m ? parseInt(m[1], 10) : Number.MAX_SAFE_INTEGER;
 }
 
+/**
+ * Split a .sql file into individual statements so each runs on its own — matching how the Neon
+ * SQL editor / psql apply files (one autocommit statement at a time). This is REQUIRED for files
+ * like 030 that `ALTER TYPE ... ADD VALUE` and then USE the new value: Postgres forbids using a
+ * newly-added enum value in the same transaction, and node-postgres would otherwise run the whole
+ * file as a single implicit transaction. Files that carry their own BEGIN/COMMIT still work —
+ * BEGIN and COMMIT become their own statements bracketing the rest on the same connection.
+ *
+ * Respects `--` line comments, `/* *\/` block comments, single-quoted strings, and dollar-quoted
+ * blocks ($$ … $$ / $tag$ … $tag$) so semicolons inside them never split a statement.
+ */
+function splitStatements(sql) {
+  const stmts = [];
+  let cur = "";
+  let i = 0;
+  const n = sql.length;
+  while (i < n) {
+    const ch = sql[i];
+    const two = sql.slice(i, i + 2);
+    if (two === "--") {
+      const nl = sql.indexOf("\n", i);
+      const end = nl === -1 ? n : nl;
+      cur += sql.slice(i, end);
+      i = end;
+      continue;
+    }
+    if (two === "/*") {
+      const close = sql.indexOf("*/", i + 2);
+      const end = close === -1 ? n : close + 2;
+      cur += sql.slice(i, end);
+      i = end;
+      continue;
+    }
+    if (ch === "'") {
+      let j = i + 1;
+      while (j < n) {
+        if (sql[j] === "'" && sql[j + 1] === "'") { j += 2; continue; }
+        if (sql[j] === "'") { j++; break; }
+        j++;
+      }
+      cur += sql.slice(i, j);
+      i = j;
+      continue;
+    }
+    if (ch === "$") {
+      const m = /^\$[A-Za-z0-9_]*\$/.exec(sql.slice(i));
+      if (m) {
+        const tag = m[0];
+        const close = sql.indexOf(tag, i + tag.length);
+        const end = close === -1 ? n : close + tag.length;
+        cur += sql.slice(i, end);
+        i = end;
+        continue;
+      }
+    }
+    if (ch === ";") {
+      const t = cur.trim();
+      if (t) stmts.push(t);
+      cur = "";
+      i++;
+      continue;
+    }
+    cur += ch;
+    i++;
+  }
+  const last = cur.trim();
+  if (last) stmts.push(last);
+  return stmts;
+}
+
 async function main() {
   if (!connectionString) {
     console.log("[apply-sql] No database URL set — skipping migrations (build continues).");
@@ -78,14 +148,30 @@ async function main() {
     }
 
     let ran = 0;
+    let failed = 0;
     for (const f of files) {
       if (applied.has(f)) continue;
       const sql = readFileSync(join(SQL_DIR, f), "utf8");
       process.stdout.write(`[apply-sql] applying ${f} … `);
-      await client.query(sql);
-      await client.query(`INSERT INTO "_sql_migrations"(filename) VALUES ($1) ON CONFLICT DO NOTHING`, [f]);
-      ran++;
-      console.log("done");
+      try {
+        // Statement-by-statement (autocommit) so files like 030 (ADD ENUM VALUE + use it) work.
+        for (const stmt of splitStatements(sql)) {
+          await client.query(stmt);
+        }
+        await client.query(`INSERT INTO "_sql_migrations"(filename) VALUES ($1) ON CONFLICT DO NOTHING`, [f]);
+        ran++;
+        console.log("done");
+      } catch (err) {
+        // Never let one file abort the whole migration (or the deploy). Reset any open/aborted
+        // transaction and continue; the file is NOT recorded, so a later run retries it.
+        await client.query("ROLLBACK").catch(() => {});
+        failed++;
+        console.log(`FAILED — ${err.message}`);
+        console.error(`[apply-sql] ⚠ ${f} failed and was skipped: ${err.message}`);
+      }
+    }
+    if (failed > 0) {
+      console.error(`[apply-sql] ${failed} file(s) failed — see above. Deploy continues; apply them in the Neon SQL editor if they persist.`);
     }
     console.log(`[apply-sql] complete — ${ran} file(s) applied, ${applied.size} already present.`);
   } finally {
@@ -94,6 +180,9 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("[apply-sql] FAILED:", err.message);
-  process.exit(1);
+  // NON-FATAL: a migration/connection problem must never block the app deploy. Log loudly and
+  // exit 0 so `next build` still runs. Any un-applied migration is retried on the next deploy or
+  // can be pasted into the Neon SQL editor.
+  console.error("[apply-sql] ERROR (non-fatal, deploy continues):", err.message);
+  process.exit(0);
 });
