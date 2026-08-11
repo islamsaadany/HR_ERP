@@ -1,0 +1,212 @@
+<title>Age-banded medical — mockup for sign-off</title>
+<style>
+  :root{
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-500:#2f4d78;
+    --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30; --navy-950:#060f1f;
+    --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-500:#c9a227; --gold-600:#a8821e; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-50:#fef2f2; --red-600:#dc2626; --amber-50:#fffbeb; --amber-700:#92400e;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:70ch}
+  .rulebox{margin-top:20px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 16px;border-radius:0 10px 10px 0;font-size:13px}
+  .rulebox strong{color:var(--navy-800)}
+  .proposal{margin-top:44px}
+  .proposal > h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px 36px}
+  .serif{font-family:Georgia,serif}
+  .tabnum{font-variant-numeric:tabular-nums}
+  /* modal */
+  .stage{background:linear-gradient(0deg,var(--navy-950),var(--navy-800));border-radius:16px;padding:34px 16px;display:grid;place-items:center}
+  .modal{width:100%;max-width:440px;background:var(--surface);border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(6,15,31,.5)}
+  .modal h3{font-family:Georgia,serif;font-size:20px;margin:0}
+  .modal .intro{font-size:13px;color:var(--muted);margin:4px 0 0}
+  .prow{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:11px;padding:11px 14px;margin-top:10px}
+  .prow.sel{border-color:var(--navy-200);background:var(--navy-50)}
+  .pname{font-size:14px;font-weight:600;color:var(--ink)}
+  .pmeta{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .pprice{font-size:13px;color:var(--navy-800);font-weight:600}
+  .chip{display:inline-block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:5px;background:var(--gold-100);color:var(--gold-800);margin-left:6px;vertical-align:middle}
+  .cb{width:20px;height:20px;border:2px solid var(--navy-500);border-radius:5px;display:inline-grid;place-items:center;color:#fff;font-size:12px;flex:0 0 auto}
+  .cb.on{background:var(--navy-700);border-color:var(--navy-700)}
+  .cb.off{background:#fff}
+  .dob{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12px;color:var(--ink);background:#fff;width:120px}
+  .addrow{display:flex;align-items:center;justify-content:space-between;border:1px dashed var(--line);border-radius:11px;padding:10px 14px;margin-top:10px}
+  .btn{border:0;border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn.navy{background:var(--navy-800);color:#fff}
+  .btn.ghost{background:var(--navy-50);color:var(--navy-700)}
+  .btn.line{background:#fff;border:1px solid var(--line);color:var(--muted)}
+  .subtotal{display:flex;align-items:center;justify-content:space-between;background:var(--navy-50);border-radius:11px;padding:12px 14px;margin-top:14px}
+  .subtotal .lbl{font-size:13px;font-weight:600;color:var(--navy-800)}
+  .subtotal .amt{font-family:Georgia,serif;font-size:19px;color:var(--navy-800)}
+  .strike{color:var(--muted);text-decoration:line-through;font-size:12px;margin-left:6px}
+  .breakdown{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+  .bd{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:2px 0}
+  .bd b{color:var(--ink);font-weight:600}
+  .note{border-radius:9px;padding:8px 11px;font-size:12px;margin-top:10px}
+  .note.navy{background:var(--navy-50);color:var(--navy-700)}
+  .note.red{background:var(--red-50);color:var(--red-600);font-weight:500}
+  .note.amber{background:var(--amber-50);color:var(--amber-700)}
+  .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media (max-width:820px){.cols{grid-template-columns:1fr}}
+  .tag{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:6px;margin-bottom:8px}
+  .tag.before{background:#f3f0ea;color:var(--muted);border:1px solid var(--line)}
+  .tag.after{background:var(--navy-50);color:var(--navy-700);border:1px solid var(--navy-100)}
+  /* admin table */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+  td.amt{text-align:right;font-variant-numeric:tabular-nums}
+  .inp{border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:12.5px;width:110px;text-align:right;font-variant-numeric:tabular-nums;background:#fff}
+  .oldcard td{color:var(--muted)}
+  footer{margin-top:56px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Benefits · medical · design review</p>
+  <h1>Age-banded medical — the two surfaces that change, for sign-off</h1>
+  <p class="lede">Medical is now priced <strong>per person by age</strong> (spec 023). Only these two surfaces change shape; the modal's structure is ported faithfully from today's (per-person rows → live premium bar → Commit), recolored/extended, not redesigned. Static mockup — sample data, no wiring.</p>
+
+  <div class="rulebox">
+    <strong>Sample used throughout:</strong> employee <b>Layla, age 32</b> (band 30–34 = 7,181.70) · spouse <b>Sara, age 29</b> (band 25–29 = 5,708.69) · child <b>Omar, age 10</b> (band 0–17 = 3,990.72). Premium = the sum of each covered person's age-band figure, then rounded to whole EGP at commit.
+  </div>
+
+  <!-- 1: employee modal -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Employee · medical setup modal</h2>
+    <p class="sub">Benefits → “Set up cover”. Same modal skeleton as today; the dependant rows now carry a DOB → age → age-band price, and children are listed individually instead of counted.</p>
+    <div class="cols">
+      <div>
+        <span class="tag before">Before (relationship counts)</span>
+        <div class="stage">
+          <div class="modal">
+            <h3>Family medical insurance</h3>
+            <p class="intro">You are always covered. Add dependants below. 100% company-covered; locked once committed.</p>
+            <div class="prow"><div><div class="pname">You</div><div class="pmeta">EGP 4,000</div></div><span class="pmeta">Included</span></div>
+            <div class="prow"><div><div class="pname">Spouse</div><div class="pmeta">EGP 3,000</div></div><span class="cb on">✓</span></div>
+            <div class="prow"><div><div class="pname">Children under 18</div><div class="pmeta">EGP 2,000 each</div></div><span class="pmeta">– 1 +</span></div>
+            <div class="prow"><div><div class="pname">Children 18+</div><div class="pmeta">EGP 2,500 each</div></div><span class="pmeta">– 0 +</span></div>
+            <div class="subtotal"><span class="lbl">Annual premium (100% covered)</span><span class="amt tabnum">EGP 9,000</span></div>
+            <div class="actions"><button class="btn line">Cancel</button><button class="btn navy">Commit medical</button></div>
+          </div>
+        </div>
+        <p class="sub" style="margin:8px 0 0">Flat per-relationship figures; no ages.</p>
+      </div>
+      <div>
+        <span class="tag after">After (per-person by age)</span>
+        <div class="stage">
+          <div class="modal">
+            <h3>Family medical insurance</h3>
+            <p class="intro">You are always covered. Add the people you want covered — each is priced by age. 100% company-covered; locked once committed.</p>
+            <div class="prow sel"><div><div class="pname">You · Layla</div><div class="pmeta">Age 32 · band 30–34</div></div><span class="pprice tabnum">EGP 7,181.70</span></div>
+            <div class="prow sel"><div style="display:flex;align-items:center;gap:10px"><span class="cb on">✓</span><div><div class="pname">Spouse · Sara</div><div class="pmeta">Age 29 · band 25–29</div></div></div><span class="pprice tabnum">EGP 5,708.69</span></div>
+            <div class="prow sel"><div style="display:flex;align-items:center;gap:10px"><span class="cb on">✓</span><div><div class="pname">Omar</div><div class="pmeta">Age 10 · band 0–17</div></div></div><span class="pprice tabnum">EGP 3,990.72</span></div>
+            <div class="prow"><div style="display:flex;align-items:center;gap:10px"><span class="cb off"></span><div><div class="pname">Nour</div><div class="pmeta">Age 19 · band 18–24</div></div></div><span class="pmeta tabnum">EGP 5,173.57</span></div>
+            <div class="breakdown">
+              <div class="bd"><span>You · Layla</span><b class="tabnum">7,181.70</b></div>
+              <div class="bd"><span>Spouse · Sara</span><b class="tabnum">5,708.69</b></div>
+              <div class="bd"><span>Omar</span><b class="tabnum">3,990.72</b></div>
+            </div>
+            <div class="subtotal"><span class="lbl">Annual premium (100% covered)</span><span class="amt tabnum">EGP 16,881</span></div>
+            <div class="actions"><button class="btn line">Cancel</button><button class="btn navy">Commit medical</button></div>
+          </div>
+        </div>
+        <p class="sub" style="margin:8px 0 0">Each covered person shows age → band → price; the breakdown sums to 16,881.11 → committed <b>16,881</b> (whole EGP).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1b: states -->
+  <section class="proposal">
+    <h2><span class="num">1b</span> Employee modal · three states</h2>
+    <p class="sub">Add-a-spouse, mid-cycle proration, and the missing-DOB block.</p>
+    <div class="cols">
+      <div>
+        <span class="tag after">Add spouse (needs a DOB)</span>
+        <div class="card">
+          <div class="addrow"><div class="pname">Add spouse</div><button class="btn ghost">+ Add spouse</button></div>
+          <div class="prow sel" style="margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><span class="cb on">✓</span><div><div class="pname">Spouse</div><div class="pmeta">Enter date of birth to price</div></div></div><input class="dob" value="1997-04-12" readonly></div>
+          <p class="note navy">The spouse is saved to your record (name + date of birth) so their age-band price can be applied, like a child.</p>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <span class="tag after" style="margin:0 0 8px">Mid-cycle joiner (proration)</span>
+          <div class="subtotal"><span class="lbl">Prorated premium (3 of 12 mo)</span><span class="amt tabnum">EGP 4,220 <span class="strike">EGP 16,881</span></span></div>
+          <p class="note navy" style="margin-top:8px">You became medical-eligible part-way through the plan year, so your premium covers the remaining 3 months (16,881.11 × 3 ÷ 12 → 4,220).</p>
+        </div>
+      </div>
+      <div>
+        <span class="tag after">Missing date of birth (blocked)</span>
+        <div class="stage">
+          <div class="modal">
+            <h3>Family medical insurance</h3>
+            <p class="intro">You are always covered. Each covered person is priced by age.</p>
+            <div class="prow" style="border-color:#f0c9c9;background:var(--red-50)"><div><div class="pname">You · Layla</div><div class="pmeta" style="color:var(--red-600)">No date of birth on file</div></div><span class="pprice" style="color:var(--red-600)">—</span></div>
+            <p class="note red">A date of birth is required to price medical. Contact HR to add your date of birth, then set up cover.</p>
+            <div class="actions"><button class="btn line">Cancel</button><button class="btn navy" style="opacity:.5">Commit medical</button></div>
+          </div>
+        </div>
+        <p class="sub" style="margin:8px 0 0">Commit is blocked (never guesses an age). Same message pattern for a spouse/child with no DOB.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2: admin editor -->
+  <section class="proposal">
+    <h2><span class="num">2</span> Admin · medical rate card (Amounts tab)</h2>
+    <p class="sub">Admin → Benefits → Amounts. The four self/spouse/child fields become the 12-band age table (edit amounts; two decimals).</p>
+    <div class="cols">
+      <div>
+        <span class="tag before">Before</span>
+        <div class="card">
+          <table class="oldcard">
+            <thead><tr><th>Cover</th><th class="amt">Annual (EGP)</th></tr></thead>
+            <tbody>
+              <tr><td>Self</td><td class="amt">4,000</td></tr>
+              <tr><td>Spouse</td><td class="amt">3,000</td></tr>
+              <tr><td>Child under 18</td><td class="amt">2,000</td></tr>
+              <tr><td>Child 18+</td><td class="amt">2,500</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <span class="tag after">After (Tier 1 · age bands)</span>
+        <div class="card">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Tier 1 <span class="chip">only tier</span></div>
+          <table>
+            <thead><tr><th>Age band</th><th class="amt">Annual premium (EGP)</th></tr></thead>
+            <tbody>
+              <tr><td>0 days – 17</td><td class="amt"><input class="inp" value="3,990.72"></td></tr>
+              <tr><td>18 – 24</td><td class="amt"><input class="inp" value="5,173.57"></td></tr>
+              <tr><td>25 – 29</td><td class="amt"><input class="inp" value="5,708.69"></td></tr>
+              <tr><td>30 – 34</td><td class="amt"><input class="inp" value="7,181.70"></td></tr>
+              <tr><td>35 – 39</td><td class="amt"><input class="inp" value="8,898.47"></td></tr>
+              <tr><td>40 – 44</td><td class="amt"><input class="inp" value="9,883.96"></td></tr>
+              <tr><td>45 – 49</td><td class="amt"><input class="inp" value="12,497.11"></td></tr>
+              <tr><td>50 – 54</td><td class="amt"><input class="inp" value="13,297.38"></td></tr>
+              <tr><td>55 – 59</td><td class="amt"><input class="inp" value="16,139.08"></td></tr>
+              <tr><td>60 – 64</td><td class="amt"><input class="inp" value="21,912.07"></td></tr>
+              <tr><td>65 – 69</td><td class="amt"><input class="inp" value="23,788.03"></td></tr>
+              <tr><td>70 – 75</td><td class="amt"><input class="inp" value="29,796.12"></td></tr>
+            </tbody>
+          </table>
+          <p class="note amber" style="margin-top:10px">Someone older than 75 is priced at the 70–75 band and flagged for HR review.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Static mockup for design sign-off · navy/gold · HR_ERP Benefits · spec 023 · 2026-08-11. Sample data only, nothing wired. Ported from the existing medical modal + Amounts editor; extended for per-person age pricing. Approve the look and I'll generate tasks and build (data + server pricing first, then these UI surfaces).
+  </footer>
+</div>
