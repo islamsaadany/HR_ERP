@@ -62,7 +62,7 @@ locked). Makes the committed premium explainable (SC-006) and immune to later DO
 | `dependantId` | String? FK → `Dependant` (setNull) | `null` = the employee themselves. |
 | `label` | String | "Employee" or the dependant's name/kind, for the breakdown. |
 | `ageAtCommit` | Int | Completed years at commit date. |
-| `premiumEGP` | Int | The band figure applied to this person, **rounded to whole EGP** (no cents; refinement 2026-08-11). Lines sum exactly to `MedicalCommitment.premium` for a full-year commit. |
+| `premiumEGP` | Int | The band figure applied to this person, **truncated to whole EGP — cents dropped, not rounded** (refinement 2026-08-11). Lines sum exactly to `MedicalCommitment.premium` for a full-year commit. |
 
 - **Index**: `@@index([commitmentId])`.
 
@@ -85,7 +85,7 @@ locked). Makes the committed premium explainable (SC-006) and immune to later DO
 - Every selected covered dependant has a DOB (schema guarantees) and a resolvable band.
 - At most one SPOUSE dependant per employee.
 - Age > 75 → top band + HR-review flag (FR-012).
-- Per-person premium rounded to **whole EGP**; committed premium = `round( Σ perPersonEGP × medicalFraction )`,
+- Per-person premium **truncated to whole EGP (cents dropped)**; committed premium = `trunc( Σ perPersonEGP × medicalFraction )`,
   capped at the pool ceiling; medical excluded from the 50% cap (FR-008, FR-010, FR-011).
 
 ## Migration ordering (SQL file)
