@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-10
 
-**Status**: Draft
+**Status**: Final (impact-analyzed; ready for `/speckit-plan`)
 
 **Input**: User description: "Make the platform truly multi-tenant so the companies in our group can all use one deployment. Tenant = the signed-in user's organization; a platform owner creates organizations and their first HR admin; existing Forefront data is preserved as Organization #1."
 
@@ -133,3 +133,12 @@ Each organization has its **own** branding (name, short name, logo, navy/gold-fa
 - **Migration delivery**: as numbered, hand-runnable `prisma/sql/` files (Neon), applied by the operator; the existing live data is treated as real and preserved.
 - **Out of scope (now)**: subdomain/custom-domain routing, public self-serve signup, billing/subscription, cross-organization (group-wide) reporting, and full organization deletion/offboarding.
 - **Design language** stays navy/gold; any new surfaces (provisioning console, org switcher for the owner) follow the existing patterns and the mockup-first rule.
+- **Login page is org-agnostic** (consequence of user-based tenant resolution): because the tenant is resolved from the signed-in user, the shared `/signin` page and the unauthenticated logo route cannot know the visitor's company, so **per-company branding applies only after login** — the login screen stays platform-generic. Per-company login branding would require subdomains/custom domains (deferred).
+
+## Impact Analysis & Non-Breakage Gate
+
+A full codebase sweep backs this spec — see **`impact-analysis.md`** in this folder (every finding is file:line-cited). Summary:
+
+- **Nothing breaks for the existing company.** After the migration attributes all current data to **Organization #1 (Forefront)**, every existing query still returns Forefront data (one org only) and existing users are unaffected.
+- **The multi-tenant risk is latent** and activates when **Organization #2** is created. The sweep found the concrete surface: ~40 files / ~180 Prisma call sites to org-scope; 4 hard config singletons (brand, notifications, medical rate card, module flags) and global reads (active plan year, pool ceilings, directory, headcount, incentive cycles) that would return the wrong org; 6 global unique constraints (`Department.name`, `BenefitCatalogItem.key`, `KnowledgeArticle.slug`, `HandbookSection.slug`, `PoolCeiling`, `IncentiveCycle.label`) that block a 2nd org until made per-org; the session/roles being global; and several file/export routes (documents, claim proofs, knowledge attachments, resources, both CSV exports) that would leak across orgs.
+- **Controlling rule:** a **hard gate** — do not create Organization #2 until every item in the gate checklist (`impact-analysis.md`) is complete. Executed in the spec's five phases, the live single-org instance never regresses.
