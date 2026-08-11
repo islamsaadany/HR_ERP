@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { updateProfilePhoto, removeProfilePhoto } from "@/app/(app)/profile/photo-actions";
 
@@ -21,6 +22,8 @@ export function ProfilePhotoHeader({
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -28,7 +31,21 @@ export function ProfilePhotoHeader({
     if (!file) return;
     const fd = new FormData();
     fd.append("photo", file);
-    startTransition(() => updateProfilePhoto(fd));
+    setError(null);
+    startTransition(async () => {
+      const res = await updateProfilePhoto(fd);
+      if (res?.error) setError(res.error);
+      else router.refresh();
+    });
+  }
+
+  function onRemove() {
+    setError(null);
+    startTransition(async () => {
+      const res = await removeProfilePhoto();
+      if (res?.error) setError(res.error);
+      else router.refresh();
+    });
   }
 
   return (
@@ -65,13 +82,14 @@ export function ProfilePhotoHeader({
             <button
               type="button"
               disabled={pending}
-              onClick={() => startTransition(() => removeProfilePhoto())}
+              onClick={onRemove}
               className="text-sm text-muted underline hover:text-red-600 disabled:opacity-60"
             >
               Remove
             </button>
           ) : null}
         </div>
+        {error ? <p className="mt-2 text-xs font-medium text-red-600">{error}</p> : null}
         <p className="mt-2 text-xs text-muted">JPG, PNG, WEBP or GIF, up to 5 MB. Shown to colleagues in the Team Directory.</p>
       </div>
     </div>
