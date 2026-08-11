@@ -148,17 +148,30 @@ async function main() {
     }
 
     let ran = 0;
+    let failed = 0;
     for (const f of files) {
       if (applied.has(f)) continue;
       const sql = readFileSync(join(SQL_DIR, f), "utf8");
       process.stdout.write(`[apply-sql] applying ${f} … `);
-      // Run statement-by-statement (autocommit) so files like 030 (ADD ENUM VALUE + use it) work.
-      for (const stmt of splitStatements(sql)) {
-        await client.query(stmt);
+      try {
+        // Statement-by-statement (autocommit) so files like 030 (ADD ENUM VALUE + use it) work.
+        for (const stmt of splitStatements(sql)) {
+          await client.query(stmt);
+        }
+        await client.query(`INSERT INTO "_sql_migrations"(filename) VALUES ($1) ON CONFLICT DO NOTHING`, [f]);
+        ran++;
+        console.log("done");
+      } catch (err) {
+        // Never let one file abort the whole migration (or the deploy). Reset any open/aborted
+        // transaction and continue; the file is NOT recorded, so a later run retries it.
+        await client.query("ROLLBACK").catch(() => {});
+        failed++;
+        console.log(`FAILED — ${err.message}`);
+        console.error(`[apply-sql] ⚠ ${f} failed and was skipped: ${err.message}`);
       }
-      await client.query(`INSERT INTO "_sql_migrations"(filename) VALUES ($1) ON CONFLICT DO NOTHING`, [f]);
-      ran++;
-      console.log("done");
+    }
+    if (failed > 0) {
+      console.error(`[apply-sql] ${failed} file(s) failed — see above. Deploy continues; apply them in the Neon SQL editor if they persist.`);
     }
     console.log(`[apply-sql] complete — ${ran} file(s) applied, ${applied.size} already present.`);
   } finally {
@@ -167,6 +180,9 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("[apply-sql] FAILED:", err.message);
-  process.exit(1);
+  // NON-FATAL: a migration/connection problem must never block the app deploy. Log loudly and
+  // exit 0 so `next build` still runs. Any un-applied migration is retried on the next deploy or
+  // can be pasted into the Neon SQL editor.
+  console.error("[apply-sql] ERROR (non-fatal, deploy continues):", err.message);
+  process.exit(0);
 });
