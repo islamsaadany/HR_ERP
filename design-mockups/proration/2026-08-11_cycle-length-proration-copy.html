@@ -1,0 +1,160 @@
+<title>Cycle-length proration — copy for sign-off</title>
+<style>
+  :root{
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-500:#2f4d78;
+    --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-500:#c9a227; --gold-600:#a8821e; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --green-50:#ecfdf5; --green-700:#047857; --amber-50:#fffbeb; --amber-600:#b45309; --amber-700:#92400e;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:66ch}
+  .rulebox{margin-top:20px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 16px;border-radius:0 10px 10px 0;font-size:13px}
+  .rulebox strong{color:var(--navy-800)}
+  .rulebox ul{margin:8px 0 0;padding-left:18px}
+  .rulebox li{margin:3px 0}
+  .proposal{margin-top:40px}
+  .proposal > h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px 36px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media (max-width:760px){.cols{grid-template-columns:1fr}}
+  .tag{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:6px;margin-bottom:10px}
+  .tag.before{background:#f3f0ea;color:var(--muted);border:1px solid var(--line)}
+  .tag.after{background:var(--navy-50);color:var(--navy-700);border:1px solid var(--navy-100)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card.gold{border-color:var(--gold-500)}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:uppercase;letter-spacing:.05em}
+  .pill.gold{background:var(--gold-100);color:var(--gold-800)}
+  .note{border-radius:10px;padding:10px 12px;font-size:12.5px;margin-top:10px}
+  .note.navy{background:var(--navy-50);color:var(--navy-700);border:1px solid var(--navy-100)}
+  .note.gold{background:var(--gold-100);color:var(--gold-800);border:1px solid var(--gold-500)}
+  .big{font-size:26px;font-family:Georgia,serif;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .metersub{font-size:13px;color:var(--muted);margin-top:2px}
+  .strike{color:var(--muted);text-decoration:line-through;font-size:12px}
+  .meter{height:10px;border-radius:999px;background:var(--navy-50);overflow:hidden;margin-top:12px}
+  .meter > span{display:block;height:100%;width:60%;background:var(--gold-500)}
+  .tile{display:flex;flex-direction:column;gap:4px}
+  .tile .tname{font-size:13px;font-weight:600;color:var(--ink)}
+  .tile .tnote{font-size:12px;color:var(--muted);min-height:1.6em}
+  .tile .tamt{font-family:Georgia,serif;font-size:16px;color:var(--navy-800)}
+  .diff{background:#fff8e6;border-radius:3px;padding:0 2px}
+  .win{font-weight:600}
+  footer{margin-top:56px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Benefits · proration copy · design review</p>
+  <h1>Cycle-length proration — the wording changes, for sign-off</h1>
+  <p class="lede">The money math changes server-side (pool &amp; Professional development now scale to the <em>length of the plan-year cycle</em>, for everyone — not just mid-year joiners). These are the only <em>visible</em> pieces that need new wording so the reduced figures read correctly. Approve the copy and I'll port it into the real components. Static mockup — sample data (a 6-month cycle), no wiring.</p>
+
+  <div class="rulebox">
+    <strong>The rule being reflected.</strong>
+    <ul>
+      <li><strong>Flexible pool + Professional development</strong> → scaled to the cycle length (e.g. a 6-month cycle → 6/12 of the annual amount) for <em>every</em> eligible employee.</li>
+      <li><strong>Medical</strong> → unchanged: still prorated only for someone who <em>joins</em> mid-cycle. Its existing wording stays as-is (shown at the bottom).</li>
+    </ul>
+  </div>
+
+  <!-- 1: employee pool meter -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Employee · flexible-pool meter</h2>
+    <p class="sub">Benefits → right-hand pool meter. Sample: annual pool EGP 20,000, a 6-month cycle → EGP 10,000.</p>
+    <div class="cols">
+      <div>
+        <span class="tag before">Before (mid-year-starter wording)</span>
+        <div class="card">
+          <span class="pill gold">Prorated · 6 of 12 mo</span>
+          <div class="big" style="margin-top:8px">EGP 10,000</div>
+          <div class="metersub">left of your EGP 10,000 <span class="win">prorated</span> pool (company share)</div>
+          <div class="note navy">You joined part-way through the plan year, so your pool covers the remaining 6 months. You&rsquo;ll get the full annual amount next plan year.</div>
+          <div class="meter"><span></span></div>
+        </div>
+        <p class="sub" style="margin:8px 0 0 0">Wrong now: implies the employee <em>joined late</em>, and promises &ldquo;full amount next year&rdquo; — untrue when the cause is simply a short cycle.</p>
+      </div>
+      <div>
+        <span class="tag after">After (cycle-length wording)</span>
+        <div class="card gold">
+          <span class="pill gold">Prorated · 6 of 12 mo</span>
+          <div class="big" style="margin-top:8px">EGP 10,000</div>
+          <div class="metersub">left of your EGP 10,000 <span class="win">prorated</span> pool (company share)</div>
+          <div class="note navy">This benefits cycle runs <span class="diff">6 of 12 months</span>, so your pool is scaled to that period. A full-length cycle carries the full annual amount.</div>
+          <div class="meter"><span></span></div>
+        </div>
+        <p class="sub" style="margin:8px 0 0 0">Badge and layout unchanged — only the explanatory sentence changes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2: professional development tile -->
+  <section class="proposal">
+    <h2><span class="num">2</span> Employee · Professional-development tile</h2>
+    <p class="sub">Benefits → &ldquo;Guaranteed benefits&rdquo; band. Only Prof-dev is flagged prorated; other gifts stay full. Sample annual EGP 12,000 → 6-month cycle EGP 6,000.</p>
+    <div class="cols">
+      <div>
+        <span class="tag before">Before</span>
+        <div class="card">
+          <div class="tile">
+            <div class="tname">Professional development</div>
+            <div class="tnote">Courses, certifications, conferences.</div>
+            <div class="tamt">EGP 6,000 <span class="strike">EGP 12,000</span></div>
+            <div><span class="pill gold">Prorated · 6 of 12 mo</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <span class="tag after">After</span>
+        <div class="card gold">
+          <div class="tile">
+            <div class="tname">Professional development</div>
+            <div class="tnote">Courses, certifications, conferences.</div>
+            <div class="tamt">EGP 6,000 <span class="strike">EGP 12,000</span></div>
+            <div><span class="pill gold">Prorated · 6 of 12 mo</span></div>
+          </div>
+        </div>
+        <p class="sub" style="margin:8px 0 0 0"><strong>No visible change here.</strong> The tile already shows a struck-through full amount + the badge; the badge text (&ldquo;6 of 12 mo&rdquo;) reads correctly for a short cycle. Shown only to confirm it's intentionally left alone.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3: admin banner -->
+  <section class="proposal">
+    <h2><span class="num">3</span> Admin · proration-window banner</h2>
+    <p class="sub">Admin → Benefits, under the plan-year header. Two states: dates set vs. not set.</p>
+    <div class="cols">
+      <div>
+        <span class="tag before">Before</span>
+        <div class="note navy" style="margin-top:0">Proration window · <b>1 Jan 2026 → 30 Jun 2026</b> · mid-year starters are prorated against this window.</div>
+        <div class="note gold">Proration off — &ldquo;2026 H2&rdquo; has no start/end dates, so mid-year starters receive full amounts. Set dates via Plan year to enable proration.</div>
+      </div>
+      <div>
+        <span class="tag after">After</span>
+        <div class="note navy" style="margin-top:0">Proration window · <b>1 Jan 2026 → 30 Jun 2026</b> · <span class="diff">the flexible pool &amp; Professional development scale to this window&rsquo;s length; medical is prorated for mid-cycle joiners.</span></div>
+        <div class="note gold">Proration off — &ldquo;2026 H2&rdquo; has no start/end dates, so <span class="diff">full annual amounts apply to everyone.</span> Set dates via Plan year to enable proration.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- unchanged: medical -->
+  <section class="proposal">
+    <h2><span class="num">✓</span> Medical wording — <span style="font-family:Georgia,serif">unchanged</span></h2>
+    <p class="sub">Shown so you can confirm it should stay. Medical is still mid-cycle-joiner only, so this sentence remains accurate.</p>
+    <div style="max-width:480px">
+      <div class="card">
+        <div class="note navy" style="margin-top:0">You joined part-way through the plan year, so your medical premium is prorated to the remaining 4 months. You&rsquo;ll get a full-year premium next plan year.</div>
+        <p class="sub" style="margin:10px 0 0 0">No change — correct for medical, which only prorates for genuine mid-cycle joiners.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Static mockup for copy sign-off · navy/gold · HR_ERP Benefits · 2026-08-11. Nothing here is wired to real data. Approve and I port the two sentences (pool meter + admin banner) into the components; the Prof-dev tile and medical wording are unchanged.
+  </footer>
+</div>
