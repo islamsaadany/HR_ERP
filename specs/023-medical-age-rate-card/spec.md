@@ -168,25 +168,26 @@ After commit, medical behaves exactly as today: **one commitment per plan year**
 
 ## Assumptions
 
-- **Pricing reference date**: A person's age is computed as **completed years at the plan-year start date** (the window's start). This makes the premium stable for the whole plan year and independent of when the employee happens to commit. *(Money-impacting default — see Open Decisions; alternatives are the commit date or the medical-eligibility date.)*
-- **Age-band bounds**: Bands are inclusive by completed years — "0 days – 17" means age ≤ 17 (under 18); "18 – 24" means 18 ≤ age ≤ 24; and so on. A person turning 18 on/before the reference date prices in 18–24.
-- **Over-75 handling**: A person older than 75 is priced at the **top band (70–75)** and flagged for HR review, rather than blocked or zero-priced. *(Default — see Open Decisions.)*
-- **Rounding**: Per-person annual premiums are summed at full two-decimal precision; proration multiplies the summed annual by `months ÷ 12` and rounds the **final committed premium to two decimals (nearest cent)**. *(Supersedes the whole-EGP `prorate` rounding used for the pool; see Open Decisions.)*
-- **Storage of decimals**: Premiums and rate-card amounts are stored with two-decimal precision (money), not whole integers.
+- **Pricing reference date** *(confirmed 2026-08-11)*: A person's age is computed as **completed years at the employee's medical commit date**. The premium therefore reflects each covered person's age on the day the election is made (and is then locked). A person who crosses a band boundary before committing prices in the higher band.
+- **Age-band bounds**: Bands are inclusive by completed years — "0 days – 17" means age ≤ 17 (under 18); "18 – 24" means 18 ≤ age ≤ 24; and so on. A person turning 18 on/before the commit date prices in 18–24.
+- **Over-75 handling** *(confirmed 2026-08-11)*: A person older than 75 is priced at the **top band (70–75)** and flagged for HR review, rather than blocked or zero-priced.
+- **Rounding** *(confirmed 2026-08-11)*: Per-person annual premiums (which carry two decimals in the rate card) are summed at full precision; proration multiplies the summed annual by `months ÷ 12`; the **final committed premium is rounded to whole EGP**, matching the pool's existing integer math. (The rate-card amounts keep their two decimals; only the committed premium is a whole number.)
+- **Storage of decimals**: Rate-card **band amounts** are stored with two-decimal precision (the operator quotes cents). The **committed premium** is stored as a whole EGP integer (unchanged from today).
+- **Spouse as a dependant** *(confirmed 2026-08-11)*: The covered spouse becomes a proper **dependant record** (name + date of birth), consistent with children, rather than a boolean + separate DOB field. The dependant record gains a way to distinguish a spouse from a child so pricing and scope rules can tell them apart.
 - **Tiers**: Only Tier 1 is defined and assigned to all eligible employees for now; a tier-assignment rule (per employment type, plan, etc.) is out of scope until more tiers exist.
 - **Personal vs Family scope (spec 021) is unchanged**: A Personal-only employee is priced on themselves alone; Family-eligible employees can add spouse + children. The FT/PT eligibility gates are unchanged.
 - **Existing dependant records are reused**: Children already carry a DOB; this feature adds selection of which children are covered and a spouse DOB. It does not redesign the dependant registry.
 - **Historical commitments are not re-priced**: Commitments made under the old relationship card keep their stored premium; new pricing applies from the cutover forward.
 - **The pool ceiling, 3-month unlock, sub-6-month medical-only view, and entry-tier fallback (spec 019) are unchanged** except that the annual premium they operate on now comes from the age-banded card.
 
-## Open Decisions *(to confirm in `/speckit-clarify` or before `/speckit-plan`)*
+## Resolved Decisions *(confirmed 2026-08-11)*
 
-These are money-impacting defaults chosen above; confirm or override:
+The four money-/model-impacting choices are settled and folded into Assumptions and the FRs above:
 
-1. **Pricing reference date** — default **plan-year start date**. Alternatives: the employee's **commit date**, or their **medical-eligibility (3-month) date**. Changes which age band a near-boundary person falls into.
-2. **Over-75 handling** — default **top band (70–75) + HR flag**. Alternatives: block (not offered) or a separate operator figure.
-3. **Rounding** — default **round the final committed premium to the nearest cent** (two decimals). Alternative: round to whole EGP to match the pool's integer math.
-4. **Spouse DOB storage** — the spouse is not currently a registry record with a DOB. Confirm whether the spouse DOB lives on the employee/commitment record or the spouse becomes a proper dependant. *(Structural — affects the data model.)*
+1. **Pricing reference date** → **commit date** (age at the day medical is committed; then locked). *(FR-004)*
+2. **Over-75 handling** → **top band (70–75) + HR flag**. *(FR-012)*
+3. **Rounding** → **final committed premium rounded to whole EGP**; rate-card band amounts keep two decimals. *(FR-011)*
+4. **Spouse DOB storage** → the **spouse becomes a proper dependant record** (name + DOB, distinguished from a child). *(FR-006, Key Entities)*
 
 ## Dependencies
 
