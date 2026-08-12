@@ -120,12 +120,20 @@ export async function buildCalculationWorkbook(
       secLead.getCell(1).font = { bold: true, size: 11, color: { argb: NAVY } };
       const lh = ws.addRow(["Client", "Gross profit", "GP %", "Envelope", "Lead fee"]);
       styleHeaderRow(lh);
+      // Term tips on the headers (hover in Excel).
+      lh.getCell(4).note = "Envelope = 3% of Gross Profit, but only when the client clears the 70% gross-margin gate.";
+      lh.getCell(5).note = "Lead fee = the envelope minus the contributors' tier deductions.";
       for (const a of leadRows) {
         const r = ws.addRow([a.client, a.grossProfit, a.grossMarginPct, a.envelope, a.leadFee]);
         r.getCell(2).numFmt = MONEY_FMT;
         r.getCell(3).numFmt = PCT_FMT;
         r.getCell(4).numFmt = MONEY_FMT;
         r.getCell(5).numFmt = MONEY_FMT;
+        // Explain a zero: envelope (and therefore the lead fee) is 0 below the gate.
+        if (!a.marginGatePassed) {
+          r.getCell(4).note = `Below the 70% margin gate (${(a.grossMarginPct * 100).toFixed(1)}%) — no envelope is generated.`;
+          r.getCell(5).note = "Envelope is 0 (client below the 70% gate), so there is no lead fee.";
+        }
       }
       const lt = ws.addRow(["Subtotal — lead fees", null, null, null, person.leadFee]);
       lt.getCell(5).numFmt = MONEY_FMT;
@@ -133,22 +141,38 @@ export async function buildCalculationWorkbook(
       ws.addRow([]);
     }
 
-    // As Contributor
+    // As Contributor — carry each assignment's gate status so a 0 can be explained.
     const contribRows = report.assignments
-      .flatMap((a) => a.contributors.map((cn) => ({ client: a.client, ...cn })))
+      .flatMap((a) =>
+        a.contributors.map((cn) => ({
+          client: a.client,
+          gatePassed: a.marginGatePassed,
+          marginPct: a.grossMarginPct,
+          ...cn,
+        }))
+      )
       .filter((cn) => key(cn.name) === key(person.name));
     if (contribRows.length) {
       const secC = ws.addRow(["As Contributor"]);
       secC.getCell(1).font = { bold: true, size: 11, color: { argb: NAVY } };
       const ch = ws.addRow(["Client", "Share", "Tier", "Allocation", "Paid"]);
       styleHeaderRow(ch);
+      ch.getCell(3).note = "Tier = the deduction this share takes from the lead's fee: ≥70%→60%, 50–69%→30%, 20–49%→10%, under 20%→0.";
+      ch.getCell(4).note = "Allocation = envelope × tier.";
+      ch.getCell(5).note = "Paid = allocation after the 5%-of-month floor and the ½-month cap.";
       for (const cn of contribRows) {
         const r = ws.addRow([cn.client, cn.share, cn.tier, cn.allocation, cn.flooredToZero ? 0 : cn.payment]);
         r.getCell(2).numFmt = PCT_FMT;
         r.getCell(3).numFmt = PCT_FMT;
         r.getCell(4).numFmt = MONEY_FMT;
         r.getCell(5).numFmt = MONEY_FMT;
-        if (cn.flooredToZero) r.getCell(5).note = "Below the 5%-of-month floor — paid as 0.";
+        if (!cn.gatePassed) {
+          // Envelope is 0 below the gate, so the allocation is 0 regardless of share.
+          r.getCell(4).note = `Below the 70% margin gate (${(cn.marginPct * 100).toFixed(1)}%) — envelope is 0, so the allocation is 0 regardless of the ${(cn.share * 100).toFixed(0)}% share.`;
+          r.getCell(5).note = "Allocation is 0 (client below the 70% gate), so nothing is paid.";
+        } else if (cn.flooredToZero) {
+          r.getCell(5).note = "Below the 5%-of-month floor — paid as 0.";
+        }
       }
       const ct = ws.addRow(["Subtotal — contributor payments", null, null, null, person.contributor]);
       ct.getCell(5).numFmt = MONEY_FMT;
@@ -165,6 +189,8 @@ export async function buildCalculationWorkbook(
       secM.getCell(1).font = { bold: true, size: 11, color: { argb: NAVY } };
       const mh = ws.addRow(["Client", "Type", "Base", "Rate", "Amount"]);
       styleHeaderRow(mh);
+      mh.getCell(3).note = "Base = net revenue the rate applies to (projects: full net revenue; retainers: the first three months, once).";
+      mh.getCell(4).note = "Rate = 5% when the BD self-generated and closed it, otherwise 3% (referred).";
       for (const a of commRows) {
         const r = ws.addRow([a.client, a.type, a.commission!.base, a.commission!.rate, a.commission!.amount]);
         r.getCell(3).numFmt = MONEY_FMT;

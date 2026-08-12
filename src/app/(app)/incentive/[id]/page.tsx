@@ -117,7 +117,31 @@ export default async function CyclePage({
         ) : null}
       </div>
 
-      {hasData ? <CycleReportView report={report} cycleId={cycle.id} /> : null}
+      {hasData ? (
+        <CycleReportView
+          report={report}
+          cycleId={cycle.id}
+          review={{
+            people: cycle.people.map((p) => ({
+              name: p.name,
+              role: p.role,
+              netMonthlySalary: p.netMonthlySalary,
+              startDate: p.startDate ? p.startDate.toISOString().slice(0, 10) : null,
+              utilization: p.utilization,
+            })),
+            assignments: cycle.assignments.map((a) => ({
+              client: a.client,
+              type: a.type,
+              lead: a.lead,
+              bd: a.bd,
+              revenue: a.revenue,
+              directCost: a.directCost,
+              status: a.status,
+            })),
+            contributions: cycle.contributions.map((c) => ({ client: c.client, person: c.person, share: c.share })),
+          }}
+        />
+      ) : null}
     </div>
   );
 }

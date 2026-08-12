@@ -84,6 +84,16 @@ body {
   max-height: calc(100vh - 11rem);
   overflow: auto;
 }
+/*
+  Horizontal-only scroll: the table renders at its FULL height (never scrolls
+  vertically) and only scrolls sideways when it is wider than the screen. Used
+  by the incentive report, where every row must stay visible. Pairs with
+  `ff-data-table` for the frozen first column on horizontal scroll.
+*/
+.ff-hscroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
 .ff-data-table {
   width: 100%;
 }
