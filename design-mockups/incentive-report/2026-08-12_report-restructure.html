@@ -8,18 +8,24 @@
     --surface: #ffffff; --paper: #f7f9fc; --ground: #eef1f6;
     --amber-bg: #fef6e7; --amber-tx: #8a6420; --amber-bd: #e8cf8f;
     --bad: #b3261e; --bad-bg: #fdeceb;
+    --st-ong-bg:#dcfce7; --st-ong-tx:#15803d; --st-end-bg:#e6eaf0; --st-end-tx:#41526b;
+    --st-prg-bg:#fdf0cf; --st-prg-tx:#8a6414; --st-pen-bg:#eef0f3; --st-pen-tx:#6b7783;
   }
   :root:not([data-theme="light"]) { @media (prefers-color-scheme: dark) {
     --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
     --navy-50:#1b2a3d; --navy-200:#3a506e; --navy-800:#24405f; --navy-900:#0a1420;
     --amber-bg:#2c2410; --amber-tx:#e2c477; --amber-bd:#5a4a20;
     --bad:#f0a89f; --bad-bg:#3a1a17;
+    --st-ong-bg:#123020; --st-ong-tx:#6ee7a8; --st-end-bg:#1c2838; --st-end-tx:#9db4d3;
+    --st-prg-bg:#33280c; --st-prg-tx:#e6c877; --st-pen-bg:#1a2430; --st-pen-tx:#8a99a8;
   } }
   :root[data-theme="dark"] {
     --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
     --navy-50:#1b2a3d; --navy-200:#3a506e; --navy-800:#24405f; --navy-900:#0a1420;
     --amber-bg:#2c2410; --amber-tx:#e2c477; --amber-bd:#5a4a20;
     --bad:#f0a89f; --bad-bg:#3a1a17;
+    --st-ong-bg:#123020; --st-ong-tx:#6ee7a8; --st-end-bg:#1c2838; --st-end-tx:#9db4d3;
+    --st-prg-bg:#33280c; --st-prg-tx:#e6c877; --st-pen-bg:#1a2430; --st-pen-tx:#8a99a8;
   }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--ground); color:var(--ink);
@@ -59,6 +65,11 @@
   .warn { color:var(--bad); cursor:help; margin-left:4px; font-weight:700; }
   .issue-tag { font-size:11px; font-weight:700; color:var(--bad); background:var(--bad-bg); border:1px solid var(--bad); padding:2px 8px; border-radius:999px; }
   .right-group { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .pill-status { display:inline-block; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:600; }
+  .st-ongoing { background:var(--st-ong-bg); color:var(--st-ong-tx); }
+  .st-ended { background:var(--st-end-bg); color:var(--st-end-tx); }
+  .st-progress { background:var(--st-prg-bg); color:var(--st-prg-tx); }
+  .st-pending { background:var(--st-pen-bg); color:var(--st-pen-tx); }
   .scost-row { cursor:pointer; }
   .scost-row:hover { background:var(--navy-50); }
   .scost-sub { display:none; }
@@ -123,10 +134,14 @@
       <div class="scroll"><table>
         <thead><tr><th>Client</th><th>Type</th><th>Lead</th><th>BD</th><th class="r">Revenue</th><th class="r">Direct cost</th><th>Status</th></tr></thead>
         <tbody>
-          <tr><td>El&nbsp;Abd</td><td>RET</td><td>Islam</td><td>Islam</td><td class="r">2,250,000</td><td class="r">630,528</td><td>ongoing</td></tr>
-          <tr><td>Wander</td><td>RET</td><td>Galal</td><td>Islam</td><td class="r">990,000</td><td class="r">270,101</td><td>ongoing</td></tr>
-          <tr><td>Imtenan</td><td>RET</td><td>Galal</td><td>Islam</td><td class="r">600,000</td><td class="r">93,009</td><td>ongoing</td></tr>
-          <tr><td>Raya Trade</td><td>RET</td><td>Islam</td><td>Omar</td><td class="r">410,000</td><td class="r">187,444</td><td>ongoing</td></tr>
+          <tr><td>El&nbsp;Abd</td><td>RET</td><td>Islam</td><td>Islam</td><td class="r">2,250,000</td><td class="r">630,528</td><td><span class="pill-status st-ongoing">Ongoing</span></td></tr>
+          <tr><td>Wander</td><td>RET</td><td>Galal</td><td>Islam</td><td class="r">990,000</td><td class="r">270,101</td><td><span class="pill-status st-ongoing">Ongoing</span></td></tr>
+          <tr><td>Imtenan</td><td>RET</td><td>Galal</td><td>Islam</td><td class="r">600,000</td><td class="r">93,009</td><td><span class="pill-status st-ongoing">Ongoing</span></td></tr>
+          <tr><td>Raya Trade</td><td>RET</td><td>Islam</td><td>Omar</td><td class="r">410,000</td><td class="r">187,444</td><td><span class="pill-status st-ongoing">Ongoing</span></td></tr>
+          <tr><td>Sportify</td><td>PRJ</td><td>Omar</td><td>Omar</td><td class="r">167,400</td><td class="r">22,778</td><td><span class="pill-status st-ended">Ended</span></td></tr>
+          <tr><td>JRNY</td><td>PRJ</td><td>Islam</td><td>Islam</td><td class="r">160,650</td><td class="r">46,968</td><td><span class="pill-status st-ended">Ended</span></td></tr>
+          <tr><td>Beverages Expert</td><td>PRJ</td><td>Islam</td><td>Islam</td><td class="r">398,396</td><td class="r">92,911</td><td><span class="pill-status st-progress">In progress</span></td></tr>
+          <tr><td>Forefront Trading</td><td>PRJ</td><td>Omar</td><td>Omar</td><td class="r">649,000</td><td class="r">—</td><td><span class="pill-status st-pending">Pending</span></td></tr>
         </tbody>
       </table></div>
       <p class="subhead subhead2">Contributions (client × person) — the <b>Total</b> column flags any client that isn't 100%</p>
