@@ -1,0 +1,112 @@
+<title>Medical Manual Entry</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-500:#2f4d78;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-400:#d4ac39;--gold-600:#a8821e;--paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green-50:#e6f3ea;--green-200:#bfe0c9;--green-700:#2f7a4d;
+    --shadow:0 10px 40px rgba(10,26,48,.18);
+    --font-serif:"Iowan Old Style",Georgia,serif;--font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;padding:28px 18px 60px;}
+  .wrap{max-width:760px;margin:0 auto;}
+  h2{font-family:var(--font-serif);font-size:22px;margin:0 0 6px;}
+  .lead{color:var(--muted);font-size:14px;line-height:1.55;margin:6px 0 18px;}
+  .lead b{color:var(--ink);}
+  .modal{border:1px solid var(--line);background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:26px;}
+  .mh{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+  .mh h3{font-family:var(--font-serif);font-size:24px;margin:0;}
+  .x{color:var(--muted);font-size:20px;cursor:default;}
+  .sub{color:var(--muted);font-size:13.5px;margin:6px 0 18px;line-height:1.5;}
+  .row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;}
+  .fld{min-width:150px;flex:1;}
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px;}
+  select,input{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:14px;background:var(--surface);color:var(--ink);}
+  .btn{border:none;background:var(--navy-800);color:#fff;font-size:14px;font-weight:600;padding:10px 18px;border-radius:9px;cursor:pointer;}
+  .foot{margin-top:14px;font-size:12.5px;color:var(--muted);line-height:1.5;}
+
+  /* auto-calc panel */
+  .calc{margin-top:14px;border:1px dashed var(--green-200);background:linear-gradient(0deg,var(--green-50),transparent);border-radius:12px;padding:14px 16px;}
+  .calc .h{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--green-700);margin-bottom:10px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  td,th{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line);}
+  th{font-size:10.5px;text-transform:uppercase;color:var(--muted);letter-spacing:.04em;}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;}
+  .tot{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:13.5px;}
+  .tot .big{font-weight:700;color:var(--navy-900);font-size:16px;}
+  .muted{color:var(--muted);}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-left:8px;}
+  .seg button{border:none;background:var(--surface);color:var(--navy-700);font-size:12.5px;font-weight:600;padding:5px 11px;cursor:pointer;}
+  .seg button.on{background:var(--navy-800);color:#fff;}
+  .hide{display:none!important;}
+</style>
+<div class="wrap">
+  <h2>Medical in the manual entry — auto-calculated</h2>
+  <p class="lead">HR picks the employee + <b>Medical</b> and sets only the <b>approval date</b>; the premium is computed automatically (age-banded rate card, commit-style proration), so the <b>Amount</b> field disappears. Toggle the Benefit below to see the two states.</p>
+
+  <div style="margin-bottom:14px">Benefit:
+    <span class="seg">
+      <button id="b-normal" class="on" onclick="setMode('normal')">A guaranteed / flexible benefit</button>
+      <button id="b-med" onclick="setMode('medical')">Medical insurance</button>
+    </span>
+  </div>
+
+  <div class="modal">
+    <div class="mh"><h3>Record a past claim / release</h3><span class="x">✕</span></div>
+    <p class="sub" id="sub">Saved as <b>released</b> (not queued) and counted against the benefit&rsquo;s allocation.</p>
+
+    <div class="row">
+      <div class="fld"><label>Employee</label><select><option>Islam Saadany</option></select></div>
+      <div class="fld"><label>Benefit</label><select id="benefitSel" onchange="onSel()"><option>Marriage allowance</option><option id="opt-med">Medical insurance</option></select></div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <div class="fld" id="amountFld" style="max-width:160px"><label>Amount (covered)</label><input placeholder="e.g. 8000"></div>
+      <div class="fld" style="max-width:190px"><label>Approval date</label><input type="date" value="2026-01-15"></div>
+      <button class="btn">Record</button>
+    </div>
+
+    <!-- MEDICAL auto-calc panel -->
+    <div class="calc hide" id="calc">
+      <div class="h">Premium calculated automatically — from age bands at the approval date</div>
+      <table>
+        <thead><tr><th>Covered person</th><th class="n">Age at approval</th><th class="n">Annual (EGP)</th></tr></thead>
+        <tbody>
+          <tr><td>Islam Saadany (employee)</td><td class="n">37</td><td class="n">11,192</td></tr>
+          <tr><td>Spouse · Nour</td><td class="n">34</td><td class="n">11,192</td></tr>
+          <tr><td>Child · Yassin</td><td class="n">6</td><td class="n">3,990</td></tr>
+        </tbody>
+      </table>
+      <div class="tot"><span class="muted">Annual premium (sum)</span><span>EGP 26,374</span></div>
+      <div class="tot"><span class="muted">Proration · 12 of 12 months from eligibility</span><span>× 12/12</span></div>
+      <div class="tot"><span class="muted">Capped at pool ceiling (EGP 45,000)</span><span>—</span></div>
+      <div class="tot" style="border-top:1px solid var(--line);padding-top:8px"><span class="big">Committed premium</span><span class="big">EGP 26,374</span></div>
+    </div>
+
+    <p class="foot" id="foot-normal">For claims already approved &amp; paid outside the app. Saved as released (not pending) and counted against the benefit&rsquo;s allocation. Enter the <b>covered (company) amount</b>. The server rejects future dates, missing allocations, and amounts over what&rsquo;s left to claim.</p>
+    <p class="foot hide" id="foot-med">For a medical commitment that already happened. HR sets only the <b>approval date</b>; the premium is priced from each covered person&rsquo;s age at that date (age-banded rate card) and prorated the same way a live commit is, capped at the pool ceiling. Saved as a <b>locked medical commitment</b> (HR-editable), back-dated to the approval date, with a covered-person snapshot. DOBs are required to price — anyone missing a DOB is flagged.</p>
+  </div>
+
+  <div style="margin-top:22px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px 18px">
+    <p style="margin:0 0 6px;font-weight:600">One decision — who is covered on a back-filled medical record?</p>
+    <p class="lead" style="margin:0">Since HR only sets the date, the covered set is auto-derived. The mockup shows <b>employee + all dependants who have a DOB on file</b> (respecting Personal vs Family eligibility). Alternatives: <b>employee only (self cover)</b>, or <b>let HR tick who's covered</b> in the modal. Tell me which and I'll build it.</p>
+  </div>
+</div>
+<script>
+  function setMode(m){
+    document.getElementById('b-normal').classList.toggle('on',m==='normal');
+    document.getElementById('b-med').classList.toggle('on',m==='medical');
+    document.getElementById('benefitSel').selectedIndex = m==='medical'?1:0;
+    onSel(true,m);
+  }
+  function onSel(force,forced){
+    var med = forced ? forced==='medical' : document.getElementById('benefitSel').selectedIndex===1;
+    document.getElementById('amountFld').classList.toggle('hide',med);
+    document.getElementById('calc').classList.toggle('hide',!med);
+    document.getElementById('foot-normal').classList.toggle('hide',med);
+    document.getElementById('foot-med').classList.toggle('hide',!med);
+    document.getElementById('sub').innerHTML = med
+      ? 'Saved as a <b>locked medical commitment</b>, back-dated to the approval date. The premium is calculated for you.'
+      : 'Saved as <b>released</b> (not queued) and counted against the benefit&rsquo;s allocation.';
+  }
+</script>
