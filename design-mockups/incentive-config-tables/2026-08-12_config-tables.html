@@ -1,0 +1,174 @@
+<title>Incentive Config Tables</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-500:#2f4d78;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-400:#d4ac39;--gold-600:#a8821e;--paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green-700:#2f7a4d;--shadow:0 1px 3px rgba(16,36,68,.06);
+    --font-serif:"Iowan Old Style",Georgia,serif;--font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;padding:26px 18px 70px;}
+  .wrap{max-width:940px;margin:0 auto;}
+  h2{font-family:var(--font-serif);font-size:22px;margin:0 0 4px;}
+  .lead{color:var(--muted);font-size:14px;line-height:1.55;margin:6px 0 18px;}
+  .lead b{color:var(--ink);}
+
+  section{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);margin-bottom:16px;}
+  .sh{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+  .sh h3{font-family:var(--font-serif);font-size:18px;margin:0;font-weight:500;}
+  .sh .note{color:var(--muted);font-size:12.5px;margin-top:3px;}
+  .editbtn{border:1px solid var(--line);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;cursor:pointer;}
+  .editbtn:hover{background:var(--navy-50);}
+
+  table{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px;}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;}
+  thead th{background:var(--navy-50);font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--navy-700);font-weight:700;}
+  tbody th{background:#faf9f6;font-size:12px;color:var(--muted);font-weight:600;width:120px;}
+  td.val{font-variant-numeric:tabular-nums;font-weight:600;color:var(--navy-900);}
+  .info{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;border:1px solid var(--navy-200,#aebfd6);color:var(--navy-500);font-size:10px;font-weight:700;margin-left:6px;cursor:pointer;position:relative;top:-1px;}
+  .info:hover{background:var(--navy-50);}
+  .pop{position:absolute;z-index:20;max-width:250px;background:var(--navy-900);color:#fff;font-size:12px;font-weight:400;line-height:1.4;padding:8px 10px;border-radius:8px;box-shadow:0 6px 20px rgba(10,26,48,.28);margin-top:6px;}
+  .pop::after{content:"";position:absolute;top:-5px;left:14px;border:5px solid transparent;border-bottom-color:var(--navy-900);border-top:0;}
+
+  input.cell{width:100%;border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:14px;font-variant-numeric:tabular-nums;background:var(--surface);}
+  .suffix{position:relative;}
+  .suffix input{padding-right:26px;}
+  .suffix .u{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px;pointer-events:none;}
+  .hide{display:none!important;}
+  .save{margin-top:12px;background:var(--navy-800);color:#fff;border:none;font-size:13px;font-weight:600;padding:8px 16px;border-radius:9px;cursor:pointer;}
+
+  /* upload row */
+  .uprow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .lbl{width:110px;font-size:13px;}
+  .filepick{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:9px;padding:5px 6px 5px 12px;background:var(--surface);flex:1;min-width:220px;}
+  .filepick .fname{font-size:13px;color:var(--navy-800);font-weight:600;}   /* visible colour */
+  .filepick .fname.empty{color:var(--muted);font-weight:400;}
+  .browse{background:var(--navy-800);color:#fff;border:none;font-size:12px;font-weight:600;padding:6px 11px;border-radius:6px;cursor:pointer;}
+  .btn{border:1px solid var(--line);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:7px 12px;border-radius:8px;cursor:pointer;}
+  .btn.solid{background:var(--navy-800);color:#fff;border-color:var(--navy-800);}
+</style>
+<div class="wrap">
+  <h2>Incentive configuration — tables + Edit (proposed)</h2>
+  <p class="lead">Every group is a <b>read-only table</b> with an <b>Edit</b> button (same pattern as the Benefits config). Values show as <b>%</b> where they're shares/rates; months and the pricing multiple stay as plain numbers with a unit. Each value has an <b>ⓘ</b> — click it for a plain-language explanation. <b>Try:</b> click an ⓘ, and click <b>Edit</b> on Contributor tiers.</p>
+
+  <!-- Contributor tiers -->
+  <section>
+    <div class="sh">
+      <div><h3>Contributor tiers</h3><div class="note">Share threshold → deduction from the Lead's fee.</div></div>
+      <button class="editbtn" onclick="toggle('tiers',this)">Edit</button>
+    </div>
+    <table id="tiers-read">
+      <thead><tr><th></th><th>Tier 1 <i class="info" onclick="pop(this,'A contributor whose share is at least this threshold falls in Tier 1.')">i</i></th><th>Tier 2 <i class="info" onclick="pop(this,'Share at least this, but below Tier 1.')">i</i></th><th>Tier 3 <i class="info" onclick="pop(this,'Share at least this, but below Tier 2. Below Tier 3 earns nothing.')">i</i></th></tr></thead>
+      <tbody>
+        <tr><th>Min share</th><td class="val">70%</td><td class="val">50%</td><td class="val">20%</td></tr>
+        <tr><th>Deduction</th><td class="val">60%</td><td class="val">30%</td><td class="val">10%</td></tr>
+      </tbody>
+    </table>
+    <table id="tiers-edit" class="hide">
+      <thead><tr><th></th><th>Tier 1</th><th>Tier 2</th><th>Tier 3</th></tr></thead>
+      <tbody>
+        <tr><th>Min share</th>
+          <td><span class="suffix"><input class="cell" value="70"><span class="u">%</span></span></td>
+          <td><span class="suffix"><input class="cell" value="50"><span class="u">%</span></span></td>
+          <td><span class="suffix"><input class="cell" value="20"><span class="u">%</span></span></td></tr>
+        <tr><th>Deduction</th>
+          <td><span class="suffix"><input class="cell" value="60"><span class="u">%</span></span></td>
+          <td><span class="suffix"><input class="cell" value="30"><span class="u">%</span></span></td>
+          <td><span class="suffix"><input class="cell" value="10"><span class="u">%</span></span></td></tr>
+      </tbody>
+    </table>
+    <button id="tiers-save" class="save hide">Save</button>
+  </section>
+
+  <!-- Commission -->
+  <section>
+    <div class="sh"><div><h3>Commission</h3></div><button class="editbtn">Edit</button></div>
+    <table>
+      <thead><tr>
+        <th>Referred rate <i class="info" onclick="pop(this,'Commission on net revenue when the lead was referred to the business developer, who closed it.')">i</i></th>
+        <th>Self-generated rate <i class="info" onclick="pop(this,'Commission when the business developer both sourced and closed the work.')">i</i></th>
+        <th>Retainer months <i class="info" onclick="pop(this,'A retainer is commissioned on this many months of the half-year, once.')">i</i></th>
+        <th>Cycle months <i class="info" onclick="pop(this,'A cycle is this many months (a half-year).')">i</i></th>
+      </tr></thead>
+      <tbody><tr><td class="val">3%</td><td class="val">5%</td><td class="val">3</td><td class="val">6</td></tr></tbody>
+    </table>
+  </section>
+
+  <!-- Contributor limits -->
+  <section>
+    <div class="sh"><div><h3>Contributor limits</h3></div><button class="editbtn">Edit</button></div>
+    <table>
+      <thead><tr>
+        <th>Max total deduction <i class="info" onclick="pop(this,'Contributor deductions never exceed this; the Lead always keeps the rest.')">i</i></th>
+        <th>Payment cap <i class="info" onclick="pop(this,'A contributor payment is capped at this many months of their net salary. 0.5 = half a month.')">i</i></th>
+        <th>Payment floor <i class="info" onclick="pop(this,'Below this fraction of a month of net salary, no contributor payment is made. 0.05 = 5% of a month.')">i</i></th>
+      </tr></thead>
+      <tbody><tr><td class="val">60%</td><td class="val">0.5 mo</td><td class="val">0.05 mo</td></tr></tbody>
+    </table>
+  </section>
+
+  <!-- Profit share -->
+  <section>
+    <div class="sh"><div><h3>Profit share <span class="note">(proposed — shown, excluded from totals)</span></h3></div><button class="editbtn">Edit</button></div>
+    <table>
+      <thead><tr>
+        <th>Target margin <i class="info" onclick="pop(this,'Profit share pays one month at this net margin and above.')">i</i></th>
+        <th>Floor margin <i class="info" onclick="pop(this,'No profit share below this net margin.')">i</i></th>
+        <th>Ceiling <i class="info" onclick="pop(this,'Entitlement is capped at this many months.')">i</i></th>
+        <th>Lead-fee offset <i class="info" onclick="pop(this,'This share of the Lead fee offsets the profit-share entitlement.')">i</i></th>
+      </tr></thead>
+      <tbody><tr><td class="val">30%</td><td class="val">15%</td><td class="val">1 mo</td><td class="val">50%</td></tr></tbody>
+    </table>
+  </section>
+
+  <!-- Envelope & Other, compact -->
+  <section>
+    <div class="sh"><div><h3>Envelope &amp; margin gate</h3></div><button class="editbtn">Edit</button></div>
+    <table>
+      <thead><tr>
+        <th>Envelope rate <i class="info" onclick="pop(this,'The fee pool for a paying client = this share of the assignment gross profit.')">i</i></th>
+        <th>Margin gate <i class="info" onclick="pop(this,'A client only generates a fee at or above this gross margin.')">i</i></th>
+        <th>Vendor markup min <i class="info" onclick="pop(this,'Minimum markup expected on an external vendor pass-through cost.')">i</i></th>
+        <th>Pricing floor <i class="info" onclick="pop(this,'Bill at least this multiple of consultant cost per hour.')">i</i></th>
+      </tr></thead>
+      <tbody><tr><td class="val">3%</td><td class="val">70%</td><td class="val">10%</td><td class="val">3.33×</td></tr></tbody>
+    </table>
+  </section>
+
+  <!-- Upload / templates -->
+  <h2 style="margin-top:34px">Templates &amp; upload — tweaks</h2>
+  <p class="lead"><b>Download all</b> grabs the three templates at once; when you pick a file its <b>name shows in navy</b> (not the muted native "No file chosen").</p>
+  <section>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn solid">⬇ Download all templates</button>
+      <button class="btn">people.csv</button><button class="btn">assignments.csv</button><button class="btn">contributions.csv</button>
+    </div>
+    <div class="uprow" style="margin-bottom:10px">
+      <span class="lbl">People <span style="color:var(--muted)">(21)</span></span>
+      <span class="filepick"><span class="fname">people-2026.csv</span><button class="browse" type="button">Choose…</button></span>
+      <button class="btn">Upload</button>
+    </div>
+    <div class="uprow">
+      <span class="lbl">Assignments <span style="color:var(--muted)">(0)</span></span>
+      <span class="filepick"><span class="fname empty">No file chosen</span><button class="browse" type="button">Choose…</button></span>
+      <button class="btn">Upload</button>
+    </div>
+  </section>
+</div>
+
+<script>
+  let openPop=null;
+  function pop(el,text){
+    if(openPop){openPop.remove();openPop=null;}
+    const p=document.createElement('div');p.className='pop';p.textContent=text;el.appendChild(p);openPop=p;
+    setTimeout(()=>document.addEventListener('click',close,{once:true}),0);
+    function close(e){if(p&&!p.contains(e.target)&&e.target!==el){p.remove();openPop=null;}}
+    event.stopPropagation();
+  }
+  function toggle(id,btn){
+    const read=document.getElementById(id+'-read'),edit=document.getElementById(id+'-edit'),save=document.getElementById(id+'-save');
+    const on=read.classList.contains('hide');
+    read.classList.toggle('hide',!on);edit.classList.toggle('hide',on);save.classList.toggle('hide',on);
+    btn.textContent=on?'Edit':'Done';
+  }
+</script>
