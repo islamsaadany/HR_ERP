@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/labels";
 import { LEAVE_STATUS_LABEL, LEAVE_STATUS_CLASS, dayCount, overlaps } from "@/lib/leave";
 import { approveLeaveRequest, declineLeaveRequest } from "../../time-off/actions";
-import { CollapsibleHeader } from "@/components/CollapsibleHeader";
+import { BackLink } from "@/components/admin/BackLink";
 
 export const dynamic = "force-dynamic";
 
@@ -56,13 +56,11 @@ export default async function AdminTimeOffPage({
   }
 
   return (
-    // Full-height flex column (desktop) so the table is the only scroller.
-    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
-      <CollapsibleHeader storageKey="admin:timeoff:header:collapsed" backHref="/admin" backLabel="Admin">
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin · Time-Off</p>
-        <h1 className="mt-1 font-serif text-3xl text-ink">All time-off requests</h1>
-        <p className="mt-1 text-muted">Every request across the company. You can approve or decline pending ones as a fallback.</p>
-      </CollapsibleHeader>
+    <div>
+      <BackLink href="/admin" label="Admin" />
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin · Time-Off</p>
+      <h1 className="mt-1 font-serif text-3xl text-ink">All time-off requests</h1>
+      <p className="mt-1 text-muted">Every request across the company. You can approve or decline pending ones as a fallback.</p>
 
       {/* Status filter */}
       <div className="mt-6 flex flex-wrap gap-2">
@@ -82,7 +80,7 @@ export default async function AdminTimeOffPage({
         ))}
       </div>
 
-      <div className="mt-4 ff-data-scroll rounded-xl border border-line bg-surface md:flex-1 md:min-h-0 md:!max-h-none">
+      <div className="mt-4 ff-data-scroll rounded-xl border border-line bg-surface">
         <table className="ff-data-table text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">

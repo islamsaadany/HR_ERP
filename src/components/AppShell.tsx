@@ -40,7 +40,10 @@ const isFullWidthRoute = (path: string) =>
  * remaining height. Desktop only (md+); mobile keeps normal page flow. Starting
  * with the employee registry; other data-table pages can opt in later.
  */
-const isSingleScrollRoute = (path: string) => path === "/admin/employees";
+const isSingleScrollRoute = (path: string) =>
+  path === "/admin/employees" ||
+  path === "/directory" ||
+  path === "/admin/time-off";
 
 export function AppShell({
   name,

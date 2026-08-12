@@ -3,7 +3,6 @@ import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
 import { getDepartments } from "@/lib/departments";
 import { DirectoryBrowser } from "@/components/DirectoryBrowser";
-import { CollapsibleHeader } from "@/components/CollapsibleHeader";
 
 export const dynamic = "force-dynamic";
 
@@ -29,15 +28,12 @@ export default async function DirectoryPage() {
   ]);
 
   return (
-    // Full-height flex column (desktop) so the table is the only scroller.
-    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
-      <CollapsibleHeader storageKey="directory:header:collapsed">
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
-          Team Directory
-        </p>
-        <h1 className="mt-1 font-serif text-3xl text-ink">The team</h1>
-        <p className="mt-1 text-muted">Find and reach your colleagues.</p>
-      </CollapsibleHeader>
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
+        Team Directory
+      </p>
+      <h1 className="mt-1 font-serif text-3xl text-ink">The team</h1>
+      <p className="mt-1 text-muted">Find and reach your colleagues.</p>
       <DirectoryBrowser people={people} departments={departments} />
     </div>
   );
