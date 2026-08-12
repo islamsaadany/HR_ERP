@@ -14,7 +14,34 @@
 export type AssignmentType = "PRJ" | "RET";
 
 /** All final rule constants, in one place (single source of truth). */
-export const INCENTIVE_RULES = {
+/**
+ * The editable shape of the incentive rules. `INCENTIVE_RULES` is the built-in
+ * default; an admin-saved `IncentiveConfig` row (see `config.ts`) produces the
+ * same shape at runtime. Every rule function accepts an optional `RuleConfig`
+ * and defaults to `INCENTIVE_RULES`, so nothing changes unless a value is edited.
+ */
+export type RuleConfig = {
+  envelopeRate: number;
+  marginGate: number;
+  contributorTiers: { min: number; deduction: number }[];
+  maxTotalDeduction: number;
+  contributorCapMonths: number;
+  contributorFloorMonths: number;
+  commissionReferred: number;
+  commissionSelfGenerated: number;
+  retainerCommissionMonths: number;
+  cycleMonths: number;
+  vendorMarkupMin: number;
+  profitShare: {
+    targetMargin: number;
+    floorMargin: number;
+    ceilingMonths: number;
+    leadFeeOffsetShare: number;
+  };
+  pricingFloorMultiple: number;
+};
+
+export const INCENTIVE_RULES: RuleConfig = {
   /** Compensation envelope = Gross Profit × 3%. */
   envelopeRate: 0.03,
   /** A client pays a Business Partner Fee only at ≥70% gross margin (binary). */
@@ -50,7 +77,7 @@ export const INCENTIVE_RULES = {
   },
   /** Pricing floor: bill at ≥ 3.33× consultant cost/hour (Appendix B guide). */
   pricingFloorMultiple: 3.33,
-} as const;
+};
 
 /**
  * Round to 2 decimals using round-half-to-even (banker's rounding), which is
@@ -90,14 +117,14 @@ export function netRevenue(revenue: number, vendorCost: number): number {
 }
 
 /** The envelope for an assignment. Zero if the 70% margin gate is not cleared. */
-export function envelope(revenue: number, directCost: number): number {
-  if (grossMargin(revenue, directCost) < INCENTIVE_RULES.marginGate) return 0;
-  return money(grossProfit(revenue, directCost) * INCENTIVE_RULES.envelopeRate);
+export function envelope(revenue: number, directCost: number, cfg: RuleConfig = INCENTIVE_RULES): number {
+  if (grossMargin(revenue, directCost) < cfg.marginGate) return 0;
+  return money(grossProfit(revenue, directCost) * cfg.envelopeRate);
 }
 
 /** The deduction a single contributor's share implies (0 under 20%). */
-export function tierDeduction(contributionShare: number): number {
-  for (const tier of INCENTIVE_RULES.contributorTiers) {
+export function tierDeduction(contributionShare: number, cfg: RuleConfig = INCENTIVE_RULES): number {
+  for (const tier of cfg.contributorTiers) {
     if (contributionShare >= tier.min) return tier.deduction;
   }
   return 0;
@@ -170,10 +197,10 @@ export type AssignmentResult = {
  * Assumes `contributions` are already validated to total 1 (the import layer
  * flags and blocks anything that does not reconcile).
  */
-export function computeAssignment(a: AssignmentInput): AssignmentResult {
+export function computeAssignment(a: AssignmentInput, cfg: RuleConfig = INCENTIVE_RULES): AssignmentResult {
   const gp = grossProfit(a.revenue, a.directCost);
   const marginPct = grossMargin(a.revenue, a.directCost);
-  const marginGatePassed = marginPct >= INCENTIVE_RULES.marginGate;
+  const marginGatePassed = marginPct >= cfg.marginGate;
   const net = netRevenue(a.revenue, a.vendorCost ?? 0);
 
   // Nothing triggers until the assignment is payable (closed project / active retainer).
@@ -198,7 +225,7 @@ export function computeAssignment(a: AssignmentInput): AssignmentResult {
     };
   }
 
-  const env = envelope(a.revenue, a.directCost);
+  const env = envelope(a.revenue, a.directCost, cfg);
 
   // Contributors are everyone on the assignment other than the Lead. The Lead's
   // own contribution is recorded but earns no allocation and drives no deduction.
@@ -206,15 +233,15 @@ export function computeAssignment(a: AssignmentInput): AssignmentResult {
   const contributors = a.contributions.filter((c) => c.name.trim().toLowerCase() !== leadKey);
 
   let totalDeduction = 0;
-  for (const c of contributors) totalDeduction += tierDeduction(c.share);
-  totalDeduction = Math.min(totalDeduction, INCENTIVE_RULES.maxTotalDeduction);
+  for (const c of contributors) totalDeduction += tierDeduction(c.share, cfg);
+  totalDeduction = Math.min(totalDeduction, cfg.maxTotalDeduction);
 
   const contributorResults: ContributorResult[] = contributors.map((c) => {
-    const tier = tierDeduction(c.share);
+    const tier = tierDeduction(c.share, cfg);
     const allocation = money(env * tier);
     const salary = a.salaries[c.name] ?? a.salaries[c.name.trim()] ?? 0;
-    const floor = salary * INCENTIVE_RULES.contributorFloorMonths;
-    const cap = salary * INCENTIVE_RULES.contributorCapMonths;
+    const floor = salary * cfg.contributorFloorMonths;
+    const cap = salary * cfg.contributorCapMonths;
     let payment = allocation;
     let flooredToZero = false;
     let capped = false;
@@ -242,12 +269,12 @@ export function computeAssignment(a: AssignmentInput): AssignmentResult {
   // Commission — protected, independent of the gates and of Part 1.
   const selfGenerated = a.bd.trim().toLowerCase() === a.leadSource.trim().toLowerCase();
   const rate = selfGenerated
-    ? INCENTIVE_RULES.commissionSelfGenerated
-    : INCENTIVE_RULES.commissionReferred;
+    ? cfg.commissionSelfGenerated
+    : cfg.commissionReferred;
   // Projects: full net revenue. Retainers: first three months of the half, once.
   const base =
     a.type === "RET"
-      ? net * (INCENTIVE_RULES.retainerCommissionMonths / INCENTIVE_RULES.cycleMonths)
+      ? net * (cfg.retainerCommissionMonths / cfg.cycleMonths)
       : net;
   const commission: CommissionResult = {
     earner: a.bd,
@@ -284,8 +311,12 @@ export function computeAssignment(a: AssignmentInput): AssignmentResult {
  * Entitlement = (Net Margin ÷ 30%) × one month net salary,
  * floored at 15% (nothing below) and ceilinged at one month (30% and above).
  */
-export function profitShareEntitlement(netMarginPct: number, monthlyNetSalary: number): number {
-  const { floorMargin, targetMargin, ceilingMonths } = INCENTIVE_RULES.profitShare;
+export function profitShareEntitlement(
+  netMarginPct: number,
+  monthlyNetSalary: number,
+  cfg: RuleConfig = INCENTIVE_RULES
+): number {
+  const { floorMargin, targetMargin, ceilingMonths } = cfg.profitShare;
   if (netMarginPct < floorMargin) return 0;
   const months = Math.min(netMarginPct / targetMargin, ceilingMonths);
   return money(months * monthlyNetSalary);

@@ -623,6 +623,38 @@ model IncentiveContribution {
   @@index([cycleId])
 }
 
+/// Editable incentive-scheme rule constants (singleton, id = "singleton"). Mirrors
+/// the built-in `INCENTIVE_RULES` defaults; the row only exists once a Super User
+/// saves. `getIncentiveConfig()` falls back to the defaults when the row is absent,
+/// so the engine is unchanged until a value is deliberately edited. Super-User edit only.
+model IncentiveConfig {
+  id                       String   @id @default("singleton")
+  envelopeRate             Float
+  marginGate               Float
+  // Contributor tiers 1–3 (share threshold → deduction). Tier 4 (under t3, → 0) is implicit.
+  tier1Min                 Float
+  tier1Deduction           Float
+  tier2Min                 Float
+  tier2Deduction           Float
+  tier3Min                 Float
+  tier3Deduction           Float
+  maxTotalDeduction        Float
+  contributorCapMonths     Float
+  contributorFloorMonths   Float
+  commissionReferred       Float
+  commissionSelfGenerated  Float
+  retainerCommissionMonths Int
+  cycleMonths              Int
+  vendorMarkupMin          Float
+  profitTargetMargin       Float
+  profitFloorMargin        Float
+  profitCeilingMonths      Float
+  profitLeadFeeOffsetShare Float
+  pricingFloorMultiple     Float
+  updatedAt                DateTime @updatedAt
+  updatedById              String?
+}
+
 // ─── Module release switch (super-user) ─────────────────────────────────────
 /// On/off flag per platform module, so a super user can build in the background
 /// and release modules when ready. Absent row = enabled (default on).

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireIncentiveAccess } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { computeCycle, type CycleAssignment } from "@/lib/incentive/compute";
+import { getIncentiveConfig } from "@/lib/incentive/config";
 import type { AssignmentType } from "@/lib/incentive/rules";
 import { CycleReportView } from "@/components/incentive/CycleReport";
 import { FirmFiguresCard } from "@/components/incentive/FirmFiguresCard";
@@ -28,6 +29,8 @@ export default async function CyclePage({
   });
   if (!cycle) notFound();
 
+  const incentiveConfig = await getIncentiveConfig();
+
   const report = computeCycle(
     cycle.people.map((p) => ({
       name: p.name,
@@ -51,7 +54,8 @@ export default async function CyclePage({
       })
     ),
     cycle.contributions.map((c) => ({ client: c.client, person: c.person, share: c.share })),
-    { revenue: cycle.revenue, deliveryCost: cycle.deliveryCost, totalExpenses: cycle.totalExpenses }
+    { revenue: cycle.revenue, deliveryCost: cycle.deliveryCost, totalExpenses: cycle.totalExpenses },
+    incentiveConfig
   );
 
   const saveFirm = saveFirmFigures.bind(null, cycle.id);

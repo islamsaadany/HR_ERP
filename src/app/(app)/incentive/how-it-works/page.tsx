@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireIncentiveAccess } from "@/lib/roles";
-import { INCENTIVE_RULES } from "@/lib/incentive/rules";
+import { getIncentiveConfig } from "@/lib/incentive/config";
 import { PrintButton } from "@/components/benefits/PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ const pct = (f: number) => `${+(f * 100).toFixed(2)}%`;
 
 export default async function IncentiveHowItWorks() {
   await requireIncentiveAccess();
-  const R = INCENTIVE_RULES;
+  const R = await getIncentiveConfig();
 
   const H2 = "mt-8 font-serif text-xl text-ink";
   const card = "mt-3 rounded-xl border border-line bg-surface p-5 text-sm leading-relaxed text-ink";
