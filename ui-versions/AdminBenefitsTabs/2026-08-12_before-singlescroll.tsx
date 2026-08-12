@@ -22,8 +22,8 @@ export function AdminBenefitsTabs({
       : "text-muted hover:text-navy-700");
 
   return (
-    <div className="mt-6 md:flex md:min-h-0 md:flex-1 md:flex-col">
-      <div role="tablist" className="flex gap-6 border-b border-line pt-1 md:shrink-0">
+    <div className="mt-6">
+      <div role="tablist" className="flex gap-6 border-b border-line pt-1">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -43,7 +43,7 @@ export function AdminBenefitsTabs({
         ))}
       </div>
       {tabs.map((t) => (
-        <div key={t.id} className={active === t.id ? "mt-6 md:flex md:min-h-0 md:flex-1 md:flex-col" : "hidden"}>
+        <div key={t.id} className={active === t.id ? "mt-6" : "hidden"}>
           {t.node}
         </div>
       ))}

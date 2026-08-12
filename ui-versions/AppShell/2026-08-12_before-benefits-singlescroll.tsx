@@ -32,7 +32,6 @@ const isFullWidthRoute = (path: string) =>
   path.startsWith("/incentive/") ||
   path === "/directory" ||
   path === "/admin/time-off" ||
-  path === "/admin/benefits" ||
   path === "/admin/benefits/release";
 
 /**
@@ -44,8 +43,7 @@ const isFullWidthRoute = (path: string) =>
 const isSingleScrollRoute = (path: string) =>
   path === "/admin/employees" ||
   path === "/directory" ||
-  path === "/admin/time-off" ||
-  path === "/admin/benefits";
+  path === "/admin/time-off";
 
 export function AppShell({
   name,

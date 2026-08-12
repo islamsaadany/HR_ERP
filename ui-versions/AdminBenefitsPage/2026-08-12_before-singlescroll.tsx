@@ -546,7 +546,7 @@ export default async function AdminBenefitsPage({
   );
 
   return (
-    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
+    <div>
       <BackLink href="/admin" label="Admin" />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -587,15 +587,9 @@ export default async function AdminBenefitsPage({
 
       <AdminBenefitsTabs
         tabs={[
-          {
-            id: "submissions",
-            label: "Submissions & Claims",
-            badge: claimsToReview,
-            // Non-table tabs get their own scroll region so the pinned page never scrolls.
-            node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{submissionsPanel}</div>,
-          },
+          { id: "submissions", label: "Submissions & Claims", badge: claimsToReview, node: submissionsPanel },
           { id: "catalogue", label: "Benefits Catalogue", node: cataloguePanel },
-          { id: "amounts", label: "Amounts", node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{amountsPanel}</div> },
+          { id: "amounts", label: "Amounts", node: amountsPanel },
         ]}
       />
     </div>
