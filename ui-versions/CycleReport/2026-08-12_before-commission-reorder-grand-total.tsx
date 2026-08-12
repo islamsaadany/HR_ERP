@@ -52,7 +52,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 /** Section ids drive the collapse state and Expand/Collapse-all. */
-const SECTION_IDS = ["review", "bpf", "contrib", "commission", "byPerson", "firm", "profitShare", "costRecovery", "watch"] as const;
+const SECTION_IDS = ["review", "bpf", "contrib", "byPerson", "firm", "commission", "profitShare", "costRecovery", "watch"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 
 function Chevron({ open }: { open: boolean }) {
@@ -427,27 +427,10 @@ export function CycleReportView({
         </div>
       </Section>
 
-      {/* 4. Commission by person — sits directly above By person so the commission
-          figures are read before the per-person totals that fold them in. */}
-      {r.commissionByPerson.length > 0 && (
-        <Section title="Commission by person" subtitle="protected — independent of the gates" open={open.commission} onToggle={() => toggle("commission")}>
-          <div className={scrollWrap}>
-            <table className="ff-data-table min-w-full divide-y divide-line">
-              <tbody className="divide-y divide-line">
-                {r.commissionByPerson.map((c) => (
-                  <tr key={c.name}><td className={td}>{c.name}</td><td className={tdr}>{m(c.amount)}</td></tr>
-                ))}
-                <tr className="bg-navy-50/40 font-semibold"><td className={td}>Total</td><td className={tdr}>{m(r.totals.commission)}</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </Section>
-      )}
-
-      {/* 5. By person */}
+      {/* 4. By person */}
       <Section
         title="By person"
-        subtitle="released compensation, plus commission folded into the grand total"
+        subtitle="released compensation (excludes commission, which is protected)"
         open={open.byPerson}
         onToggle={() => toggle("byPerson")}
         action={
@@ -466,7 +449,7 @@ export function CycleReportView({
                 <th className={th}>Person</th><th className={th + " text-right"}>Salary</th>
                 <th className={th + " text-right"}>Lead fee</th><th className={th + " text-right"}>Contributor</th>
                 <th className={th + " text-right"}>Total</th><th className={th + " text-right"}>Months</th>
-                <th className={th + " text-right"}>Commission</th><th className={th + " text-right"}>Grand total</th>
+                <th className={th + " text-right"}>Commission</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -479,7 +462,6 @@ export function CycleReportView({
                   <td className={tdr}>{m(p.total)}</td>
                   <td className={tdr}>{p.months || "—"}</td>
                   <td className={tdr}>{p.commission ? m(p.commission) : "—"}</td>
-                  <td className={tdr + " font-semibold"}>{m(p.total + p.commission)}</td>
                 </tr>
               ))}
             </tbody>
@@ -539,6 +521,22 @@ export function CycleReportView({
                   <td className={td}>Profit after scheme</td><td className={tdr}>{whole(firm.profitAfterScheme)}</td>
                   <td className={tdr}><PctCell value={pct(firm.profitAfterSchemePct)} calc={`${whole(firm.profitAfterScheme)} ÷ ${whole(firm.revenue)} (of revenue)`} /></td>
                 </tr>
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      )}
+
+      {/* 6. Commission by person */}
+      {r.commissionByPerson.length > 0 && (
+        <Section title="Commission by person" subtitle="protected — independent of the gates" open={open.commission} onToggle={() => toggle("commission")}>
+          <div className={scrollWrap}>
+            <table className="ff-data-table min-w-full divide-y divide-line">
+              <tbody className="divide-y divide-line">
+                {r.commissionByPerson.map((c) => (
+                  <tr key={c.name}><td className={td}>{c.name}</td><td className={tdr}>{m(c.amount)}</td></tr>
+                ))}
+                <tr className="bg-navy-50/40 font-semibold"><td className={td}>Total</td><td className={tdr}>{m(r.totals.commission)}</td></tr>
               </tbody>
             </table>
           </div>

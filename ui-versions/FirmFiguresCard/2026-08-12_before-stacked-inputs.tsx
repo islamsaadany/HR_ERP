@@ -38,7 +38,7 @@ export function FirmFiguresCard({
             Edit
           </button>
         </div>
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 grid grid-cols-3 gap-2">
           <Figure label="Revenue" value={revenue} />
           <Figure label="Direct cost" value={deliveryCost} />
           <Figure label="Total expenses" value={totalExpenses} />
@@ -50,18 +50,18 @@ export function FirmFiguresCard({
   return (
     <form action={action} className="rounded-xl border border-line bg-surface p-4">
       <div className="text-sm font-semibold text-ink">Firm P&amp;L</div>
-      <div className="mt-3 space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <label className="text-[11px] uppercase tracking-wide text-muted">Revenue</label>
-          <input name="revenue" defaultValue={revenue ?? ""} className={input + " w-full max-w-[220px] text-right"} />
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <div>
+          <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Revenue</label>
+          <input name="revenue" defaultValue={revenue ?? ""} className={input + " w-full"} />
         </div>
-        <div className="flex items-center justify-between gap-3">
-          <label className="text-[11px] uppercase tracking-wide text-muted">Direct cost</label>
-          <input name="deliveryCost" defaultValue={deliveryCost ?? ""} className={input + " w-full max-w-[220px] text-right"} />
+        <div>
+          <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Direct cost</label>
+          <input name="deliveryCost" defaultValue={deliveryCost ?? ""} className={input + " w-full"} />
         </div>
-        <div className="flex items-center justify-between gap-3">
-          <label className="text-[11px] uppercase tracking-wide text-muted">Total expenses</label>
-          <input name="totalExpenses" defaultValue={totalExpenses ?? ""} className={input + " w-full max-w-[220px] text-right"} />
+        <div>
+          <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Total expenses</label>
+          <input name="totalExpenses" defaultValue={totalExpenses ?? ""} className={input + " w-full"} />
         </div>
       </div>
       <button className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">
@@ -73,9 +73,9 @@ export function FirmFiguresCard({
 
 function Figure({ label, value }: { label: string; value: number | null }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="text-[11px] uppercase tracking-wide text-muted">{label}</div>
-      <div className="w-full max-w-[220px] rounded-lg border border-line bg-paper px-3 py-2 text-right text-sm font-semibold tabular-nums text-ink">
+    <div>
+      <div className="mb-1 text-[11px] uppercase tracking-wide text-muted">{label}</div>
+      <div className="rounded-lg border border-line bg-paper px-3 py-2 text-sm font-semibold tabular-nums text-ink">
         {value == null ? "—" : value.toLocaleString()}
       </div>
     </div>
