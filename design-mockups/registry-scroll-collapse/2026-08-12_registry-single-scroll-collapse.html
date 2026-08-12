@@ -16,15 +16,7 @@
   .intro { max-width:1000px; margin:0 auto; padding:28px 24px 8px; }
   .intro h2 { font-family:var(--font-serif); font-size:22px; margin:0 0 6px; color:var(--navy-900); }
   .intro p { color:var(--muted); font-size:14px; line-height:1.55; margin:6px 0; }
-
-  .switcher { margin-top:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px; box-shadow:var(--shadow-card); }
-  .switcher .lab { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-600); margin-bottom:10px; }
-  .segs { display:flex; gap:8px; flex-wrap:wrap; }
-  .seg { border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:8px 13px; font-size:13px; font-weight:600; color:var(--navy-700); cursor:pointer; display:flex; align-items:center; gap:8px; }
-  .seg small { font-weight:500; color:var(--muted); }
-  .seg.active { border-color:var(--navy-800); background:var(--navy-800); color:#fff; }
-  .seg.active small { color:var(--navy-100); }
-  .switcher .note { margin-top:10px; font-size:12.5px; color:var(--muted); }
+  .intro b { color:var(--ink); }
 
   /* ---- Simulated app viewport ---- */
   .viewport {
@@ -39,33 +31,17 @@
 
   .main { flex:1; min-width:0; display:flex; flex-direction:column; padding:22px 26px; height:100%; }
 
-  .backrow { display:flex; align-items:center; gap:12px; flex:none; min-height:30px; }
+  .backrow { display:flex; align-items:center; gap:12px; flex:none; min-height:34px; }
   .backlink { color:var(--muted); font-size:13px; text-decoration:none; }
   .backlink:hover { color:var(--navy-700); }
 
-  /* ---- Collapse control variants (only the active one shows) ---- */
-  .ctl { margin-left:auto; display:none; align-items:center; cursor:pointer; }
-  body[data-variant="ghost"]   .ctl.ghost   { display:inline-flex; }
-  body[data-variant="icon"]    .ctl.icon    { display:inline-flex; }
-  body[data-variant="link"]    .ctl.link    { display:inline-flex; }
-
-  /* Variant A — ghost text + chevron (no border) */
-  .ctl.ghost { gap:7px; color:var(--navy-700); font-size:13px; font-weight:600; padding:5px 8px; border-radius:8px; }
-  .ctl.ghost:hover { background:var(--navy-50); }
-  .ctl.ghost svg { width:15px; height:15px; transition:transform .2s ease; }
-  body.collapsed .ctl.ghost svg { transform:rotate(180deg); }
-
-  /* Variant B — icon-only chevron chip */
-  .ctl.icon { width:32px; height:32px; justify-content:center; border-radius:9px; color:var(--navy-500); border:1px solid var(--line); background:var(--surface); }
-  .ctl.icon:hover { background:var(--navy-50); color:var(--navy-800); }
-  .ctl.icon svg { width:17px; height:17px; transition:transform .2s ease; }
-  body.collapsed .ctl.icon svg { transform:rotate(180deg); }
-
-  /* Variant C — plain underlined text (matches "Sign out" style) */
-  .ctl.link { gap:6px; color:var(--navy-500); font-size:12.5px; font-weight:600; text-decoration:underline; text-underline-offset:3px; }
-  .ctl.link:hover { color:var(--gold-600); }
-  .ctl.link svg { width:13px; height:13px; transition:transform .2s ease; }
-  body.collapsed .ctl.link svg { transform:rotate(180deg); }
+  /* Style B — icon-only chevron chip */
+  .ctl { margin-left:auto; display:inline-flex; align-items:center; justify-content:center;
+    width:32px; height:32px; border-radius:9px; cursor:pointer;
+    color:var(--navy-500); border:1px solid var(--line); background:var(--surface); }
+  .ctl:hover { background:var(--navy-50); color:var(--navy-800); }
+  .ctl svg { width:17px; height:17px; transition:transform .2s ease; }
+  body.collapsed .ctl svg { transform:rotate(180deg); }
 
   .titleblock { flex:none; overflow:hidden; transition:max-height .22s ease, opacity .18s ease, margin .22s ease; max-height:150px; opacity:1; margin-top:14px; }
   body.collapsed .titleblock { max-height:0; opacity:0; margin-top:0; }
@@ -98,18 +74,9 @@
 </style>
 
 <div class="intro">
-  <h2>Registry — pick a collapse control</h2>
-  <p>Same layout fix as before (one scrollbar, only the table scrolls). This version lets you compare <b>three less box-like styles</b> for the collapse control, and the label/tooltip now flips with state — it never says "Collapse" while already collapsed.</p>
-
-  <div class="switcher">
-    <div class="lab">Collapse control style</div>
-    <div class="segs">
-      <button class="seg active" data-set="ghost">A · Ghost text + chevron <small>borderless</small></button>
-      <button class="seg" data-set="icon">B · Icon-only chevron <small>tooltip</small></button>
-      <button class="seg" data-set="link">C · Underlined text <small>"Sign out" style</small></button>
-    </div>
-    <div class="note">Click a style, then use the control at the top-right of the frame (or press it again to expand). Watch the wording change: <b>Hide details ▲</b> ↔ <b>Show details ▼</b>.</div>
-  </div>
+  <h2>Registry — final: single scroll + icon collapse (Style B)</h2>
+  <p>One scrollbar — only the table scrolls, the outer page bar is gone. The collapse control is a small <b>icon-only chevron</b> at the top-right of the frame; since there's no visible label, the wording question is moot. Hover it for the tooltip, which flips <b>Hide header ↔ Show header</b>; the chevron rotates to show state.</p>
+  <p>Click the chevron: the eyebrow, <b>Employees</b> title and record count fold away; the <b>← Admin</b> back link, the CSV / Passwords / New-employee buttons, and the search + filters all stay. The preference is remembered per browser (like the sidebar collapse).</p>
 </div>
 
 <div class="viewport">
@@ -120,20 +87,8 @@
   <div class="main">
     <div class="backrow">
       <a href="#" class="backlink">← Admin</a>
-
-      <!-- A: ghost -->
-      <span class="ctl ghost" onclick="toggle()" title="">
-        <span class="lbl">Hide details</span>
+      <span class="ctl" id="ctl" onclick="toggle()" title="Hide header" aria-label="Hide header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-      </span>
-      <!-- B: icon-only -->
-      <span class="ctl icon" onclick="toggle()" title="Hide details" aria-label="Hide details">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-      </span>
-      <!-- C: link -->
-      <span class="ctl link" onclick="toggle()" title="">
-        <span class="lbl">Hide details</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
       </span>
     </div>
 
@@ -175,7 +130,6 @@
 </div>
 
 <script>
-  // rows
   var depts=["Consulting Department","Marketing & Community","Data Management Unit","Top Management","Financial Department","People Department"];
   var types=["Full-time","Part-time"];
   var tenures=["6 months – 2 years","2 – 4 years","4 – 7 years","—","7 – 10 years"];
@@ -187,24 +141,12 @@
   }
   document.getElementById("rows").innerHTML=html;
 
-  // state-aware label + tooltip
   function syncLabels(){
     var collapsed = document.body.classList.contains("collapsed");
-    var text = collapsed ? "Show details" : "Hide details";
-    document.querySelectorAll(".ctl .lbl").forEach(function(n){ n.textContent = text; });
-    document.querySelectorAll(".ctl").forEach(function(n){ n.setAttribute("title", text); n.setAttribute("aria-label", text); });
+    var text = collapsed ? "Show header" : "Hide header";
+    var ctl = document.getElementById("ctl");
+    ctl.setAttribute("title", text); ctl.setAttribute("aria-label", text);
   }
   function toggle(){ document.body.classList.toggle("collapsed"); syncLabels(); }
-
-  // variant switch
-  document.querySelectorAll(".seg").forEach(function(b){
-    b.addEventListener("click", function(){
-      document.querySelectorAll(".seg").forEach(function(x){ x.classList.remove("active"); });
-      b.classList.add("active");
-      document.body.setAttribute("data-variant", b.getAttribute("data-set"));
-    });
-  });
-
-  document.body.setAttribute("data-variant","ghost");
   syncLabels();
 </script>
