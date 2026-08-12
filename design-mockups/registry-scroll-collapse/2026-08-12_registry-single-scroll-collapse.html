@@ -1,0 +1,152 @@
+<title>Registry Scroll & Collapse</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-300:#7d97ba;
+    --navy-500:#2f4d78; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-300:#e0c05a; --gold-400:#d4ac39; --gold-500:#c9a227; --gold-600:#a8821e;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --shadow-card:0 1px 2px rgba(16,36,68,.04),0 1px 3px rgba(16,36,68,.06);
+    --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; }
+  body { background:var(--paper); color:var(--ink); font-family:var(--font-sans); -webkit-font-smoothing:antialiased; }
+
+  .intro { max-width:1000px; margin:0 auto; padding:28px 24px 8px; }
+  .intro h2 { font-family:var(--font-serif); font-size:22px; margin:0 0 6px; color:var(--navy-900); }
+  .intro p { color:var(--muted); font-size:14px; line-height:1.55; margin:6px 0; }
+  .intro b { color:var(--ink); }
+
+  /* ---- Simulated app viewport ---- */
+  .viewport {
+    max-width:1180px; margin:16px auto 40px; height:640px;
+    border:1px solid var(--line); border-radius:14px; overflow:hidden;
+    box-shadow:var(--shadow-card); background:var(--surface); display:flex;
+  }
+  .sidebar { width:56px; background:var(--navy-900); flex:none; display:flex; flex-direction:column; align-items:center; padding:14px 0; gap:14px; }
+  .sidebar .logo { width:30px; height:30px; border-radius:8px; background:var(--navy-800); color:var(--gold-400); font-family:var(--font-serif); font-size:16px; display:grid; place-items:center; }
+  .sidebar .dot { width:26px; height:26px; border-radius:7px; }
+  .sidebar .dot.on { background:var(--navy-800); }
+
+  .main { flex:1; min-width:0; display:flex; flex-direction:column; padding:22px 26px; height:100%; }
+
+  .backrow { display:flex; align-items:center; gap:12px; flex:none; min-height:34px; }
+  .backlink { color:var(--muted); font-size:13px; text-decoration:none; }
+  .backlink:hover { color:var(--navy-700); }
+
+  /* Style B — icon-only chevron chip */
+  .ctl { margin-left:auto; display:inline-flex; align-items:center; justify-content:center;
+    width:32px; height:32px; border-radius:9px; cursor:pointer;
+    color:var(--navy-500); border:1px solid var(--line); background:var(--surface); }
+  .ctl:hover { background:var(--navy-50); color:var(--navy-800); }
+  .ctl svg { width:17px; height:17px; transition:transform .2s ease; }
+  body.collapsed .ctl svg { transform:rotate(180deg); }
+
+  .titleblock { flex:none; overflow:hidden; transition:max-height .22s ease, opacity .18s ease, margin .22s ease; max-height:150px; opacity:1; margin-top:14px; }
+  body.collapsed .titleblock { max-height:0; opacity:0; margin-top:0; }
+  .titleblock .row { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--gold-600); text-transform:uppercase; }
+  .title { font-family:var(--font-serif); font-size:34px; line-height:1.1; margin:4px 0 2px; color:var(--navy-900); }
+  .count { font-size:13px; color:var(--muted); }
+  .actions { display:flex; gap:8px; flex:none; }
+  .btn { border:1px solid var(--line); background:var(--surface); color:var(--navy-700); font-size:13px; font-weight:600; padding:7px 12px; border-radius:9px; cursor:pointer; }
+  .btn.primary { background:var(--navy-800); color:#fff; border-color:var(--navy-800); }
+
+  .toolbar { flex:none; display:flex; gap:8px; align-items:center; margin-top:16px; flex-wrap:wrap; }
+  body.collapsed .toolbar { margin-top:4px; }
+  .search { flex:1; min-width:220px; border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:9px 12px; font-size:13px; color:var(--muted); }
+  .select { border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:9px 12px; font-size:13px; color:var(--navy-700); }
+
+  .hintline { flex:none; font-size:12px; color:var(--muted); margin-top:12px; }
+
+  .datascroll { flex:1; min-height:0; overflow:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-top:10px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  thead th { position:sticky; top:0; z-index:2; background:var(--navy-50); text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:11px 14px; border-bottom:1px solid var(--line); font-weight:700; }
+  tbody td { padding:11px 14px; border-bottom:1px solid var(--line); color:var(--ink); white-space:nowrap; }
+  tbody tr:hover td { background:var(--navy-50); }
+  td.name { font-weight:600; color:var(--navy-900); }
+  .pill { display:inline-block; background:var(--navy-50); color:var(--navy-700); border:1px solid var(--navy-100); border-radius:999px; padding:2px 9px; font-size:11px; font-weight:600; }
+  .open { color:var(--gold-600); font-weight:600; }
+  tbody tr > :first-child, thead tr > :first-child { position:sticky; left:0; background:var(--surface); box-shadow:1px 0 0 var(--line), 6px 0 8px -6px rgba(15,36,68,.16); }
+  thead tr > :first-child { background:var(--navy-50); z-index:3; }
+  tbody tr:hover > :first-child { background:var(--navy-50); }
+</style>
+
+<div class="intro">
+  <h2>Registry — final: single scroll + icon collapse (Style B)</h2>
+  <p>One scrollbar — only the table scrolls, the outer page bar is gone. The collapse control is a small <b>icon-only chevron</b> at the top-right of the frame; since there's no visible label, the wording question is moot. Hover it for the tooltip, which flips <b>Hide header ↔ Show header</b>; the chevron rotates to show state.</p>
+  <p>Click the chevron: the eyebrow, <b>Employees</b> title and record count fold away; the <b>← Admin</b> back link, the CSV / Passwords / New-employee buttons, and the search + filters all stay. The preference is remembered per browser (like the sidebar collapse).</p>
+</div>
+
+<div class="viewport">
+  <div class="sidebar">
+    <div class="logo">F</div>
+    <div class="dot"></div><div class="dot"></div><div class="dot on"></div><div class="dot"></div>
+  </div>
+  <div class="main">
+    <div class="backrow">
+      <a href="#" class="backlink">← Admin</a>
+      <span class="ctl" id="ctl" onclick="toggle()" title="Hide header" aria-label="Hide header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+      </span>
+    </div>
+
+    <div class="titleblock">
+      <div class="row">
+        <div>
+          <div class="eyebrow">Admin · Registry</div>
+          <div class="title">Employees</div>
+          <div class="count">21 records</div>
+        </div>
+        <div class="actions">
+          <button class="btn">CSV ▾</button>
+          <button class="btn">Passwords ▾</button>
+          <button class="btn primary">+ New employee</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">Search name, email, title…</div>
+      <div class="select">All departments ▾</div>
+      <div class="select">All types ▾</div>
+      <div class="select">All statuses ▾</div>
+      <div class="select">All roles ▾</div>
+      <div class="select">Columns ▾</div>
+    </div>
+
+    <div class="hintline">21 of 21 · click a cell to edit · click a header to sort · drag a header to reorder</div>
+
+    <div class="datascroll">
+      <table>
+        <thead>
+          <tr><th>Name ↕</th><th>Email</th><th>Department ↕</th><th>Type ↕</th><th>Tenure</th><th>End date</th><th>Status ↕</th><th></th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  var depts=["Consulting Department","Marketing & Community","Data Management Unit","Top Management","Financial Department","People Department"];
+  var types=["Full-time","Part-time"];
+  var tenures=["6 months – 2 years","2 – 4 years","4 – 7 years","—","7 – 10 years"];
+  var names=["Ahmed Galal","Alaa Allam","Aley eldeen Mahmoud","Islam Saadany","Michle Magdy","Mohamed Essam","Mohamed Yahia Selim","Momen Mohamed Zaki","Nermine Hazem","Noran Essam","Omar Alaa","Passant Mohammed","Raneem Sarhan","Reem El Barbary","Salma Adel","Sara Ibrahim","Tarek Nabil","Yara Mostafa","Youssef Kamal","Ziad Hassan","Nada Fathy"];
+  var html="";
+  for (var i=0;i<names.length;i++){
+    var first=names[i].split(" ")[0].toLowerCase();
+    html+="<tr><td class='name'>"+names[i]+"</td><td>"+first+"@forefront.consulting</td><td>"+depts[i%depts.length]+"</td><td>"+types[i%2]+"</td><td>"+tenures[i%tenures.length]+"</td><td>—</td><td><span class='pill'>Active</span></td><td class='open'>Open</td></tr>";
+  }
+  document.getElementById("rows").innerHTML=html;
+
+  function syncLabels(){
+    var collapsed = document.body.classList.contains("collapsed");
+    var text = collapsed ? "Show header" : "Hide header";
+    var ctl = document.getElementById("ctl");
+    ctl.setAttribute("title", text); ctl.setAttribute("aria-label", text);
+  }
+  function toggle(){ document.body.classList.toggle("collapsed"); syncLabels(); }
+  syncLabels();
+</script>

@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { toDateInput } from "@/lib/labels";
 import { getDepartments, unionDepartments } from "@/lib/departments";
 import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
-import { BackLink } from "@/components/admin/BackLink";
 import { EmployeeGrid, type GridRow } from "@/components/admin/EmployeeGrid";
 import { RegistryHeader } from "@/components/admin/RegistryHeader";
 
@@ -79,9 +78,15 @@ export default async function EmployeesPage() {
   );
 
   return (
-    <div>
-      <BackLink href="/admin" label="Admin" />
-      <RegistryHeader employeeCount={employees.length} canResetAll={isSuperUser(actor.role)} />
+    // Full-height flex column (desktop) so the grid fills the leftover space and
+    // is the only scroller; mobile keeps normal page flow.
+    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
+      <RegistryHeader
+        employeeCount={employees.length}
+        canResetAll={isSuperUser(actor.role)}
+        backHref="/admin"
+        backLabel="Admin"
+      />
 
       <EmployeeGrid
         rows={rows}

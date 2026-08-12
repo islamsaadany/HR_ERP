@@ -28,7 +28,8 @@ export default async function DirectoryPage() {
   ]);
 
   return (
-    <div>
+    // Full-height flex column (desktop) so the table is the only scroller.
+    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
         Team Directory
       </p>

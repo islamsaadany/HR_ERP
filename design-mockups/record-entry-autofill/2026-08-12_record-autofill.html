@@ -1,0 +1,84 @@
+<title>Record Entry — Auto-fill</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-500:#2f4d78;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-600:#a8821e;--paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;--green-700:#2f7a4d;
+    --shadow:0 10px 40px rgba(10,26,48,.18);--font-serif:"Iowan Old Style",Georgia,serif;--font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;padding:26px 18px 60px;}
+  .wrap{max-width:720px;margin:0 auto;}
+  h2{font-family:var(--font-serif);font-size:22px;margin:0 0 6px;}
+  .lead{color:var(--muted);font-size:14px;line-height:1.55;margin:6px 0 16px;}.lead b{color:var(--ink);}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin:0 0 14px 8px;}
+  .seg button{border:none;background:var(--surface);color:var(--navy-700);font-size:12.5px;font-weight:600;padding:6px 12px;cursor:pointer;}
+  .seg button.on{background:var(--navy-800);color:#fff;}
+  .modal{border:1px solid var(--line);background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:24px;}
+  .mh{font-family:var(--font-serif);font-size:22px;margin:0 0 14px;}
+  .row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;}
+  .fld{min-width:150px;flex:1;}label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px;}
+  select,input{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:14px;background:var(--surface);color:var(--ink);}
+  .amt{position:relative;}
+  .amt input{font-weight:700;color:var(--navy-900);font-variant-numeric:tabular-nums;border-color:var(--navy-200,#aebfd6);background:linear-gradient(0deg,var(--navy-50),var(--surface));}
+  .amt .badge{position:absolute;right:10px;top:-9px;background:var(--green-700);color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;}
+  .btn{border:none;background:var(--navy-800);color:#fff;font-size:14px;font-weight:600;padding:10px 18px;border-radius:9px;cursor:pointer;}
+  .deps{margin-top:14px;border:1px dashed var(--navy-200,#aebfd6);border-radius:12px;background:linear-gradient(0deg,var(--navy-50),transparent);padding:12px 14px;}
+  .deps .h{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--gold-600);margin-bottom:8px;}
+  .dep{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:14px;}
+  .dep input{width:auto;}.dep .age{margin-left:auto;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .foot{margin-top:14px;font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .hide{display:none!important;}
+</style>
+<div class="wrap">
+  <h2>Record entry — value auto-fills, HR can adjust</h2>
+  <p class="lead">Pick employee + benefit and the <b>Amount auto-fills</b> with the calculated value (still editable for a manual tweak). Medical adds a <b>dependant picker</b> and re-prices as you toggle. Choose a benefit:
+    <span class="seg"><button id="b-sum" class="on" onclick="mode('summer')">Summer allowance</button><button id="b-med" onclick="mode('medical')">Medical insurance</button></span>
+  </p>
+
+  <div class="modal">
+    <div class="mh">Record a past claim / release</div>
+    <div class="row">
+      <div class="fld"><label>Employee</label><select><option>Islam Saadany</option></select></div>
+      <div class="fld"><label>Benefit</label><select id="ben"><option id="o-sum">Summer allowance</option><option id="o-med">Medical insurance</option></select></div>
+    </div>
+
+    <!-- medical dependant picker -->
+    <div class="deps hide" id="deps">
+      <div class="h">Who is covered? — premium re-prices as you change this</div>
+      <div class="dep"><input type="checkbox" checked disabled><span>Islam Saadany (employee)</span><span class="age">age 37 · EGP 11,192</span></div>
+      <div class="dep"><input type="checkbox" checked onchange="price()" id="d-spouse"><span>Spouse · Nour</span><span class="age">age 34 · EGP 11,192</span></div>
+      <div class="dep"><input type="checkbox" checked onchange="price()" id="d-child"><span>Child · Yassin</span><span class="age">age 6 · EGP 3,990</span></div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <div class="fld amt" style="max-width:220px">
+        <span class="badge">Calculated</span>
+        <label id="amt-label">Amount (covered)</label>
+        <input id="amt" value="8,000">
+      </div>
+      <div class="fld" style="max-width:190px"><label>Approval date</label><input type="date" value="2026-01-15"></div>
+      <button class="btn">Record</button>
+    </div>
+
+    <p class="foot" id="foot">The amount is pre-filled from the employee&rsquo;s band for Summer allowance. Adjust it if the actual figure differed.</p>
+  </div>
+</div>
+<script>
+  function mode(m){
+    document.getElementById('b-sum').classList.toggle('on',m==='summer');
+    document.getElementById('b-med').classList.toggle('on',m==='medical');
+    document.getElementById('ben').selectedIndex=m==='medical'?1:0;
+    const med=m==='medical';
+    document.getElementById('deps').classList.toggle('hide',!med);
+    document.getElementById('foot').textContent = med
+      ? 'The amount is priced automatically from the covered people’s age bands (see above) and prorated like a live commit. Adjust it if the recorded premium differed.'
+      : 'The amount is pre-filled from the employee’s band for Summer allowance. Adjust it if the actual figure differed.';
+    if(med) price(); else document.getElementById('amt').value='8,000';
+  }
+  function price(){
+    let t=11192;
+    if(document.getElementById('d-spouse').checked)t+=11192;
+    if(document.getElementById('d-child').checked)t+=3990;
+    document.getElementById('amt').value=t.toLocaleString();
+  }
+</script>

@@ -1,0 +1,119 @@
+<title>Employment Details Arrangement</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-300:#7d97ba; --navy-500:#2f4d78;
+    --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-400:#d4ac39; --gold-600:#a8821e;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --green-bg:#e6f3ea; --green-line:#bfe0c9; --green-ink:#2f7a4d; --green-dot:#3a9c62;
+    --shadow-card:0 1px 2px rgba(16,36,68,.04),0 1px 3px rgba(16,36,68,.06);
+    --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; }
+  body { background:var(--paper); color:var(--ink); font-family:var(--font-sans); -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:760px; margin:0 auto; padding:28px 22px 60px; }
+  h2 { font-family:var(--font-serif); font-size:22px; margin:0 0 6px; color:var(--navy-900); }
+  .lead { color:var(--muted); font-size:14px; line-height:1.55; margin:6px 0 18px; }
+  .lead b { color:var(--ink); }
+
+  section.card { border:1px solid var(--line); border-radius:14px; background:var(--surface); padding:24px; box-shadow:var(--shadow-card); }
+  .cardhead { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+  .cardhead h3 { font-family:var(--font-serif); font-size:18px; margin:0; color:var(--ink); font-weight:500; }
+
+  .badge { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:4px 11px; font-size:12px; font-weight:700; letter-spacing:.02em; }
+  .badge .dot { width:7px; height:7px; border-radius:50%; }
+  .badge.active { background:var(--green-bg); color:var(--green-ink); border:1px solid var(--green-line); }
+  .badge.active .dot { background:var(--green-dot); }
+  .badge.left { background:var(--navy-50); color:var(--muted); border:1px solid var(--line); }
+  .badge.left .dot { background:var(--navy-300); }
+
+  .grid { display:grid; gap:16px; grid-template-columns:1fr 1fr; }
+  .full { grid-column:1 / -1; }
+  label { display:block; font-size:12px; font-weight:600; color:var(--navy-700); margin-bottom:6px; }
+  .inp, select.inp { width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 11px; font-size:14px; background:var(--surface); color:var(--ink); }
+  .ro { width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 11px; font-size:14px; background:var(--navy-50); color:var(--navy-800); font-weight:600; }
+  .cap { margin-top:5px; font-size:11px; color:var(--muted); }
+
+  .derive { grid-column:1 / -1; border:1px dashed var(--navy-200); border-radius:12px; background:linear-gradient(0deg,var(--navy-50),transparent); padding:14px 16px; }
+  .derive .gh { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-600); margin-bottom:12px; }
+  .derive .pair { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:560px){ .grid,.derive .pair{ grid-template-columns:1fr; } }
+</style>
+
+<div class="wrap">
+  <h2>Employment details — new layout</h2>
+  <p class="lead">Order: <b>Employment type</b> → <b>Start &amp; End date</b> (side by side) → <b>Years of service &amp; Tenure band</b> (derived, read-only) → <b>Reports to &amp; Role</b> → <b>Monthly salary</b>. The old Status field is gone — it's now a small <b>green Active badge</b> at the top-right of the section, which flips to a muted <b>Left</b> pill once an end date is entered.</p>
+  <p class="lead"><b>Try it:</b> set the <b>End date</b> below and watch the badge change Active → Left.</p>
+
+  <section class="card">
+    <div class="cardhead">
+      <h3>Employment</h3>
+      <span class="badge active" id="badge"><span class="dot"></span><span id="badgeText">Active</span></span>
+    </div>
+
+    <div class="grid">
+      <!-- 1. Employment type -->
+      <div>
+        <label>Employment type</label>
+        <select class="inp"><option>Full-time</option><option>Part-time</option></select>
+      </div>
+      <div></div>
+
+      <!-- 2. Start date | End date -->
+      <div>
+        <label>Start date</label>
+        <input class="inp" type="date" value="2022-04-01" id="start" />
+      </div>
+      <div>
+        <label>End date</label>
+        <input class="inp" type="date" id="end" />
+        <div class="cap">Setting an end date marks the employee as Left.</div>
+      </div>
+
+      <!-- 3. Years of service | Tenure band (derived) -->
+      <div class="derive">
+        <div class="gh">Calculated from the start date</div>
+        <div class="pair">
+          <div>
+            <label>Years of service</label>
+            <div class="ro">3 years 4 months</div>
+          </div>
+          <div>
+            <label>Tenure band</label>
+            <div class="ro">2 – 4 years</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Reports to | Role -->
+      <div>
+        <label>Reports to</label>
+        <select class="inp"><option>—</option><option>Islam Saadany</option></select>
+      </div>
+      <div>
+        <label>Role</label>
+        <select class="inp"><option>Employee</option><option>HR Admin</option></select>
+      </div>
+
+      <!-- 5. Monthly salary (bottom) -->
+      <div>
+        <label>Monthly salary (EGP)</label>
+        <input class="inp" inputmode="numeric" value="" />
+      </div>
+      <div></div>
+    </div>
+  </section>
+
+  <p class="lead" style="margin-top:22px;">Badge placement is my suggestion — top-right of the Employment card so it sits with the section it describes. Alternatives if you prefer: next to the employee's name at the very top of the page, or inline on the End-date row. <b>Years of service</b> counts start → today (or → end date if Left), shown as “3 years 4 months”; under a month → “less than a month”; no start date → “—”.</p>
+</div>
+
+<script>
+  var end=document.getElementById("end"), badge=document.getElementById("badge"), txt=document.getElementById("badgeText");
+  end.addEventListener("input", function(){
+    var left = !!end.value;
+    badge.className = "badge " + (left ? "left" : "active");
+    txt.textContent = left ? "Left" : "Active";
+  });
+</script>

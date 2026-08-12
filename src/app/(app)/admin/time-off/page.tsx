@@ -56,7 +56,8 @@ export default async function AdminTimeOffPage({
   }
 
   return (
-    <div>
+    // Full-height flex column (desktop) so the table is the only scroller.
+    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
       <BackLink href="/admin" label="Admin" />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin · Time-Off</p>
       <h1 className="mt-1 font-serif text-3xl text-ink">All time-off requests</h1>
@@ -80,7 +81,7 @@ export default async function AdminTimeOffPage({
         ))}
       </div>
 
-      <div className="mt-4 ff-data-scroll rounded-xl border border-line bg-surface">
+      <div className="mt-4 ff-data-scroll rounded-xl border border-line bg-surface md:flex-1 md:min-h-0 md:!max-h-none">
         <table className="ff-data-table text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">

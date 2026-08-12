@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import type { ActionState } from "@/app/(app)/admin/employees/actions";
-import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
+import { deriveTenureBand, statusFromEndDate, formatYearsOfService } from "@/lib/tenure";
 import { TENURE_BAND_LABEL, STATUS_LABEL } from "@/lib/labels";
 
 type Dep = { name: string | null; dateOfBirth: string; kind: "CHILD" | "SPOUSE" };
@@ -69,6 +69,11 @@ export function EmployeeForm({
   const [endDate, setEndDate] = useState(values.endDate ?? "");
   const derivedBand = deriveTenureBand(startDate ? new Date(startDate) : null).band;
   const derivedStatus = statusFromEndDate(endDate ? new Date(endDate) : null);
+  const yearsOfService = formatYearsOfService(
+    startDate ? new Date(startDate) : null,
+    endDate ? new Date(endDate) : null
+  );
+  const isActive = derivedStatus === "ACTIVE";
   const RO = "w-full rounded-lg border border-line bg-paper px-3 py-2 text-sm text-ink";
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     action,
@@ -136,8 +141,27 @@ export function EmployeeForm({
       </section>
 
       <section className="rounded-xl border border-line bg-surface p-6">
-        <h2 className="mb-4 font-serif text-lg text-ink">Employment</h2>
+        {/* Status is no longer a field — it shows as a badge here, driven by the end date. */}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-serif text-lg text-ink">Employment</h2>
+          <span
+            className={
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold " +
+              (isActive
+                ? "border-green-200 bg-green-50 text-green-700"
+                : "border-line bg-navy-50 text-muted")
+            }
+          >
+            <span
+              className={"h-1.5 w-1.5 rounded-full " + (isActive ? "bg-green-500" : "bg-navy-300")}
+              aria-hidden="true"
+            />
+            {STATUS_LABEL[derivedStatus]}
+          </span>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
+          {/* Employment type + Monthly salary (salary is Super-User-only) */}
           <div>
             <label className={L}>Employment type</label>
             <select name="employmentType" defaultValue={values.employmentType ?? ""} className={I}>
@@ -146,13 +170,16 @@ export function EmployeeForm({
               <option value="PART_TIME">Part-time</option>
             </select>
           </div>
-          <div>
-            <label className={L}>Tenure band</label>
-            <div className={RO} aria-readonly="true">
-              {derivedBand ? TENURE_BAND_LABEL[derivedBand] : "—"}
+          {canSeeSalary ? (
+            <div>
+              <label className={L}>Monthly salary (EGP)</label>
+              <input name="monthlySalary" inputMode="numeric" defaultValue={values.monthlySalary ?? ""} className={I} />
             </div>
-            <p className="mt-1 text-[11px] text-muted">Calculated automatically from the start date.</p>
-          </div>
+          ) : (
+            <div />
+          )}
+
+          {/* Start & End date side by side — the start date drives the values below. */}
           <div>
             <label className={L}>Start date</label>
             <input
@@ -174,17 +201,27 @@ export function EmployeeForm({
             />
             <p className="mt-1 text-[11px] text-muted">Setting an end date marks the employee as Left.</p>
           </div>
-          {canSeeSalary ? (
-            <div>
-              <label className={L}>Monthly salary (EGP)</label>
-              <input name="monthlySalary" inputMode="numeric" defaultValue={values.monthlySalary ?? ""} className={I} />
+
+          {/* Derived from the start date — read-only */}
+          <div className="rounded-xl border border-dashed border-navy-200 bg-navy-50/40 p-4 sm:col-span-2">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-gold-600">
+              Calculated from the start date
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className={L}>Years of service</label>
+                <div className={RO} aria-readonly="true">{yearsOfService}</div>
+              </div>
+              <div>
+                <label className={L}>Tenure band</label>
+                <div className={RO} aria-readonly="true">
+                  {derivedBand ? TENURE_BAND_LABEL[derivedBand] : "—"}
+                </div>
+              </div>
             </div>
-          ) : null}
-          <div>
-            <label className={L}>Status</label>
-            <div className={RO} aria-readonly="true">{STATUS_LABEL[derivedStatus]}</div>
-            <p className="mt-1 text-[11px] text-muted">Set automatically from the end date.</p>
           </div>
+
+          {/* Reports to + Role */}
           <div>
             <label className={L}>Reports to</label>
             <select name="reportsToId" defaultValue={values.reportsToId ?? ""} className={I}>

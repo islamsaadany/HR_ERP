@@ -28,3 +28,28 @@ export function deriveTenureBand(
 export function statusFromEndDate(endDate: Date | null | undefined): EmployeeStatus {
   return endDate ? "LEFT" : "ACTIVE";
 }
+
+/**
+ * Years of service as a friendly string, counted from the hire date to `now`
+ * (or to the end date if the employee has left). Whole years + whole months.
+ * Under a month → "less than a month"; no/future hire date → "—".
+ */
+export function formatYearsOfService(
+  hire: Date | null,
+  end?: Date | null,
+  now: Date = new Date()
+): string {
+  if (!hire || isNaN(hire.getTime())) return "—";
+  const to = end && !isNaN(end.getTime()) ? end : now;
+  let months =
+    (to.getFullYear() - hire.getFullYear()) * 12 + (to.getMonth() - hire.getMonth());
+  // Drop the current month until the day-of-month is reached.
+  if (to.getDate() < hire.getDate()) months -= 1;
+  if (months < 0) return "—";
+  if (months < 1) return "less than a month";
+  const years = Math.floor(months / 12);
+  const rem = months % 12;
+  const yPart = years > 0 ? `${years} year${years === 1 ? "" : "s"}` : "";
+  const mPart = rem > 0 ? `${rem} month${rem === 1 ? "" : "s"}` : "";
+  return [yPart, mPart].filter(Boolean).join(" ");
+}

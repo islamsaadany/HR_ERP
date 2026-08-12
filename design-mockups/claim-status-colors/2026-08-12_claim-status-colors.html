@@ -1,0 +1,61 @@
+<title>Claim Status Colors</title>
+<style>
+  :root{
+    --gold-100:#f6ecca; --gold-800:#6f521c;
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-700:#163055; --navy-800:#0f2444;
+    --red-50:#fef2f2; --red-700:#b91c1c; --green-50:#e6f3ea; --green-200:#bfe0c9; --green-700:#2f7a4d;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --font-serif:"Iowan Old Style",Georgia,serif; --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:720px;margin:0 auto;padding:30px 22px 60px;}
+  h2{font-family:var(--font-serif);font-size:23px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:14px;margin:4px 0 22px;}
+  h3{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:26px 0 12px;}
+  table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:middle;}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);}
+  tr:last-child td{border-bottom:none;}
+  .pill{display:inline-block;border-radius:999px;padding:3px 12px;font-size:12px;font-weight:700;}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--navy-700);background:var(--navy-50);padding:2px 6px;border-radius:5px;}
+  .s-sub{background:var(--gold-100);color:var(--gold-800);}
+  .s-app{background:var(--navy-100);color:var(--navy-800);}
+  .s-rei{background:var(--navy-50);color:var(--navy-700);}
+  .s-rej{background:var(--red-50);color:var(--red-700);}
+  .s-rei-green{background:var(--green-50);color:var(--green-700);border:1px solid var(--green-200);}
+  .note{margin-top:8px;font-size:13px;color:var(--muted);line-height:1.55;}
+  .flag{margin-top:22px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px 18px;}
+  .flag b{color:var(--ink);}
+</style>
+<div class="wrap">
+  <h2>Claim status colors (what the employee sees)</h2>
+  <p class="sub">The pill on each claim, from <code>CLAIM_STATUS_CLASS</code> in <code>src/lib/benefits/claims.ts</code>.</p>
+
+  <h3>Current</h3>
+  <table>
+    <thead><tr><th>Status</th><th>Pill</th><th>Classes</th></tr></thead>
+    <tbody>
+      <tr><td>Submitted</td><td><span class="pill s-sub">Submitted</span></td><td><code>bg-gold-100 text-gold-800</code></td></tr>
+      <tr><td>Approved</td><td><span class="pill s-app">Approved</span></td><td><code>bg-navy-100 text-navy-800</code></td></tr>
+      <tr><td>Reimbursed</td><td><span class="pill s-rei">Reimbursed</span></td><td><code>bg-navy-50 text-navy-700</code></td></tr>
+      <tr><td>Rejected</td><td><span class="pill s-rej">Rejected</span></td><td><code>bg-red-50 text-red-700</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="flag">
+    <b>What stands out:</b> <span class="pill s-app">Approved</span> and <span class="pill s-rei">Reimbursed</span> are two shades of the same navy — they read as almost the same pill at a glance, even though one means “still owed” and the other means “paid.”
+  </div>
+
+  <h3>Optional — make “Reimbursed” green (paid / done)</h3>
+  <table>
+    <thead><tr><th>Status</th><th>Pill</th><th>Classes</th></tr></thead>
+    <tbody>
+      <tr><td>Submitted</td><td><span class="pill s-sub">Submitted</span></td><td><code>bg-gold-100 text-gold-800</code> (unchanged)</td></tr>
+      <tr><td>Approved</td><td><span class="pill s-app">Approved</span></td><td><code>bg-navy-100 text-navy-800</code> (unchanged)</td></tr>
+      <tr><td>Reimbursed</td><td><span class="pill s-rei-green">Reimbursed</span></td><td><code>bg-green-50 text-green-700</code> (proposed)</td></tr>
+      <tr><td>Rejected</td><td><span class="pill s-rej">Rejected</span></td><td><code>bg-red-50 text-red-700</code> (unchanged)</td></tr>
+    </tbody>
+  </table>
+  <p class="note">This gives each stage its own color family: <b>gold</b> = waiting on HR, <b>navy</b> = approved / in progress, <b>green</b> = paid, <b>red</b> = rejected. Same green already used for the “Active” badge and the payment-confirmed banner, so it stays on-palette.</p>
+</div>

@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireSuperUser } from "@/lib/roles";
+import { requireIncentiveAccess } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { computeCycle, type CycleAssignment } from "@/lib/incentive/compute";
+import { getIncentiveConfig } from "@/lib/incentive/config";
 import type { AssignmentType } from "@/lib/incentive/rules";
 import { CycleReportView } from "@/components/incentive/CycleReport";
 import { FirmFiguresCard } from "@/components/incentive/FirmFiguresCard";
 import { SheetUpload } from "@/components/incentive/SheetUpload";
+import { DownloadTemplates } from "@/components/incentive/DownloadTemplates";
 import { saveFirmFigures } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +20,7 @@ export default async function CyclePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ warn?: string; error?: string }>;
 }) {
-  await requireSuperUser();
+  await requireIncentiveAccess();
   const { id } = await params;
   const { warn, error } = await searchParams;
 
@@ -27,6 +29,8 @@ export default async function CyclePage({
     include: { people: true, assignments: true, contributions: true },
   });
   if (!cycle) notFound();
+
+  const incentiveConfig = await getIncentiveConfig();
 
   const report = computeCycle(
     cycle.people.map((p) => ({
@@ -51,7 +55,8 @@ export default async function CyclePage({
       })
     ),
     cycle.contributions.map((c) => ({ client: c.client, person: c.person, share: c.share })),
-    { revenue: cycle.revenue, deliveryCost: cycle.deliveryCost, totalExpenses: cycle.totalExpenses }
+    { revenue: cycle.revenue, deliveryCost: cycle.deliveryCost, totalExpenses: cycle.totalExpenses },
+    incentiveConfig
   );
 
   const saveFirm = saveFirmFigures.bind(null, cycle.id);
@@ -90,11 +95,7 @@ export default async function CyclePage({
           <div className="rounded-xl border border-line bg-surface p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-ink">Upload sheets (CSV)</div>
-              <div className="flex gap-2 text-xs">
-                <a href="/api/incentive/template/people" className="text-navy-700 hover:underline">people</a>
-                <a href="/api/incentive/template/assignments" className="text-navy-700 hover:underline">assignments</a>
-                <a href="/api/incentive/template/contributions" className="text-navy-700 hover:underline">contributions</a>
-              </div>
+              <DownloadTemplates />
             </div>
             <p className="mt-1 text-[11px] text-muted">Download a template, fill it, upload it back. Re-uploading replaces that sheet.</p>
             <div className="mt-3 space-y-3">

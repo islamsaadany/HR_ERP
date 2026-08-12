@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireSuperUser } from "@/lib/roles";
+import { requireIncentiveAccess, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { createCycle, deleteCycle } from "./actions";
 
@@ -10,7 +10,7 @@ export default async function IncentiveHome({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireSuperUser();
+  const actor = await requireIncentiveAccess();
   const { error } = await searchParams;
   const cycles = await prisma.incentiveCycle.findMany({ orderBy: { createdAt: "desc" } });
 
@@ -19,12 +19,32 @@ export default async function IncentiveHome({
 
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Super User · Confidential</p>
-      <h1 className="mt-1 font-serif text-3xl text-ink">Incentive Scheme</h1>
-      <p className="mt-1 text-muted">
-        Partner-compensation cycles (Business Partner Fee, Commission, Profit Share). Upload the four
-        sheets per cycle; all figures are computed server-side.
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Confidential · Super User &amp; Finance</p>
+          <h1 className="mt-1 font-serif text-3xl text-ink">Incentive Scheme</h1>
+          <p className="mt-1 text-muted">
+            Partner-compensation cycles (Business Partner Fee, Commission, Profit Share). Upload the four
+            sheets per cycle; all figures are computed server-side.
+          </p>
+        </div>
+        <div className="mt-1 flex flex-none gap-2">
+          {isSuperUser(actor.role) ? (
+            <Link
+              href="/incentive/config"
+              className="rounded-lg border border-line bg-surface px-3 py-2 text-sm font-medium text-navy-700 hover:bg-navy-50"
+            >
+              Configuration
+            </Link>
+          ) : null}
+          <Link
+            href="/incentive/how-it-works"
+            className="rounded-lg border border-line bg-surface px-3 py-2 text-sm font-medium text-navy-700 hover:bg-navy-50"
+          >
+            How it works
+          </Link>
+        </div>
+      </div>
 
       {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p> : null}
 

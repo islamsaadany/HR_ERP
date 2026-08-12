@@ -70,7 +70,9 @@ export function DirectoryBrowser({
   }, [people, q, dept, sortKey, sortDir]);
 
   return (
-    <div>
+    // Full-height flex column (desktop) so the table below fills the leftover
+    // space and is the only scroller; mobile keeps normal flow.
+    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
       <div className="mt-6 flex flex-wrap gap-3">
         <input
           value={q}
@@ -101,7 +103,7 @@ export function DirectoryBrowser({
           No one matches that search.
         </div>
       ) : (
-        <div className="mt-4 ff-data-scroll rounded-xl border border-line bg-surface">
+        <div className="mt-4 ff-data-scroll rounded-xl border border-line bg-surface md:flex-1 md:min-h-0 md:!max-h-none">
           <table className="ff-data-table text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">

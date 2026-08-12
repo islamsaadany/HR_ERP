@@ -19,7 +19,7 @@ export default async function EditEmployeePage({
   const actor = await requireAdmin();
   const { id } = await params;
 
-  const [employee, managers, departments, claimAgg, medicalCount, proofCount] = await Promise.all([
+  const [employee, managers, departments, claimRows, medicalAgg] = await Promise.all([
     prisma.user.findUnique({
       where: { id },
       include: { dependants: { orderBy: { dateOfBirth: "asc" } } },
@@ -30,13 +30,49 @@ export default async function EditEmployeePage({
       select: { id: true, name: true },
     }),
     getDepartments(),
-    // Benefits-data counts for the reset card (all plan years).
-    prisma.benefitClaim.aggregate({ where: { userId: id }, _count: true, _sum: { amount: true } }),
-    prisma.medicalCommitment.count({ where: { userId: id } }),
-    prisma.benefitClaim.count({ where: { userId: id, proofUrl: { not: null } } }),
+    // Per-benefit breakdown for the reset card (all plan years).
+    prisma.benefitClaim.findMany({
+      where: { userId: id },
+      select: {
+        amount: true,
+        guaranteedBenefitId: true,
+        catalogItemId: true,
+        guaranteedBenefit: { select: { name: true } },
+        catalogItem: { select: { name: true, isMedical: true } },
+      },
+    }),
+    prisma.medicalCommitment.aggregate({ where: { userId: id }, _count: true, _sum: { premium: true } }),
   ]);
 
   if (!employee) notFound();
+
+  // Group claims into one line per benefit (guaranteed or flexible catalog item),
+  // then prepend the medical commitment line if one exists.
+  const lineMap = new Map<string, { target: string; label: string; type: "Guaranteed" | "Flexible"; count: number; total: number }>();
+  for (const c of claimRows) {
+    let key: string, label: string, type: "Guaranteed" | "Flexible";
+    if (c.guaranteedBenefitId) {
+      key = `guaranteed:${c.guaranteedBenefitId}`;
+      label = c.guaranteedBenefit?.name ?? "Guaranteed benefit";
+      type = "Guaranteed";
+    } else if (c.catalogItemId) {
+      key = `catalog:${c.catalogItemId}`;
+      label = c.catalogItem?.name ?? "Flexible benefit";
+      type = "Flexible";
+    } else {
+      continue;
+    }
+    const row = lineMap.get(key) ?? { target: key, label, type, count: 0, total: 0 };
+    row.count += 1;
+    row.total += c.amount;
+    lineMap.set(key, row);
+  }
+  const resetLines: import("@/components/admin/ResetBenefitsCard").BenefitLine[] = [
+    ...(medicalAgg._count > 0
+      ? [{ target: "medical", label: "Medical commitment", type: "Medical" as const, count: medicalAgg._count, total: medicalAgg._sum.premium ?? 0 }]
+      : []),
+    ...[...lineMap.values()].sort((a, b) => a.label.localeCompare(b.label)),
+  ];
 
   const boundUpdate = updateEmployee.bind(null, id);
 
@@ -93,10 +129,7 @@ export default async function EditEmployeePage({
         <ResetBenefitsCard
           userId={employee.id}
           name={employee.name}
-          claims={claimAgg._count}
-          claimsTotal={claimAgg._sum.amount ?? 0}
-          medical={medicalCount}
-          proofFiles={proofCount}
+          lines={resetLines}
         />
       </div>
     </div>

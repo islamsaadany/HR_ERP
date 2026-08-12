@@ -9,6 +9,7 @@ export type PaymentRow = {
   approvedAt: string; // display-formatted
   paidAmount: number | null; // set once reimbursed
   paidDate: string | null; // display-formatted, set once reimbursed
+  hasProof: boolean; // employee attached a proof-of-payment file
 };
 
 const egp = (n: number) => "EGP " + n.toLocaleString("en-US");
@@ -34,6 +35,7 @@ export function PaymentsQueue({ rows }: { rows: PaymentRow[] }) {
             <th className="px-3 py-3 font-medium">Benefit</th>
             <th className="px-3 py-3 text-right font-medium">Covered amount</th>
             <th className="px-3 py-3 font-medium">Approved</th>
+            <th className="px-3 py-3 font-medium">Proof</th>
             <th className="px-3 py-3 text-right font-medium">Payment</th>
           </tr>
         </thead>
@@ -44,6 +46,20 @@ export function PaymentsQueue({ rows }: { rows: PaymentRow[] }) {
               <td className="px-3 py-2 text-muted">{r.benefit}</td>
               <td className="px-3 py-2 text-right tabular-nums text-ink">{egp(r.covered)}</td>
               <td className="px-3 py-2 text-muted">{r.approvedAt}</td>
+              <td className="px-3 py-2">
+                {r.hasProof ? (
+                  <a
+                    href={`/api/claims/${r.id}/proof`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-medium text-navy-700 underline underline-offset-2 hover:text-navy-900"
+                  >
+                    View proof
+                  </a>
+                ) : (
+                  <span className="text-muted">—</span>
+                )}
+              </td>
               <td className="px-3 py-2">
                 {r.status === "APPROVED" ? (
                   <form action={confirmPayment} className="flex flex-wrap items-center justify-end gap-2">
@@ -68,7 +84,7 @@ export function PaymentsQueue({ rows }: { rows: PaymentRow[] }) {
                   </form>
                 ) : (
                   <div className="flex flex-wrap items-center justify-end gap-2 text-right">
-                    <span className="rounded-full bg-navy-50 px-2 py-0.5 text-xs font-semibold text-navy-700">Reimbursed</span>
+                    <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">Reimbursed</span>
                     <span className="text-xs text-muted tabular-nums">
                       {r.paidAmount != null ? egp(r.paidAmount) : egp(r.covered)}
                       {r.paidDate ? ` · ${r.paidDate}` : ""}

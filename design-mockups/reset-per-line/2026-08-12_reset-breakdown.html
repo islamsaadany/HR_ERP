@@ -1,0 +1,64 @@
+<title>Reset Benefits — Per Line</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-600:#a8821e;--paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --red-50:#fef2f2;--red-100:#fde4e4;--red-200:#f7cccc;--red-500:#d64545;--red-600:#c0392b;--red-700:#a5342b;
+    --green-700:#2f7a4d;--font-serif:"Iowan Old Style",Georgia,serif;--font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;padding:28px 18px 60px;}
+  .wrap{max-width:820px;margin:0 auto;}
+  h2{font-family:var(--font-serif);font-size:22px;margin:0 0 6px;}
+  .lead{color:var(--muted);font-size:14px;line-height:1.55;margin:6px 0 20px;}
+  .lead b{color:var(--ink);}
+  .card{border:1px solid var(--red-200);background:linear-gradient(180deg,var(--red-50),var(--surface));border-radius:16px;padding:22px 24px;}
+  .dz{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red-700);}
+  .dz .dot{width:7px;height:7px;border-radius:50%;background:var(--red-500);}
+  h3{font-family:var(--font-serif);font-size:20px;margin:8px 0 2px;}
+  .sub{color:var(--muted);font-size:13.5px;line-height:1.5;margin:2px 0 16px;}
+  table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--red-100);border-radius:12px;overflow:hidden;}
+  th,td{padding:11px 14px;text-align:left;font-size:14px;border-bottom:1px solid var(--line);}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;}
+  tr:last-child td{border-bottom:none;}
+  .chip{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:600;}
+  .c-med{background:var(--green-50,#e6f3ea);color:var(--green-700);}
+  .c-flex{background:var(--navy-50);color:var(--navy-700);}
+  .c-guar{background:#f6ecca;color:#6f521c;}
+  .del{border:1px solid var(--red-200);background:var(--surface);color:var(--red-600);font-size:12px;font-weight:600;padding:5px 12px;border-radius:8px;cursor:pointer;}
+  .del:hover{background:var(--red-50);}
+  .foot{margin-top:18px;border-top:1px dashed var(--red-200);padding-top:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .resetall{background:var(--red-600);color:#fff;border:none;font-size:13px;font-weight:600;padding:9px 16px;border-radius:9px;cursor:pointer;}
+  .note{font-size:12px;color:var(--muted);line-height:1.5;max-width:440px;}
+  .confirm{margin-top:10px;font-size:12px;color:var(--muted);}
+  .confirm input{margin-top:4px;width:260px;border:1px solid var(--red-200);border-radius:8px;padding:7px 10px;font-size:13px;}
+</style>
+<div class="wrap">
+  <h2>Reset benefits data — per-benefit breakdown</h2>
+  <p class="lead">Replaces the single Reset/Full-erase with a <b>breakdown of every benefit</b> the employee has, each with its own <b>Delete</b>. The uploaded-files line is gone (a proof-required claim carries its document anyway). One-line delete is a single click; only <b>Reset all</b> asks for the typed name.</p>
+
+  <div class="card">
+    <span class="dz"><span class="dot"></span>Danger zone</span>
+    <h3>Reset benefits data — Islam Saadany</h3>
+    <p class="sub">Removes the selected benefit records across <b>all plan years</b> so you can re-test. Does not touch profile, role, password, or documents.</p>
+
+    <table>
+      <thead><tr><th>Benefit</th><th>Type</th><th class="n">Records</th><th class="n">Total</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Medical commitment</td><td><span class="chip c-med">Medical</span></td><td class="n">1</td><td class="n">EGP 26,374</td><td class="n"><button class="del">Delete</button></td></tr>
+        <tr><td>Summer allowance</td><td><span class="chip c-guar">Guaranteed</span></td><td class="n">2</td><td class="n">EGP 8,000</td><td class="n"><button class="del">Delete</button></td></tr>
+        <tr><td>Gym</td><td><span class="chip c-flex">Flexible</span></td><td class="n">1</td><td class="n">EGP 3,200</td><td class="n"><button class="del">Delete</button></td></tr>
+        <tr><td>Personal learning</td><td><span class="chip c-flex">Flexible</span></td><td class="n">3</td><td class="n">EGP 12,500</td><td class="n"><button class="del">Delete</button></td></tr>
+      </tbody>
+    </table>
+
+    <div class="foot">
+      <div class="note">
+        <b>Delete</b> a single row and that benefit&rsquo;s records are removed for the employee (all statuses, all years). To wipe everything at once, type the name and use <b>Reset all</b>.
+        <div class="confirm">Type <b>ISLAM SAADANY</b> to enable Reset all<br><input placeholder="Islam Saadany"></div>
+      </div>
+      <button class="resetall" disabled style="opacity:.5;cursor:not-allowed">Reset all</button>
+    </div>
+  </div>
+</div>

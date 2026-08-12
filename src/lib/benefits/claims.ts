@@ -17,7 +17,7 @@ export const CLAIM_STATUS_LABEL: Record<ClaimStatus, string> = {
 export const CLAIM_STATUS_CLASS: Record<ClaimStatus, string> = {
   SUBMITTED: "bg-gold-100 text-gold-800",
   APPROVED: "bg-navy-100 text-navy-800",
-  REIMBURSED: "bg-navy-50 text-navy-700",
+  REIMBURSED: "bg-green-50 text-green-700",
   REJECTED: "bg-red-50 text-red-700",
 };
 

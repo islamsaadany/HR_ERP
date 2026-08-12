@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
+import { BackLink } from "@/components/admin/BackLink";
 import {
   generateTeamPasswords,
   type GenPasswordsState,
@@ -21,9 +22,13 @@ function csvCell(v: string): string {
 export function RegistryHeader({
   employeeCount,
   canResetAll,
+  backHref,
+  backLabel,
 }: {
   employeeCount: number;
   canResetAll: boolean;
+  backHref: string;
+  backLabel: string;
 }) {
   const [state, action, pending] = useActionState<GenPasswordsState, FormData>(
     generateTeamPasswords,
@@ -51,6 +56,8 @@ export function RegistryHeader({
 
   return (
     <div>
+      <BackLink href={backHref} label={backLabel} />
+
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">

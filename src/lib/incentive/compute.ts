@@ -19,6 +19,7 @@ import {
   profitShareEntitlement,
   money,
   INCENTIVE_RULES,
+  type RuleConfig,
   type AssignmentResult,
   type AssignmentType,
 } from "./rules";
@@ -114,7 +115,8 @@ export function computeCycle(
   people: CyclePerson[],
   assignments: CycleAssignment[],
   contributions: CycleContribution[],
-  firm: FirmFigures
+  firm: FirmFigures,
+  cfg: RuleConfig = INCENTIVE_RULES
 ): CycleReport {
   const issues: string[] = [];
   const salaries: Record<string, number> = {};
@@ -160,21 +162,24 @@ export function computeCycle(
       issues.push(`Assignment "${a.client}": lead "${a.lead}" is not in the people sheet.`);
     }
     results.push(
-      computeAssignment({
-        client: a.client,
-        type: a.type,
-        revenue: a.revenue!,
-        directCost: a.directCost!,
-        vendorCost: a.vendorCost,
-        markupPct: a.markupPct,
-        leadName: a.lead,
-        leadEligible: eligibleFor(a.lead),
-        bd: a.bd,
-        leadSource: a.leadSource ?? a.bd,
-        payable: true,
-        contributions: contribs.map((c) => ({ name: c.person, share: c.share })),
-        salaries,
-      })
+      computeAssignment(
+        {
+          client: a.client,
+          type: a.type,
+          revenue: a.revenue!,
+          directCost: a.directCost!,
+          vendorCost: a.vendorCost,
+          markupPct: a.markupPct,
+          leadName: a.lead,
+          leadEligible: eligibleFor(a.lead),
+          bd: a.bd,
+          leadSource: a.leadSource ?? a.bd,
+          payable: true,
+          contributions: contribs.map((c) => ({ name: c.person, share: c.share })),
+          salaries,
+        },
+        cfg
+      )
     );
   }
 
@@ -258,7 +263,7 @@ export function computeCycle(
   }
   const costRecovery: CostRecoveryRow[] = people
     .map((p) => {
-      const sixMonthSalary = money(p.netMonthlySalary * INCENTIVE_RULES.cycleMonths);
+      const sixMonthSalary = money(p.netMonthlySalary * cfg.cycleMonths);
       const gpGenerated = money(gpByPerson.get(key(p.name)) ?? 0);
       return {
         name: p.name,
@@ -272,12 +277,12 @@ export function computeCycle(
 
   // Profit Share (proposed) — driven by firm net margin (profit after scheme).
   const netMarginPct = firmBlock ? firmBlock.profitAfterSchemePct : null;
-  const gateMet = netMarginPct != null && netMarginPct >= INCENTIVE_RULES.profitShare.floorMargin;
+  const gateMet = netMarginPct != null && netMarginPct >= cfg.profitShare.floorMargin;
   const psRows = gateMet
     ? people.map((p) => {
-        const entitlement = profitShareEntitlement(netMarginPct!, p.netMonthlySalary);
+        const entitlement = profitShareEntitlement(netMarginPct!, p.netMonthlySalary, cfg);
         const leadFee = byPerson.find((b) => key(b.name) === key(p.name))?.leadFee ?? 0;
-        const offset = money(leadFee * INCENTIVE_RULES.profitShare.leadFeeOffsetShare);
+        const offset = money(leadFee * cfg.profitShare.leadFeeOffsetShare);
         return { name: p.name, entitlement, offset, net: money(Math.max(0, entitlement - offset)) };
       })
     : [];

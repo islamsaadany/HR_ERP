@@ -34,6 +34,17 @@ const isFullWidthRoute = (path: string) =>
   path === "/admin/time-off" ||
   path === "/admin/benefits/release";
 
+/**
+ * Routes pinned to the viewport height so ONLY their data table scrolls — no
+ * second, page-level scrollbar. The header stays put and the table fills the
+ * remaining height. Desktop only (md+); mobile keeps normal page flow. Starting
+ * with the employee registry; other data-table pages can opt in later.
+ */
+const isSingleScrollRoute = (path: string) =>
+  path === "/admin/employees" ||
+  path === "/directory" ||
+  path === "/admin/time-off";
+
 export function AppShell({
   name,
   email,
@@ -87,6 +98,8 @@ export function AppShell({
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
+
+  const singleScroll = isSingleScrollRoute(pathname);
 
   return (
     <div
@@ -314,7 +327,13 @@ export function AppShell({
       </aside>
 
       {/* Main */}
-      <div className="flex min-w-0 flex-col">
+      <div
+        className={
+          "flex min-w-0 flex-col" +
+          // Single-scroll pages pin to the viewport so only their table scrolls.
+          (singleScroll ? " md:h-screen md:overflow-hidden" : "")
+        }
+      >
         <header className="flex items-center justify-between bg-navy-900 px-4 py-3 text-white md:hidden">
           <span className="font-serif text-lg uppercase">{companyName}</span>
           <form action={signOutAction}>
@@ -326,9 +345,15 @@ export function AppShell({
         <main
           className={
             "w-full flex-1 p-6 md:p-10 " +
+            // Single-scroll pages become a full-height flex column so the table
+            // fills the leftover space and is the only scroller (desktop only).
             // Wide, many-column data pages (registry, incentive report) use the
             // full screen width; every other page keeps the centered max-width.
-            (isFullWidthRoute(pathname) ? "" : "max-w-6xl")
+            (singleScroll
+              ? "md:flex md:min-h-0 md:flex-col"
+              : isFullWidthRoute(pathname)
+                ? ""
+                : "max-w-6xl")
           }
         >
           {children}
