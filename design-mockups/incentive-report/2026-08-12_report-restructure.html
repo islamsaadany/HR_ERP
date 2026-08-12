@@ -43,7 +43,8 @@
   .subhead2 { margin-top:14px; }
 
   table { border-collapse:collapse; width:100%; }
-  .scroll { overflow-x:auto; border:1px solid var(--line); border-radius:10px; }
+  /* Horizontal scroll only — never vertical; tables render at full height. */
+  .scroll { overflow-x:auto; overflow-y:hidden; border:1px solid var(--line); border-radius:10px; }
   th, td { padding:8px 12px; font-size:13px; white-space:nowrap; }
   thead th { background:var(--navy-50); color:var(--muted); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
   tbody tr { border-top:1px solid var(--line); }
@@ -59,15 +60,18 @@
 
   .info { position:relative; display:inline-flex; margin-left:5px; vertical-align:middle; }
   .info > .dot { width:15px; height:15px; border-radius:50%; border:1px solid var(--navy-200); color:var(--navy-500); font-size:10px; font-weight:700; display:grid; place-items:center; cursor:help; }
-  .info .tip { position:absolute; left:50%; top:130%; transform:translateX(-50%); background:var(--navy-900); color:#fff; font-size:11px; font-weight:400; line-height:1.35; padding:7px 10px; border-radius:8px; width:220px; z-index:50; box-shadow:0 6px 20px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:opacity .12s; text-transform:none; letter-spacing:normal; text-align:left; }
-  .info:hover .tip { opacity:1; }
-
-  .pct, .zero { position:relative; cursor:help; border-bottom:1px dotted var(--navy-200); }
+  .pct, .zero { cursor:help; border-bottom:1px dotted var(--navy-200); }
   .zero { color:var(--gold-600); font-weight:600; display:inline-block; }
-  .pct .calc, .zero .calc { position:absolute; right:0; top:130%; background:var(--navy-900); color:#fff; font-size:11px; font-weight:400; padding:6px 9px; border-radius:8px; opacity:0; pointer-events:none; transition:opacity .12s; z-index:50; box-shadow:0 6px 20px rgba(0,0,0,.25); }
-  .pct .calc { white-space:nowrap; }
-  .zero .calc { left:0; right:auto; width:230px; white-space:normal; line-height:1.35; text-align:left; }
-  .pct:hover .calc, .zero:hover .calc { opacity:1; }
+  /* Tooltips: a fixed floating layer, positioned by JS from the trigger's rect,
+     so the table's overflow:hidden can never clip them. */
+  .tip, .calc {
+    position:fixed; top:0; left:0; max-width:230px; background:var(--navy-900); color:#fff;
+    font-size:11px; font-weight:400; line-height:1.35; padding:7px 10px; border-radius:8px;
+    z-index:100; box-shadow:0 6px 20px rgba(0,0,0,.25); opacity:0; pointer-events:none;
+    transition:opacity .12s; text-transform:none; letter-spacing:normal; text-align:left;
+  }
+  .calc { white-space:nowrap; max-width:none; }
+  .tshow { opacity:1; }
 
   .wl-cat { font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--gold-600); margin:14px 0 4px; }
   .wl-cat:first-child { margin-top:2px; }
@@ -265,5 +269,29 @@
     </div>
   </details>
 
-  <p class="legend">Mockup only — figures are illustrative. Confirm this and I'll build it into the live report, plus the Excel cell-notes, the config ⓘ tooltip fix, and the benefits-catalogue internal scroll.</p>
+  <p class="legend">Mockup only — figures are illustrative. Note there is <b>no vertical scrollbar</b> on any table now; they render at full height and only scroll sideways if the screen is narrower than the table. Confirm this and I'll build it into the live report, plus the Excel cell-notes, the config ⓘ tooltip fix, and the benefits-catalogue internal scroll.</p>
 </div>
+
+<script>
+  // Position each tooltip as a fixed floating layer from its trigger's rect,
+  // clamped to the viewport — mirrors how the real components will render tips
+  // so overflow:hidden on the table can never clip them.
+  document.querySelectorAll('.info, .pct, .zero').forEach(function (trigger) {
+    var tip = trigger.querySelector('.tip, .calc');
+    if (!tip) return;
+    function show() {
+      var r = trigger.getBoundingClientRect();
+      tip.classList.add('tshow');
+      var w = tip.offsetWidth, h = tip.offsetHeight;
+      var left = r.left + r.width / 2 - w / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+      var top = r.bottom + 6;
+      if (top + h > window.innerHeight - 8) top = r.top - h - 6; // flip above if no room
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+    }
+    function hide() { tip.classList.remove('tshow'); }
+    trigger.addEventListener('mouseenter', show);
+    trigger.addEventListener('mouseleave', hide);
+  });
+</script>
