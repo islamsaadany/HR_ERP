@@ -26,7 +26,7 @@ export const employeeSchema = z.object({
   phone: strOrNull,
   department: strOrNull,
   title: strOrNull,
-  role: z.enum(["EMPLOYEE", "HR_ADMIN", "SUPER_USER"]),
+  role: z.enum(["EMPLOYEE", "HR_ADMIN", "FINANCE", "SUPER_USER"]),
   employmentType: z.preprocess(
     emptyToNull,
     z.enum(["FULL_TIME", "PART_TIME"]).nullable().optional()
