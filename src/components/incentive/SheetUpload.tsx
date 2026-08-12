@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { uploadSheet, type UploadState } from "@/app/(app)/incentive/actions";
 
@@ -21,13 +21,17 @@ export function SheetUpload({
   count: number;
 }) {
   const router = useRouter();
+  const [fileName, setFileName] = useState("");
   const [state, formAction, pending] = useActionState<UploadState, FormData>(
     uploadSheet.bind(null, cycleId, kind),
     null
   );
 
   useEffect(() => {
-    if (state?.ok) router.refresh();
+    if (state?.ok) {
+      setFileName("");
+      router.refresh();
+    }
   }, [state, router]);
 
   return (
@@ -37,15 +41,26 @@ export function SheetUpload({
           {label}
           <span className="text-muted"> ({count})</span>
         </span>
-        <input
-          type="file"
-          name="file"
-          required
-          accept=".csv,text/csv"
-          className="min-w-0 flex-1 text-xs text-muted file:mr-2 file:rounded file:border-0 file:bg-navy-800 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white"
-        />
+        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface p-1">
+          <span className="shrink-0 rounded bg-navy-800 px-3 py-1.5 text-xs font-semibold text-white">Choose…</span>
+          <span
+            className={
+              "min-w-0 flex-1 truncate text-xs " +
+              (fileName ? "font-semibold text-navy-800" : "text-muted")
+            }
+          >
+            {fileName || "No file chosen"}
+          </span>
+          <input
+            type="file"
+            name="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")}
+          />
+        </label>
         <button
-          disabled={pending}
+          disabled={pending || !fileName}
           className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-navy-700 hover:bg-navy-50 disabled:opacity-60"
         >
           {pending ? "Uploading…" : "Upload"}

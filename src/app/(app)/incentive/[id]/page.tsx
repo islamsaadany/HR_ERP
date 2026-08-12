@@ -8,6 +8,7 @@ import type { AssignmentType } from "@/lib/incentive/rules";
 import { CycleReportView } from "@/components/incentive/CycleReport";
 import { FirmFiguresCard } from "@/components/incentive/FirmFiguresCard";
 import { SheetUpload } from "@/components/incentive/SheetUpload";
+import { DownloadTemplates } from "@/components/incentive/DownloadTemplates";
 import { saveFirmFigures } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -94,11 +95,7 @@ export default async function CyclePage({
           <div className="rounded-xl border border-line bg-surface p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-ink">Upload sheets (CSV)</div>
-              <div className="flex gap-2 text-xs">
-                <a href="/api/incentive/template/people" className="text-navy-700 hover:underline">people</a>
-                <a href="/api/incentive/template/assignments" className="text-navy-700 hover:underline">assignments</a>
-                <a href="/api/incentive/template/contributions" className="text-navy-700 hover:underline">contributions</a>
-              </div>
+              <DownloadTemplates />
             </div>
             <p className="mt-1 text-[11px] text-muted">Download a template, fill it, upload it back. Re-uploading replaces that sheet.</p>
             <div className="mt-3 space-y-3">
