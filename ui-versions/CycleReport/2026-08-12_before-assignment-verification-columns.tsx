@@ -11,20 +11,7 @@ const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 /** Raw uploaded sheets, for the Review & validation section. */
 export type ReviewData = {
   people: { name: string; role: string | null; netMonthlySalary: number; startDate: string | null; utilization: number | null }[];
-  assignments: {
-    client: string;
-    type: string;
-    lead: string;
-    bd: string;
-    leadSource: string | null;
-    revenue: number | null;
-    directCost: number | null;
-    vendorCost: number;
-    markupPct: number;
-    startDate: string | null;
-    closeDate: string | null;
-    status: string;
-  }[];
+  assignments: { client: string; type: string; lead: string; bd: string; revenue: number | null; directCost: number | null; status: string }[];
   contributions: { client: string; person: string; share: number }[];
 };
 
@@ -242,20 +229,7 @@ export function CycleReportView({
         <div className={scrollWrap}>
           <table className="ff-data-table min-w-full divide-y divide-line">
             <thead className="bg-navy-50/40">
-              <tr>
-                <th className={th}>Client</th>
-                <th className={th}>Type</th>
-                <th className={th}>Lead</th>
-                <th className={th}>BD</th>
-                <th className={th}>Lead source</th>
-                <th className={th + " text-right"}>Revenue</th>
-                <th className={th + " text-right"}>Direct cost</th>
-                <th className={th + " text-right"}>Vendor cost</th>
-                <th className={th + " text-right"}>Markup %</th>
-                <th className={th}>Start date</th>
-                <th className={th}>Closure date</th>
-                <th className={th}>Status</th>
-              </tr>
+              <tr><th className={th}>Client</th><th className={th}>Type</th><th className={th}>Lead</th><th className={th}>BD</th><th className={th + " text-right"}>Revenue</th><th className={th + " text-right"}>Direct cost</th><th className={th}>Status</th></tr>
             </thead>
             <tbody className="divide-y divide-line">
               {review.assignments
@@ -267,13 +241,8 @@ export function CycleReportView({
                     <td className={td}>{a.type}</td>
                     <td className={td}>{a.lead}</td>
                     <td className={td}>{a.bd}</td>
-                    <td className={td}>{a.leadSource ?? "—"}</td>
                     <td className={tdr}>{a.revenue == null ? "—" : whole(a.revenue)}</td>
                     <td className={tdr}>{a.directCost == null ? "—" : whole(a.directCost)}</td>
-                    <td className={tdr}>{a.vendorCost ? whole(a.vendorCost) : "—"}</td>
-                    <td className={tdr}>{a.markupPct ? `${a.markupPct}%` : "—"}</td>
-                    <td className={td}>{a.startDate ?? "—"}</td>
-                    <td className={td}>{a.closeDate ?? "—"}</td>
                     <td className={td}><StatusPill status={a.status} /></td>
                   </tr>
                 ))}
