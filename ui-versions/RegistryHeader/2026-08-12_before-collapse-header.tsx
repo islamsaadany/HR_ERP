@@ -1,15 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { BackLink } from "@/components/admin/BackLink";
 import {
   generateTeamPasswords,
   type GenPasswordsState,
 } from "@/app/(app)/admin/employees/password-actions";
-
-// Remembers the header-collapsed preference per browser (like the sidebar).
-const HEADER_COLLAPSE_KEY = "employees:header:collapsed";
 
 function csvCell(v: string): string {
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
@@ -25,13 +21,9 @@ function csvCell(v: string): string {
 export function RegistryHeader({
   employeeCount,
   canResetAll,
-  backHref,
-  backLabel,
 }: {
   employeeCount: number;
   canResetAll: boolean;
-  backHref: string;
-  backLabel: string;
 }) {
   const [state, action, pending] = useActionState<GenPasswordsState, FormData>(
     generateTeamPasswords,
@@ -39,22 +31,6 @@ export function RegistryHeader({
   );
   const [openMenu, setOpenMenu] = useState<null | "csv" | "pw">(null);
   const done = state && state.ok ? state : null;
-
-  // Collapsing folds away the title block (eyebrow + "Employees" + count) to
-  // give the table more height; the back link, action buttons, and the search
-  // + filters below all stay put. The preference is remembered per browser.
-  const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => {
-    setCollapsed(localStorage.getItem(HEADER_COLLAPSE_KEY) === "1");
-  }, []);
-  function toggleCollapsed() {
-    setCollapsed((c) => {
-      const next = !c;
-      localStorage.setItem(HEADER_COLLAPSE_KEY, next ? "1" : "0");
-      return next;
-    });
-  }
-  const collapseLabel = collapsed ? "Show header" : "Hide header";
 
   function downloadCsv() {
     if (!done) return;
@@ -75,43 +51,16 @@ export function RegistryHeader({
 
   return (
     <div>
-      {/* Back link + icon-only collapse chevron (top-right of the content). */}
-      <div className="relative">
-        <BackLink href={backHref} label={backLabel} />
-        <button
-          type="button"
-          onClick={toggleCollapsed}
-          aria-label={collapseLabel}
-          title={collapseLabel}
-          aria-expanded={!collapsed}
-          className="absolute right-0 top-0 grid h-8 w-8 place-items-center rounded-lg border border-line bg-surface text-navy-500 transition hover:bg-navy-50 hover:text-navy-800"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className={"h-4 w-4 transition-transform " + (collapsed ? "rotate-180" : "")}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M18 15l-6-6-6 6" />
-          </svg>
-        </button>
-      </div>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
+            Admin · Registry
+          </p>
+          <h1 className="mt-1 font-serif text-3xl text-ink">Employees</h1>
+          <p className="mt-1 text-muted">{employeeCount} records</p>
+        </div>
 
-      <div className="flex items-start gap-4">
-        {collapsed ? null : (
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
-              Admin · Registry
-            </p>
-            <h1 className="mt-1 font-serif text-3xl text-ink">Employees</h1>
-            <p className="mt-1 text-muted">{employeeCount} records</p>
-          </div>
-        )}
-
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {/* CSV dropdown — Export / Import */}
           <div className="relative">
             <button

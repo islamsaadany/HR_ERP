@@ -376,9 +376,7 @@ export function EmployeeGrid({
   }
 
   return (
-    // Full-height flex column (desktop) so the scroll box below fills the
-    // leftover space and becomes the only scroller; mobile keeps normal flow.
-    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
+    <div>
       {/* Toolbar: filters + columns */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <input
@@ -453,7 +451,7 @@ export function EmployeeGrid({
         ) : null}
       </div>
 
-      <div className="mt-3 ff-data-scroll rounded-xl border border-line bg-surface md:flex-1 md:min-h-0 md:!max-h-none">
+      <div className="mt-3 ff-data-scroll rounded-xl border border-line bg-surface">
         <table className="ff-data-table text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
