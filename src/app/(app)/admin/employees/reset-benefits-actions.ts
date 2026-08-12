@@ -48,11 +48,28 @@ export async function resetBenefits(
         })
       : [];
 
-  // Delete the DB rows together so a partial failure doesn't leave a half-cleared state.
-  const [claimsDeleted, medicalDeleted] = await prisma.$transaction([
-    prisma.benefitClaim.deleteMany({ where: { userId } }),
-    prisma.medicalCommitment.deleteMany({ where: { userId } }),
-  ]);
+  // A committed medical row carries covered-person snapshot rows. Delete those
+  // first so the erase always succeeds — even for paid claims or a committed
+  // medical — regardless of how the FK cascade was created on the live DB.
+  const commitmentIds = (
+    await prisma.medicalCommitment.findMany({ where: { userId }, select: { id: true } })
+  ).map((c) => c.id);
+
+  // Delete the DB rows together (FK-safe order) so a partial failure doesn't
+  // leave a half-cleared state. Surface a real error rather than doing nothing.
+  let claimsDeleted: { count: number };
+  let medicalDeleted: { count: number };
+  try {
+    const [, claims, medical] = await prisma.$transaction([
+      prisma.medicalCoveredPerson.deleteMany({ where: { commitmentId: { in: commitmentIds } } }),
+      prisma.benefitClaim.deleteMany({ where: { userId } }),
+      prisma.medicalCommitment.deleteMany({ where: { userId } }),
+    ]);
+    claimsDeleted = claims;
+    medicalDeleted = medical;
+  } catch (e) {
+    return { ok: false, error: `Couldn't erase: ${e instanceof Error ? e.message : String(e)}` };
+  }
 
   // Full-erase only: remove the uploaded proof files from Blob storage. Best-effort —
   // a storage hiccup must not fail the reset now that the rows are already gone.
