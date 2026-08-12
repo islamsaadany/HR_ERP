@@ -7,16 +7,19 @@
     --ink: #14202e; --muted: #5c6b7a; --line: #dde3ea;
     --surface: #ffffff; --paper: #f7f9fc; --ground: #eef1f6;
     --amber-bg: #fef6e7; --amber-tx: #8a6420; --amber-bd: #e8cf8f;
+    --bad: #b3261e; --bad-bg: #fdeceb;
   }
   :root:not([data-theme="light"]) { @media (prefers-color-scheme: dark) {
     --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
     --navy-50:#1b2a3d; --navy-200:#3a506e; --navy-800:#24405f; --navy-900:#0a1420;
     --amber-bg:#2c2410; --amber-tx:#e2c477; --amber-bd:#5a4a20;
+    --bad:#f0a89f; --bad-bg:#3a1a17;
   } }
   :root[data-theme="dark"] {
     --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
     --navy-50:#1b2a3d; --navy-200:#3a506e; --navy-800:#24405f; --navy-900:#0a1420;
     --amber-bg:#2c2410; --amber-tx:#e2c477; --amber-bd:#5a4a20;
+    --bad:#f0a89f; --bad-bg:#3a1a17;
   }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--ground); color:var(--ink);
@@ -50,6 +53,12 @@
   tbody tr { border-top:1px solid var(--line); }
   td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; }
   .tot { background:var(--navy-50); font-weight:700; }
+  #pnl { table-layout: fixed; }
+  .flag-row td { background:var(--amber-bg); }
+  .flag-cell { background:var(--bad-bg); color:var(--bad); font-weight:700; }
+  .warn { color:var(--bad); cursor:help; margin-left:4px; font-weight:700; }
+  .issue-tag { font-size:11px; font-weight:700; color:var(--bad); background:var(--bad-bg); border:1px solid var(--bad); padding:2px 8px; border-radius:999px; }
+  .right-group { margin-left:auto; display:flex; gap:8px; align-items:center; }
   .scost-row { cursor:pointer; }
   .scost-row:hover { background:var(--navy-50); }
   .scost-sub { display:none; }
@@ -93,13 +102,15 @@
     <button class="btn" onclick="document.querySelectorAll('.wrap > details').forEach(d=>d.open=false)">Collapse all</button>
   </div>
 
-  <!-- 1. Review & validation (collapsed) -->
-  <details>
-    <summary><span class="chev">▶</span><span class="sec-title">Review &amp; validation</span><span class="sec-sub">the three uploaded sheets, as read</span><span class="sec-tag">People 5 · Assignments 4 · Contributions 3</span></summary>
+  <!-- 1. Review & validation (auto-opens when there's a data issue) -->
+  <details open>
+    <summary><span class="chev">▶</span><span class="sec-title">Review &amp; validation</span><span class="sec-sub">the three uploaded sheets, as read</span>
+      <span class="right-group"><span class="issue-tag">⚠ 1 data issue</span><span class="sec-tag" style="margin-left:0">People 5 · Assignments 4 · Contributions 4</span></span>
+    </summary>
     <div class="sec-body">
       <p class="subhead">People</p>
       <div class="scroll"><table>
-        <thead><tr><th>Name</th><th>Role</th><th class="r">Net monthly salary</th><th>Start date</th><th class="r">Utilisation</th></tr></thead>
+        <thead><tr><th>Name</th><th>Role</th><th class="r">Net monthly salary</th><th>Start date</th><th class="r">Utilization</th></tr></thead>
         <tbody>
           <tr><td>Islam</td><td>Senior Consultant</td><td class="r">150,000</td><td>2024-01-01</td><td class="r">66%</td></tr>
           <tr><td>Galal</td><td>Consultant</td><td class="r">60,000</td><td>2024-01-01</td><td class="r">63%</td></tr>
@@ -112,18 +123,20 @@
       <div class="scroll"><table>
         <thead><tr><th>Client</th><th>Type</th><th>Lead</th><th>BD</th><th class="r">Revenue</th><th class="r">Direct cost</th><th>Status</th></tr></thead>
         <tbody>
+          <tr class="flag-row"><td>El&nbsp;Abd <span class="warn">⚠<span class="tip">Excluded from the payout: contributions total 93% (must be 100%). Fix the shares in the Contributions sheet.</span></span></td><td>RET</td><td>Islam</td><td>Islam</td><td class="r">2,250,000</td><td class="r">630,528</td><td>ongoing</td></tr>
           <tr><td>Wander</td><td>RET</td><td>Galal</td><td>Islam</td><td class="r">990,000</td><td class="r">270,101</td><td>ongoing</td></tr>
           <tr><td>Imtenan</td><td>RET</td><td>Galal</td><td>Islam</td><td class="r">600,000</td><td class="r">93,009</td><td>ongoing</td></tr>
           <tr><td>Raya Trade</td><td>RET</td><td>Islam</td><td>Omar</td><td class="r">410,000</td><td class="r">187,444</td><td>ongoing</td></tr>
         </tbody>
       </table></div>
-      <p class="subhead subhead2">Contributions (client × person)</p>
+      <p class="subhead subhead2">Contributions (client × person) — the <b>Total</b> column flags any client that isn't 100%</p>
       <div class="scroll"><table>
-        <thead><tr><th>Client</th><th class="r">Islam</th><th class="r">Momen</th><th class="r">Galal</th><th class="r">Aley</th><th class="r">Omar</th></tr></thead>
+        <thead><tr><th>Client</th><th class="r">Islam</th><th class="r">Momen</th><th class="r">Galal</th><th class="r">Aley</th><th class="r">Omar</th><th class="r">Total</th></tr></thead>
         <tbody>
-          <tr><td>Wander</td><td class="r">14%</td><td class="r">—</td><td class="r">60%</td><td class="r">22%</td><td class="r">—</td></tr>
-          <tr><td>Imtenan</td><td class="r">5%</td><td class="r">9%</td><td class="r">86%</td><td class="r">—</td><td class="r">—</td></tr>
-          <tr><td>Raya Trade</td><td class="r">15%</td><td class="r">11%</td><td class="r">—</td><td class="r">—</td><td class="r">70%</td></tr>
+          <tr class="flag-row"><td>El&nbsp;Abd</td><td class="r">7%</td><td class="r">59%</td><td class="r">5%</td><td class="r">22%</td><td class="r">—</td><td class="r flag-cell">93% <span class="warn">⚠<span class="tip">Must total 100%. This assignment is excluded from the payout until the shares are corrected.</span></span></td></tr>
+          <tr><td>Wander</td><td class="r">14%</td><td class="r">—</td><td class="r">64%</td><td class="r">22%</td><td class="r">—</td><td class="r">100%</td></tr>
+          <tr><td>Imtenan</td><td class="r">5%</td><td class="r">9%</td><td class="r">86%</td><td class="r">—</td><td class="r">—</td><td class="r">100%</td></tr>
+          <tr><td>Raya Trade</td><td class="r">15%</td><td class="r">15%</td><td class="r">—</td><td class="r">—</td><td class="r">70%</td><td class="r">100%</td></tr>
         </tbody>
       </table></div>
     </div>
@@ -190,6 +203,7 @@
     <summary><span class="chev">▶</span><span class="sec-title">Firm P&amp;L</span><span class="sec-sub">whole-EGP values · hover a % for its calculation · click Scheme cost to break it down</span></summary>
     <div class="sec-body">
       <div class="scroll"><table id="pnl">
+        <colgroup><col style="width:56%"><col style="width:24%"><col style="width:20%"></colgroup>
         <thead><tr><th>Item</th><th class="r">Value</th><th class="r">%</th></tr></thead>
         <tbody>
           <tr><td>Revenue</td><td class="r">6,514,087</td><td class="r">—</td></tr>
@@ -276,7 +290,7 @@
   // Position each tooltip as a fixed floating layer from its trigger's rect,
   // clamped to the viewport — mirrors how the real components will render tips
   // so overflow:hidden on the table can never clip them.
-  document.querySelectorAll('.info, .pct, .zero').forEach(function (trigger) {
+  document.querySelectorAll('.info, .pct, .zero, .warn').forEach(function (trigger) {
     var tip = trigger.querySelector('.tip, .calc');
     if (!tip) return;
     function show() {
