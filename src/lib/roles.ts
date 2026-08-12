@@ -13,6 +13,9 @@ export const isFinance = (role?: Role) =>
 /** Salary is confidential — only a Super User may see or edit monthly salary. HR Admin cannot. */
 export const canSeeSalary = (role?: Role) => isSuperUser(role);
 
+/** Incentive Scheme access: Super User (governance) or Finance (operations — upload sheets, edit figures, download templates). */
+export const canAccessIncentive = (role?: Role) => isSuperUser(role) || isFinance(role);
+
 /** The signed-in session, or null. */
 export async function getSession() {
   return auth();
@@ -43,6 +46,13 @@ export async function requireSuperUser() {
 export async function requireFinance() {
   const user = await requireUser();
   if (!isFinance(user.role)) redirect("/dashboard");
+  return user;
+}
+
+/** Require Incentive-Scheme access (Super User or Finance); redirect home otherwise. */
+export async function requireIncentiveAccess() {
+  const user = await requireUser();
+  if (!canAccessIncentive(user.role)) redirect("/dashboard");
   return user;
 }
 

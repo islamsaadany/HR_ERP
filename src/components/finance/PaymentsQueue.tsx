@@ -84,7 +84,7 @@ export function PaymentsQueue({ rows }: { rows: PaymentRow[] }) {
                   </form>
                 ) : (
                   <div className="flex flex-wrap items-center justify-end gap-2 text-right">
-                    <span className="rounded-full bg-navy-50 px-2 py-0.5 text-xs font-semibold text-navy-700">Reimbursed</span>
+                    <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">Reimbursed</span>
                     <span className="text-xs text-muted tabular-nums">
                       {r.paidAmount != null ? egp(r.paidAmount) : egp(r.covered)}
                       {r.paidDate ? ` · ${r.paidDate}` : ""}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireSuperUser } from "@/lib/roles";
+import { requireIncentiveAccess } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { createCycle, deleteCycle } from "./actions";
 
@@ -10,7 +10,7 @@ export default async function IncentiveHome({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireSuperUser();
+  await requireIncentiveAccess();
   const { error } = await searchParams;
   const cycles = await prisma.incentiveCycle.findMany({ orderBy: { createdAt: "desc" } });
 

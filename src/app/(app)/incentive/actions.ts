@@ -3,11 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireSuperUser } from "@/lib/roles";
+import { requireIncentiveAccess } from "@/lib/roles";
 import { parsePeople, parseAssignments, parseContributions } from "@/lib/incentive/import";
 
 export async function createCycle(formData: FormData): Promise<void> {
-  await requireSuperUser();
+  await requireIncentiveAccess();
   const label = String(formData.get("label") ?? "").trim();
   if (!label) redirect("/incentive?error=Enter+a+cycle+label");
   const clash = await prisma.incentiveCycle.findUnique({ where: { label }, select: { id: true } });
@@ -18,7 +18,7 @@ export async function createCycle(formData: FormData): Promise<void> {
 }
 
 export async function deleteCycle(formData: FormData): Promise<void> {
-  await requireSuperUser();
+  await requireIncentiveAccess();
   const id = String(formData.get("id") ?? "");
   if (id) {
     await prisma.incentiveCycle.delete({ where: { id } });
@@ -28,7 +28,7 @@ export async function deleteCycle(formData: FormData): Promise<void> {
 }
 
 export async function saveFirmFigures(cycleId: string, formData: FormData): Promise<void> {
-  await requireSuperUser();
+  await requireIncentiveAccess();
   const num = (k: string) => {
     const v = String(formData.get(k) ?? "").replace(/[, ]/g, "").trim();
     if (v === "") return null;
@@ -63,7 +63,7 @@ export async function uploadSheet(
 ): Promise<UploadState> {
   // Auth check stays outside the try so its redirect (for a non-Super-User) propagates normally
   // rather than being swallowed and shown as an "upload failed" message.
-  await requireSuperUser();
+  await requireIncentiveAccess();
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {

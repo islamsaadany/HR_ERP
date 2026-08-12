@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireSuperUser } from "@/lib/roles";
+import { requireIncentiveAccess } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { computeCycle, type CycleAssignment } from "@/lib/incentive/compute";
 import type { AssignmentType } from "@/lib/incentive/rules";
@@ -18,7 +18,7 @@ export default async function CyclePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ warn?: string; error?: string }>;
 }) {
-  await requireSuperUser();
+  await requireIncentiveAccess();
   const { id } = await params;
   const { warn, error } = await searchParams;
 

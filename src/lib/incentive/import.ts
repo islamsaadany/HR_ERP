@@ -57,7 +57,10 @@ function headerIndex(header: string[]): Record<string, number> {
 
 function num(v: string | undefined): number | null {
   if (v == null) return null;
-  const s = v.replace(/[, ]/g, "").trim();
+  // Strip thousands separators, spaces, currency, and a trailing percent sign so
+  // "7%", "1,000", "EGP 500", and "66 %" all parse (percent values are converted
+  // to a fraction by the caller where relevant).
+  const s = v.replace(/[,%\s]/g, "").replace(/egp/i, "").trim();
   if (s === "" || /pending|tbd|n\/a/i.test(s)) return null;
   const n = Number(s);
   return Number.isFinite(n) ? n : null;

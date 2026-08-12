@@ -13,9 +13,9 @@ Sample Contributor,Consultant,70000,2024-06-01,yes,0.65
   },
   assignments: {
     filename: "assignments.csv",
-    csv: `client,type,cycle,lead,bd,lead_source,revenue,direct_cost,vendor_cost,markup_pct,start_date,close_date
-Sample Retainer,RET,H1-2026,Sample Lead,Sample Lead,Sample Lead,1000000,250000,0,0,2026-01-01,Ongoing
-Sample Project,PRJ,H1-2026,Sample Lead,Sample Contributor,Sample Lead,300000,60000,0,0,2026-01-01,2026-05-30
+    csv: `client,type,lead,bd,lead_source,revenue,direct_cost,vendor_cost,markup_pct,start_date,close_date
+Sample Retainer,RET,Sample Lead,Sample Lead,Sample Lead,1000000,250000,0,0,2026-01-01,Ongoing
+Sample Project,PRJ,Sample Lead,Sample Contributor,Sample Lead,300000,60000,0,0,2026-01-01,2026-05-30
 `,
   },
   contributions: {
