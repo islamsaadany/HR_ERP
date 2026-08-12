@@ -54,7 +54,22 @@ error-prone; this reproduces the document's figures exactly and server-side.
 - **FR-006a** (2026-08-12): The by-person section offers **Download calculation
   (.xlsx)** — a workbook with a Summary sheet plus one sheet per consultant showing
   their full derivation (assignments led, contributions with tier/allocation, and
-  commission), so each person's number can be shared alongside the amount.
+  commission), so each person's number can be shared alongside the amount. The .xlsx
+  carries **term tips** on the column headers and **zero-reason cell notes** (a 0 below
+  the 70% gate vs a 0 below the 5% floor are explained distinctly).
+- **FR-006b** (2026-08-12): The on-screen report is **restructured**: collapsible
+  sections with Expand/Collapse-all; a leading **Review & validation** section (the
+  three uploaded sheets read back) that **auto-opens on a data issue** and flags the
+  offending client — the **Contributions** matrix gains a **Total-%** column that turns
+  red (with ⚠ on the client name) when a client isn't 100%. The **Firm P&L** is an
+  `Item | Value | %` table (whole-EGP values, hover note showing each %'s calculation,
+  "Delivery cost" relabelled **Direct cost**, and a **Scheme cost** row that expands in
+  place to BP fees / contributor / commission, with scheme-%-of-GP on that row). 0
+  values in the fee tables carry a hover reason. The **watch list** is grouped
+  **General/clients first, then per person**. Tables are **full-height** (horizontal-only
+  scroll); tooltips render as a fixed floating layer so the scroll box never clips them.
+  The manual `eligible_to_lead` flag is gone from the People template/report (see
+  clarifications).
 - **FR-007**: Per-hour performance metrics (GP/hour, break-even, pricing floor)
   are **out of scope** until an hours column is provided; cost recovery uses
   contribution-weighted GP.

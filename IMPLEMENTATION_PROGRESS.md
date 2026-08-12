@@ -95,6 +95,22 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-12 — Incentive report restructure + tips + benefits catalogue scroll (spec 009, branch `claude/incentive-reports-templates-fse4oe`, no migration):**
+  On-screen cycle report rebuilt (`CycleReport.tsx` now a client component): collapsible
+  sections + Expand/Collapse-all; a **Review & validation** section (the 3 uploaded sheets)
+  that auto-opens on a data issue, with a **Contributions Total-% column** flagging any
+  client ≠ 100% (amber row + red total + ⚠ on the name). **Firm P&L** rebuilt as
+  `Item | Value | %` (whole-EGP values, hover calc note per %, **Direct cost** rename,
+  **Scheme cost** expands in place to BP fees / contributor / commission). 0 cells carry a
+  hover reason (below the 70% gate). **Watch list** grouped General/clients then per person
+  (`compute.ts` now attributes each note). Full-height tables via new `.ff-hscroll`
+  (horizontal-only); non-clipping tooltips (`HoverTip` + `tipPosition`), which also fixes
+  the config ⓘ clipping (`InfoDot`). **Excel** (`calc-export.ts`) gained header term-tips +
+  zero-reason cell notes. **Benefits admin** page pinned registry-style (single-scroll) so
+  the catalogue table scrolls internally, not the whole page (`AppShell` route lists,
+  `AdminBenefitsTabs`, `CatalogueGrid`). Verified: `tsc` + `build` green; verify-incentive
+  27/27 + verify-incentive-cycle 16/16; xlsx builder valid with notes. Mockups under
+  `design-mockups/incentive-report/` and `design-mockups/incentive-icon/`.
 - **2026-08-12 — Incentive reports & templates (spec 009, branch `claude/incentive-reports-templates-fse4oe`, no migration):**
   Four changes, no schema/seed change. (1) **Eligible-to-lead retired** from the People
   template, parser use, and the report ⚠ — the Assignments sheet already decides who leads;
