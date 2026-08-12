@@ -1,0 +1,141 @@
+<title>Employment Details Arrangement</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-500:#2f4d78;
+    --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-400:#d4ac39; --gold-600:#a8821e;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --shadow-card:0 1px 2px rgba(16,36,68,.04),0 1px 3px rgba(16,36,68,.06);
+    --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; }
+  body { background:var(--paper); color:var(--ink); font-family:var(--font-sans); -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:760px; margin:0 auto; padding:28px 22px 60px; }
+  h2 { font-family:var(--font-serif); font-size:22px; margin:0 0 6px; color:var(--navy-900); }
+  .lead { color:var(--muted); font-size:14px; line-height:1.55; margin:6px 0 18px; }
+
+  .switcher { border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:12px 14px; box-shadow:var(--shadow-card); margin-bottom:22px; }
+  .switcher .lab { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-600); margin-bottom:9px; }
+  .segs { display:flex; gap:8px; flex-wrap:wrap; }
+  .seg { border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:8px 13px; font-size:13px; font-weight:600; color:var(--navy-700); cursor:pointer; }
+  .seg.active { border-color:var(--navy-800); background:var(--navy-800); color:#fff; }
+
+  section.card { border:1px solid var(--line); border-radius:14px; background:var(--surface); padding:24px; box-shadow:var(--shadow-card); }
+  section.card > h3 { font-family:var(--font-serif); font-size:18px; margin:0 0 16px; color:var(--ink); font-weight:500; }
+  .grid { display:grid; gap:16px; grid-template-columns:1fr 1fr; }
+  label { display:block; font-size:12px; font-weight:600; color:var(--navy-700); margin-bottom:6px; }
+  .inp, .ro, select.inp { width:100%; border:1px solid var(--line); border-radius:9px; padding:9px 11px; font-size:14px; background:var(--surface); color:var(--ink); }
+  .ro { background:var(--navy-50); color:var(--navy-800); font-weight:600; }
+  .cap { margin-top:5px; font-size:11px; color:var(--muted); }
+
+  /* the derived trio grouping */
+  .derive-group { grid-column:1 / -1; border:1px dashed var(--navy-200); border-radius:12px; background:linear-gradient(0deg,var(--navy-50),transparent); padding:16px; }
+  .derive-group .gh { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-600); margin-bottom:12px; }
+  .trio { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; align-items:end; gap:10px; }
+  .arrow { align-self:center; color:var(--navy-300,#7d97ba); font-size:20px; padding-bottom:8px; }
+  @media (max-width:640px){ .trio{ grid-template-columns:1fr; } .arrow{ display:none; } }
+
+  .hide { display:none !important; }
+</style>
+
+<div class="wrap">
+  <h2>Employment details — start-date-driven arrangement</h2>
+  <p class="lead">The <b>start date</b> is the single input that drives the rest. It now leads, followed by the two values it calculates — <b>years of service</b> and <b>tenure band</b> — both read-only. Pick the arrangement you prefer.</p>
+
+  <div class="switcher">
+    <div class="lab">Arrangement</div>
+    <div class="segs">
+      <button class="seg active" data-opt="row">A · Inline row (start → years → band)</button>
+      <button class="seg" data-opt="stack">B · Start date + derived strip</button>
+    </div>
+  </div>
+
+  <section class="card">
+    <h3>Employment</h3>
+    <div class="grid">
+      <div>
+        <label>Employment type</label>
+        <select class="inp"><option>Full-time</option><option>Part-time</option></select>
+      </div>
+      <div>
+        <label>End date</label>
+        <input class="inp" type="date" />
+        <div class="cap">Setting an end date marks the employee as Left.</div>
+      </div>
+
+      <!-- OPTION A: inline row -->
+      <div class="derive-group opt-row">
+        <div class="gh">Calculated from the start date</div>
+        <div class="trio">
+          <div>
+            <label>Start date</label>
+            <input class="inp" type="date" value="2022-04-01" />
+          </div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div>
+            <label>Years of service</label>
+            <div class="ro">3 years 4 months</div>
+          </div>
+          <div class="arrow" aria-hidden="true">→</div>
+          <div>
+            <label>Tenure band</label>
+            <div class="ro">2 – 4 years</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPTION B: start date field + derived strip -->
+      <div class="opt-stack hide" style="grid-column:1 / -1;">
+        <label>Start date</label>
+        <input class="inp" type="date" value="2022-04-01" style="max-width:260px;" />
+        <div class="derive-group" style="margin-top:12px;">
+          <div class="gh">Calculated from the start date</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+              <label>Years of service</label>
+              <div class="ro">3 years 4 months</div>
+            </div>
+            <div>
+              <label>Tenure band</label>
+              <div class="ro">2 – 4 years</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label>Monthly salary (EGP)</label>
+        <input class="inp" inputmode="numeric" value="" />
+      </div>
+      <div>
+        <label>Status</label>
+        <div class="ro">Active</div>
+        <div class="cap">Set automatically from the end date.</div>
+      </div>
+      <div>
+        <label>Reports to</label>
+        <select class="inp"><option>—</option></select>
+      </div>
+      <div>
+        <label>Role</label>
+        <select class="inp"><option>Employee</option></select>
+      </div>
+    </div>
+  </section>
+
+  <p class="lead" style="margin-top:22px;">Notes: <b>Years of service</b> counts from the start date to today (or to the end date if the person has left), shown as e.g. “3 years 4 months”. Under a month reads “less than a month”; no start date reads “—”. Nothing else on the form changes — only these three are re-grouped, and Years of service is new.</p>
+</div>
+
+<script>
+  document.querySelectorAll(".seg").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll(".seg").forEach(function(x){ x.classList.remove("active"); });
+      b.classList.add("active");
+      var opt = b.getAttribute("data-opt");
+      document.querySelectorAll(".opt-row").forEach(function(n){ n.classList.toggle("hide", opt!=="row"); });
+      document.querySelectorAll(".opt-stack").forEach(function(n){ n.classList.toggle("hide", opt!=="stack"); });
+    });
+  });
+</script>
