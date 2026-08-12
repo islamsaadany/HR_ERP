@@ -1,0 +1,247 @@
+<title>Assignments Verification Columns</title>
+<style>
+  :root {
+    --navy-900: #0d1a2e; --navy-800: #13233b; --navy-700: #1c3252; --navy-500: #33507a;
+    --navy-200: #b9c6da; --navy-50: #eef2f8;
+    --gold-300: #e5c877; --gold-600: #a9822a; --gold-bg:#fbf5e4;
+    --ink: #14202e; --muted: #5c6b7a; --line: #dde3ea;
+    --surface: #ffffff; --paper: #f7f9fc; --ground: #eef1f6;
+    --amber-bg: #fef6e7; --amber-tx: #8a6420; --amber-bd: #e8cf8f;
+    --bad: #b3261e; --bad-bg: #fdeceb;
+    --st-ong-bg:#dcfce7; --st-ong-tx:#15803d; --st-end-bg:#e6eaf0; --st-end-tx:#41526b;
+    --st-prg-bg:#fdf0cf; --st-prg-tx:#8a6414; --st-pen-bg:#eef0f3; --st-pen-tx:#6b7783;
+  }
+  :root:not([data-theme="light"]) { @media (prefers-color-scheme: dark) {
+    --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
+    --navy-50:#1b2a3d; --navy-200:#3a506e; --navy-800:#24405f; --navy-900:#0a1420;
+    --gold-bg:#2a2410;
+    --amber-bg:#2c2410; --amber-tx:#e2c477; --amber-bd:#5a4a20;
+    --bad:#f0a89f; --bad-bg:#3a1a17;
+    --st-ong-bg:#123020; --st-ong-tx:#6ee7a8; --st-end-bg:#1c2838; --st-end-tx:#9db4d3;
+    --st-prg-bg:#33280c; --st-prg-tx:#e6c877; --st-pen-bg:#1a2430; --st-pen-tx:#8a99a8;
+  } }
+  :root[data-theme="dark"] {
+    --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
+    --navy-50:#1b2a3d; --navy-200:#3a506e; --navy-800:#24405f; --navy-900:#0a1420;
+    --gold-bg:#2a2410;
+    --amber-bg:#2c2410; --amber-tx:#e2c477; --amber-bd:#5a4a20;
+    --bad:#f0a89f; --bad-bg:#3a1a17;
+    --st-ong-bg:#123020; --st-ong-tx:#6ee7a8; --st-end-bg:#1c2838; --st-end-tx:#9db4d3;
+    --st-prg-bg:#33280c; --st-prg-tx:#e6c877; --st-pen-bg:#1a2430; --st-pen-tx:#8a99a8;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.45; padding:26px 24px 80px; }
+  .wrap { max-width: 1400px; margin: 0 auto; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); }
+  h1 { font-family: Georgia, serif; font-size:28px; margin:4px 0 2px; font-weight:600; }
+  .lede { color:var(--muted); font-size:13px; margin:4px 0 0; }
+  .note-banner { margin:18px 0; border:1px solid var(--amber-bd); background:var(--amber-bg); color:var(--amber-tx); border-radius:12px; padding:12px 16px; font-size:13px; }
+  .toolbar { display:flex; justify-content:flex-end; gap:8px; margin:8px 0 4px; }
+  .btn { border:1px solid var(--line); background:var(--surface); color:var(--navy-700); font-size:12px; font-weight:600; border-radius:8px; padding:6px 12px; cursor:pointer; }
+  .btn:hover { background:var(--navy-50); }
+
+  details { background:var(--surface); border:1px solid var(--line); border-radius:14px; margin-top:14px; overflow:hidden; }
+  summary { list-style:none; cursor:pointer; padding:14px 18px; display:flex; align-items:center; gap:10px; user-select:none; }
+  summary::-webkit-details-marker { display:none; }
+  .chev { transition:transform .15s ease; color:var(--muted); font-size:13px; }
+  details[open] > summary .chev { transform:rotate(90deg); }
+  .sec-title { font-family: Georgia, serif; font-size:18px; }
+  .sec-sub { color:var(--muted); font-size:12.5px; font-weight:400; }
+  .sec-tag { font-size:11px; color:var(--muted); font-weight:600; }
+  .sec-body { padding:0 18px 18px; }
+  .subhead { font-size:12px; color:var(--muted); margin:2px 0 8px; }
+  .subhead2 { margin-top:14px; }
+
+  table { border-collapse:collapse; width:100%; }
+  .scroll { overflow-x:auto; overflow-y:hidden; border:1px solid var(--line); border-radius:10px; }
+  th, td { padding:8px 12px; font-size:13px; white-space:nowrap; }
+  thead th { background:var(--navy-50); color:var(--muted); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+  tbody tr { border-top:1px solid var(--line); }
+  td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; }
+  .muted-cell { color:var(--muted); }
+  .flag-row td { background:var(--amber-bg); }
+  .flag-cell { background:var(--bad-bg); color:var(--bad); font-weight:700; }
+  .warn { color:var(--bad); cursor:help; margin-left:4px; font-weight:700; }
+  .issue-tag { font-size:11px; font-weight:700; color:var(--bad); background:var(--bad-bg); border:1px solid var(--bad); padding:2px 8px; border-radius:999px; }
+  .right-group { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .pill-status { display:inline-block; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:600; }
+  .st-ongoing { background:var(--st-ong-bg); color:var(--st-ong-tx); }
+  .st-ended { background:var(--st-end-bg); color:var(--st-end-tx); }
+  .st-progress { background:var(--st-prg-bg); color:var(--st-prg-tx); }
+  .st-pending { background:var(--st-pen-bg); color:var(--st-pen-tx); }
+
+  /* Mockup-only annotation: the five newly-added columns. Not part of the live styling. */
+  th.new { background:var(--gold-bg); color:var(--gold-600); }
+  td.new { background:color-mix(in srgb, var(--gold-bg) 55%, transparent); }
+  .newbadge { display:inline-block; margin-left:6px; font-size:10px; font-weight:700; letter-spacing:.04em; color:var(--gold-600); background:var(--gold-bg); border:1px solid var(--gold-300); border-radius:999px; padding:1px 7px; text-transform:uppercase; vertical-align:middle; }
+
+  .info { position:relative; display:inline-flex; margin-left:5px; vertical-align:middle; }
+  .tip {
+    position:fixed; top:0; left:0; max-width:250px; background:var(--navy-900); color:#fff;
+    font-size:11px; font-weight:400; line-height:1.35; padding:7px 10px; border-radius:8px;
+    z-index:100; box-shadow:0 6px 20px rgba(0,0,0,.25); opacity:0; pointer-events:none;
+    transition:opacity .12s; text-transform:none; letter-spacing:normal; text-align:left;
+  }
+  .tshow { opacity:1; }
+  .legend { margin-top:18px; font-size:12px; color:var(--muted); line-height:1.6; }
+  .legend b { color:var(--ink); }
+  .swatch { display:inline-block; width:11px; height:11px; border-radius:3px; background:var(--gold-bg); border:1px solid var(--gold-300); vertical-align:middle; margin-right:5px; }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Super User · Confidential · MOCKUP for sign-off</p>
+  <h1>Incentive review — Assignments verification table</h1>
+  <p class="lede">Adding the five uploaded assignment fields that weren't shown in the read-back:
+    <b style="color:var(--gold-600)">Lead source</b>, <b style="color:var(--gold-600)">Vendor cost</b>,
+    <b style="color:var(--gold-600)">Markup&nbsp;%</b>, <b style="color:var(--gold-600)">Start date</b>, and
+    <b style="color:var(--gold-600)">Closure date</b> (sitting just before the status pill). The People and
+    Contributions tables are unchanged. Gold shading below marks the new columns for this review only — in the
+    live report they'll match every other column.</p>
+
+  <div class="toolbar">
+    <button class="btn" onclick="document.querySelectorAll('.wrap > details').forEach(d=>d.open=true)">Expand all</button>
+    <button class="btn" onclick="document.querySelectorAll('.wrap > details').forEach(d=>d.open=false)">Collapse all</button>
+  </div>
+
+  <!-- Review & validation -->
+  <details open>
+    <summary><span class="chev">▶</span><span class="sec-title">Review &amp; validation</span><span class="sec-sub">the three uploaded sheets, as read</span>
+      <span class="right-group"><span class="issue-tag">⚠ 1 data issue</span><span class="sec-tag">People 5 · Assignments 8 · Contributions 4</span></span>
+    </summary>
+    <div class="sec-body">
+
+      <!-- People — unchanged -->
+      <p class="subhead">People <span style="color:var(--muted)">(unchanged)</span></p>
+      <div class="scroll"><table>
+        <thead><tr><th>Name</th><th>Role</th><th class="r">Net monthly salary</th><th>Start date</th><th class="r">Utilization</th></tr></thead>
+        <tbody>
+          <tr><td>Islam</td><td>Senior Consultant</td><td class="r">150,000</td><td>2024-01-01</td><td class="r">66%</td></tr>
+          <tr><td>Galal</td><td>Consultant</td><td class="r">60,000</td><td>2024-01-01</td><td class="r">63%</td></tr>
+          <tr><td>Omar</td><td>Consultant</td><td class="r">50,000</td><td>2024-01-01</td><td class="r">90%</td></tr>
+          <tr><td>Aley</td><td>Consultant</td><td class="r">85,000</td><td>2024-01-01</td><td class="r">63%</td></tr>
+          <tr><td>Momen</td><td>Consultant</td><td class="r">90,000</td><td>2024-01-01</td><td class="r">75%</td></tr>
+        </tbody>
+      </table></div>
+
+      <!-- Assignments — five columns added -->
+      <p class="subhead subhead2">Assignments <span class="newbadge">+5 columns</span></p>
+      <div class="scroll"><table>
+        <thead><tr>
+          <th>Client</th><th>Type</th><th>Lead</th><th>BD</th>
+          <th class="new">Lead source</th>
+          <th class="r">Revenue</th><th class="r">Direct cost</th>
+          <th class="r new">Vendor cost</th><th class="r new">Markup&nbsp;%</th>
+          <th class="new">Start date</th><th class="new">Closure date</th>
+          <th>Status</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td>El&nbsp;Abd</td><td>RET</td><td>Islam</td><td>Islam</td>
+            <td class="new">Islam</td>
+            <td class="r">2,250,000</td><td class="r">630,528</td>
+            <td class="r new muted-cell">—</td><td class="r new muted-cell">—</td>
+            <td class="new">2026-01-01</td><td class="new muted-cell">—</td>
+            <td><span class="pill-status st-ongoing">Ongoing</span></td>
+          </tr>
+          <tr>
+            <td>Wander</td><td>RET</td><td>Galal</td><td>Islam</td>
+            <td class="new">Islam</td>
+            <td class="r">990,000</td><td class="r">270,101</td>
+            <td class="r new muted-cell">—</td><td class="r new muted-cell">—</td>
+            <td class="new">2026-01-01</td><td class="new muted-cell">—</td>
+            <td><span class="pill-status st-ongoing">Ongoing</span></td>
+          </tr>
+          <tr>
+            <td>Imtenan</td><td>RET</td><td>Galal</td><td>Islam</td>
+            <td class="new">Client referral</td>
+            <td class="r">600,000</td><td class="r">93,009</td>
+            <td class="r new muted-cell">—</td><td class="r new muted-cell">—</td>
+            <td class="new">2026-01-01</td><td class="new muted-cell">—</td>
+            <td><span class="pill-status st-ongoing">Ongoing</span></td>
+          </tr>
+          <tr>
+            <td>Raya Trade</td><td>RET</td><td>Islam</td><td>Omar</td>
+            <td class="new">Omar</td>
+            <td class="r">410,000</td><td class="r">187,444</td>
+            <td class="r new">50,000</td><td class="r new">15%</td>
+            <td class="new">2026-01-01</td><td class="new muted-cell">—</td>
+            <td><span class="pill-status st-ongoing">Ongoing</span></td>
+          </tr>
+          <tr>
+            <td>Sportify</td><td>PRJ</td><td>Omar</td><td>Omar</td>
+            <td class="new">Omar</td>
+            <td class="r">167,400</td><td class="r">22,778</td>
+            <td class="r new muted-cell">—</td><td class="r new muted-cell">—</td>
+            <td class="new">2026-01-15</td><td class="new">2026-04-30</td>
+            <td><span class="pill-status st-ended">Ended</span></td>
+          </tr>
+          <tr>
+            <td>JRNY</td><td>PRJ</td><td>Islam</td><td>Islam</td>
+            <td class="new">Islam</td>
+            <td class="r">160,650</td><td class="r">46,968</td>
+            <td class="r new muted-cell">—</td><td class="r new muted-cell">—</td>
+            <td class="new">2026-02-01</td><td class="new">2026-05-20</td>
+            <td><span class="pill-status st-ended">Ended</span></td>
+          </tr>
+          <tr>
+            <td>Beverages Expert</td><td>PRJ</td><td>Islam</td><td>Islam</td>
+            <td class="new">Client referral</td>
+            <td class="r">398,396</td><td class="r">92,911</td>
+            <td class="r new muted-cell">—</td><td class="r new muted-cell">—</td>
+            <td class="new">2026-03-01</td><td class="new muted-cell">—</td>
+            <td><span class="pill-status st-progress">In progress</span></td>
+          </tr>
+          <tr>
+            <td>Forefront Trading</td><td>PRJ</td><td>Omar</td><td>Omar</td>
+            <td class="new">Omar</td>
+            <td class="r">649,000</td><td class="r muted-cell">—</td>
+            <td class="r new">120,000</td><td class="r new">20%</td>
+            <td class="new muted-cell">—</td><td class="new muted-cell">—</td>
+            <td><span class="pill-status st-pending">Pending</span></td>
+          </tr>
+        </tbody>
+      </table></div>
+
+      <!-- Contributions — unchanged -->
+      <p class="subhead subhead2">Contributions (client × person) — the <b>Total</b> column flags any client that isn't 100% <span style="color:var(--muted)">(unchanged)</span></p>
+      <div class="scroll"><table>
+        <thead><tr><th>Client</th><th class="r">Islam</th><th class="r">Momen</th><th class="r">Galal</th><th class="r">Aley</th><th class="r">Omar</th><th class="r">Total</th></tr></thead>
+        <tbody>
+          <tr class="flag-row"><td>El&nbsp;Abd <span class="warn">⚠<span class="tip">Contributions total 93% — must be 100%. This assignment is excluded from the payout until the shares are corrected.</span></span></td><td class="r">7%</td><td class="r">59%</td><td class="r">5%</td><td class="r">22%</td><td class="r">—</td><td class="r flag-cell">93% <span class="warn">⚠<span class="tip">Must total 100%. This assignment is excluded from the payout until the shares are corrected.</span></span></td></tr>
+          <tr><td>Wander</td><td class="r">14%</td><td class="r">—</td><td class="r">64%</td><td class="r">22%</td><td class="r">—</td><td class="r">100%</td></tr>
+          <tr><td>Imtenan</td><td class="r">5%</td><td class="r">9%</td><td class="r">86%</td><td class="r">—</td><td class="r">—</td><td class="r">100%</td></tr>
+          <tr><td>Raya Trade</td><td class="r">15%</td><td class="r">15%</td><td class="r">—</td><td class="r">—</td><td class="r">70%</td><td class="r">100%</td></tr>
+        </tbody>
+      </table></div>
+
+      <p class="legend">
+        <span class="swatch"></span><b>Gold-shaded columns</b> are the five now added to the read-back — a review aid only; in the live report they render exactly like the neighbouring columns (no shading).<br>
+        • <b>Lead source</b> — who sourced the work (when it equals the BD, that's the self-generated 5% commission case).<br>
+        • <b>Vendor cost</b> / <b>Markup&nbsp;%</b> — the external pass-through and its markup; blank rows show “—”.<br>
+        • <b>Start date</b> / <b>Closure date</b> — placed right before the status pill, so a closed row shows its closure date next to “Ended”; open rows show “—”.
+      </p>
+    </div>
+  </details>
+</div>
+
+<script>
+  document.querySelectorAll('.warn').forEach(function (trigger) {
+    var tip = trigger.querySelector('.tip');
+    if (!tip) return;
+    function show() {
+      var r = trigger.getBoundingClientRect();
+      tip.classList.add('tshow');
+      var w = tip.offsetWidth, h = tip.offsetHeight;
+      var left = r.left + r.width / 2 - w / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+      var top = r.bottom + 6;
+      if (top + h > window.innerHeight - 8) top = r.top - h - 6;
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+    }
+    function hide() { tip.classList.remove('tshow'); }
+    trigger.addEventListener('mouseenter', show);
+    trigger.addEventListener('mouseleave', hide);
+  });
+</script>
