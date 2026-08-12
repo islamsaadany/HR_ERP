@@ -7,19 +7,13 @@ const SHEETS = ["people", "assignments", "contributions"] as const;
  * fires all three at once (staggered so the browser allows the multi-download),
  * plus the individual links. The template route already sends each as an
  * attachment (Content-Disposition), so a plain anchor click downloads it.
- *
- * When a cycleId is passed, the route seeds each sheet from data we already hold
- * (the registry for people; the prior cycle's clients for assignments and the
- * contributions grid) instead of the synthetic sample rows.
  */
-export function DownloadTemplates({ cycleId }: { cycleId?: string }) {
+export function DownloadTemplates() {
   function downloadAll() {
     SHEETS.forEach((sheet, i) => {
       window.setTimeout(() => {
         const a = document.createElement("a");
-        a.href = cycleId
-          ? `/api/incentive/template/${sheet}?cycleId=${encodeURIComponent(cycleId)}`
-          : `/api/incentive/template/${sheet}`;
+        a.href = `/api/incentive/template/${sheet}`;
         a.download = `${sheet}.csv`;
         document.body.appendChild(a);
         a.click();

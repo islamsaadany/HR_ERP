@@ -1,0 +1,221 @@
+<title>Incentive Icon Options</title>
+<style>
+  :root {
+    --navy-900: #0d1a2e;
+    --navy-800: #13233b;
+    --navy-700: #1c3252;
+    --navy-50: #eef2f8;
+    --gold-300: #e5c877;
+    --gold-400: #d4af37;
+    --gold-600: #a9822a;
+    --ink: #14202e;
+    --muted: #5c6b7a;
+    --line: #dfe4ea;
+    --surface: #ffffff;
+    --ground: #f4f6f9;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --ink: #e8edf3;
+      --muted: #9aa7b4;
+      --line: #26313f;
+      --surface: #16202c;
+      --ground: #0e161f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e8edf3;
+    --muted: #9aa7b4;
+    --line: #26313f;
+    --surface: #16202c;
+    --ground: #0e161f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5;
+    padding: 40px 24px 64px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--gold-600); margin: 0 0 6px;
+  }
+  h1 { font-family: Georgia, "Times New Roman", serif; font-size: 30px; margin: 0 0 8px; font-weight: 600; }
+  .lede { color: var(--muted); margin: 0 0 32px; max-width: 62ch; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 40px 0 14px; }
+
+  /* Current-vs-new comparison */
+  .compare {
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: stretch;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
+  }
+  .compare .note { color: var(--muted); font-size: 13px; align-self: center; max-width: 30ch; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .card .letter {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 6px; background: var(--gold-400); color: var(--navy-900);
+    font-size: 12px; font-weight: 800;
+  }
+  .cardhead { display: flex; align-items: center; gap: 10px; }
+  .cardhead .name { font-weight: 650; font-size: 15px; }
+  .cardhead .desc { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+  /* Navy nav rail sample */
+  .rail {
+    background: var(--navy-900); border-radius: 12px; padding: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .pill {
+    width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
+    color: var(--gold-300);
+  }
+  .pill.active { background: var(--navy-800); }
+  .pill.rest:hover { background: var(--navy-800); }
+  .railcaption { font-size: 11px; color: var(--muted); text-align: center; margin-top: 8px; }
+  svg { width: 22px; height: 22px; }
+  .footer { margin-top: 40px; color: var(--muted); font-size: 13px; }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Incentive Scheme · Navigation icon</p>
+  <h1>Pick the Incentive icon</h1>
+  <p class="lede">The Incentive nav entry currently reuses the <strong>Benefits</strong> icon, so the two are indistinguishable in the sidebar. Below are candidate replacements, drawn in the exact house nav style (navy pill, gold stroke). Each shows its active and resting states. Tell me the letter you want.</p>
+
+  <h2>The problem — same icon twice</h2>
+  <div class="compare">
+    <div class="rail" style="flex:0 0 auto;">
+      <div class="pill active" title="Benefits">
+        <!-- benefits (gift) -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8"/><path d="M12 8v12"/><path d="M12 8S9 3 7 5s3 3 5 3zm0 0s3-5 5-3-3 3-5 3z"/></svg>
+      </div>
+      <div class="pill rest" title="Incentive (today)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8"/><path d="M12 8v12"/><path d="M12 8S9 3 7 5s3 3 5 3zm0 0s3-5 5-3-3 3-5 3z"/></svg>
+      </div>
+    </div>
+    <p class="note">Benefits (left) and Incentive (right) render identically today. The goal is a distinct mark for Incentive — money earned for performance, not a perk.</p>
+  </div>
+
+  <h2>Candidates</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="cardhead">
+        <span class="letter">A</span>
+        <div><div class="name">Trophy</div><div class="desc">Reward for performance</div></div>
+      </div>
+      <div>
+        <div class="rail">
+          <div class="pill active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v4a4 4 0 0 1-8 0z"/><path d="M8 5H5v1a3 3 0 0 0 3 3"/><path d="M16 5h3v1a3 3 0 0 1-3 3"/><path d="M12 12v3"/><path d="M9 20h6"/><path d="M10 20c0-1.5.4-2.5 2-2.5s2 1 2 2.5"/></svg>
+          </div>
+          <div class="pill rest">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v4a4 4 0 0 1-8 0z"/><path d="M8 5H5v1a3 3 0 0 0 3 3"/><path d="M16 5h3v1a3 3 0 0 1-3 3"/><path d="M12 12v3"/><path d="M9 20h6"/><path d="M10 20c0-1.5.4-2.5 2-2.5s2 1 2 2.5"/></svg>
+          </div>
+        </div>
+        <div class="railcaption">active · resting</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardhead">
+        <span class="letter">B</span>
+        <div><div class="name">Coins</div><div class="desc">Payout / compensation</div></div>
+      </div>
+      <div>
+        <div class="rail">
+          <div class="pill active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="9" cy="6" rx="5" ry="2.4"/><path d="M4 6v4c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4V6"/><path d="M4 10v4c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4v-4"/><circle cx="16.5" cy="15.5" r="4.5"/><path d="M16.5 13.5v4M15 15.5h3"/></svg>
+          </div>
+          <div class="pill rest">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="9" cy="6" rx="5" ry="2.4"/><path d="M4 6v4c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4V6"/><path d="M4 10v4c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4v-4"/><circle cx="16.5" cy="15.5" r="4.5"/><path d="M16.5 13.5v4M15 15.5h3"/></svg>
+          </div>
+        </div>
+        <div class="railcaption">active · resting</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardhead">
+        <span class="letter">C</span>
+        <div><div class="name">Award medal</div><div class="desc">Recognition + ribbon</div></div>
+      </div>
+      <div>
+        <div class="rail">
+          <div class="pill active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="m12 6.7 1 2 2.2.2-1.7 1.5.6 2.1-2.1-1.2-2.1 1.2.6-2.1-1.7-1.5 2.2-.2z"/><path d="M8.5 13.5 7 21l5-2.5L17 21l-1.5-7.5"/></svg>
+          </div>
+          <div class="pill rest">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="m12 6.7 1 2 2.2.2-1.7 1.5.6 2.1-2.1-1.2-2.1 1.2.6-2.1-1.7-1.5 2.2-.2z"/><path d="M8.5 13.5 7 21l5-2.5L17 21l-1.5-7.5"/></svg>
+          </div>
+        </div>
+        <div class="railcaption">active · resting</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardhead">
+        <span class="letter">D</span>
+        <div><div class="name">Growth chart</div><div class="desc">Performance / upside</div></div>
+      </div>
+      <div>
+        <div class="rail">
+          <div class="pill active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M7 16l4-4 3 2 5-6"/><path d="M19 8V4.5M19 8h-3.5" transform="translate(0 0)"/><path d="M15.5 8H19V4.5"/></svg>
+          </div>
+          <div class="pill rest">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M7 16l4-4 3 2 5-6"/><path d="M15.5 8H19V4.5"/></svg>
+          </div>
+        </div>
+        <div class="railcaption">active · resting</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardhead">
+        <span class="letter">E</span>
+        <div><div class="name">Hand + coin</div><div class="desc">Reward paid to a person</div></div>
+      </div>
+      <div>
+        <div class="rail">
+          <div class="pill active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="3.2"/><path d="M12 5.6v2.8M10.8 7h2.4"/><path d="M3 20a4 4 0 0 1 4-3h3l2 1.5a1.2 1.2 0 0 1-1 2H8"/><path d="M14 18.5l5-1.5a1.3 1.3 0 0 1 1 2.4l-6 2.6-4-1"/></svg>
+          </div>
+          <div class="pill rest">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="3.2"/><path d="M12 5.6v2.8M10.8 7h2.4"/><path d="M3 20a4 4 0 0 1 4-3h3l2 1.5a1.2 1.2 0 0 1-1 2H8"/><path d="M14 18.5l5-1.5a1.3 1.3 0 0 1 1 2.4l-6 2.6-4-1"/></svg>
+          </div>
+        </div>
+        <div class="railcaption">active · resting</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardhead">
+        <span class="letter">F</span>
+        <div><div class="name">Rosette badge</div><div class="desc">Merit seal</div></div>
+      </div>
+      <div>
+        <div class="rail">
+          <div class="pill active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5.2"/><path d="M12 6.4l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 8.5l2-.3z"/><path d="M9 13.8 7.5 21l4.5-2.4L16.5 21 15 13.8"/></svg>
+          </div>
+          <div class="pill rest">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5.2"/><path d="M12 6.4l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 8.5l2-.3z"/><path d="M9 13.8 7.5 21l4.5-2.4L16.5 21 15 13.8"/></svg>
+          </div>
+        </div>
+        <div class="railcaption">active · resting</div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="footer">My pick: <strong>A (Trophy)</strong> — instantly reads as a performance reward, distinct from the Benefits gift, and clean at 22px. <strong>B (Coins)</strong> is the strongest "money" alternative if you'd rather signal payout than achievement. Reply with a letter and I'll wire it into the nav.</p>
+</div>

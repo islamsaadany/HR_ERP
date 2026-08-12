@@ -21,6 +21,10 @@ error-prone; this reproduces the document's figures exactly and server-side.
 - **Inputs are uploaded as CSV** per cycle (people / assignments / contributions +
   a firm-figures form), with **downloadable templates**.
 - **Utilisation gate → manual `eligible_to_lead`** per person (no timesheet data).
+  **Retired from the operator flow (2026-08-12):** the column is gone from the People
+  template and the report — whoever is entered as a lead in the Assignments sheet is
+  paid their lead fee, so the flag was redundant with the assignment itself. The DB
+  field remains, inert at its default (`true`), leaving the verified engine untouched.
 - **Contributions flag-and-block:** a payable assignment whose contributions don't
   total ~100% (±1pp) is flagged and excluded until corrected — not normalised.
 - **Commission rate:** `bd == lead_source` ⇒ self-generated **5%**, else referred **3%**.
@@ -31,7 +35,11 @@ error-prone; this reproduces the document's figures exactly and server-side.
   template download; the nav entry appears for super users only.
 - **FR-002**: A super user creates cycles and, per cycle, uploads the People,
   Assignments, and Contributions CSVs (re-upload replaces the sheet) and enters
-  the firm P&L figures.
+  the firm P&L figures. **Templates download pre-filled from data we already hold
+  (2026-08-12):** People is seeded from the registry (Consulting Department + Data
+  Management Unit — name, role, salary, start date); Assignments and Contributions
+  carry the client list (and lead/bd) from the most recent prior cycle. Money and
+  date columns are left blank. With no cycle context the static sample template is served.
 - **FR-003**: The engine computes, server-side and to 2 dp: envelope (3% of GP),
   the 70% gate, contributor tiers/deductions (Lead keeps ≥40%), the contributor
   floor (5% of month) and cap (½ month), firm-retained residual, commission
@@ -43,13 +51,33 @@ error-prone; this reproduces the document's figures exactly and server-side.
   flagged and that assignment is excluded from payouts until corrected.
 - **FR-006**: Reports render: Business Partner Fee, contributor detail, by-person,
   commission, firm P&L, Profit Share (proposed), cost recovery, and a watch list.
+- **FR-006a** (2026-08-12): The by-person section offers **Download calculation
+  (.xlsx)** — a workbook with a Summary sheet plus one sheet per consultant showing
+  their full derivation (assignments led, contributions with tier/allocation, and
+  commission), so each person's number can be shared alongside the amount. The .xlsx
+  carries **term tips** on the column headers and **zero-reason cell notes** (a 0 below
+  the 70% gate vs a 0 below the 5% floor are explained distinctly).
+- **FR-006b** (2026-08-12): The on-screen report is **restructured**: collapsible
+  sections with Expand/Collapse-all; a leading **Review & validation** section (the
+  three uploaded sheets read back) that **auto-opens on a data issue** and flags the
+  offending client — the **Contributions** matrix gains a **Total-%** column that turns
+  red (with ⚠ on the client name) when a client isn't 100%. The **Firm P&L** is an
+  `Item | Value | %` table (whole-EGP values, hover note showing each %'s calculation,
+  "Delivery cost" relabelled **Direct cost**, and a **Scheme cost** row that expands in
+  place to BP fees / contributor / commission, with scheme-%-of-GP on that row). 0
+  values in the fee tables carry a hover reason. The **watch list** is grouped
+  **General/clients first, then per person**. Tables are **full-height** (horizontal-only
+  scroll); tooltips render as a fixed floating layer so the scroll box never clips them.
+  The manual `eligible_to_lead` flag is gone from the People template/report (see
+  clarifications).
 - **FR-007**: Per-hour performance metrics (GP/hour, break-even, pricing floor)
   are **out of scope** until an hours column is provided; cost recovery uses
   contribution-weighted GP.
 
 ## Key entities
 - **IncentiveCycle**: label, status, firm revenue/deliveryCost/totalExpenses.
-- **IncentivePerson**: name, role, netMonthlySalary, eligibleToLead, utilization.
+- **IncentivePerson**: name, role, netMonthlySalary, utilization (`eligibleToLead`
+  retained inert; no longer in the template or report — see clarifications).
 - **IncentiveAssignment**: client, type, lead, bd, leadSource, revenue, directCost,
   vendorCost, markupPct, status.
 - **IncentiveContribution**: client, person, share.

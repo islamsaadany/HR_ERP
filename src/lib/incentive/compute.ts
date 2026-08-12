@@ -100,7 +100,12 @@ export type CycleReport = {
     gateMet: boolean;
     rows: { name: string; entitlement: number; offset: number; net: number }[];
   };
-  watchList: string[];
+  /**
+   * Watch-list notes, each attributed to a person or to the whole cycle/a client
+   * (`person: null`). The report groups the null-person items under a leading
+   * "General / clients" category, then one group per person.
+   */
+  watchList: { person: string | null; text: string }[];
 };
 
 const key = (s: string) => s.trim().toLowerCase();
@@ -287,19 +292,22 @@ export function computeCycle(
       })
     : [];
 
-  // Watch list — the computable items.
-  const watchList: string[] = [];
+  // Watch list — the computable items, each attributed to a person or (null) to
+  // a client/the cycle as a whole.
+  const watchList: { person: string | null; text: string }[] = [];
   for (const r of results) {
     for (const c of r.contributors) {
-      if (c.flooredToZero) watchList.push(`${c.name} contributed to ${r.client} but the payment fell below the 5% floor (£0).`);
+      if (c.flooredToZero)
+        watchList.push({ person: c.name, text: `Contributed to ${r.client} but the payment fell below the 5% floor (£0).` });
     }
     if (r.marginGatePassed && r.grossMarginPct < INCENTIVE_RULES.marginGate + 0.02) {
-      watchList.push(`${r.client} clears the 70% gate by a thin margin (${(r.grossMarginPct * 100).toFixed(1)}%).`);
+      watchList.push({ person: null, text: `${r.client} clears the 70% gate by a thin margin (${(r.grossMarginPct * 100).toFixed(1)}%).` });
     }
   }
   for (const p of byPerson) {
-    if (p.salary > 0 && p.contributor / p.salary > 2) watchList.push(`${p.name}'s contributor payments exceed two months of salary.`);
-    if (p.total === 0 && p.commission === 0) watchList.push(`${p.name} earned nothing this cycle.`);
+    if (p.salary > 0 && p.contributor / p.salary > 2)
+      watchList.push({ person: p.name, text: `Contributor payments exceed two months of salary.` });
+    if (p.total === 0 && p.commission === 0) watchList.push({ person: p.name, text: `Earned nothing this cycle.` });
   }
 
   return {

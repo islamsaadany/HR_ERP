@@ -19,25 +19,6 @@ const th = "px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wid
 const td = "px-3 py-2 text-sm text-ink whitespace-nowrap";
 const tdr = td + " text-right tabular-nums";
 
-/**
- * Assignment status → display label, sort order, and pill colour. "closed"
- * reads as "Ended"; rows in the review table sort Ongoing → Ended → In
- * progress → Pending. Colour tracks payability (green active, slate done,
- * amber in-flight, grey awaiting).
- */
-const STATUS_META: Record<string, { label: string; order: number; cls: string }> = {
-  ongoing: { label: "Ongoing", order: 1, cls: "bg-green-100 text-green-700" },
-  closed: { label: "Ended", order: 2, cls: "bg-slate-100 text-slate-600" },
-  in_progress: { label: "In progress", order: 3, cls: "bg-amber-100 text-amber-700" },
-  pending: { label: "Pending", order: 4, cls: "bg-gray-100 text-gray-500" },
-};
-const statusMeta = (s: string) => STATUS_META[s] ?? { label: s, order: 99, cls: "bg-gray-100 text-gray-500" };
-
-function StatusPill({ status }: { status: string }) {
-  const meta = statusMeta(status);
-  return <span className={"inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold " + meta.cls}>{meta.label}</span>;
-}
-
 /** Section ids drive the collapse state and Expand/Collapse-all. */
 const SECTION_IDS = ["review", "bpf", "contrib", "byPerson", "firm", "commission", "profitShare", "costRecovery", "watch"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
@@ -232,20 +213,17 @@ export function CycleReportView({
               <tr><th className={th}>Client</th><th className={th}>Type</th><th className={th}>Lead</th><th className={th}>BD</th><th className={th + " text-right"}>Revenue</th><th className={th + " text-right"}>Direct cost</th><th className={th}>Status</th></tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {review.assignments
-                .slice()
-                .sort((a, b) => statusMeta(a.status).order - statusMeta(b.status).order)
-                .map((a) => (
-                  <tr key={a.client}>
-                    <td className={td}>{a.client}</td>
-                    <td className={td}>{a.type}</td>
-                    <td className={td}>{a.lead}</td>
-                    <td className={td}>{a.bd}</td>
-                    <td className={tdr}>{a.revenue == null ? "—" : whole(a.revenue)}</td>
-                    <td className={tdr}>{a.directCost == null ? "—" : whole(a.directCost)}</td>
-                    <td className={td}><StatusPill status={a.status} /></td>
-                  </tr>
-                ))}
+              {review.assignments.map((a) => (
+                <tr key={a.client}>
+                  <td className={td}>{a.client}</td>
+                  <td className={td}>{a.type}</td>
+                  <td className={td}>{a.lead}</td>
+                  <td className={td}>{a.bd}</td>
+                  <td className={tdr}>{a.revenue == null ? "—" : whole(a.revenue)}</td>
+                  <td className={tdr}>{a.directCost == null ? "—" : whole(a.directCost)}</td>
+                  <td className={td}>{a.status}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

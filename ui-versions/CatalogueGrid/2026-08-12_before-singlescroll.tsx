@@ -172,8 +172,8 @@ export function CatalogueGrid({
   };
 
   return (
-    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
-      <div className="mt-2 flex flex-wrap items-center gap-2 md:shrink-0">
+    <div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -210,7 +210,7 @@ export function CatalogueGrid({
         {categories.map((c) => <option key={c} value={c} />)}
       </datalist>
 
-      <div className="mt-3 ff-data-scroll rounded-xl border border-line bg-surface md:flex-1 md:min-h-0 md:!max-h-none">
+      <div className="mt-3 ff-data-scroll rounded-xl border border-line bg-surface">
         <table className="ff-data-table ff-catalogue text-sm">
           <thead>
             <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">

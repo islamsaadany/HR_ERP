@@ -95,6 +95,36 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-12 — Incentive report restructure + tips + benefits catalogue scroll (spec 009, branch `claude/incentive-reports-templates-fse4oe`, no migration):**
+  On-screen cycle report rebuilt (`CycleReport.tsx` now a client component): collapsible
+  sections + Expand/Collapse-all; a **Review & validation** section (the 3 uploaded sheets)
+  that auto-opens on a data issue, with a **Contributions Total-% column** flagging any
+  client ≠ 100% (amber row + red total + ⚠ on the name). **Firm P&L** rebuilt as
+  `Item | Value | %` (whole-EGP values, hover calc note per %, **Direct cost** rename,
+  **Scheme cost** expands in place to BP fees / contributor / commission). 0 cells carry a
+  hover reason (below the 70% gate). **Watch list** grouped General/clients then per person
+  (`compute.ts` now attributes each note). Full-height tables via new `.ff-hscroll`
+  (horizontal-only); non-clipping tooltips (`HoverTip` + `tipPosition`), which also fixes
+  the config ⓘ clipping (`InfoDot`). **Excel** (`calc-export.ts`) gained header term-tips +
+  zero-reason cell notes. **Benefits admin** page pinned registry-style (single-scroll) so
+  the catalogue table scrolls internally, not the whole page (`AppShell` route lists,
+  `AdminBenefitsTabs`, `CatalogueGrid`). Verified: `tsc` + `build` green; verify-incentive
+  27/27 + verify-incentive-cycle 16/16; xlsx builder valid with notes. Mockups under
+  `design-mockups/incentive-report/` and `design-mockups/incentive-icon/`.
+- **2026-08-12 — Incentive reports & templates (spec 009, branch `claude/incentive-reports-templates-fse4oe`, no migration):**
+  Four changes, no schema/seed change. (1) **Eligible-to-lead retired** from the People
+  template, parser use, and the report ⚠ — the Assignments sheet already decides who leads;
+  DB field left inert at `true`, verified engine untouched. (2) **Pre-filled templates** —
+  the template route is now cycle-aware (`?cycleId=`): People seeds from the registry
+  (Consulting Department + Data Management Unit); Assignments/Contributions carry the client
+  list + lead/bd from the most recent prior cycle; money/date columns blank
+  (`src/lib/incentive/prefill.ts`). (3) **Per-person .xlsx export** — "Download calculation"
+  on the by-person section streams a workbook (Summary + one sheet per consultant with their
+  full derivation) via `exceljs` (`src/lib/incentive/calc-export.ts`, `load.ts`,
+  `/api/incentive/[id]/calculation`). (4) **Distinct nav icon** — Incentive was reusing the
+  Benefits gift icon; now a coins icon (mockup-approved). Verified: `tsc` + `build` green;
+  throwaway run of the .xlsx builder on the Appendix-A sample reconciles (Galal → Imtenan lead
+  fee 15,209.73), 1 summary + N person sheets, valid workbook re-opened by exceljs.
 - **2026-08-07 — Benefits orientation tour (spec 017, branch `claude/hr-erp-benefits-coverage-rates-hnaox1`, migration `024`):**
   A personalized, first-run, skippable, re-openable **stepped-cards** walkthrough (`BenefitsOrientation`)
   on the employee Benefits page. 4 steps in the employee's own numbers (welcome + first name → pool/band;

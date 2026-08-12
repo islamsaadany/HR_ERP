@@ -1,0 +1,326 @@
+<title>Incentive Report Restructure</title>
+<style>
+  :root {
+    --navy-900: #0d1a2e; --navy-800: #13233b; --navy-700: #1c3252; --navy-500: #33507a;
+    --navy-200: #b9c6da; --navy-50: #eef2f8;
+    --gold-300: #e5c877; --gold-600: #a9822a;
+    --ink: #14202e; --muted: #5c6b7a; --line: #dde3ea;
+    --surface: #ffffff; --paper: #f7f9fc; --ground: #eef1f6;
+    --amber-bg: #fef6e7; --amber-tx: #8a6420; --amber-bd: #e8cf8f;
+    --bad: #b3261e; --bad-bg: #fdeceb;
+    --st-ong-bg:#dcfce7; --st-ong-tx:#15803d; --st-end-bg:#e6eaf0; --st-end-tx:#41526b;
+    --st-prg-bg:#fdf0cf; --st-prg-tx:#8a6414; --st-pen-bg:#eef0f3; --st-pen-tx:#6b7783;
+  }
+  :root:not([data-theme="light"]) { @media (prefers-color-scheme: dark) {
+    --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
+    --navy-50:#1b2a3d; --navy-200:#3a506e; --navy-800:#24405f; --navy-900:#0a1420;
+    --amber-bg:#2c2410; --amber-tx:#e2c477; --amber-bd:#5a4a20;
+    --bad:#f0a89f; --bad-bg:#3a1a17;
+    --st-ong-bg:#123020; --st-ong-tx:#6ee7a8; --st-end-bg:#1c2838; --st-end-tx:#9db4d3;
+    --st-prg-bg:#33280c; --st-prg-tx:#e6c877; --st-pen-bg:#1a2430; --st-pen-tx:#8a99a8;
+  } }
+  :root[data-theme="dark"] {
+    --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
+    --navy-50:#1b2a3d; --navy-200:#3a506e; --navy-800:#24405f; --navy-900:#0a1420;
+    --amber-bg:#2c2410; --amber-tx:#e2c477; --amber-bd:#5a4a20;
+    --bad:#f0a89f; --bad-bg:#3a1a17;
+    --st-ong-bg:#123020; --st-ong-tx:#6ee7a8; --st-end-bg:#1c2838; --st-end-tx:#9db4d3;
+    --st-prg-bg:#33280c; --st-prg-tx:#e6c877; --st-pen-bg:#1a2430; --st-pen-tx:#8a99a8;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.45; padding:26px 24px 80px; }
+  .wrap { max-width: 1360px; margin: 0 auto; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); }
+  h1 { font-family: Georgia, serif; font-size:28px; margin:4px 0 2px; font-weight:600; }
+  .note-banner { margin:18px 0; border:1px solid var(--amber-bd); background:var(--amber-bg); color:var(--amber-tx); border-radius:12px; padding:12px 16px; font-size:13px; }
+  .toolbar { display:flex; justify-content:flex-end; gap:8px; margin:8px 0 4px; }
+  .btn { border:1px solid var(--line); background:var(--surface); color:var(--navy-700); font-size:12px; font-weight:600; border-radius:8px; padding:6px 12px; cursor:pointer; }
+  .btn:hover { background:var(--navy-50); }
+
+  details { background:var(--surface); border:1px solid var(--line); border-radius:14px; margin-top:14px; overflow:hidden; }
+  summary { list-style:none; cursor:pointer; padding:14px 18px; display:flex; align-items:center; gap:10px; user-select:none; }
+  summary::-webkit-details-marker { display:none; }
+  .chev { transition:transform .15s ease; color:var(--muted); font-size:13px; }
+  details[open] > summary .chev { transform:rotate(90deg); }
+  .sec-title { font-family: Georgia, serif; font-size:18px; }
+  .sec-sub { color:var(--muted); font-size:12.5px; font-weight:400; }
+  .sec-tag { margin-left:auto; font-size:11px; color:var(--muted); font-weight:600; }
+  .sec-body { padding:0 18px 18px; }
+  .dl-btn { margin-left:auto; background:var(--navy-800); color:#fff; border:none; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; text-decoration:none; }
+  .subhead { font-size:12px; color:var(--muted); margin:2px 0 8px; }
+  .subhead2 { margin-top:14px; }
+
+  table { border-collapse:collapse; width:100%; }
+  /* Horizontal scroll only — never vertical; tables render at full height. */
+  .scroll { overflow-x:auto; overflow-y:hidden; border:1px solid var(--line); border-radius:10px; }
+  th, td { padding:8px 12px; font-size:13px; white-space:nowrap; }
+  thead th { background:var(--navy-50); color:var(--muted); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+  tbody tr { border-top:1px solid var(--line); }
+  td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; }
+  .tot { background:var(--navy-50); font-weight:700; }
+  #pnl { table-layout: fixed; }
+  .flag-row td { background:var(--amber-bg); }
+  .flag-cell { background:var(--bad-bg); color:var(--bad); font-weight:700; }
+  .warn { color:var(--bad); cursor:help; margin-left:4px; font-weight:700; }
+  .issue-tag { font-size:11px; font-weight:700; color:var(--bad); background:var(--bad-bg); border:1px solid var(--bad); padding:2px 8px; border-radius:999px; }
+  .right-group { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .pill-status { display:inline-block; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:600; }
+  .st-ongoing { background:var(--st-ong-bg); color:var(--st-ong-tx); }
+  .st-ended { background:var(--st-end-bg); color:var(--st-end-tx); }
+  .st-progress { background:var(--st-prg-bg); color:var(--st-prg-tx); }
+  .st-pending { background:var(--st-pen-bg); color:var(--st-pen-tx); }
+  .scost-row { cursor:pointer; }
+  .scost-row:hover { background:var(--navy-50); }
+  .scost-sub { display:none; }
+  .scost-sub td:first-child { padding-left:34px; color:var(--muted); }
+  .open-scost .scost-sub { display:table-row; }
+  .mini-chev { display:inline-block; color:var(--muted); font-size:11px; transition:transform .15s; }
+  .open-scost .mini-chev { transform:rotate(90deg); }
+
+  .info { position:relative; display:inline-flex; margin-left:5px; vertical-align:middle; }
+  .info > .dot { width:15px; height:15px; border-radius:50%; border:1px solid var(--navy-200); color:var(--navy-500); font-size:10px; font-weight:700; display:grid; place-items:center; cursor:help; }
+  .pct, .zero { cursor:help; border-bottom:1px dotted var(--navy-200); }
+  .zero { color:var(--gold-600); font-weight:600; display:inline-block; }
+  /* Tooltips: a fixed floating layer, positioned by JS from the trigger's rect,
+     so the table's overflow:hidden can never clip them. */
+  .tip, .calc {
+    position:fixed; top:0; left:0; max-width:230px; background:var(--navy-900); color:#fff;
+    font-size:11px; font-weight:400; line-height:1.35; padding:7px 10px; border-radius:8px;
+    z-index:100; box-shadow:0 6px 20px rgba(0,0,0,.25); opacity:0; pointer-events:none;
+    transition:opacity .12s; text-transform:none; letter-spacing:normal; text-align:left;
+  }
+  .calc { white-space:nowrap; max-width:none; }
+  .tshow { opacity:1; }
+
+  .wl-cat { font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--gold-600); margin:14px 0 4px; }
+  .wl-cat:first-child { margin-top:2px; }
+  .wl-list { margin:0; padding-left:20px; }
+  .wl-list li { font-size:13px; margin:2px 0; }
+  .legend { margin-top:16px; font-size:11.5px; color:var(--muted); }
+  .caption { font-size:12px; color:var(--muted); padding:6px 2px 0; }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Super User · Confidential · MOCKUP for sign-off</p>
+  <h1>H1-2026 — cycle report (proposed layout)</h1>
+  <p style="color:var(--muted);font-size:13px;margin:4px 0 0;">Full section list. Sections collapse on click (Review starts collapsed). Tables fill the page width; horizontal scroll only on a tight screen; no vertical scroll. Hover any ⓘ, dotted % or 0.</p>
+
+  <div class="note-banner"><b>Data needs attention — excluded from the payout.</b> El&nbsp;Abd: contributions total 93.0% (must be 100%).</div>
+
+  <div class="toolbar">
+    <button class="btn" onclick="document.querySelectorAll('.wrap > details').forEach(d=>d.open=true)">Expand all</button>
+    <button class="btn" onclick="document.querySelectorAll('.wrap > details').forEach(d=>d.open=false)">Collapse all</button>
+  </div>
+
+  <!-- 1. Review & validation (auto-opens when there's a data issue) -->
+  <details open>
+    <summary><span class="chev">▶</span><span class="sec-title">Review &amp; validation</span><span class="sec-sub">the three uploaded sheets, as read</span>
+      <span class="right-group"><span class="issue-tag">⚠ 1 data issue</span><span class="sec-tag" style="margin-left:0">People 5 · Assignments 4 · Contributions 4</span></span>
+    </summary>
+    <div class="sec-body">
+      <p class="subhead">People</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Name</th><th>Role</th><th class="r">Net monthly salary</th><th>Start date</th><th class="r">Utilization</th></tr></thead>
+        <tbody>
+          <tr><td>Islam</td><td>Senior Consultant</td><td class="r">150,000</td><td>2024-01-01</td><td class="r">66%</td></tr>
+          <tr><td>Galal</td><td>Consultant</td><td class="r">60,000</td><td>2024-01-01</td><td class="r">63%</td></tr>
+          <tr><td>Omar</td><td>Consultant</td><td class="r">50,000</td><td>2024-01-01</td><td class="r">90%</td></tr>
+          <tr><td>Aley</td><td>Consultant</td><td class="r">85,000</td><td>2024-01-01</td><td class="r">63%</td></tr>
+          <tr><td>Momen</td><td>Consultant</td><td class="r">90,000</td><td>2024-01-01</td><td class="r">75%</td></tr>
+        </tbody>
+      </table></div>
+      <p class="subhead subhead2">Assignments</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Client</th><th>Type</th><th>Lead</th><th>BD</th><th class="r">Revenue</th><th class="r">Direct cost</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>El&nbsp;Abd</td><td>RET</td><td>Islam</td><td>Islam</td><td class="r">2,250,000</td><td class="r">630,528</td><td><span class="pill-status st-ongoing">Ongoing</span></td></tr>
+          <tr><td>Wander</td><td>RET</td><td>Galal</td><td>Islam</td><td class="r">990,000</td><td class="r">270,101</td><td><span class="pill-status st-ongoing">Ongoing</span></td></tr>
+          <tr><td>Imtenan</td><td>RET</td><td>Galal</td><td>Islam</td><td class="r">600,000</td><td class="r">93,009</td><td><span class="pill-status st-ongoing">Ongoing</span></td></tr>
+          <tr><td>Raya Trade</td><td>RET</td><td>Islam</td><td>Omar</td><td class="r">410,000</td><td class="r">187,444</td><td><span class="pill-status st-ongoing">Ongoing</span></td></tr>
+          <tr><td>Sportify</td><td>PRJ</td><td>Omar</td><td>Omar</td><td class="r">167,400</td><td class="r">22,778</td><td><span class="pill-status st-ended">Ended</span></td></tr>
+          <tr><td>JRNY</td><td>PRJ</td><td>Islam</td><td>Islam</td><td class="r">160,650</td><td class="r">46,968</td><td><span class="pill-status st-ended">Ended</span></td></tr>
+          <tr><td>Beverages Expert</td><td>PRJ</td><td>Islam</td><td>Islam</td><td class="r">398,396</td><td class="r">92,911</td><td><span class="pill-status st-progress">In progress</span></td></tr>
+          <tr><td>Forefront Trading</td><td>PRJ</td><td>Omar</td><td>Omar</td><td class="r">649,000</td><td class="r">—</td><td><span class="pill-status st-pending">Pending</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="subhead subhead2">Contributions (client × person) — the <b>Total</b> column flags any client that isn't 100%</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Client</th><th class="r">Islam</th><th class="r">Momen</th><th class="r">Galal</th><th class="r">Aley</th><th class="r">Omar</th><th class="r">Total</th></tr></thead>
+        <tbody>
+          <tr class="flag-row"><td>El&nbsp;Abd <span class="warn">⚠<span class="tip">Contributions total 93% — must be 100%. This assignment is excluded from the payout until the shares are corrected.</span></span></td><td class="r">7%</td><td class="r">59%</td><td class="r">5%</td><td class="r">22%</td><td class="r">—</td><td class="r flag-cell">93% <span class="warn">⚠<span class="tip">Must total 100%. This assignment is excluded from the payout until the shares are corrected.</span></span></td></tr>
+          <tr><td>Wander</td><td class="r">14%</td><td class="r">—</td><td class="r">64%</td><td class="r">22%</td><td class="r">—</td><td class="r">100%</td></tr>
+          <tr><td>Imtenan</td><td class="r">5%</td><td class="r">9%</td><td class="r">86%</td><td class="r">—</td><td class="r">—</td><td class="r">100%</td></tr>
+          <tr><td>Raya Trade</td><td class="r">15%</td><td class="r">15%</td><td class="r">—</td><td class="r">—</td><td class="r">70%</td><td class="r">100%</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+
+  <!-- 2. Business Partner Fee -->
+  <details open>
+    <summary><span class="chev">▶</span><span class="sec-title">Business Partner Fee</span><span class="info"><span class="dot">i</span><span class="tip"><b>Envelope</b> = 3% of the client's Gross Profit, and only when the client clears the 70% gross-margin gate. It's the pot the assignment generates before the lead and contributors are paid.</span></span></summary>
+    <div class="sec-body">
+      <div class="scroll"><table>
+        <thead><tr><th>Client</th><th>Type</th><th class="r">GP</th><th class="r">GP%</th><th class="r">Envelope</th><th class="r">Ded</th><th>Lead</th><th class="r">Lead fee</th><th class="r">Contributor</th><th class="r">Firm</th></tr></thead>
+        <tbody>
+          <tr><td>Wander</td><td>RET</td><td class="r">719,899.00</td><td class="r">72.7%</td><td class="r">21,596.97</td><td class="r">10%</td><td>Galal</td><td class="r">19,437.27</td><td class="r">2,159.70</td><td class="r">—</td></tr>
+          <tr><td>Imtenan</td><td>RET</td><td class="r">506,991.00</td><td class="r">84.5%</td><td class="r">15,209.73</td><td class="r">—</td><td>Galal</td><td class="r">15,209.73</td><td class="r">—</td><td class="r">—</td></tr>
+          <tr><td>Raya Trade</td><td>RET</td><td class="r">222,556.00</td><td class="r">54.3%</td>
+            <td class="r"><span class="zero">0.00<span class="calc">Below the 70% margin gate (54.3%) — no envelope is generated, so the lead fee and every contributor allocation on this client are 0.</span></span></td>
+            <td class="r">—</td><td>Islam</td>
+            <td class="r"><span class="zero">0.00<span class="calc">Envelope is 0 (client below the 70% gate), so there is no lead fee.</span></span></td>
+            <td class="r">—</td><td class="r">—</td></tr>
+          <tr class="tot"><td colspan="7">Total</td><td class="r">34,647.00</td><td class="r">2,159.70</td><td class="r">—</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+
+  <!-- 3. Contributor detail -->
+  <details open>
+    <summary><span class="chev">▶</span><span class="sec-title">Contributor detail</span><span class="info"><span class="dot">i</span><span class="tip"><b>Tier</b> = the deduction a contributor's share takes from the lead's fee. <b>Allocation</b> = envelope × tier. <b>Paid</b> = allocation after the 5%-of-month floor and ½-month cap.</span></span></summary>
+    <div class="sec-body">
+      <div class="scroll"><table>
+        <thead><tr><th>Client</th><th>Person</th><th class="r">Share</th><th class="r">Tier</th><th class="r">Allocation</th><th class="r">Paid</th></tr></thead>
+        <tbody>
+          <tr><td>Wander</td><td>Aley</td><td class="r">22%</td><td class="r">10%</td><td class="r">2,159.70</td><td class="r">2,159.70</td></tr>
+          <tr><td>Wander</td><td>Islam</td><td class="r">14%</td><td class="r">—</td><td class="r">0.00</td><td class="r">0 (floored)</td></tr>
+          <tr><td>Imtenan</td><td>Islam</td><td class="r">5%</td><td class="r">—</td><td class="r">0.00</td><td class="r">0 (floored)</td></tr>
+          <tr><td>Raya Trade</td><td>Omar</td><td class="r">70%</td><td class="r">—</td>
+            <td class="r"><span class="zero">0.00<span class="calc">Raya Trade is below the 70% margin gate (54.3%), so its envelope is 0 — Omar's allocation is 0 regardless of his 70% share.</span></span></td>
+            <td class="r"><span class="zero">0.00<span class="calc">Allocation is 0 (client below the 70% gate), so nothing is paid.</span></span></td></tr>
+          <tr><td>Raya Trade</td><td>Momen</td><td class="r">11%</td><td class="r">—</td>
+            <td class="r"><span class="zero">0.00<span class="calc">Raya Trade is below the 70% margin gate — envelope 0, so allocation is 0.</span></span></td>
+            <td class="r"><span class="zero">0.00<span class="calc">Allocation is 0 (client below the 70% gate).</span></span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+
+  <!-- 4. By person -->
+  <details open>
+    <summary><span class="chev">▶</span><span class="sec-title">By person</span><span class="sec-sub">released compensation (excludes commission)</span><a class="dl-btn" href="#" onclick="return false">⬇ Download calculation (.xlsx)</a></summary>
+    <div class="sec-body">
+      <div class="scroll"><table>
+        <thead><tr><th>Person</th><th class="r">Salary</th><th class="r">Lead fee</th><th class="r">Contributor</th><th class="r">Total</th><th class="r">Months</th><th class="r">Commission</th></tr></thead>
+        <tbody>
+          <tr><td>Galal</td><td class="r">60,000</td><td class="r">34,647.00</td><td class="r">—</td><td class="r">34,647.00</td><td class="r">0.58</td><td class="r">—</td></tr>
+          <tr><td>Aley</td><td class="r">85,000</td><td class="r">—</td><td class="r">2,159.70</td><td class="r">2,159.70</td><td class="r">0.03</td><td class="r">—</td></tr>
+          <tr><td>Islam</td><td class="r">150,000</td><td class="r">—</td><td class="r">—</td><td class="r">—</td><td class="r">—</td><td class="r">12,300.00</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+
+  <!-- 5. Firm P&L — single continuous table; scheme cost expands in place -->
+  <details open>
+    <summary><span class="chev">▶</span><span class="sec-title">Firm P&amp;L</span><span class="sec-sub">whole-EGP values · hover a % for its calculation · click Scheme cost to break it down</span></summary>
+    <div class="sec-body">
+      <div class="scroll"><table id="pnl">
+        <colgroup><col style="width:56%"><col style="width:24%"><col style="width:20%"></colgroup>
+        <thead><tr><th>Item</th><th class="r">Value</th><th class="r">%</th></tr></thead>
+        <tbody>
+          <tr><td>Revenue</td><td class="r">6,514,087</td><td class="r">—</td></tr>
+          <tr><td>Direct cost</td><td class="r">2,477,345</td><td class="r"><span class="pct">38.0%<span class="calc">2,477,345 ÷ 6,514,087 (of revenue)</span></span></td></tr>
+          <tr><td>Gross profit</td><td class="r">4,036,742</td><td class="r"><span class="pct">62.0%<span class="calc">4,036,742 ÷ 6,514,087 (of revenue)</span></span></td></tr>
+          <tr><td>Total expenses</td><td class="r">3,500,000</td><td class="r"><span class="pct">53.7%<span class="calc">3,500,000 ÷ 6,514,087 (of revenue)</span></span></td></tr>
+          <tr class="tot"><td>Profit before scheme</td><td class="r">536,742</td><td class="r"><span class="pct">8.2%<span class="calc">536,742 ÷ 6,514,087 (of revenue)</span></span></td></tr>
+          <tr class="scost-row" onclick="document.getElementById('pnl').classList.toggle('open-scost')">
+            <td><span class="mini-chev">▶</span> Scheme cost</td><td class="r">246,550</td><td class="r"><span class="pct">6.1% of GP<span class="calc">246,550 ÷ 4,036,742 (of gross profit)</span></span></td></tr>
+          <tr class="scost-sub"><td>Business Partner (lead) fees</td><td class="r">120,450</td><td class="r"></td></tr>
+          <tr class="scost-sub"><td>Contributor payments</td><td class="r">84,200</td><td class="r"></td></tr>
+          <tr class="scost-sub"><td>Commission</td><td class="r">41,900</td><td class="r"></td></tr>
+          <tr class="tot"><td>Profit after scheme</td><td class="r">290,192</td><td class="r"><span class="pct">4.5%<span class="calc">290,192 ÷ 6,514,087 (of revenue)</span></span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="caption">The three components sit inside the P&amp;L — “Scheme cost” expands in place, it is not a separate table.</p>
+    </div>
+  </details>
+
+  <!-- 6. Commission by person -->
+  <details open>
+    <summary><span class="chev">▶</span><span class="sec-title">Commission by person</span><span class="sec-sub">protected — independent of the gates</span></summary>
+    <div class="sec-body">
+      <div class="scroll"><table>
+        <tbody>
+          <tr><td>Islam</td><td class="r">12,300.00</td></tr>
+          <tr><td>Omar</td><td class="r">3,720.00</td></tr>
+          <tr class="tot"><td>Total</td><td class="r">16,020.00</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+
+  <!-- 7. Profit Share -->
+  <details open>
+    <summary><span class="chev">▶</span><span class="sec-title">Profit Share</span><span class="sec-sub">proposed, not adopted — excluded from released totals</span></summary>
+    <div class="sec-body">
+      <div class="scroll"><table>
+        <thead><tr><th>Person</th><th class="r">Entitlement</th><th class="r">Offset</th><th class="r">Net</th></tr></thead>
+        <tbody>
+          <tr><td>Galal</td><td class="r">45,000.00</td><td class="r">17,323.50</td><td class="r">27,676.50</td></tr>
+          <tr><td>Islam</td><td class="r">112,500.00</td><td class="r">—</td><td class="r">112,500.00</td></tr>
+        </tbody>
+      </table></div>
+      <p class="caption">Shown populated for layout. In this sample the net margin is below the 15% gate, so it would actually read: “Net margin 4.5% is below the 15% gate — Profit Share is nil.”</p>
+    </div>
+  </details>
+
+  <!-- 8. Cost recovery -->
+  <details open>
+    <summary><span class="chev">▶</span><span class="sec-title">Cost recovery</span><span class="info"><span class="dot">i</span><span class="tip"><b>Multiple</b> = Gross Profit a person generated (weighted by their contribution share) ÷ their six-month salary. Above 1× means they covered their cost.</span></span></summary>
+    <div class="sec-body">
+      <div class="scroll"><table>
+        <thead><tr><th>Person</th><th class="r">6-mo salary</th><th class="r">GP generated</th><th class="r">Multiple</th><th class="r">Surplus</th></tr></thead>
+        <tbody>
+          <tr><td>Omar</td><td class="r">300,000</td><td class="r">690,000</td><td class="r">2.3x</td><td class="r">390,000</td></tr>
+          <tr><td>Galal</td><td class="r">360,000</td><td class="r">612,000</td><td class="r">1.7x</td><td class="r">252,000</td></tr>
+          <tr><td>Islam</td><td class="r">900,000</td><td class="r">1,180,000</td><td class="r">1.3x</td><td class="r">280,000</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </details>
+
+  <!-- 9. Watch list -->
+  <details open>
+    <summary><span class="chev">▶</span><span class="sec-title">Watch list</span><span class="sec-sub">general items first, then per person</span></summary>
+    <div class="sec-body">
+      <div class="wl-cat">General / clients</div>
+      <ul class="wl-list">
+        <li>Wander clears the 70% gate by a thin margin (72.7%).</li>
+        <li>Raya Trade is below the 70% gate (54.3%) — no Business Partner Fee this cycle.</li>
+      </ul>
+      <div class="wl-cat">Galal</div>
+      <ul class="wl-list"><li>Contributor payments on JRNY fell below the 5% floor (paid 0).</li></ul>
+      <div class="wl-cat">Islam</div>
+      <ul class="wl-list"><li>Earned a lead fee of 0 on Raya Trade (client below the 70% gate).</li></ul>
+    </div>
+  </details>
+
+  <p class="legend">Mockup only — figures are illustrative. Note there is <b>no vertical scrollbar</b> on any table now; they render at full height and only scroll sideways if the screen is narrower than the table. Confirm this and I'll build it into the live report, plus the Excel cell-notes, the config ⓘ tooltip fix, and the benefits-catalogue internal scroll.</p>
+</div>
+
+<script>
+  // Position each tooltip as a fixed floating layer from its trigger's rect,
+  // clamped to the viewport — mirrors how the real components will render tips
+  // so overflow:hidden on the table can never clip them.
+  document.querySelectorAll('.info, .pct, .zero, .warn').forEach(function (trigger) {
+    var tip = trigger.querySelector('.tip, .calc');
+    if (!tip) return;
+    function show() {
+      var r = trigger.getBoundingClientRect();
+      tip.classList.add('tshow');
+      var w = tip.offsetWidth, h = tip.offsetHeight;
+      var left = r.left + r.width / 2 - w / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+      var top = r.bottom + 6;
+      if (top + h > window.innerHeight - 8) top = r.top - h - 6; // flip above if no room
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+    }
+    function hide() { tip.classList.remove('tshow'); }
+    trigger.addEventListener('mouseenter', show);
+    trigger.addEventListener('mouseleave', hide);
+  });
+</script>
