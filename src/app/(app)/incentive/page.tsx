@@ -19,12 +19,22 @@ export default async function IncentiveHome({
 
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Super User · Confidential</p>
-      <h1 className="mt-1 font-serif text-3xl text-ink">Incentive Scheme</h1>
-      <p className="mt-1 text-muted">
-        Partner-compensation cycles (Business Partner Fee, Commission, Profit Share). Upload the four
-        sheets per cycle; all figures are computed server-side.
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Confidential · Super User &amp; Finance</p>
+          <h1 className="mt-1 font-serif text-3xl text-ink">Incentive Scheme</h1>
+          <p className="mt-1 text-muted">
+            Partner-compensation cycles (Business Partner Fee, Commission, Profit Share). Upload the four
+            sheets per cycle; all figures are computed server-side.
+          </p>
+        </div>
+        <Link
+          href="/incentive/how-it-works"
+          className="mt-1 flex-none rounded-lg border border-line bg-surface px-3 py-2 text-sm font-medium text-navy-700 hover:bg-navy-50"
+        >
+          How it works
+        </Link>
+      </div>
 
       {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p> : null}
 
