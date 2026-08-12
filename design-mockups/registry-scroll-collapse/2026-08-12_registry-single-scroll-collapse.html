@@ -13,44 +13,60 @@
   html,body { margin:0; padding:0; }
   body { background:var(--paper); color:var(--ink); font-family:var(--font-sans); -webkit-font-smoothing:antialiased; }
 
-  .intro { max-width:960px; margin:0 auto; padding:28px 24px 8px; }
+  .intro { max-width:1000px; margin:0 auto; padding:28px 24px 8px; }
   .intro h2 { font-family:var(--font-serif); font-size:22px; margin:0 0 6px; color:var(--navy-900); }
   .intro p { color:var(--muted); font-size:14px; line-height:1.55; margin:6px 0; }
-  .intro .toggle-row { margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .intro .hint { font-size:12.5px; color:var(--muted); }
 
-  /* ---- Simulated app viewport (mimics the AppShell main area, full-width data page) ---- */
+  .switcher { margin-top:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px; box-shadow:var(--shadow-card); }
+  .switcher .lab { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gold-600); margin-bottom:10px; }
+  .segs { display:flex; gap:8px; flex-wrap:wrap; }
+  .seg { border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:8px 13px; font-size:13px; font-weight:600; color:var(--navy-700); cursor:pointer; display:flex; align-items:center; gap:8px; }
+  .seg small { font-weight:500; color:var(--muted); }
+  .seg.active { border-color:var(--navy-800); background:var(--navy-800); color:#fff; }
+  .seg.active small { color:var(--navy-100); }
+  .switcher .note { margin-top:10px; font-size:12.5px; color:var(--muted); }
+
+  /* ---- Simulated app viewport ---- */
   .viewport {
-    max-width:1180px; margin:16px auto 40px; height:660px;
+    max-width:1180px; margin:16px auto 40px; height:640px;
     border:1px solid var(--line); border-radius:14px; overflow:hidden;
-    box-shadow:var(--shadow-card); background:var(--surface);
-    display:flex;
+    box-shadow:var(--shadow-card); background:var(--surface); display:flex;
   }
-  .sidebar {
-    width:56px; background:var(--navy-900); flex:none;
-    display:flex; flex-direction:column; align-items:center; padding:14px 0; gap:14px;
-  }
-  .sidebar .logo { width:30px; height:30px; border-radius:8px; background:var(--navy-800);
-    color:var(--gold-400); font-family:var(--font-serif); font-size:16px; display:grid; place-items:center; }
-  .sidebar .dot { width:26px; height:26px; border-radius:7px; background:transparent; }
+  .sidebar { width:56px; background:var(--navy-900); flex:none; display:flex; flex-direction:column; align-items:center; padding:14px 0; gap:14px; }
+  .sidebar .logo { width:30px; height:30px; border-radius:8px; background:var(--navy-800); color:var(--gold-400); font-family:var(--font-serif); font-size:16px; display:grid; place-items:center; }
+  .sidebar .dot { width:26px; height:26px; border-radius:7px; }
   .sidebar .dot.on { background:var(--navy-800); }
 
-  /* main = fixed-height flex column: header fixed, table fills the rest and is the ONLY scroller */
   .main { flex:1; min-width:0; display:flex; flex-direction:column; padding:22px 26px; height:100%; }
 
-  .backrow { display:flex; align-items:center; gap:12px; flex:none; }
+  .backrow { display:flex; align-items:center; gap:12px; flex:none; min-height:30px; }
   .backlink { color:var(--muted); font-size:13px; text-decoration:none; }
   .backlink:hover { color:var(--navy-700); }
-  .collapse-btn {
-    margin-left:auto; display:inline-flex; align-items:center; gap:7px;
-    border:1px solid var(--line); background:var(--surface); color:var(--navy-700);
-    font-size:12.5px; font-weight:600; padding:5px 11px; border-radius:9px; cursor:pointer;
-  }
-  .collapse-btn:hover { background:var(--navy-50); }
-  .collapse-btn svg { width:14px; height:14px; transition:transform .18s ease; }
-  body.collapsed .collapse-btn svg { transform:rotate(180deg); }
 
-  /* The title block that collapses away */
+  /* ---- Collapse control variants (only the active one shows) ---- */
+  .ctl { margin-left:auto; display:none; align-items:center; cursor:pointer; }
+  body[data-variant="ghost"]   .ctl.ghost   { display:inline-flex; }
+  body[data-variant="icon"]    .ctl.icon    { display:inline-flex; }
+  body[data-variant="link"]    .ctl.link    { display:inline-flex; }
+
+  /* Variant A — ghost text + chevron (no border) */
+  .ctl.ghost { gap:7px; color:var(--navy-700); font-size:13px; font-weight:600; padding:5px 8px; border-radius:8px; }
+  .ctl.ghost:hover { background:var(--navy-50); }
+  .ctl.ghost svg { width:15px; height:15px; transition:transform .2s ease; }
+  body.collapsed .ctl.ghost svg { transform:rotate(180deg); }
+
+  /* Variant B — icon-only chevron chip */
+  .ctl.icon { width:32px; height:32px; justify-content:center; border-radius:9px; color:var(--navy-500); border:1px solid var(--line); background:var(--surface); }
+  .ctl.icon:hover { background:var(--navy-50); color:var(--navy-800); }
+  .ctl.icon svg { width:17px; height:17px; transition:transform .2s ease; }
+  body.collapsed .ctl.icon svg { transform:rotate(180deg); }
+
+  /* Variant C — plain underlined text (matches "Sign out" style) */
+  .ctl.link { gap:6px; color:var(--navy-500); font-size:12.5px; font-weight:600; text-decoration:underline; text-underline-offset:3px; }
+  .ctl.link:hover { color:var(--gold-600); }
+  .ctl.link svg { width:13px; height:13px; transition:transform .2s ease; }
+  body.collapsed .ctl.link svg { transform:rotate(180deg); }
+
   .titleblock { flex:none; overflow:hidden; transition:max-height .22s ease, opacity .18s ease, margin .22s ease; max-height:150px; opacity:1; margin-top:14px; }
   body.collapsed .titleblock { max-height:0; opacity:0; margin-top:0; }
   .titleblock .row { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
@@ -61,7 +77,6 @@
   .btn { border:1px solid var(--line); background:var(--surface); color:var(--navy-700); font-size:13px; font-weight:600; padding:7px 12px; border-radius:9px; cursor:pointer; }
   .btn.primary { background:var(--navy-800); color:#fff; border-color:var(--navy-800); }
 
-  /* toolbar (search + filters) — always visible */
   .toolbar { flex:none; display:flex; gap:8px; align-items:center; margin-top:16px; flex-wrap:wrap; }
   body.collapsed .toolbar { margin-top:4px; }
   .search { flex:1; min-width:220px; border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:9px 12px; font-size:13px; color:var(--muted); }
@@ -69,7 +84,6 @@
 
   .hintline { flex:none; font-size:12px; color:var(--muted); margin-top:12px; }
 
-  /* THE scroller — fills remaining height, only thing that scrolls */
   .datascroll { flex:1; min-height:0; overflow:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); margin-top:10px; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
   thead th { position:sticky; top:0; z-index:2; background:var(--navy-50); text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:11px 14px; border-bottom:1px solid var(--line); font-weight:700; }
@@ -78,28 +92,23 @@
   td.name { font-weight:600; color:var(--navy-900); }
   .pill { display:inline-block; background:var(--navy-50); color:var(--navy-700); border:1px solid var(--navy-100); border-radius:999px; padding:2px 9px; font-size:11px; font-weight:600; }
   .open { color:var(--gold-600); font-weight:600; }
-  /* frozen first column */
   tbody tr > :first-child, thead tr > :first-child { position:sticky; left:0; background:var(--surface); box-shadow:1px 0 0 var(--line), 6px 0 8px -6px rgba(15,36,68,.16); }
   thead tr > :first-child { background:var(--navy-50); z-index:3; }
   tbody tr:hover > :first-child { background:var(--navy-50); }
-
-  .legend { max-width:960px; margin:0 auto; padding:4px 24px 40px; }
-  .legend .card { border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:16px 18px; box-shadow:var(--shadow-card); }
-  .legend h3 { margin:0 0 8px; font-size:14px; color:var(--navy-900); }
-  .legend ul { margin:0; padding-left:18px; color:var(--muted); font-size:13.5px; line-height:1.7; }
-  .legend b { color:var(--ink); }
 </style>
 
 <div class="intro">
-  <h2>Registry — single scroll + collapse (proposed)</h2>
-  <p>The page is now exactly one screen tall. The header (back link, title block, search) stays put and the <b>table is the only thing that scrolls</b> — the outer page scrollbar is gone. Scroll inside the table below to confirm there's just one bar.</p>
-  <p>Use the <b>Collapse</b> button (top-right of the frame) to hide the title block — the <b>← Admin</b> back link, the action buttons, and the search + filters stay visible, and the table gains the reclaimed height.</p>
-  <div class="toggle-row">
-    <button class="collapse-btn" onclick="document.body.classList.toggle('collapsed')" style="position:static">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-      Toggle collapse (demo)
-    </button>
-    <span class="hint">Also works via the button inside the frame.</span>
+  <h2>Registry — pick a collapse control</h2>
+  <p>Same layout fix as before (one scrollbar, only the table scrolls). This version lets you compare <b>three less box-like styles</b> for the collapse control, and the label/tooltip now flips with state — it never says "Collapse" while already collapsed.</p>
+
+  <div class="switcher">
+    <div class="lab">Collapse control style</div>
+    <div class="segs">
+      <button class="seg active" data-set="ghost">A · Ghost text + chevron <small>borderless</small></button>
+      <button class="seg" data-set="icon">B · Icon-only chevron <small>tooltip</small></button>
+      <button class="seg" data-set="link">C · Underlined text <small>"Sign out" style</small></button>
+    </div>
+    <div class="note">Click a style, then use the control at the top-right of the frame (or press it again to expand). Watch the wording change: <b>Hide details ▲</b> ↔ <b>Show details ▼</b>.</div>
   </div>
 </div>
 
@@ -111,10 +120,21 @@
   <div class="main">
     <div class="backrow">
       <a href="#" class="backlink">← Admin</a>
-      <button class="collapse-btn" onclick="document.body.classList.toggle('collapsed')">
+
+      <!-- A: ghost -->
+      <span class="ctl ghost" onclick="toggle()" title="">
+        <span class="lbl">Hide details</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-        <span class="lbl">Collapse</span>
-      </button>
+      </span>
+      <!-- B: icon-only -->
+      <span class="ctl icon" onclick="toggle()" title="Hide details" aria-label="Hide details">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+      </span>
+      <!-- C: link -->
+      <span class="ctl link" onclick="toggle()" title="">
+        <span class="lbl">Hide details</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+      </span>
     </div>
 
     <div class="titleblock">
@@ -154,18 +174,8 @@
   </div>
 </div>
 
-<div class="legend">
-  <div class="card">
-    <h3>What changes vs. today</h3>
-    <ul>
-      <li><b>One scrollbar.</b> The page fills the viewport exactly; only the table scrolls. The current "table height = 100vh − 11rem" guess (which overflows and adds the second bar) is replaced by a fixed-height column that fills the leftover space precisely.</li>
-      <li><b>Collapse button.</b> Hides the eyebrow + <b>Employees</b> title + record count only. The <b>← Admin</b> back link, action buttons, and search/filters stay. Preference remembered per browser (like the sidebar collapse).</li>
-      <li><b>No restyle.</b> Colors, table, chips, buttons, spacing are unchanged — this is layout plumbing plus one toggle.</li>
-    </ul>
-  </div>
-</div>
-
 <script>
+  // rows
   var depts=["Consulting Department","Marketing & Community","Data Management Unit","Top Management","Financial Department","People Department"];
   var types=["Full-time","Part-time"];
   var tenures=["6 months – 2 years","2 – 4 years","4 – 7 years","—","7 – 10 years"];
@@ -176,4 +186,25 @@
     html+="<tr><td class='name'>"+names[i]+"</td><td>"+first+"@forefront.consulting</td><td>"+depts[i%depts.length]+"</td><td>"+types[i%2]+"</td><td>"+tenures[i%tenures.length]+"</td><td>—</td><td><span class='pill'>Active</span></td><td class='open'>Open</td></tr>";
   }
   document.getElementById("rows").innerHTML=html;
+
+  // state-aware label + tooltip
+  function syncLabels(){
+    var collapsed = document.body.classList.contains("collapsed");
+    var text = collapsed ? "Show details" : "Hide details";
+    document.querySelectorAll(".ctl .lbl").forEach(function(n){ n.textContent = text; });
+    document.querySelectorAll(".ctl").forEach(function(n){ n.setAttribute("title", text); n.setAttribute("aria-label", text); });
+  }
+  function toggle(){ document.body.classList.toggle("collapsed"); syncLabels(); }
+
+  // variant switch
+  document.querySelectorAll(".seg").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll(".seg").forEach(function(x){ x.classList.remove("active"); });
+      b.classList.add("active");
+      document.body.setAttribute("data-variant", b.getAttribute("data-set"));
+    });
+  });
+
+  document.body.setAttribute("data-variant","ghost");
+  syncLabels();
 </script>
