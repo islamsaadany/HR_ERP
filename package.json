@@ -22,6 +22,7 @@
     "@auth/prisma-adapter": "^2.10.0",
     "@prisma/client": "^6.16.2",
     "@vercel/blob": "^2.3.0",
+    "exceljs": "^4.4.0",
     "mermaid": "^11.16.0",
     "next": "^15.5.4",
     "next-auth": "^5.0.0-beta.29",

@@ -95,9 +95,13 @@ export default async function CyclePage({
           <div className="rounded-xl border border-line bg-surface p-4">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-ink">Upload sheets (CSV)</div>
-              <DownloadTemplates />
+              <DownloadTemplates cycleId={cycle.id} />
             </div>
-            <p className="mt-1 text-[11px] text-muted">Download a template, fill it, upload it back. Re-uploading replaces that sheet.</p>
+            <p className="mt-1 text-[11px] text-muted">
+              Templates come pre-filled from what we already hold — people from the Consulting &amp; Data teams,
+              and clients carried from the previous cycle. Fill the remaining columns and upload it back;
+              re-uploading replaces that sheet.
+            </p>
             <div className="mt-3 space-y-3">
               {uploads.map((u) => (
                 <SheetUpload key={u.kind} cycleId={cycle.id} kind={u.kind} label={u.label} count={u.count} />
@@ -113,7 +117,7 @@ export default async function CyclePage({
         ) : null}
       </div>
 
-      {hasData ? <CycleReportView report={report} /> : null}
+      {hasData ? <CycleReportView report={report} cycleId={cycle.id} /> : null}
     </div>
   );
 }

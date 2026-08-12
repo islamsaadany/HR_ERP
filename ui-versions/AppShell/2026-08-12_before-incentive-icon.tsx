@@ -168,7 +168,7 @@ export function AppShell({
                       : "text-gold-300 hover:bg-navy-800")
                   }
                 >
-                  <NavIcon name="incentive" />
+                  <NavIcon name="benefits" />
                 </Link>
               ) : null}
               {showPayments ? (
@@ -413,10 +413,6 @@ function NavIcon({ name }: { name: string }) {
     case "profile":
       return (
         <svg {...common}><circle cx="12" cy="8" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
-      );
-    case "incentive":
-      return (
-        <svg {...common}><ellipse cx="9" cy="6" rx="5" ry="2.4" /><path d="M4 6v4c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4V6" /><path d="M4 10v4c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4v-4" /><circle cx="16.5" cy="15.5" r="4.5" /><path d="M16.5 13.5v4M15 15.5h3" /></svg>
       );
     case "payments":
       return (

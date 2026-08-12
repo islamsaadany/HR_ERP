@@ -3,26 +3,11 @@ import type { CycleReport } from "@/lib/incentive/compute";
 const m = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 
-function Section({
-  title,
-  subtitle,
-  action,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
+function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
     <section className="mt-8">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="font-serif text-xl text-ink">{title}</h2>
-          {subtitle ? <p className="mt-0.5 text-sm text-muted">{subtitle}</p> : null}
-        </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
-      </div>
+      <h2 className="font-serif text-xl text-ink">{title}</h2>
+      {subtitle ? <p className="mt-0.5 text-sm text-muted">{subtitle}</p> : null}
       <div className="mt-3 ff-data-scroll rounded-xl border border-line bg-surface">{children}</div>
     </section>
   );
@@ -32,7 +17,7 @@ const th = "px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wid
 const td = "px-3 py-2 text-sm text-ink whitespace-nowrap";
 const tdr = td + " text-right tabular-nums";
 
-export function CycleReportView({ report, cycleId }: { report: CycleReport; cycleId: string }) {
+export function CycleReportView({ report }: { report: CycleReport }) {
   const r = report;
 
   return (
@@ -77,7 +62,7 @@ export function CycleReportView({ report, cycleId }: { report: CycleReport; cycl
                   <td className={tdr}>{pct(a.grossMarginPct)}</td>
                   <td className={tdr}>{m(a.envelope)}</td>
                   <td className={tdr}>{a.totalDeduction ? pct(a.totalDeduction) : "—"}</td>
-                  <td className={td}>{a.leadName}</td>
+                  <td className={td}>{a.leadName}{a.leadEligible ? "" : " ⚠"}</td>
                   <td className={tdr}>{m(a.leadFee)}</td>
                   <td className={tdr}>{contrib ? m(contrib) : "—"}</td>
                   <td className={tdr}>{a.firmRetained ? m(a.firmRetained) : "—"}</td>
@@ -122,18 +107,7 @@ export function CycleReportView({ report, cycleId }: { report: CycleReport; cycl
       </Section>
 
       {/* Fee by person */}
-      <Section
-        title="By person"
-        subtitle="Released compensation (excludes commission, which is protected)."
-        action={
-          <a
-            href={`/api/incentive/${cycleId}/calculation`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-navy-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-700"
-          >
-            ⬇ Download calculation (.xlsx)
-          </a>
-        }
-      >
+      <Section title="By person" subtitle="Released compensation (excludes commission, which is protected).">
         <table className="ff-data-table min-w-full divide-y divide-line">
           <thead className="bg-navy-50/40">
             <tr>
