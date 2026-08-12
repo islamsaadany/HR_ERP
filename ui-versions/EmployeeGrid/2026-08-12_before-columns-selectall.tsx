@@ -276,17 +276,6 @@ export function EmployeeGrid({
     persistCfg(cfg.map((c) => (c.key === key ? { ...c, visible: !c.visible } : c)));
   }
 
-  // Show/hide every hideable column at once. Non-hideable columns (e.g. Name)
-  // always stay visible.
-  function setAllColumns(visible: boolean) {
-    persistCfg(
-      cfg.map((c) => {
-        const col = colByKey.get(c.key);
-        return col && !col.hideable ? { ...c, visible: true } : { ...c, visible };
-      })
-    );
-  }
-
   function reorder(from: string, to: string) {
     if (from === to) return;
     const next = [...cfg];
@@ -429,28 +418,7 @@ export function EmployeeGrid({
             <>
               <div className="fixed inset-0 z-10" onClick={() => setColsOpen(false)} />
               <div className="absolute right-0 z-20 mt-1 w-56 rounded-lg border border-line bg-surface p-2 shadow-lg">
-                <div className="flex items-center justify-between px-2 pb-1">
-                  <p className="text-[11px] uppercase tracking-wide text-muted">Show columns</p>
-                  <div className="flex items-center gap-1 text-[11px] font-medium">
-                    <button
-                      type="button"
-                      onClick={() => setAllColumns(true)}
-                      className="rounded px-1.5 py-0.5 text-navy-700 hover:bg-navy-50"
-                    >
-                      All
-                    </button>
-                    <span className="text-line" aria-hidden="true">
-                      ·
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setAllColumns(false)}
-                      className="rounded px-1.5 py-0.5 text-navy-700 hover:bg-navy-50"
-                    >
-                      None
-                    </button>
-                  </div>
-                </div>
+                <p className="px-2 pb-1 text-[11px] uppercase tracking-wide text-muted">Show columns</p>
                 {cfg.map((c) => {
                   const col = colByKey.get(c.key);
                   if (!col) return null;
