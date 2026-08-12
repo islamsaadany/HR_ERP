@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { isAdmin } from "@/lib/roles";
+import { isAdmin, isFinance } from "@/lib/roles";
 import { streamPrivateBlob } from "@/lib/blob-serve";
 
 /**
- * Authorized proof-of-payment download: the claim owner or HR/Super User only.
+ * Authorized proof-of-payment download: the claim owner, HR/Super User, or Finance.
  * Proof files live in a PRIVATE store and are streamed through the server after
  * the permission check — the raw blob URL is never exposed.
  */
@@ -21,8 +21,9 @@ export async function GET(
   const claim = await prisma.benefitClaim.findUnique({ where: { id } });
   if (!claim || !claim.proofUrl) return new NextResponse("Not found", { status: 404 });
 
+  // The claim owner, HR/Super User, or Finance (who pays it) may view the proof.
   const isOwner = claim.userId === session.user.id;
-  if (!isOwner && !isAdmin(session.user.role)) {
+  if (!isOwner && !isAdmin(session.user.role) && !isFinance(session.user.role)) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 

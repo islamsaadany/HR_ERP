@@ -35,6 +35,9 @@ export default async function FinancePage({
       approvedAt: c.decidedAt ? formatDate(c.decidedAt) : "—",
       paidAmount: c.amountTransferred ?? null,
       paidDate: c.transferDate ? formatDate(c.transferDate) : null,
+      // Proof-of-payment the employee attached (PROOF-policy claims) — Finance
+      // views it before confirming. Streamed via /api/claims/[id]/proof.
+      hasProof: !!c.proofUrl,
     }));
 
   return (
