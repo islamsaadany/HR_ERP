@@ -110,8 +110,11 @@ export default async function AdminBenefitsPage({
       label: `${g.name} (${eligibilityText(g)})`,
       group: "Guaranteed" as const,
     })),
+    // Medical is priced automatically (age bands + proration) — a single option, no amount entered.
+    { value: "medical", label: "Medical insurance (auto-priced)", group: "Medical" as const },
+    // Flexible basket — exclude medical items (they're covered by the auto-priced option above).
     ...catalogItems
-      .filter((c) => c.active)
+      .filter((c) => c.active && !c.isMedical)
       .map((c) => ({ value: `catalog:${c.id}`, label: c.name, group: "Flexible basket" as const })),
   ];
 

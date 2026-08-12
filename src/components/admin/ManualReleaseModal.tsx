@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ManualReleaseForm } from "@/components/admin/ManualReleaseForm";
 
 type Emp = { id: string; name: string };
-type Benefit = { value: string; label: string; group: "Guaranteed" | "Flexible basket" };
+type Benefit = { value: string; label: string; group: "Guaranteed" | "Medical" | "Flexible basket" };
 
 /**
  * "Record a past claim / release" is an exception (HR back-filling a claim paid outside the app),
