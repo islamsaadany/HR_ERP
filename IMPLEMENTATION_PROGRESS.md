@@ -95,6 +95,20 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-13 — Admin/Finance UX: amounts-save toast + editable reimbursed record (branch `claude/benefits-eligibility-display-d36tez`, no migration):**
+  Two follow-ups on the same branch, no schema/seed change. (1) **Amounts-tab save feedback** —
+  every save form on Admin → Benefits → **Amounts** (pool ceilings, guaranteed FT/PT amounts,
+  each medical rate-card row) was submitting silently; now wrapped in a shared `ToastForm`
+  (`components/admin/ToastForm.tsx`) that keeps the same server action but fires the employee-claim
+  **green `ff-toast`** on success (red on failure), so the operator knows it saved before pressing
+  Done. (2) **Finance reimbursed-record dates + edit** — the Finance **Payments** table now shows the
+  **Approved** date and a dedicated **Reimbursed on** column, and each reimbursed row is
+  **Finance-editable** (`ReimbursedCell` → `editPayment` in `finance/actions.ts`) to fix the
+  transferred amount and/or reimbursement date. Guarded to Finance/Super-User, validates (positive
+  amount, valid non-future date, still REIMBURSED), leaves status + `paidBy`/`paidAt` unchanged, and
+  **sends no email** (the employee was already notified at reimbursement — it's a bookkeeping fix).
+  Mockup-approved (`design-mockups/finance-payments/2026-08-13_reimbursed-dates-edit.html`); UI
+  snapshots under `ui-versions/`. Docs synced (PROJECT_DETAILS + spec 020). `tsc`/`build` green.
 - **2026-08-13 — Guaranteed-benefit salary-fallback fix + release-table display (branch `claude/benefits-eligibility-display-d36tez`, no migration):**
   Two changes, no schema/seed change. (1) **Salary-fallback correction (money + display).**
   A guaranteed benefit with **no per-type band amount set** (e.g. Part-time Summer

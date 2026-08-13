@@ -167,3 +167,10 @@ A Super User opens the admin settings and manages the email notifications: a **m
 - **Localization / templating**: Emails are English, plain and transactional, consistent with the app's tone; rich branded templates are not required for v1 of this feature.
 - **Persistence & migration**: The existing claim records are migrated to the new status vocabulary (existing "released" claims map to "Reimbursed"); the exact migration is handled at implementation time via the project's Neon SQL hand-off process.
 - **Auditability**: Each transition records who acted and when, so the claim history shows the full Submitted → Approved → Reimbursed (or Rejected) trail.
+
+## Follow-up — reimbursed-record dates & Finance edit (2026-08-13)
+
+Operational refinement to the Finance **Payments** view; no new state, no schema change.
+
+- **Both dates visible.** The Payments table shows the **Approved** date (HR decision, `decidedAt`) and a dedicated **Reimbursed on** column (the transfer date, `transferDate`) — previously the reimbursement date was only tucked into the payment cell.
+- **Finance can correct a reimbursed record.** Each REIMBURSED row has an inline **Edit** (`ReimbursedCell` → `editPayment`) to fix the **transferred amount and/or the reimbursement date** (e.g. a mistyped date). It is Finance/Super-User-guarded, validates (positive amount, valid non-future date, record still REIMBURSED), leaves **status**, **`paidById`**, and **`paidAt`** unchanged, and **sends no email** — the employee was already notified at reimbursement (per the "Rejection/reimbursement emails" loop), so a bookkeeping correction is deliberately silent. Realizes the "Finance records the actual amount transferred" assumption by making that record correctable after the fact while preserving the audit of who/when it was originally confirmed.

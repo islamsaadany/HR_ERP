@@ -73,3 +73,49 @@ export async function confirmPayment(formData: FormData): Promise<void> {
   revalidatePath("/admin/benefits");
   redirect("/finance?paid=" + q(claim.user.name ?? "the employee"));
 }
+
+/**
+ * Finance corrects an already-REIMBURSED record — the transferred amount and/or the
+ * reimbursement date (e.g. a mistyped date). Same validation as confirming, but it does
+ * NOT change status, NOT touch who/when it was confirmed (`paidById`/`paidAt`), and
+ * deliberately sends NO email — the employee was already notified at reimbursement, this
+ * is a bookkeeping fix. Guarded to Finance/Super User.
+ */
+export async function editPayment(formData: FormData): Promise<void> {
+  await requireFinance();
+  const id = formData.get("id") as string;
+  if (!id) return;
+
+  const amount = parseInt(((formData.get("amountTransferred") as string | null) ?? "").replace(/[^0-9]/g, ""), 10);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    redirect("/finance?error=" + q("Enter a valid transferred amount."));
+  }
+  const dateStr = ((formData.get("transferDate") as string | null) ?? "").trim();
+  const transferDate = dateStr ? new Date(dateStr) : null;
+  if (!transferDate || Number.isNaN(transferDate.getTime())) {
+    redirect("/finance?error=" + q("Enter a valid reimbursement date."));
+  }
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+  if (transferDate.getTime() > endOfToday.getTime()) {
+    redirect("/finance?error=" + q("The reimbursement date can't be in the future."));
+  }
+
+  const claim = await prisma.benefitClaim.findUnique({
+    where: { id },
+    include: { user: { select: { name: true } } },
+  });
+  if (!claim || claim.status !== "REIMBURSED") {
+    redirect("/finance?error=" + q("That record isn't a reimbursed payment."));
+  }
+
+  await prisma.benefitClaim.update({
+    where: { id },
+    data: { transferDate, amountTransferred: amount },
+  });
+
+  revalidatePath("/finance");
+  revalidatePath("/benefits");
+  revalidatePath("/admin/benefits");
+  redirect("/finance?edited=" + q(claim.user.name ?? "the employee"));
+}
