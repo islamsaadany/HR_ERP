@@ -60,10 +60,11 @@ export const employeeSchema = z.object({
       .optional()
   ),
   reportsToId: strOrNull,
-  // Emergency contact (HR-managed, spec 001 registry extension) — all three required on input.
-  emergencyContactName: z.string().trim().min(1, "Emergency contact name is required"),
-  emergencyContactRelationship: z.string().trim().min(1, "Emergency contact relationship is required"),
-  emergencyContactPhone: z.string().trim().min(1, "Emergency contact phone is required"),
+  // Emergency contact (HR-managed, spec 001 registry extension) — optional so HR is
+  // never blocked from saving other edits on a record that lacks them; filled when known.
+  emergencyContactName: strOrNull,
+  emergencyContactRelationship: strOrNull,
+  emergencyContactPhone: strOrNull,
   dependants: z.array(dependantSchema).default([]),
 });
 

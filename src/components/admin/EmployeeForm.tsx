@@ -340,16 +340,16 @@ export function EmployeeForm({
         <h2 className="mb-4 font-serif text-lg text-ink">Emergency contact</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={L}>Contact name *</label>
-            <input name="emergencyContactName" defaultValue={values.emergencyContactName ?? ""} required className={I} />
+            <label className={L}>Contact name</label>
+            <input name="emergencyContactName" defaultValue={values.emergencyContactName ?? ""} className={I} />
           </div>
           <div>
-            <label className={L}>Relationship *</label>
-            <input name="emergencyContactRelationship" defaultValue={values.emergencyContactRelationship ?? ""} required className={I} />
+            <label className={L}>Relationship</label>
+            <input name="emergencyContactRelationship" defaultValue={values.emergencyContactRelationship ?? ""} className={I} />
           </div>
           <div className="sm:col-span-2">
-            <label className={L}>Contact phone *</label>
-            <input name="emergencyContactPhone" defaultValue={values.emergencyContactPhone ?? ""} required className={I} />
+            <label className={L}>Contact phone</label>
+            <input name="emergencyContactPhone" defaultValue={values.emergencyContactPhone ?? ""} className={I} />
           </div>
         </div>
       </section>
