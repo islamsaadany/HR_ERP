@@ -97,14 +97,13 @@ body {
 .ff-data-table {
   width: 100%;
 }
-/* Frozen header row (navy blue, bold white text, consistent across every data table) */
+/* Frozen header row (navy blue with light text, consistent across every data table) */
 .ff-data-table thead th {
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--color-navy-800);
-  color: #ffffff;
-  font-weight: 700;
+  color: #e8edf3;
 }
 /* Frozen first column (both header and body cells) */
 .ff-data-table tr > :first-child {
