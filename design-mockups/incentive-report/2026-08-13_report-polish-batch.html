@@ -49,7 +49,8 @@
   .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
 
   table { border-collapse:collapse; width:100%; }
-  .scroll { overflow-x:auto; overflow-y:hidden; border:1px solid var(--line); border-radius:10px; }
+  .scroll { overflow-x:auto; overflow-y:hidden; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+  .note-eq { font-size:12px; color:var(--muted); font-style:italic; white-space:normal; }
   th, td { padding:8px 12px; font-size:13px; white-space:nowrap; }
   thead th { background:var(--navy-50); color:var(--muted); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
   tbody tr { border-top:1px solid var(--line); }
@@ -193,18 +194,20 @@
   </table></div>
   <p class="legend">Shading alternates each time the <b>client</b> changes (Wander → Imtenan → Raya Trade → Beverages), not every row.</p>
 
-  <!-- 7. Firm P&L squeezed -->
-  <h2>5 · Firm P&amp;L — squeezed <span class="chg">values near labels</span></h2>
-  <p class="sub">Constrained width so the Value/% columns sit next to the item names instead of stretching across the page.</p>
-  <div class="scroll narrow"><table style="table-layout:fixed"><colgroup><col style="width:52%"><col style="width:28%"><col style="width:20%"></colgroup>
-    <thead><tr><th>Item</th><th class="r">Value</th><th class="r">%</th></tr></thead>
+  <!-- 7. Firm P&L squeezed + Notes column with word-equations -->
+  <h2>5 · Firm P&amp;L <span class="chg">squeezed</span> <span class="chg">Notes column (equations)</span></h2>
+  <p class="sub">Values sit next to the item names. The old hover-note becomes a visible <b>Notes</b> column that spells out
+    each % as a plain-language equation (e.g. Direct cost → <i>Direct cost ÷ Revenue</i>) rather than raw numbers.</p>
+  <div class="scroll" style="max-width:680px"><table style="table-layout:fixed"><colgroup><col style="width:30%"><col style="width:20%"><col style="width:12%"><col style="width:38%"></colgroup>
+    <thead><tr><th>Item</th><th class="r">Value</th><th class="r">%</th><th>Notes</th></tr></thead>
     <tbody>
-      <tr><td>Revenue</td><td class="r">6,514,087</td><td class="r muted-cell">—</td></tr>
-      <tr><td>Direct cost</td><td class="r">2,477,345</td><td class="r"><span class="brk">38.0%<span class="tip">2,477,345 ÷ 6,514,087 (of revenue)</span></span></td></tr>
-      <tr><td>Gross profit</td><td class="r">4,036,742</td><td class="r"><span class="brk">62.0%<span class="tip">4,036,742 ÷ 6,514,087 (of revenue)</span></span></td></tr>
-      <tr><td>Total expenses</td><td class="r">3,500,000</td><td class="r"><span class="brk">53.7%<span class="tip">3,500,000 ÷ 6,514,087 (of revenue)</span></span></td></tr>
-      <tr class="tot"><td>Profit before scheme</td><td class="r">536,742</td><td class="r">8.2%</td></tr>
-      <tr class="tot"><td>Profit after scheme</td><td class="r">290,192</td><td class="r">4.5%</td></tr>
+      <tr><td>Revenue</td><td class="r">6,514,087</td><td class="r muted-cell">—</td><td class="muted-cell">—</td></tr>
+      <tr><td>Direct cost</td><td class="r">2,477,345</td><td class="r">38.0%</td><td class="note-eq">Direct cost ÷ Revenue</td></tr>
+      <tr><td>Gross profit</td><td class="r">4,036,742</td><td class="r">62.0%</td><td class="note-eq">Gross profit ÷ Revenue</td></tr>
+      <tr><td>Total expenses</td><td class="r">3,500,000</td><td class="r">53.7%</td><td class="note-eq">Total expenses ÷ Revenue</td></tr>
+      <tr class="tot"><td>Profit before scheme</td><td class="r">536,742</td><td class="r">8.2%</td><td class="note-eq">Profit before scheme ÷ Revenue</td></tr>
+      <tr><td>Scheme cost</td><td class="r">246,550</td><td class="r">6.1%</td><td class="note-eq">Scheme cost ÷ Gross profit</td></tr>
+      <tr class="tot"><td>Profit after scheme</td><td class="r">290,192</td><td class="r">4.5%</td><td class="note-eq">Profit after scheme ÷ Revenue</td></tr>
     </tbody>
   </table></div>
 
