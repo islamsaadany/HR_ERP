@@ -89,7 +89,10 @@ error-prone; this reproduces the document's figures exactly and server-side.
   best, 2–3× good, 1–2× poor, <1× critical). **Commission by person** is squeezed with a
   **click-a-name** expansion to the per-deal breakdown (client, self/referred, rate,
   net-revenue base, amount). `utilization` is removed from the People template/read-back
-  (see clarifications).
+  (see clarifications). **Data-table headers are navy blue with light text** (shared
+  `ff-data-table` style, app-wide), and the **sticky first column is repainted** so the
+  header corner, zebra rows, and total/emphasis rows all fill their first column instead
+  of showing white.
 - **FR-007**: Per-hour performance metrics (GP/hour, break-even, pricing floor)
   are **out of scope** until an hours column is provided; cost recovery uses
   contribution-weighted GP.
