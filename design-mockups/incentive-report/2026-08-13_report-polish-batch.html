@@ -12,11 +12,11 @@
     --st-end-bg:#dbeafe; --st-end-tx:#1d4ed8;      /* Ended → bluish (was grey) */
     --st-prg-bg:#fdf0cf; --st-prg-tx:#8a6414; --st-pen-bg:#eef0f3; --st-pen-tx:#6b7783;
     /* cost-recovery multiple bands */
-    --mb-best-bg:#dcfce7; --mb-best-tx:#15803d;    /* >3x  best */
-    --mb-good-bg:#ecfccb; --mb-good-tx:#4d7c0f;    /* 2-3x good */
+    --mb-best-bg:#a7f3c4; --mb-best-tx:#14682f;    /* >3x  best  (deeper green) */
+    --mb-good-bg:#ecfccb; --mb-good-tx:#4d7c0f;    /* 2-3x good  (lime) */
     --mb-poor-bg:#fef3c7; --mb-poor-tx:#92600e;    /* 1-2x poor */
     --mb-crit-bg:#fee2e2; --mb-crit-tx:#b91c1c;    /* <1x  critical */
-    --zebra:#f4f7fb;
+    --zebra:#f7f1e4;                               /* warm cream — distinct from the blue header */
   }
   :root:not([data-theme="light"]) { @media (prefers-color-scheme: dark) {
     --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
@@ -24,18 +24,18 @@
     --bad:#f0a89f; --bad-bg:#3a1a17; --gold-bg:#2a2410;
     --st-ong-bg:#123020; --st-ong-tx:#6ee7a8; --st-end-bg:#16294a; --st-end-tx:#93b4f5;
     --st-prg-bg:#33280c; --st-prg-tx:#e6c877; --st-pen-bg:#1a2430; --st-pen-tx:#8a99a8;
-    --mb-best-bg:#123020; --mb-best-tx:#6ee7a8; --mb-good-bg:#25320f; --mb-good-tx:#bce06a;
+    --mb-best-bg:#15532e; --mb-best-tx:#8bf0b0; --mb-good-bg:#25320f; --mb-good-tx:#bce06a;
     --mb-poor-bg:#33280c; --mb-poor-tx:#e6c877; --mb-crit-bg:#3a1a17; --mb-crit-tx:#f0a89f;
-    --zebra:#101c28;
+    --zebra:#241f12;
   } }
   :root[data-theme="dark"] {
     --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
     --bad:#f0a89f; --bad-bg:#3a1a17; --gold-bg:#2a2410;
     --st-ong-bg:#123020; --st-ong-tx:#6ee7a8; --st-end-bg:#16294a; --st-end-tx:#93b4f5;
     --st-prg-bg:#33280c; --st-prg-tx:#e6c877; --st-pen-bg:#1a2430; --st-pen-tx:#8a99a8;
-    --mb-best-bg:#123020; --mb-best-tx:#6ee7a8; --mb-good-bg:#25320f; --mb-good-tx:#bce06a;
+    --mb-best-bg:#15532e; --mb-best-tx:#8bf0b0; --mb-good-bg:#25320f; --mb-good-tx:#bce06a;
     --mb-poor-bg:#33280c; --mb-poor-tx:#e6c877; --mb-crit-bg:#3a1a17; --mb-crit-tx:#f0a89f;
-    --zebra:#101c28;
+    --zebra:#241f12;
   }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--ground); color:var(--ink);
@@ -79,9 +79,10 @@
   .brk { cursor:help; border-bottom:1px dotted var(--navy-200); }
   .zero { color:var(--gold-600); font-weight:600; cursor:help; border-bottom:1px dotted var(--navy-200); }
   .tip {
-    position:fixed; top:0; left:0; max-width:260px; background:var(--navy-900); color:#fff;
-    font-size:11px; font-weight:400; line-height:1.4; padding:8px 11px; border-radius:8px;
-    z-index:100; box-shadow:0 6px 20px rgba(0,0,0,.28); opacity:0; pointer-events:none;
+    position:fixed; top:0; left:0; max-width:270px; background:var(--navy-900); color:#fff;
+    font-size:11.5px; font-weight:400; line-height:1.45; padding:10px 12px; border-radius:9px;
+    z-index:100; box-shadow:0 8px 24px rgba(0,0,0,.32); border:1px solid rgba(255,255,255,.10);
+    opacity:0; pointer-events:none;
     transition:opacity .12s; text-transform:none; letter-spacing:normal; text-align:left;
   }
   .tip b { color:#fff; }
@@ -94,6 +95,19 @@
   .cols { display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start; }
   .pick-note { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 8px; }
   .divider { height:1px; background:var(--line); margin:34px 0 0; }
+
+  /* click-to-expand commission */
+  .exp-row { cursor:pointer; }
+  .exp-row:hover td { background:var(--navy-50); }
+  .mini-chev { display:inline-block; color:var(--muted); font-size:11px; transition:transform .15s; margin-right:5px; }
+  .exp-row.open .mini-chev { transform:rotate(90deg); }
+  .exp-sub { display:none; }
+  .exp-sub.show { display:table-row; }
+  .exp-sub > td { background:var(--paper); padding:6px 12px 10px 30px; white-space:normal; }
+  .brk-line { display:flex; justify-content:space-between; gap:14px; font-size:12px; padding:3px 0; border-top:1px dashed var(--line); }
+  .brk-line:first-child { border-top:none; }
+  .brk-line span { color:var(--muted); }
+  .brk-line b { color:var(--ink); font-variant-numeric:tabular-nums; }
 </style>
 
 <div class="wrap">
@@ -103,8 +117,9 @@
     dotted 0s. Gold “changed” chips mark what's new. Figures are illustrative.</p>
 
   <!-- 1. People — utilization removed -->
-  <h2>1 · People read-back <span class="chg">utilization removed</span></h2>
-  <p class="sub">The <b>Utilization</b> column is dropped from the CSV template and this table — it fed no calculation.</p>
+  <h2>1 · People read-back <span class="chg">utilization removed</span> <span class="chg">squeezed</span></h2>
+  <p class="sub">The <b>Utilization</b> column is dropped from the CSV template and this table — it fed no calculation.
+    With only four columns left, the table is also constrained to a sensible width (not stretched full-width).</p>
   <div class="scroll midw"><table>
     <thead><tr><th>Name</th><th>Role</th><th class="r">Net monthly salary</th><th>Start date</th></tr></thead>
     <tbody>
@@ -214,43 +229,41 @@
 
   <div class="divider"></div>
 
-  <!-- 9. Commission table: EXPANDED vs SQUEEZED -->
-  <h2>7 · Commission by person — you decide: expanded or squeezed</h2>
-  <p class="sub">Right now it's a wide 2-column table (Name, Amount). Two options below — pick one.</p>
-  <div class="cols">
-    <div>
-      <p class="pick-note">Option A — expanded (per-deal breakdown)</p>
-      <div class="scroll"><table>
-        <thead><tr><th>Person</th><th>Client</th><th>Source</th><th class="r">Rate</th><th class="r">Net revenue</th><th class="r">Commission</th></tr></thead>
-        <tbody>
-          <tr><td>Islam</td><td>JRNY</td><td>Self-gen</td><td class="r">5%</td><td class="r">160,650</td><td class="r">8,032.50</td></tr>
-          <tr><td>Islam</td><td>Beverages</td><td>Self-gen</td><td class="r">5%</td><td class="r">85,350</td><td class="r">4,267.50</td></tr>
-          <tr class="tot"><td colspan="5">Islam total</td><td class="r">12,300.00</td></tr>
-          <tr class="zebra"><td>Omar</td><td>Sportify</td><td>Self-gen</td><td class="r">5%</td><td class="r">74,400</td><td class="r">3,720.00</td></tr>
-          <tr class="tot"><td colspan="5">Omar total</td><td class="r">3,720.00</td></tr>
-          <tr class="tot"><td colspan="5">Grand total</td><td class="r">16,020.00</td></tr>
-        </tbody>
-      </table></div>
-      <p class="legend"><b>Needs a small engine change</b> to expose per-deal commission (client, self/referred, rate, base). Shows exactly how each person's commission was earned.</p>
-    </div>
-    <div>
-      <p class="pick-note">Option B — squeezed (compact)</p>
-      <div class="scroll" style="max-width:280px"><table>
-        <thead><tr><th>Person</th><th class="r">Commission</th></tr></thead>
-        <tbody>
-          <tr><td>Islam</td><td class="r">12,300.00</td></tr>
-          <tr><td>Omar</td><td class="r">3,720.00</td></tr>
-          <tr class="tot"><td>Total</td><td class="r">16,020.00</td></tr>
-        </tbody>
-      </table></div>
-      <p class="legend">No engine change — just constrains the width so the two columns sit tightly. Same data as today.</p>
-    </div>
-  </div>
+  <!-- 9. Commission table: squeezed, click a name to expand -->
+  <h2>7 · Commission by person <span class="chg">squeezed + click to expand</span></h2>
+  <p class="sub">Starts compact (Person, Commission). <b>Click a person's name</b> to reveal the per-deal breakdown —
+    client, source (self/referred), rate, net revenue, and the commission from each. Click again to collapse.
+    Try clicking <b>Islam</b> or <b>Omar</b>.</p>
+  <div class="scroll" style="max-width:470px"><table id="commtbl">
+    <thead><tr><th>Person</th><th class="r">Commission</th></tr></thead>
+    <tbody>
+      <tr class="exp-row" onclick="toggleExp(this)"><td><span class="mini-chev">▶</span>Islam</td><td class="r">12,300.00</td></tr>
+      <tr class="exp-sub"><td colspan="2">
+        <div class="brk-line"><span>JRNY · Self-gen · 5% · net 160,650</span><b>8,032.50</b></div>
+        <div class="brk-line"><span>Beverages Expert · Self-gen · 5% · net 85,350</span><b>4,267.50</b></div>
+      </td></tr>
+      <tr class="exp-row" onclick="toggleExp(this)"><td><span class="mini-chev">▶</span>Omar</td><td class="r">3,720.00</td></tr>
+      <tr class="exp-sub"><td colspan="2">
+        <div class="brk-line"><span>Sportify · Self-gen · 5% · net 74,400</span><b>3,720.00</b></div>
+      </td></tr>
+      <tr class="tot"><td>Total</td><td class="r">16,020.00</td></tr>
+    </tbody>
+  </table></div>
+  <p class="legend"><b>Needs a small engine change</b> to expose the per-deal commission detail (client, self/referred, rate,
+    net-revenue base) that today is only computed as a per-person total. The row itself stays squeezed until clicked.</p>
 
-  <p class="legend" style="margin-top:26px">Tell me: <b>expanded (A)</b> or <b>squeezed (B)</b> for commission, and confirm the rest — then I'll build it all, verify, and push.</p>
+  <p class="legend" style="margin-top:26px">If this all looks right, say the word and I'll build the batch, verify, and push.</p>
 </div>
 
 <script>
+  // Commission: click a person row to toggle its per-deal breakdown sub-row.
+  function toggleExp(row) {
+    var sub = row.nextElementSibling;
+    if (!sub || !sub.classList.contains('exp-sub')) return;
+    row.classList.toggle('open');
+    sub.classList.toggle('show');
+  }
+
   document.querySelectorAll('.info, .brk, .zero').forEach(function (trigger) {
     var tip = trigger.querySelector('.tip');
     if (!tip) return;
