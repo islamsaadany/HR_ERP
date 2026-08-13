@@ -146,3 +146,17 @@ The allowance value for each employee is computed from the benefit's configured 
 - **Applicability by employment type** is read from the existing guaranteed-benefit config (a benefit exists for FT and/or PT).
 - **Reuses** the existing admin Benefits area, role gating, and CSV export approach from spec `007`; no new money rules. Adds the Benefit Release record (schema change); saved column presets remain a later enhancement.
 - **Amounts are the per-band entitlement figures** from config (not confidential); actual disbursement happens outside the app.
+
+## Follow-ups (2026-08-13)
+
+- **Distinct "Reimbursed (backfilled)" status**: a benefit an employee already
+  received via HR's manual back-fill (an already-approved `BenefitClaim` with
+  status `REIMBURSED`, recorded outside the app — spec 016) is a **separate**
+  mechanism from a `BenefitRelease`. The release view now surfaces those people
+  as **"Reimbursed (backfilled) — <date>"** (and counts them in the footer) so a
+  paid person is no longer shown as "Not released". Release (payroll marking) and
+  reimbursement (already paid) remain distinct records.
+- **Truthful needs-attention reason**: when no amount resolves, the Status names
+  the actual cause — **no employment type**, **no tenure band**, or **no allowance
+  set for their type/band** — instead of always saying "no tenure". (A part-time
+  employee with no configured part-time band amount is the common case.)

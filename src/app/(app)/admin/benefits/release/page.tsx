@@ -60,7 +60,7 @@ export default async function BenefitReleasePage({
       ...(selected.eligibleFullTime ? (["FULL_TIME"] as const) : []),
       ...(selected.eligiblePartTime ? (["PART_TIME"] as const) : []),
     ];
-    const [employees, releases] = await Promise.all([
+    const [employees, releases, reimbursed] = await Promise.all([
       prisma.user.findMany({
         where: { status: "ACTIVE", employmentType: { in: typeIn.length ? [...typeIn] : ["FULL_TIME", "PART_TIME"] } },
         orderBy: { name: "asc" },
@@ -74,25 +74,49 @@ export default async function BenefitReleasePage({
         where: { guaranteedBenefitId: selected.id, planYearId: planYear.id },
         select: { userId: true, releasedAt: true },
       }),
+      // Back-filled reimbursements for this benefit (recorded by HR as an already-paid
+      // claim, not a release). Surfaced as a distinct "Reimbursed (backfilled)" status
+      // so a paid person isn't mistaken for "not released".
+      prisma.benefitClaim.findMany({
+        where: { guaranteedBenefitId: selected.id, planYearId: planYear.id, status: "REIMBURSED" },
+        select: { userId: true, decidedAt: true },
+      }),
     ]);
     const releasedBy = new Map(releases.map((r) => [r.userId, toDateInput(r.releasedAt)]));
+    const reimbursedBy = new Map(reimbursed.map((c) => [c.userId, toDateInput(c.decidedAt)]));
 
-    rows = employees.map((e) => ({
-      id: e.id,
-      name: e.name,
-      email: e.email,
-      department: e.department ?? "",
-      title: e.title ?? "",
-      employmentType: e.employmentType ? EMPLOYMENT_TYPE_LABEL[e.employmentType] : "",
-      tenure: e.tenureBand ? TENURE_BAND_LABEL[e.tenureBand] : "",
-      startDate: toDateInput(e.startDate),
-      phone: e.phone ?? "",
-      manager: e.reportsTo?.name ?? "",
-      status: STATUS_LABEL[e.status],
-      amount: e.tenureBand && e.employmentType ? amountForBand(e.employmentType, e.tenureBand, selected) : null,
-      released: releasedBy.has(e.id),
-      releasedAt: releasedBy.get(e.id) ?? "",
-    }));
+    rows = employees.map((e) => {
+      const amount = e.tenureBand && e.employmentType ? amountForBand(e.employmentType, e.tenureBand, selected) : null;
+      // When no amount resolves, say why — the tenure band, the employment type, or the
+      // benefit's per-type/band allowance may be the missing piece (not always "no tenure").
+      const attention =
+        amount != null
+          ? ""
+          : !e.employmentType
+          ? "no employment type"
+          : !e.tenureBand
+          ? "no tenure band"
+          : "no allowance set for their type / band";
+      return {
+        id: e.id,
+        name: e.name,
+        email: e.email,
+        department: e.department ?? "",
+        title: e.title ?? "",
+        employmentType: e.employmentType ? EMPLOYMENT_TYPE_LABEL[e.employmentType] : "",
+        tenure: e.tenureBand ? TENURE_BAND_LABEL[e.tenureBand] : "",
+        startDate: toDateInput(e.startDate),
+        phone: e.phone ?? "",
+        manager: e.reportsTo?.name ?? "",
+        status: STATUS_LABEL[e.status],
+        amount,
+        attention,
+        released: releasedBy.has(e.id),
+        releasedAt: releasedBy.get(e.id) ?? "",
+        reimbursed: reimbursedBy.has(e.id),
+        reimbursedAt: reimbursedBy.get(e.id) ?? "",
+      };
+    });
   }
 
   return (
