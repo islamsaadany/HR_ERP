@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import type { CycleReport } from "@/lib/incentive/compute";
 import { HoverTip } from "./HoverTip";
 
@@ -10,7 +10,7 @@ const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 
 /** Raw uploaded sheets, for the Review & validation section. */
 export type ReviewData = {
-  people: { name: string; role: string | null; netMonthlySalary: number; startDate: string | null }[];
+  people: { name: string; role: string | null; netMonthlySalary: number; startDate: string | null; utilization: number | null }[];
   assignments: {
     client: string;
     type: string;
@@ -31,33 +31,19 @@ export type ReviewData = {
 const th = "px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-muted";
 const td = "px-3 py-2 text-sm text-ink whitespace-nowrap";
 const tdr = td + " text-right tabular-nums";
-const tdNote = "px-3 py-2 text-sm italic text-muted whitespace-normal";
 
 /**
  * Assignment status → display label, sort order, and pill colour. "closed"
  * reads as "Ended"; rows in the review table sort Ongoing → Ended → In
- * progress → Pending. Colour tracks payability (green active, blue done,
+ * progress → Pending. Colour tracks payability (green active, slate done,
  * amber in-flight, grey awaiting).
  */
 const STATUS_META: Record<string, { label: string; order: number; cls: string }> = {
   ongoing: { label: "Ongoing", order: 1, cls: "bg-green-100 text-green-700" },
-  closed: { label: "Ended", order: 2, cls: "bg-blue-100 text-blue-700" },
+  closed: { label: "Ended", order: 2, cls: "bg-slate-100 text-slate-600" },
   in_progress: { label: "In progress", order: 3, cls: "bg-amber-100 text-amber-700" },
   pending: { label: "Pending", order: 4, cls: "bg-gray-100 text-gray-500" },
 };
-
-/**
- * Cost-recovery Multiple → colour band. >3× best (deeper green), 2–3× good
- * (lime), 1–2× poor (amber), below 1× critical (red).
- */
-const multipleBand = (mx: number) =>
-  mx > 3
-    ? "bg-green-200 text-green-800"
-    : mx >= 2
-    ? "bg-lime-100 text-lime-700"
-    : mx >= 1
-    ? "bg-amber-100 text-amber-700"
-    : "bg-red-100 text-red-700";
 const statusMeta = (s: string) => STATUS_META[s] ?? { label: s, order: 99, cls: "bg-gray-100 text-gray-500" };
 
 function StatusPill({ status }: { status: string }) {
@@ -66,7 +52,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 /** Section ids drive the collapse state and Expand/Collapse-all. */
-const SECTION_IDS = ["review", "bpf", "contrib", "commission", "byPerson", "firm", "profitShare", "costRecovery", "watch"] as const;
+const SECTION_IDS = ["review", "bpf", "contrib", "byPerson", "firm", "commission", "profitShare", "costRecovery", "watch"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 
 function Chevron({ open }: { open: boolean }) {
@@ -118,14 +104,11 @@ function Section({
   );
 }
 
-/**
- * A small ⓘ term-tip (hover), rendered as a non-clipping floating layer. The
- * icon lives on the navy column headers, so it is styled light for contrast.
- */
-function InfoTip({ text }: { text: React.ReactNode }) {
+/** A small ⓘ term-tip (hover), rendered as a non-clipping floating layer. */
+function InfoTip({ text }: { text: string }) {
   return (
     <HoverTip text={text} className="ml-1 inline-flex align-middle">
-      <span className="grid h-[15px] w-[15px] place-items-center rounded-full border border-white/50 text-[10px] font-bold leading-none text-white/90">
+      <span className="grid h-[15px] w-[15px] place-items-center rounded-full border border-navy-200 text-[10px] font-bold leading-none text-navy-500">
         i
       </span>
     </HoverTip>
@@ -136,6 +119,15 @@ function InfoTip({ text }: { text: React.ReactNode }) {
 function ZeroCell({ note, value = "0.00" }: { note: string; value?: string }) {
   return (
     <HoverTip text={note} className="border-b border-dotted border-navy-200 font-semibold text-gold-600">
+      {value}
+    </HoverTip>
+  );
+}
+
+/** A percentage with a hover note showing its calculation. */
+function PctCell({ value, calc }: { value: string; calc: string }) {
+  return (
+    <HoverTip text={calc} className="border-b border-dotted border-navy-200">
       {value}
     </HoverTip>
   );
@@ -180,8 +172,6 @@ export function CycleReportView({
   const setAll = (v: boolean) => setOpen(Object.fromEntries(SECTION_IDS.map((s) => [s, v])) as Record<SectionId, boolean>);
 
   const [schemeOpen, setSchemeOpen] = useState(false);
-  const [expandedComm, setExpandedComm] = useState<Record<string, boolean>>({});
-  const toggleComm = (name: string) => setExpandedComm((e) => ({ ...e, [name]: !e[name] }));
 
   const firm = r.firm;
   const grossProfit = firm ? firm.revenue - firm.deliveryCost : 0;
@@ -229,10 +219,10 @@ export function CycleReportView({
         }
       >
         <p className="mb-2 text-xs text-muted">People</p>
-        <div className={scrollWrap + " max-w-2xl"}>
+        <div className={scrollWrap}>
           <table className="ff-data-table min-w-full divide-y divide-line">
             <thead className="bg-navy-50/40">
-              <tr><th className={th}>Name</th><th className={th}>Role</th><th className={th + " text-right"}>Net monthly salary</th><th className={th}>Start date</th></tr>
+              <tr><th className={th}>Name</th><th className={th}>Role</th><th className={th + " text-right"}>Net monthly salary</th><th className={th}>Start date</th><th className={th + " text-right"}>Utilization</th></tr>
             </thead>
             <tbody className="divide-y divide-line">
               {review.people.map((p) => (
@@ -241,6 +231,7 @@ export function CycleReportView({
                   <td className={td}>{p.role ?? "—"}</td>
                   <td className={tdr}>{whole(p.netMonthlySalary)}</td>
                   <td className={td}>{p.startDate ?? "—"}</td>
+                  <td className={tdr}>{p.utilization == null ? "—" : pct(p.utilization)}</td>
                 </tr>
               ))}
             </tbody>
@@ -341,6 +332,7 @@ export function CycleReportView({
         title="Business Partner Fee"
         open={open.bpf}
         onToggle={() => toggle("bpf")}
+        titleExtra={<InfoTip text="Envelope = 3% of the client's Gross Profit, and only when the client clears the 70% gross-margin gate. It's the pot the assignment generates before the lead and contributors are paid." />}
       >
         <div className={scrollWrap}>
           <table className="ff-data-table min-w-full divide-y divide-line">
@@ -348,22 +340,18 @@ export function CycleReportView({
               <tr>
                 <th className={th}>Client</th><th className={th}>Type</th>
                 <th className={th + " text-right"}>GP</th><th className={th + " text-right"}>GP%</th>
-                <th className={th + " text-right"}>
-                  Envelope
-                  <InfoTip text="Envelope = 3% of the client's Gross Profit, and only when the client clears the 70% gross-margin gate. It's the pot the assignment generates before the lead and contributors are paid." />
-                </th>
-                <th className={th + " text-right"}>Ded</th>
+                <th className={th + " text-right"}>Envelope</th><th className={th + " text-right"}>Ded</th>
                 <th className={th}>Lead</th><th className={th + " text-right"}>Lead fee</th>
                 <th className={th + " text-right"}>Contributor</th><th className={th + " text-right"}>Firm</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {r.assignments.map((a, i) => {
+              {r.assignments.map((a) => {
                 const contrib = a.contributors.reduce((s, c) => s + c.payment, 0);
                 const gateFailed = !a.marginGatePassed;
                 const gateNote = `Below the 70% margin gate (${pct(a.grossMarginPct)}) — no envelope is generated, so the lead fee and every contributor allocation on this client are 0.`;
                 return (
-                  <tr key={a.client} className={i % 2 === 1 ? "ff-zebra" : undefined}>
+                  <tr key={a.client}>
                     <td className={td}>{a.client}</td>
                     <td className={td}>{a.type}</td>
                     <td className={tdr}>{m(a.grossProfit)}</td>
@@ -372,38 +360,12 @@ export function CycleReportView({
                     <td className={tdr}>{a.totalDeduction ? pct(a.totalDeduction) : "—"}</td>
                     <td className={td}>{a.leadName}</td>
                     <td className={tdr}>{gateFailed ? <ZeroCell note="Envelope is 0 (client below the 70% gate), so there is no lead fee." /> : m(a.leadFee)}</td>
-                    <td className={tdr}>
-                      {contrib ? (
-                        <HoverTip
-                          className="border-b border-dotted border-navy-200"
-                          text={
-                            <span className="block min-w-[200px]">
-                              <span className="mb-1.5 block font-semibold">Contributor breakdown — {a.client}</span>
-                              {a.contributors.map((c) => (
-                                <span key={c.name} className="flex justify-between gap-4 py-0.5">
-                                  <span>
-                                    {c.name} · {pct(c.share)}
-                                    {c.tier ? ` · tier ${pct(c.tier)}` : ""}
-                                  </span>
-                                  <span className="font-semibold tabular-nums">
-                                    {c.flooredToZero ? "0 (floored)" : m(c.payment)}
-                                  </span>
-                                </span>
-                              ))}
-                            </span>
-                          }
-                        >
-                          {m(contrib)}
-                        </HoverTip>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
+                    <td className={tdr}>{contrib ? m(contrib) : "—"}</td>
                     <td className={tdr}>{a.firmRetained ? m(a.firmRetained) : "—"}</td>
                   </tr>
                 );
               })}
-              <tr className="ff-total-row font-semibold">
+              <tr className="bg-navy-50/40 font-semibold">
                 <td className={td} colSpan={7}>Total</td>
                 <td className={tdr}>{m(r.totals.leadFees)}</td>
                 <td className={tdr}>{m(r.totals.contributorPayments)}</td>
@@ -419,113 +381,56 @@ export function CycleReportView({
         title="Contributor detail"
         open={open.contrib}
         onToggle={() => toggle("contrib")}
+        titleExtra={<InfoTip text="Tier = the deduction a contributor's share takes from the lead's fee. Allocation = envelope × tier. Paid = allocation after the 5%-of-month floor and ½-month cap." />}
       >
         <div className={scrollWrap}>
           <table className="ff-data-table min-w-full divide-y divide-line">
             <thead className="bg-navy-50/40">
               <tr>
                 <th className={th}>Client</th><th className={th}>Person</th>
-                <th className={th + " text-right"}>Share</th>
-                <th className={th + " text-right"}>
-                  Tier
-                  <InfoTip text="Tier = the deduction a contributor's share takes from the lead's fee. Allocation = envelope × tier. Paid = allocation after the 5%-of-month floor and ½-month cap." />
-                </th>
+                <th className={th + " text-right"}>Share</th><th className={th + " text-right"}>Tier</th>
                 <th className={th + " text-right"}>Allocation</th><th className={th + " text-right"}>Paid</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {r.assignments
-                .filter((a) => a.contributors.length > 0)
-                .flatMap((a, ai) =>
-                  a.contributors.map((c) => {
-                    const gateFailed = !a.marginGatePassed;
-                    // Shade alternates each time the client changes, so each client's
-                    // contributors read as one block (base rows stay white). ff-zebra
-                    // repaints the sticky first column too.
-                    const zebra = ai % 2 === 1;
-                    return (
-                      <tr key={a.client + c.name} className={zebra ? "ff-zebra" : undefined}>
-                        <td className={td}>{a.client}</td>
-                        <td className={td}>{c.name}</td>
-                        <td className={tdr}>{pct(c.share)}</td>
-                        <td className={tdr}>{c.tier ? pct(c.tier) : "—"}</td>
-                        <td className={tdr}>
-                          {gateFailed ? (
-                            <ZeroCell note={`${a.client} is below the 70% margin gate (${pct(a.grossMarginPct)}), so its envelope is 0 — ${c.name}'s allocation is 0 regardless of the ${pct(c.share)} share.`} />
-                          ) : (
-                            m(c.allocation)
-                          )}
-                        </td>
-                        <td className={tdr}>
-                          {gateFailed ? (
-                            <ZeroCell note="Allocation is 0 (client below the 70% gate), so nothing is paid." value="0.00" />
-                          ) : c.flooredToZero ? (
-                            <ZeroCell note="Below the 5%-of-month floor — paid as 0." value="0 (floored)" />
-                          ) : (
-                            m(c.payment)
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+              {r.assignments.flatMap((a) =>
+                a.contributors.map((c) => {
+                  const gateFailed = !a.marginGatePassed;
+                  return (
+                    <tr key={a.client + c.name}>
+                      <td className={td}>{a.client}</td>
+                      <td className={td}>{c.name}</td>
+                      <td className={tdr}>{pct(c.share)}</td>
+                      <td className={tdr}>{c.tier ? pct(c.tier) : "—"}</td>
+                      <td className={tdr}>
+                        {gateFailed ? (
+                          <ZeroCell note={`${a.client} is below the 70% margin gate (${pct(a.grossMarginPct)}), so its envelope is 0 — ${c.name}'s allocation is 0 regardless of the ${pct(c.share)} share.`} />
+                        ) : (
+                          m(c.allocation)
+                        )}
+                      </td>
+                      <td className={tdr}>
+                        {gateFailed ? (
+                          <ZeroCell note="Allocation is 0 (client below the 70% gate), so nothing is paid." value="0.00" />
+                        ) : c.flooredToZero ? (
+                          <ZeroCell note="Below the 5%-of-month floor — paid as 0." value="0 (floored)" />
+                        ) : (
+                          m(c.payment)
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
       </Section>
 
-      {/* 4. Commission by person — sits directly above By person so the commission
-          figures are read before the per-person totals that fold them in.
-          Compact by default; click a name to reveal that person's per-deal breakdown. */}
-      {r.commissionByPerson.length > 0 && (
-        <Section title="Commission by person" subtitle="protected — independent of the gates · click a name for the per-deal breakdown" open={open.commission} onToggle={() => toggle("commission")}>
-          <div className={scrollWrap + " max-w-md"}>
-            <table className="ff-data-table min-w-full divide-y divide-line">
-              <thead className="bg-navy-50/40">
-                <tr><th className={th}>Person</th><th className={th + " text-right"}>Commission</th></tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {r.commissionByPerson.map((c) => (
-                  <Fragment key={c.name}>
-                    <tr className="cursor-pointer hover:bg-navy-50/40" onClick={() => toggleComm(c.name)}>
-                      <td className={td}>
-                        <span className="inline-flex items-center gap-1.5">
-                          <Chevron open={!!expandedComm[c.name]} />
-                          {c.name}
-                        </span>
-                      </td>
-                      <td className={tdr}>{m(c.amount)}</td>
-                    </tr>
-                    {expandedComm[c.name] && (
-                      <tr>
-                        <td colSpan={2} className="bg-paper px-3 pb-3 pl-9">
-                          {c.deals.map((d, i) => (
-                            <div
-                              key={i}
-                              className="flex justify-between gap-4 border-t border-dashed border-line py-1 text-xs first:border-t-0"
-                            >
-                              <span className="text-muted">
-                                {d.client} · {d.selfGenerated ? "Self-gen" : "Referred"} · {Math.round(d.rate * 100)}% · net {whole(d.base)}
-                              </span>
-                              <span className="font-semibold tabular-nums text-ink">{m(d.amount)}</span>
-                            </div>
-                          ))}
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                ))}
-                <tr className="ff-total-row font-semibold"><td className={td}>Total</td><td className={tdr}>{m(r.totals.commission)}</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </Section>
-      )}
-
-      {/* 5. Compensation by person */}
+      {/* 4. By person */}
       <Section
-        title="Compensation by person"
-        subtitle="released compensation, plus commission folded into the grand total"
+        title="By person"
+        subtitle="released compensation (excludes commission, which is protected)"
         open={open.byPerson}
         onToggle={() => toggle("byPerson")}
         action={
@@ -544,12 +449,12 @@ export function CycleReportView({
                 <th className={th}>Person</th><th className={th + " text-right"}>Salary</th>
                 <th className={th + " text-right"}>Lead fee</th><th className={th + " text-right"}>Contributor</th>
                 <th className={th + " text-right"}>Total</th><th className={th + " text-right"}>Months</th>
-                <th className={th + " text-right"}>Commission</th><th className={th + " text-right"}>Grand total</th>
+                <th className={th + " text-right"}>Commission</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {r.byPerson.map((p, i) => (
-                <tr key={p.name} className={i % 2 === 1 ? "ff-zebra" : undefined}>
+              {r.byPerson.map((p) => (
+                <tr key={p.name}>
                   <td className={td}>{p.name}</td>
                   <td className={tdr}>{m(p.salary)}</td>
                   <td className={tdr}>{p.leadFee ? m(p.leadFee) : "—"}</td>
@@ -557,7 +462,6 @@ export function CycleReportView({
                   <td className={tdr}>{m(p.total)}</td>
                   <td className={tdr}>{p.months || "—"}</td>
                   <td className={tdr}>{p.commission ? m(p.commission) : "—"}</td>
-                  <td className={tdr + " font-semibold"}>{m(p.total + p.commission)}</td>
                 </tr>
               ))}
             </tbody>
@@ -565,66 +469,74 @@ export function CycleReportView({
         </div>
       </Section>
 
-      {/* 5. Firm P&L — Item | Value | % | Notes; scheme cost expands in place.
-          The Notes column states each % as a plain-language equation. */}
+      {/* 5. Firm P&L — Item | Value | %, scheme cost expands in place */}
       {firm && (
         <Section
           title="Firm P&L"
-          subtitle="whole-EGP values · each % explained in Notes · click Scheme cost to break it down"
+          subtitle="whole-EGP values · hover a % for its calculation · click Scheme cost to break it down"
           open={open.firm}
           onToggle={() => toggle("firm")}
         >
-          <div className={scrollWrap + " max-w-3xl"}>
+          <div className={scrollWrap}>
             <table className="ff-data-table min-w-full divide-y divide-line" style={{ tableLayout: "fixed" }}>
               <colgroup>
-                <col style={{ width: "30%" }} />
-                <col style={{ width: "22%" }} />
-                <col style={{ width: "13%" }} />
-                <col style={{ width: "35%" }} />
+                <col style={{ width: "56%" }} />
+                <col style={{ width: "24%" }} />
+                <col style={{ width: "20%" }} />
               </colgroup>
               <thead className="bg-navy-50/40">
-                <tr><th className={th}>Item</th><th className={th + " text-right"}>Value</th><th className={th + " text-right"}>%</th><th className={th}>Notes</th></tr>
+                <tr><th className={th}>Item</th><th className={th + " text-right"}>Value</th><th className={th + " text-right"}>%</th></tr>
               </thead>
               <tbody className="divide-y divide-line">
-                <tr><td className={td}>Revenue</td><td className={tdr}>{whole(firm.revenue)}</td><td className={tdr}>—</td><td className={tdNote}>—</td></tr>
+                <tr><td className={td}>Revenue</td><td className={tdr}>{whole(firm.revenue)}</td><td className={tdr}>—</td></tr>
                 <tr>
                   <td className={td}>Direct cost</td><td className={tdr}>{whole(firm.deliveryCost)}</td>
-                  <td className={tdr}>{pct(firm.deliveryCost / firm.revenue)}</td>
-                  <td className={tdNote}>Direct cost ÷ Revenue</td>
+                  <td className={tdr}><PctCell value={pct(firm.deliveryCost / firm.revenue)} calc={`${whole(firm.deliveryCost)} ÷ ${whole(firm.revenue)} (of revenue)`} /></td>
                 </tr>
                 <tr>
                   <td className={td}>Gross profit</td><td className={tdr}>{whole(grossProfit)}</td>
-                  <td className={tdr}>{pct(grossProfit / firm.revenue)}</td>
-                  <td className={tdNote}>Gross profit ÷ Revenue</td>
+                  <td className={tdr}><PctCell value={pct(grossProfit / firm.revenue)} calc={`${whole(grossProfit)} ÷ ${whole(firm.revenue)} (of revenue)`} /></td>
                 </tr>
                 <tr>
                   <td className={td}>Total expenses</td><td className={tdr}>{whole(firm.totalExpenses)}</td>
-                  <td className={tdr}>{pct(firm.totalExpenses / firm.revenue)}</td>
-                  <td className={tdNote}>Total expenses ÷ Revenue</td>
+                  <td className={tdr}><PctCell value={pct(firm.totalExpenses / firm.revenue)} calc={`${whole(firm.totalExpenses)} ÷ ${whole(firm.revenue)} (of revenue)`} /></td>
                 </tr>
-                <tr className="ff-total-row font-semibold">
+                <tr className="bg-navy-50/40 font-semibold">
                   <td className={td}>Profit before scheme</td><td className={tdr}>{whole(firm.profitBeforeScheme)}</td>
-                  <td className={tdr}>{pct(firm.profitBeforeSchemePct)}</td>
-                  <td className={tdNote + " font-normal"}>Profit before scheme ÷ Revenue</td>
+                  <td className={tdr}><PctCell value={pct(firm.profitBeforeSchemePct)} calc={`${whole(firm.profitBeforeScheme)} ÷ ${whole(firm.revenue)} (of revenue)`} /></td>
                 </tr>
                 <tr className="cursor-pointer hover:bg-navy-50/40" onClick={() => setSchemeOpen((s) => !s)}>
                   <td className={td}><span className="inline-flex items-center gap-1.5"><Chevron open={schemeOpen} /> Scheme cost</span></td>
                   <td className={tdr}>{whole(firm.schemeCost)}</td>
-                  <td className={tdr}>{`${pct(firm.schemePctOfGrossProfit)} of GP`}</td>
-                  <td className={tdNote}>Scheme cost ÷ Gross profit</td>
+                  <td className={tdr}><PctCell value={`${pct(firm.schemePctOfGrossProfit)} of GP`} calc={`${whole(firm.schemeCost)} ÷ ${whole(grossProfit)} (of gross profit)`} /></td>
                 </tr>
                 {schemeOpen && (
                   <>
-                    <tr><td className={td + " pl-9 text-muted"}>Business Partner (lead) fees</td><td className={tdr + " text-muted"}>{whole(r.totals.leadFees)}</td><td className={tdr}></td><td className={tdNote}></td></tr>
-                    <tr><td className={td + " pl-9 text-muted"}>Contributor payments</td><td className={tdr + " text-muted"}>{whole(r.totals.contributorPayments)}</td><td className={tdr}></td><td className={tdNote}></td></tr>
-                    <tr><td className={td + " pl-9 text-muted"}>Commission</td><td className={tdr + " text-muted"}>{whole(r.totals.commission)}</td><td className={tdr}></td><td className={tdNote}></td></tr>
+                    <tr><td className={td + " pl-9 text-muted"}>Business Partner (lead) fees</td><td className={tdr + " text-muted"}>{whole(r.totals.leadFees)}</td><td className={tdr}></td></tr>
+                    <tr><td className={td + " pl-9 text-muted"}>Contributor payments</td><td className={tdr + " text-muted"}>{whole(r.totals.contributorPayments)}</td><td className={tdr}></td></tr>
+                    <tr><td className={td + " pl-9 text-muted"}>Commission</td><td className={tdr + " text-muted"}>{whole(r.totals.commission)}</td><td className={tdr}></td></tr>
                   </>
                 )}
-                <tr className="ff-total-row font-semibold">
+                <tr className="bg-navy-50/40 font-semibold">
                   <td className={td}>Profit after scheme</td><td className={tdr}>{whole(firm.profitAfterScheme)}</td>
-                  <td className={tdr}>{pct(firm.profitAfterSchemePct)}</td>
-                  <td className={tdNote + " font-normal"}>Profit after scheme ÷ Revenue</td>
+                  <td className={tdr}><PctCell value={pct(firm.profitAfterSchemePct)} calc={`${whole(firm.profitAfterScheme)} ÷ ${whole(firm.revenue)} (of revenue)`} /></td>
                 </tr>
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      )}
+
+      {/* 6. Commission by person */}
+      {r.commissionByPerson.length > 0 && (
+        <Section title="Commission by person" subtitle="protected — independent of the gates" open={open.commission} onToggle={() => toggle("commission")}>
+          <div className={scrollWrap}>
+            <table className="ff-data-table min-w-full divide-y divide-line">
+              <tbody className="divide-y divide-line">
+                {r.commissionByPerson.map((c) => (
+                  <tr key={c.name}><td className={td}>{c.name}</td><td className={tdr}>{m(c.amount)}</td></tr>
+                ))}
+                <tr className="bg-navy-50/40 font-semibold"><td className={td}>Total</td><td className={tdr}>{m(r.totals.commission)}</td></tr>
               </tbody>
             </table>
           </div>
@@ -656,31 +568,23 @@ export function CycleReportView({
         title="Cost recovery"
         open={open.costRecovery}
         onToggle={() => toggle("costRecovery")}
+        titleExtra={<InfoTip text="Multiple = Gross Profit a person generated (weighted by their contribution share) ÷ their six-month salary. Above 1× means they covered their cost." />}
       >
         <div className={scrollWrap}>
           <table className="ff-data-table min-w-full divide-y divide-line">
             <thead className="bg-navy-50/40">
               <tr>
                 <th className={th}>Person</th><th className={th + " text-right"}>6-mo salary</th>
-                <th className={th + " text-right"}>GP generated</th>
-                <th className={th + " text-right"}>
-                  Multiple
-                  <InfoTip text="Multiple = Gross Profit a person generated (weighted by their contribution share) ÷ their six-month net salary. Benchmark: above 3× best, 2–3× good, 1–2× poor, below 1× critical (didn't cover their own salary)." />
-                </th>
-                <th className={th + " text-right"}>Surplus</th>
+                <th className={th + " text-right"}>GP generated</th><th className={th + " text-right"}>Multiple</th><th className={th + " text-right"}>Surplus</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {r.costRecovery.map((c, i) => (
-                <tr key={c.name} className={i % 2 === 1 ? "ff-zebra" : undefined}>
+              {r.costRecovery.map((c) => (
+                <tr key={c.name}>
                   <td className={td}>{c.name}</td>
                   <td className={tdr}>{m(c.sixMonthSalary)}</td>
                   <td className={tdr}>{m(c.gpGenerated)}</td>
-                  <td className={tdr}>
-                    <span className={"inline-block rounded px-2 py-0.5 font-semibold tabular-nums " + multipleBand(c.multiple)}>
-                      {c.multiple}×
-                    </span>
-                  </td>
+                  <td className={tdr}>{c.multiple}x</td>
                   <td className={tdr}>{m(c.surplus)}</td>
                 </tr>
               ))}

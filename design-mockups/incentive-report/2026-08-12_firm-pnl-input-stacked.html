@@ -1,0 +1,121 @@
+<title>Firm P&L Input Stacked</title>
+<style>
+  :root {
+    --navy-900: #0d1a2e; --navy-800: #13233b; --navy-700: #1c3252; --navy-500: #33507a;
+    --navy-200: #b9c6da; --navy-50: #eef2f8;
+    --gold-300: #e5c877; --gold-600: #a9822a; --gold-bg:#fbf5e4;
+    --ink: #14202e; --muted: #5c6b7a; --line: #dde3ea;
+    --surface: #ffffff; --paper: #f7f9fc; --ground: #eef1f6;
+  }
+  :root:not([data-theme="light"]) { @media (prefers-color-scheme: dark) {
+    --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
+    --navy-50:#1b2a3d; --navy-200:#3a506e; --navy-800:#24405f; --navy-900:#0a1420; --gold-bg:#2a2410;
+  } }
+  :root[data-theme="dark"] {
+    --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
+    --navy-50:#1b2a3d; --navy-200:#3a506e; --navy-800:#24405f; --navy-900:#0a1420; --gold-bg:#2a2410;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.45; padding:26px 24px 80px; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); }
+  h1 { font-family: Georgia, serif; font-size:26px; margin:4px 0 2px; font-weight:600; }
+  .lede { color:var(--muted); font-size:13px; margin:4px 0 18px; }
+  .col-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:0 0 8px; }
+  .col-title.bad { color:#b3261e; }
+  .col-title.good { color:var(--gold-600); }
+
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  .card { border:1px solid var(--line); background:var(--surface); border-radius:14px; padding:16px; }
+  .card-h { font-size:13px; font-weight:700; color:var(--ink); margin-bottom:12px; }
+
+  label { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); margin-bottom:4px; }
+  .in { width:100%; border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:8px 10px; font-size:14px; color:var(--ink); }
+  .in.filled { font-weight:600; }
+  .g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .stack > * + * { margin-top:10px; }
+  .save { margin-top:14px; background:var(--navy-800); color:#fff; border:none; border-radius:9px; padding:9px 16px; font-size:13px; font-weight:600; }
+
+  /* stacked "list" row: label left, value right */
+  .row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .row label { margin:0; }
+  .row .in { max-width:220px; text-align:right; font-variant-numeric:tabular-nums; }
+
+  .ghost { border:1px dashed var(--line); border-radius:14px; padding:16px; color:var(--muted); font-size:12px; }
+  .up-row { display:flex; align-items:center; gap:8px; margin-top:10px; }
+  .up-row .lbl { width:96px; font-size:12px; }
+  .up-row .pick { flex:1; border:1px solid var(--line); border-radius:8px; padding:6px 8px; font-size:11px; color:var(--muted); display:flex; align-items:center; gap:8px; }
+  .up-row .pick .btn { background:var(--navy-800); color:#fff; border-radius:5px; padding:3px 8px; font-size:10px; font-weight:700; }
+  .up-row .up { border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:11px; font-weight:600; color:var(--navy-700); }
+
+  .legend { margin-top:22px; font-size:12px; color:var(--muted); line-height:1.6; }
+  .legend b { color:var(--ink); }
+  .tag { display:inline-block; font-size:10px; font-weight:700; color:#b3261e; background:#fdeceb; border-radius:999px; padding:1px 8px; margin-left:6px; }
+  .tag.ok { color:var(--gold-600); background:var(--gold-bg); }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Super User · Confidential · MOCKUP for sign-off</p>
+  <h1>Firm P&amp;L input — stack the three entries</h1>
+  <p class="lede">Today the three figures sit in one horizontal row inside the narrow left card, so it's short and
+    cramped while the Upload card beside it is tall — a big empty gap underneath. Proposed: stack the three
+    entries vertically so the card fills the space and each field is full-width and easy to read.</p>
+
+  <!-- BEFORE vs AFTER of the card itself -->
+  <div class="two">
+    <div>
+      <p class="col-title bad">Now — horizontal row <span class="tag">cramped</span></p>
+      <div class="card">
+        <div class="card-h">Firm P&amp;L</div>
+        <div class="g3">
+          <div><label>Revenue</label><input class="in filled" value="6,514,087"></div>
+          <div><label>Direct cost</label><input class="in filled" value="2,477,345"></div>
+          <div><label>Total exp.</label><input class="in filled" value="3,500,000"></div>
+        </div>
+        <button class="save">Save firm figures</button>
+      </div>
+    </div>
+
+    <div>
+      <p class="col-title good">Proposed — stacked <span class="tag ok">fills the space</span></p>
+      <div class="card">
+        <div class="card-h">Firm P&amp;L</div>
+        <div class="stack">
+          <div class="row"><label>Revenue</label><input class="in filled" value="6,514,087"></div>
+          <div class="row"><label>Direct cost</label><input class="in filled" value="2,477,345"></div>
+          <div class="row"><label>Total expenses</label><input class="in filled" value="3,500,000"></div>
+        </div>
+        <button class="save">Save firm figures</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-context: the top row, proposed card next to the uploads card, showing the gap is gone -->
+  <p class="col-title" style="margin-top:26px">In context — the top two-column row (proposed)</p>
+  <div class="two">
+    <div class="card">
+      <div class="card-h">Firm P&amp;L</div>
+      <div class="stack">
+        <div class="row"><label>Revenue</label><input class="in filled" value="6,514,087"></div>
+        <div class="row"><label>Direct cost</label><input class="in filled" value="2,477,345"></div>
+        <div class="row"><label>Total expenses</label><input class="in filled" value="3,500,000"></div>
+      </div>
+      <button class="save">Save firm figures</button>
+    </div>
+    <div class="card">
+      <div class="card-h" style="display:flex;justify-content:space-between;align-items:center">Upload sheets (CSV) <span class="up">⬇ Templates</span></div>
+      <div style="font-size:11px;color:var(--muted)">Templates come pre-filled from what we already hold. Fill the remaining columns and upload it back; re-uploading replaces that sheet.</div>
+      <div class="up-row"><span class="lbl">People (5)</span><span class="pick"><span class="btn">Choose…</span> No file chosen</span><span class="up">Upload</span></div>
+      <div class="up-row"><span class="lbl">Assignments (8)</span><span class="pick"><span class="btn">Choose…</span> No file chosen</span><span class="up">Upload</span></div>
+      <div class="up-row"><span class="lbl">Contributions (4)</span><span class="pick"><span class="btn">Choose…</span> No file chosen</span><span class="up">Upload</span></div>
+    </div>
+  </div>
+
+  <p class="legend">
+    <b>What changes:</b> only the layout of the three inputs — from a 3-across grid to a vertical list (label left,
+    value right). Applies to both the editable form and the saved/locked read-only view, so they stay consistent.
+    Field names, the Save button, validation, and everything else are untouched.<br>
+    If you actually meant the opposite (keep them side-by-side), just say so and I'll drop this one.
+  </p>
+</div>

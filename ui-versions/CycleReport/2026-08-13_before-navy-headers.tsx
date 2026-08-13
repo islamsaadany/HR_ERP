@@ -118,14 +118,11 @@ function Section({
   );
 }
 
-/**
- * A small ⓘ term-tip (hover), rendered as a non-clipping floating layer. The
- * icon lives on the navy column headers, so it is styled light for contrast.
- */
-function InfoTip({ text }: { text: React.ReactNode }) {
+/** A small ⓘ term-tip (hover), rendered as a non-clipping floating layer. */
+function InfoTip({ text }: { text: string }) {
   return (
     <HoverTip text={text} className="ml-1 inline-flex align-middle">
-      <span className="grid h-[15px] w-[15px] place-items-center rounded-full border border-white/50 text-[10px] font-bold leading-none text-white/90">
+      <span className="grid h-[15px] w-[15px] place-items-center rounded-full border border-navy-200 text-[10px] font-bold leading-none text-navy-500">
         i
       </span>
     </HoverTip>
@@ -403,7 +400,7 @@ export function CycleReportView({
                   </tr>
                 );
               })}
-              <tr className="ff-total-row font-semibold">
+              <tr className="bg-navy-50/40 font-semibold">
                 <td className={td} colSpan={7}>Total</td>
                 <td className={tdr}>{m(r.totals.leadFees)}</td>
                 <td className={tdr}>{m(r.totals.contributorPayments)}</td>
@@ -515,7 +512,7 @@ export function CycleReportView({
                     )}
                   </Fragment>
                 ))}
-                <tr className="ff-total-row font-semibold"><td className={td}>Total</td><td className={tdr}>{m(r.totals.commission)}</td></tr>
+                <tr className="bg-navy-50/40 font-semibold"><td className={td}>Total</td><td className={tdr}>{m(r.totals.commission)}</td></tr>
               </tbody>
             </table>
           </div>
@@ -602,7 +599,7 @@ export function CycleReportView({
                   <td className={tdr}>{pct(firm.totalExpenses / firm.revenue)}</td>
                   <td className={tdNote}>Total expenses ÷ Revenue</td>
                 </tr>
-                <tr className="ff-total-row font-semibold">
+                <tr className="bg-navy-50/40 font-semibold">
                   <td className={td}>Profit before scheme</td><td className={tdr}>{whole(firm.profitBeforeScheme)}</td>
                   <td className={tdr}>{pct(firm.profitBeforeSchemePct)}</td>
                   <td className={tdNote + " font-normal"}>Profit before scheme ÷ Revenue</td>
@@ -620,7 +617,7 @@ export function CycleReportView({
                     <tr><td className={td + " pl-9 text-muted"}>Commission</td><td className={tdr + " text-muted"}>{whole(r.totals.commission)}</td><td className={tdr}></td><td className={tdNote}></td></tr>
                   </>
                 )}
-                <tr className="ff-total-row font-semibold">
+                <tr className="bg-navy-50/40 font-semibold">
                   <td className={td}>Profit after scheme</td><td className={tdr}>{whole(firm.profitAfterScheme)}</td>
                   <td className={tdr}>{pct(firm.profitAfterSchemePct)}</td>
                   <td className={tdNote + " font-normal"}>Profit after scheme ÷ Revenue</td>

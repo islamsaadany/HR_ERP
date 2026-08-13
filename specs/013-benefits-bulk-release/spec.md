@@ -146,3 +146,26 @@ The allowance value for each employee is computed from the benefit's configured 
 - **Applicability by employment type** is read from the existing guaranteed-benefit config (a benefit exists for FT and/or PT).
 - **Reuses** the existing admin Benefits area, role gating, and CSV export approach from spec `007`; no new money rules. Adds the Benefit Release record (schema change); saved column presets remain a later enhancement.
 - **Amounts are the per-band entitlement figures** from config (not confidential); actual disbursement happens outside the app.
+
+## Follow-ups (2026-08-13)
+
+- **Claim state surfaced in the release view**: an HR back-fill records a
+  `BenefitClaim` (now **APPROVED** — Finance confirms it in Payments → `REIMBURSED`;
+  see spec 016), a **separate** mechanism from a `BenefitRelease`. The release view
+  now surfaces that claim state per person — **"Approved — awaiting payment"** or
+  **"Reimbursed — <date>"** — and counts them in the footer, so a paid/in-flight
+  person is no longer shown as "Not released". Release (payroll marking) and the
+  claim flow remain distinct records.
+- **Live tenure derivation**: the release derives each person's tenure band from
+  the **hire date at view time** (not the stored, possibly-stale band), so crossing
+  6 months / a band boundary is reflected without re-saving the employee.
+- **Truthful needs-attention reason**: when no amount resolves, the Status names
+  the actual cause — **"< 6 months — not yet eligible"**, **"no hire date"**,
+  **"no employment type"**, or **"no part-time / full-time amount set"** — instead
+  of always saying "no tenure". (A part-time employee with no configured part-time
+  band amount, or a sub-6-month hire, are the common cases.) Eligibility (who a
+  benefit is assigned to) and the per-band **amount** are separate settings — the
+  release reads the amount.
+- **"< 6 months" tenure label**: employees under six months now read **"< 6 months"**
+  (not a bare "—") wherever their tenure band is shown — the profile, the employee
+  edit form, and the release list. (Registry grid: a later follow-up.)

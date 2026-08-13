@@ -1,0 +1,288 @@
+<title>Incentive Report Polish</title>
+<style>
+  :root {
+    --navy-900: #0d1a2e; --navy-800: #13233b; --navy-700: #1c3252; --navy-500: #33507a;
+    --navy-200: #b9c6da; --navy-50: #eef2f8;
+    --gold-300: #e5c877; --gold-600: #a9822a; --gold-bg:#fbf5e4;
+    --ink: #14202e; --muted: #5c6b7a; --line: #dde3ea;
+    --surface: #ffffff; --paper: #f7f9fc; --ground: #eef1f6;
+    --bad: #b3261e; --bad-bg: #fdeceb;
+    /* status pills */
+    --st-ong-bg:#dcfce7; --st-ong-tx:#15803d;
+    --st-end-bg:#dbeafe; --st-end-tx:#1d4ed8;      /* Ended → bluish (was grey) */
+    --st-prg-bg:#fdf0cf; --st-prg-tx:#8a6414; --st-pen-bg:#eef0f3; --st-pen-tx:#6b7783;
+    /* cost-recovery multiple bands */
+    --mb-best-bg:#a7f3c4; --mb-best-tx:#14682f;    /* >3x  best  (deeper green) */
+    --mb-good-bg:#ecfccb; --mb-good-tx:#4d7c0f;    /* 2-3x good  (lime) */
+    --mb-poor-bg:#fef3c7; --mb-poor-tx:#92600e;    /* 1-2x poor */
+    --mb-crit-bg:#fee2e2; --mb-crit-tx:#b91c1c;    /* <1x  critical */
+    --zebra:#efe6cf;                               /* warm sand — clearly warmer than the grey header; base rows stay white */
+  }
+  :root:not([data-theme="light"]) { @media (prefers-color-scheme: dark) {
+    --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
+    --navy-50:#1b2a3d; --navy-200:#3a506e; --navy-800:#24405f; --navy-900:#0a1420;
+    --bad:#f0a89f; --bad-bg:#3a1a17; --gold-bg:#2a2410;
+    --st-ong-bg:#123020; --st-ong-tx:#6ee7a8; --st-end-bg:#16294a; --st-end-tx:#93b4f5;
+    --st-prg-bg:#33280c; --st-prg-tx:#e6c877; --st-pen-bg:#1a2430; --st-pen-tx:#8a99a8;
+    --mb-best-bg:#15532e; --mb-best-tx:#8bf0b0; --mb-good-bg:#25320f; --mb-good-tx:#bce06a;
+    --mb-poor-bg:#33280c; --mb-poor-tx:#e6c877; --mb-crit-bg:#3a1a17; --mb-crit-tx:#f0a89f;
+    --zebra:#241f12;
+  } }
+  :root[data-theme="dark"] {
+    --ink:#e8edf3; --muted:#97a4b2; --line:#29333f; --surface:#14202c; --paper:#101a24; --ground:#0b131b;
+    --bad:#f0a89f; --bad-bg:#3a1a17; --gold-bg:#2a2410;
+    --st-ong-bg:#123020; --st-ong-tx:#6ee7a8; --st-end-bg:#16294a; --st-end-tx:#93b4f5;
+    --st-prg-bg:#33280c; --st-prg-tx:#e6c877; --st-pen-bg:#1a2430; --st-pen-tx:#8a99a8;
+    --mb-best-bg:#15532e; --mb-best-tx:#8bf0b0; --mb-good-bg:#25320f; --mb-good-tx:#bce06a;
+    --mb-poor-bg:#33280c; --mb-poor-tx:#e6c877; --mb-crit-bg:#3a1a17; --mb-crit-tx:#f0a89f;
+    --zebra:#241f12;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.45; padding:26px 24px 90px; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); }
+  h1 { font-family: Georgia, serif; font-size:26px; margin:4px 0 2px; font-weight:600; }
+  .lede { color:var(--muted); font-size:13px; margin:4px 0 0; }
+  h2 { font-family: Georgia, serif; font-size:17px; margin:30px 0 4px; font-weight:600; }
+  .sub { color:var(--muted); font-size:12.5px; margin:0 0 10px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
+
+  table { border-collapse:collapse; width:100%; }
+  .scroll { overflow-x:auto; overflow-y:hidden; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+  .note-eq { font-size:12px; color:var(--muted); font-style:italic; white-space:normal; }
+  th, td { padding:8px 12px; font-size:13px; white-space:nowrap; }
+  thead th { background:var(--navy-50); color:var(--muted); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+  tbody tr { border-top:1px solid var(--line); }
+  td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; }
+  .tot { background:var(--navy-50); font-weight:700; }
+  .muted-cell { color:var(--muted); }
+  .narrow { max-width:420px; }
+  .midw { max-width:560px; }
+
+  .pill { display:inline-block; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:600; }
+  .st-ongoing { background:var(--st-ong-bg); color:var(--st-ong-tx); }
+  .st-ended { background:var(--st-end-bg); color:var(--st-end-tx); }
+  .st-progress { background:var(--st-prg-bg); color:var(--st-prg-tx); }
+  .st-pending { background:var(--st-pen-bg); color:var(--st-pen-tx); }
+
+  .mb { display:inline-block; border-radius:6px; padding:2px 9px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .mb-best { background:var(--mb-best-bg); color:var(--mb-best-tx); }
+  .mb-good { background:var(--mb-good-bg); color:var(--mb-good-tx); }
+  .mb-poor { background:var(--mb-poor-bg); color:var(--mb-poor-tx); }
+  .mb-crit { background:var(--mb-crit-bg); color:var(--mb-crit-tx); }
+
+  /* zebra by client group */
+  tr.zebra td { background:var(--zebra); }
+
+  .info { position:relative; display:inline-flex; margin-left:5px; vertical-align:middle; }
+  .info > .dot { width:15px; height:15px; border-radius:50%; border:1px solid var(--navy-200); color:var(--navy-500); font-size:10px; font-weight:700; display:grid; place-items:center; cursor:help; }
+  .brk { cursor:help; border-bottom:1px dotted var(--navy-200); }
+  .zero { color:var(--gold-600); font-weight:600; cursor:help; border-bottom:1px dotted var(--navy-200); }
+  .tip {
+    position:fixed; top:0; left:0; width:max-content; max-width:270px; background:var(--navy-900); color:#fff;
+    font-size:11.5px; font-weight:400; line-height:1.45; padding:10px 12px; border-radius:9px;
+    z-index:100; box-shadow:0 8px 24px rgba(0,0,0,.32); border:1px solid rgba(255,255,255,.10);
+    opacity:0; pointer-events:none; white-space:normal;   /* wrap inside the box even when the cell is nowrap */
+    transition:opacity .12s; text-transform:none; letter-spacing:normal; text-align:left;
+  }
+  .tip b { color:#fff; }
+  .tip .brk-row { display:flex; justify-content:space-between; gap:16px; margin-top:3px; }
+  .tshow { opacity:1; }
+
+  .chg { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.03em; color:var(--gold-600); background:var(--gold-bg); border:1px solid var(--gold-300); border-radius:999px; padding:1px 8px; text-transform:uppercase; margin-left:8px; }
+  .legend { margin-top:10px; font-size:12px; color:var(--muted); line-height:1.55; }
+  .legend b { color:var(--ink); }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start; }
+  .pick-note { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 8px; }
+  .divider { height:1px; background:var(--line); margin:34px 0 0; }
+
+  /* click-to-expand commission */
+  .exp-row { cursor:pointer; }
+  .exp-row:hover td { background:var(--navy-50); }
+  .mini-chev { display:inline-block; color:var(--muted); font-size:11px; transition:transform .15s; margin-right:5px; }
+  .exp-row.open .mini-chev { transform:rotate(90deg); }
+  .exp-sub { display:none; }
+  .exp-sub.show { display:table-row; }
+  .exp-sub > td { background:var(--paper); padding:6px 12px 10px 30px; white-space:normal; }
+  .brk-line { display:flex; justify-content:space-between; gap:14px; font-size:12px; padding:3px 0; border-top:1px dashed var(--line); }
+  .brk-line:first-child { border-top:none; }
+  .brk-line span { color:var(--muted); }
+  .brk-line b { color:var(--ink); font-variant-numeric:tabular-nums; }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Super User · Confidential · MOCKUP for sign-off</p>
+  <h1>Incentive report — polish batch</h1>
+  <p class="lede">All requested tweaks in one place. Hover the ⓘ icons, the dotted <b>Contributor</b> figures, and the
+    dotted 0s. Gold “changed” chips mark what's new. Figures are illustrative.</p>
+
+  <!-- 1. People — utilization removed -->
+  <h2>1 · People read-back <span class="chg">utilization removed</span> <span class="chg">squeezed</span></h2>
+  <p class="sub">The <b>Utilization</b> column is dropped from the CSV template and this table — it fed no calculation.
+    With only four columns left, the table is also constrained to a sensible width (not stretched full-width).</p>
+  <div class="scroll midw"><table>
+    <thead><tr><th>Name</th><th>Role</th><th class="r">Net monthly salary</th><th>Start date</th></tr></thead>
+    <tbody>
+      <tr><td>Islam</td><td>Senior Consultant</td><td class="r">150,000</td><td>2024-01-01</td></tr>
+      <tr><td>Galal</td><td>Consultant</td><td class="r">60,000</td><td>2024-01-01</td></tr>
+      <tr><td>Omar</td><td>Consultant</td><td class="r">50,000</td><td>2024-01-01</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- 2. Ended badge -->
+  <h2>2 · Status pills — “Ended” now bluish <span class="chg">was grey</span></h2>
+  <p class="sub">Only the Ended pill changes colour; the others stay as they are.</p>
+  <div class="card">
+    <span class="pill st-ongoing">Ongoing</span>&nbsp;&nbsp;
+    <span class="pill st-ended">Ended</span>&nbsp;&nbsp;
+    <span class="pill st-progress">In progress</span>&nbsp;&nbsp;
+    <span class="pill st-pending">Pending</span>
+  </div>
+
+  <!-- 3 + 4. Business Partner Fee: info on Envelope header, contributor hover breakdown -->
+  <h2>3 · Business Partner Fee <span class="chg">ⓘ moved to Envelope</span> <span class="chg">Contributor hover</span></h2>
+  <p class="sub">The ⓘ sits on the <b>Envelope</b> header (it explains the envelope). The <b>Contributor</b> figure is now
+    hoverable — it breaks down who was paid what. Hover “2,159.70” below.</p>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th>Client</th><th>Type</th><th class="r">GP</th><th class="r">GP%</th>
+      <th class="r">Envelope<span class="info"><span class="dot">i</span><span class="tip"><b>Envelope</b> = 3% of the client's Gross Profit, and only when the client clears the 70% gross-margin gate. It's the pot the assignment generates before the lead and contributors are paid.</span></span></th>
+      <th class="r">Ded</th><th>Lead</th><th class="r">Lead fee</th><th class="r">Contributor</th><th class="r">Firm</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td>Wander</td><td>RET</td><td class="r">719,899.00</td><td class="r">72.7%</td>
+        <td class="r">21,596.97</td><td class="r">10%</td><td>Galal</td><td class="r">19,437.27</td>
+        <td class="r"><span class="brk">2,159.70<span class="tip"><b>Contributor breakdown — Wander</b><span class="brk-row"><span>Aley · 22% · tier 10%</span><b>2,159.70</b></span><span class="brk-row"><span>Islam · 14%</span><b>0 (floored)</b></span></span></span></td>
+        <td class="r muted-cell">—</td>
+      </tr>
+      <tr>
+        <td>Imtenan</td><td>RET</td><td class="r">506,991.00</td><td class="r">84.5%</td>
+        <td class="r">15,209.73</td><td class="r muted-cell">—</td><td>Galal</td><td class="r">15,209.73</td>
+        <td class="r muted-cell">—</td><td class="r muted-cell">—</td>
+      </tr>
+      <tr>
+        <td>Raya Trade</td><td>RET</td><td class="r">222,556.00</td><td class="r">54.3%</td>
+        <td class="r"><span class="zero">0.00<span class="tip">Below the 70% margin gate (54.3%) — no envelope is generated, so the lead fee and every contributor allocation on this client are 0.</span></span></td>
+        <td class="r muted-cell">—</td><td>Islam</td>
+        <td class="r"><span class="zero">0.00<span class="tip">Envelope is 0 (client below the 70% gate), so there is no lead fee.</span></span></td>
+        <td class="r muted-cell">—</td><td class="r muted-cell">—</td>
+      </tr>
+      <tr class="tot"><td colspan="7">Total</td><td class="r">34,647.00</td><td class="r">2,159.70</td><td class="r">—</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- 5 + 6. Contributor detail: info on Tier header + zebra by client -->
+  <h2>4 · Contributor detail <span class="chg">ⓘ moved to Tier</span> <span class="chg">alternating client shading</span></h2>
+  <p class="sub">The ⓘ sits on the <b>Tier</b> header. Rows are shaded in alternating bands <b>per client</b>, so each
+    client's contributors read as one block.</p>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th>Client</th><th>Person</th><th class="r">Share</th>
+      <th class="r">Tier<span class="info"><span class="dot">i</span><span class="tip"><b>Tier</b> = the deduction a contributor's share takes from the lead's fee. <b>Allocation</b> = envelope × tier. <b>Paid</b> = allocation after the 5%-of-month floor and ½-month cap.</span></span></th>
+      <th class="r">Allocation</th><th class="r">Paid</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>Wander</td><td>Aley</td><td class="r">22%</td><td class="r">10%</td><td class="r">2,159.70</td><td class="r">2,159.70</td></tr>
+      <tr><td>Wander</td><td>Islam</td><td class="r">14%</td><td class="r muted-cell">—</td><td class="r">0.00</td><td class="r">0 (floored)</td></tr>
+      <tr class="zebra"><td>Imtenan</td><td>Islam</td><td class="r">5%</td><td class="r muted-cell">—</td><td class="r">0.00</td><td class="r">0 (floored)</td></tr>
+      <tr><td>Raya Trade</td><td>Omar</td><td class="r">70%</td><td class="r muted-cell">—</td><td class="r">0.00</td><td class="r">0.00</td></tr>
+      <tr><td>Raya Trade</td><td>Momen</td><td class="r">11%</td><td class="r muted-cell">—</td><td class="r">0.00</td><td class="r">0.00</td></tr>
+      <tr class="zebra"><td>Beverages</td><td>Momen</td><td class="r">40%</td><td class="r">10%</td><td class="r">3,120.00</td><td class="r">3,120.00</td></tr>
+    </tbody>
+  </table></div>
+  <p class="legend">Shading alternates each time the <b>client</b> changes (Wander → Imtenan → Raya Trade → Beverages), not every row.</p>
+
+  <!-- 7. Firm P&L squeezed + Notes column with word-equations -->
+  <h2>5 · Firm P&amp;L <span class="chg">squeezed</span> <span class="chg">Notes column (equations)</span></h2>
+  <p class="sub">Values sit next to the item names. The old hover-note becomes a visible <b>Notes</b> column that spells out
+    each % as a plain-language equation (e.g. Direct cost → <i>Direct cost ÷ Revenue</i>) rather than raw numbers.</p>
+  <div class="scroll" style="max-width:680px"><table style="table-layout:fixed"><colgroup><col style="width:30%"><col style="width:20%"><col style="width:12%"><col style="width:38%"></colgroup>
+    <thead><tr><th>Item</th><th class="r">Value</th><th class="r">%</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Revenue</td><td class="r">6,514,087</td><td class="r muted-cell">—</td><td class="muted-cell">—</td></tr>
+      <tr><td>Direct cost</td><td class="r">2,477,345</td><td class="r">38.0%</td><td class="note-eq">Direct cost ÷ Revenue</td></tr>
+      <tr><td>Gross profit</td><td class="r">4,036,742</td><td class="r">62.0%</td><td class="note-eq">Gross profit ÷ Revenue</td></tr>
+      <tr><td>Total expenses</td><td class="r">3,500,000</td><td class="r">53.7%</td><td class="note-eq">Total expenses ÷ Revenue</td></tr>
+      <tr class="tot"><td>Profit before scheme</td><td class="r">536,742</td><td class="r">8.2%</td><td class="note-eq">Profit before scheme ÷ Revenue</td></tr>
+      <tr><td>Scheme cost</td><td class="r">246,550</td><td class="r">6.1%</td><td class="note-eq">Scheme cost ÷ Gross profit</td></tr>
+      <tr class="tot"><td>Profit after scheme</td><td class="r">290,192</td><td class="r">4.5%</td><td class="note-eq">Profit after scheme ÷ Revenue</td></tr>
+    </tbody>
+  </table></div>
+
+  <!-- 8. Cost recovery: info on Multiple header + 4-band colour -->
+  <h2>6 · Cost recovery <span class="chg">ⓘ moved to Multiple</span> <span class="chg">4-band colour</span></h2>
+  <p class="sub">The ⓘ sits on the <b>Multiple</b> header. Each Multiple is colour-banded:
+    <span class="mb mb-best">&gt;3× best</span> <span class="mb mb-good">2–3× good</span>
+    <span class="mb mb-poor">1–2× poor</span> <span class="mb mb-crit">&lt;1× critical</span></p>
+  <div class="scroll midw"><table>
+    <thead><tr>
+      <th>Person</th><th class="r">6-mo salary</th><th class="r">GP generated</th>
+      <th class="r">Multiple<span class="info"><span class="dot">i</span><span class="tip"><b>Multiple</b> = Gross Profit a person generated (weighted by their contribution share) ÷ their six-month net salary. Benchmark: &gt;3× best, 2–3× good, 1–2× poor, below 1× critical (didn't cover their own salary).</span></span></th>
+      <th class="r">Surplus</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>Momen</td><td class="r">540,000</td><td class="r">1,850,000</td><td class="r"><span class="mb mb-best">3.4×</span></td><td class="r">1,310,000</td></tr>
+      <tr><td>Omar</td><td class="r">300,000</td><td class="r">690,000</td><td class="r"><span class="mb mb-good">2.3×</span></td><td class="r">390,000</td></tr>
+      <tr><td>Galal</td><td class="r">360,000</td><td class="r">612,000</td><td class="r"><span class="mb mb-poor">1.7×</span></td><td class="r">252,000</td></tr>
+      <tr><td>Aley</td><td class="r">510,000</td><td class="r">380,000</td><td class="r"><span class="mb mb-crit">0.7×</span></td><td class="r">−130,000</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="divider"></div>
+
+  <!-- 9. Commission table: squeezed, click a name to expand -->
+  <h2>7 · Commission by person <span class="chg">squeezed + click to expand</span></h2>
+  <p class="sub">Starts compact (Person, Commission). <b>Click a person's name</b> to reveal the per-deal breakdown —
+    client, source (self/referred), rate, net revenue, and the commission from each. Click again to collapse.
+    Try clicking <b>Islam</b> or <b>Omar</b>.</p>
+  <div class="scroll" style="max-width:470px"><table id="commtbl">
+    <thead><tr><th>Person</th><th class="r">Commission</th></tr></thead>
+    <tbody>
+      <tr class="exp-row" onclick="toggleExp(this)"><td><span class="mini-chev">▶</span>Islam</td><td class="r">12,300.00</td></tr>
+      <tr class="exp-sub"><td colspan="2">
+        <div class="brk-line"><span>JRNY · Self-gen · 5% · net 160,650</span><b>8,032.50</b></div>
+        <div class="brk-line"><span>Beverages Expert · Self-gen · 5% · net 85,350</span><b>4,267.50</b></div>
+      </td></tr>
+      <tr class="exp-row" onclick="toggleExp(this)"><td><span class="mini-chev">▶</span>Omar</td><td class="r">3,720.00</td></tr>
+      <tr class="exp-sub"><td colspan="2">
+        <div class="brk-line"><span>Sportify · Self-gen · 5% · net 74,400</span><b>3,720.00</b></div>
+      </td></tr>
+      <tr class="tot"><td>Total</td><td class="r">16,020.00</td></tr>
+    </tbody>
+  </table></div>
+  <p class="legend"><b>Needs a small engine change</b> to expose the per-deal commission detail (client, self/referred, rate,
+    net-revenue base) that today is only computed as a per-person total. The row itself stays squeezed until clicked.</p>
+
+  <p class="legend" style="margin-top:26px">If this all looks right, say the word and I'll build the batch, verify, and push.</p>
+</div>
+
+<script>
+  // Commission: click a person row to toggle its per-deal breakdown sub-row.
+  function toggleExp(row) {
+    var sub = row.nextElementSibling;
+    if (!sub || !sub.classList.contains('exp-sub')) return;
+    row.classList.toggle('open');
+    sub.classList.toggle('show');
+  }
+
+  document.querySelectorAll('.info, .brk, .zero').forEach(function (trigger) {
+    var tip = trigger.querySelector('.tip');
+    if (!tip) return;
+    function show() {
+      var r = trigger.getBoundingClientRect();
+      tip.classList.add('tshow');
+      var w = tip.offsetWidth, h = tip.offsetHeight;
+      var left = r.left + r.width / 2 - w / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+      var top = r.bottom + 6;
+      if (top + h > window.innerHeight - 8) top = r.top - h - 6;
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+    }
+    function hide() { tip.classList.remove('tshow'); }
+    trigger.addEventListener('mouseenter', show);
+    trigger.addEventListener('mouseleave', hide);
+  });
+</script>

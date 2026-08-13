@@ -118,14 +118,11 @@ function Section({
   );
 }
 
-/**
- * A small ⓘ term-tip (hover), rendered as a non-clipping floating layer. The
- * icon lives on the navy column headers, so it is styled light for contrast.
- */
-function InfoTip({ text }: { text: React.ReactNode }) {
+/** A small ⓘ term-tip (hover), rendered as a non-clipping floating layer. */
+function InfoTip({ text }: { text: string }) {
   return (
     <HoverTip text={text} className="ml-1 inline-flex align-middle">
-      <span className="grid h-[15px] w-[15px] place-items-center rounded-full border border-white/50 text-[10px] font-bold leading-none text-white/90">
+      <span className="grid h-[15px] w-[15px] place-items-center rounded-full border border-navy-200 text-[10px] font-bold leading-none text-navy-500">
         i
       </span>
     </HoverTip>
@@ -358,12 +355,12 @@ export function CycleReportView({
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {r.assignments.map((a, i) => {
+              {r.assignments.map((a) => {
                 const contrib = a.contributors.reduce((s, c) => s + c.payment, 0);
                 const gateFailed = !a.marginGatePassed;
                 const gateNote = `Below the 70% margin gate (${pct(a.grossMarginPct)}) — no envelope is generated, so the lead fee and every contributor allocation on this client are 0.`;
                 return (
-                  <tr key={a.client} className={i % 2 === 1 ? "ff-zebra" : undefined}>
+                  <tr key={a.client}>
                     <td className={td}>{a.client}</td>
                     <td className={td}>{a.type}</td>
                     <td className={tdr}>{m(a.grossProfit)}</td>
@@ -403,7 +400,7 @@ export function CycleReportView({
                   </tr>
                 );
               })}
-              <tr className="ff-total-row font-semibold">
+              <tr className="bg-navy-50/40 font-semibold">
                 <td className={td} colSpan={7}>Total</td>
                 <td className={tdr}>{m(r.totals.leadFees)}</td>
                 <td className={tdr}>{m(r.totals.contributorPayments)}</td>
@@ -440,11 +437,10 @@ export function CycleReportView({
                   a.contributors.map((c) => {
                     const gateFailed = !a.marginGatePassed;
                     // Shade alternates each time the client changes, so each client's
-                    // contributors read as one block (base rows stay white). ff-zebra
-                    // repaints the sticky first column too.
-                    const zebra = ai % 2 === 1;
+                    // contributors read as one block (base rows stay white).
+                    const zebra = ai % 2 === 1 ? " bg-[#eef0f2]" : "";
                     return (
-                      <tr key={a.client + c.name} className={zebra ? "ff-zebra" : undefined}>
+                      <tr key={a.client + c.name} className={zebra || undefined}>
                         <td className={td}>{a.client}</td>
                         <td className={td}>{c.name}</td>
                         <td className={tdr}>{pct(c.share)}</td>
@@ -515,16 +511,16 @@ export function CycleReportView({
                     )}
                   </Fragment>
                 ))}
-                <tr className="ff-total-row font-semibold"><td className={td}>Total</td><td className={tdr}>{m(r.totals.commission)}</td></tr>
+                <tr className="bg-navy-50/40 font-semibold"><td className={td}>Total</td><td className={tdr}>{m(r.totals.commission)}</td></tr>
               </tbody>
             </table>
           </div>
         </Section>
       )}
 
-      {/* 5. Compensation by person */}
+      {/* 5. By person */}
       <Section
-        title="Compensation by person"
+        title="By person"
         subtitle="released compensation, plus commission folded into the grand total"
         open={open.byPerson}
         onToggle={() => toggle("byPerson")}
@@ -548,8 +544,8 @@ export function CycleReportView({
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {r.byPerson.map((p, i) => (
-                <tr key={p.name} className={i % 2 === 1 ? "ff-zebra" : undefined}>
+              {r.byPerson.map((p) => (
+                <tr key={p.name}>
                   <td className={td}>{p.name}</td>
                   <td className={tdr}>{m(p.salary)}</td>
                   <td className={tdr}>{p.leadFee ? m(p.leadFee) : "—"}</td>
@@ -602,7 +598,7 @@ export function CycleReportView({
                   <td className={tdr}>{pct(firm.totalExpenses / firm.revenue)}</td>
                   <td className={tdNote}>Total expenses ÷ Revenue</td>
                 </tr>
-                <tr className="ff-total-row font-semibold">
+                <tr className="bg-navy-50/40 font-semibold">
                   <td className={td}>Profit before scheme</td><td className={tdr}>{whole(firm.profitBeforeScheme)}</td>
                   <td className={tdr}>{pct(firm.profitBeforeSchemePct)}</td>
                   <td className={tdNote + " font-normal"}>Profit before scheme ÷ Revenue</td>
@@ -620,7 +616,7 @@ export function CycleReportView({
                     <tr><td className={td + " pl-9 text-muted"}>Commission</td><td className={tdr + " text-muted"}>{whole(r.totals.commission)}</td><td className={tdr}></td><td className={tdNote}></td></tr>
                   </>
                 )}
-                <tr className="ff-total-row font-semibold">
+                <tr className="bg-navy-50/40 font-semibold">
                   <td className={td}>Profit after scheme</td><td className={tdr}>{whole(firm.profitAfterScheme)}</td>
                   <td className={tdr}>{pct(firm.profitAfterSchemePct)}</td>
                   <td className={tdNote + " font-normal"}>Profit after scheme ÷ Revenue</td>
@@ -671,8 +667,8 @@ export function CycleReportView({
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {r.costRecovery.map((c, i) => (
-                <tr key={c.name} className={i % 2 === 1 ? "ff-zebra" : undefined}>
+              {r.costRecovery.map((c) => (
+                <tr key={c.name}>
                   <td className={td}>{c.name}</td>
                   <td className={tdr}>{m(c.sixMonthSalary)}</td>
                   <td className={tdr}>{m(c.gpGenerated)}</td>

@@ -26,7 +26,11 @@ export const employeeSchema = z.object({
   phone: strOrNull,
   department: strOrNull,
   title: strOrNull,
-  role: z.enum(["EMPLOYEE", "HR_ADMIN", "FINANCE", "SUPER_USER"]),
+  // Optional: the Role control is disabled (and so not submitted) for non-super
+  // admins, and the server derives role from the actor for them anyway — it never
+  // trusts the client's role for non-super-users. Required-ness here only broke
+  // HR/Finance edits with a generic "Invalid input".
+  role: z.enum(["EMPLOYEE", "HR_ADMIN", "FINANCE", "SUPER_USER"]).optional(),
   employmentType: z.preprocess(
     emptyToNull,
     z.enum(["FULL_TIME", "PART_TIME"]).nullable().optional()
@@ -56,10 +60,11 @@ export const employeeSchema = z.object({
       .optional()
   ),
   reportsToId: strOrNull,
-  // Emergency contact (HR-managed, spec 001 registry extension) — all three required on input.
-  emergencyContactName: z.string().trim().min(1, "Emergency contact name is required"),
-  emergencyContactRelationship: z.string().trim().min(1, "Emergency contact relationship is required"),
-  emergencyContactPhone: z.string().trim().min(1, "Emergency contact phone is required"),
+  // Emergency contact (HR-managed, spec 001 registry extension) — optional so HR is
+  // never blocked from saving other edits on a record that lacks them; filled when known.
+  emergencyContactName: strOrNull,
+  emergencyContactRelationship: strOrNull,
+  emergencyContactPhone: strOrNull,
   dependants: z.array(dependantSchema).default([]),
 });
 

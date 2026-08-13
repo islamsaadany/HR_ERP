@@ -144,3 +144,14 @@ An HR admin or Super User records a claim/release that already happened outside 
 - **The everyone × benefits filterable master table is deferred** (future spec); this spec keeps the current submissions + claims-queue views.
 - **View-first is a display state**, not new persistence — unsaved edits are discarded on tab switch.
 - **Navy/gold**, mirroring `AdminBenefitsTabs` / `BenefitsTabs`; no redesign of preserved elements.
+
+## Follow-up (2026-08-13) — backfill routes through Finance
+
+The HR manual back-fill previously wrote a `BenefitClaim` straight to
+**REIMBURSED** ("already paid outside the app"). It now records it as
+**APPROVED** so it appears in **Finance → Payments**, where Finance confirms the
+transfer — entering the actual (possibly back-dated) transfer date — which flips
+it to **REIMBURSED** and emails the employee (the confirmation doubles as
+documentation). This preserves the HR-records / Finance-confirms separation of
+duties. **Medical back-fill is unchanged** (a locked `MedicalCommitment`, not a
+claim, and it does not flow through Payments).

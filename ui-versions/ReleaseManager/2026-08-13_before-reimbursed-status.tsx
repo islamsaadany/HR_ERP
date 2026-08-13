@@ -17,14 +17,9 @@ export type ReleaseRow = {
   phone: string;
   manager: string;
   status: string; // employee status label
-  amount: number | null; // band-derived allowance; null = needs attention (see `attention`)
-  attention: string; // when amount is null, the specific reason ("" otherwise)
+  amount: number | null; // band-derived allowance; null = needs attention (no band)
   released: boolean;
   releasedAt: string; // YYYY-MM-DD or ""
-  // A recorded claim for this benefit: "approved" (HR back-filled, awaiting Finance
-  // payment) or "reimbursed" (Finance confirmed). "" when there is none.
-  claimState: "approved" | "reimbursed" | "";
-  claimDate: string; // YYYY-MM-DD or ""
 };
 
 // Column catalogue. `anchor` columns are always in the sheet; the rest are toggleable.
@@ -51,15 +46,7 @@ const csvCell = (v: string | number | null | undefined): string => {
 
 const egp = (n: number | null) => (n == null ? "" : "EGP " + n.toLocaleString());
 const statusText = (r: ReleaseRow) =>
-  r.amount == null
-    ? `Needs attention — ${r.attention || "no allowance"}`
-    : r.released
-    ? `Released — ${r.releasedAt}`
-    : r.claimState === "reimbursed"
-    ? `Reimbursed — ${r.claimDate}`
-    : r.claimState === "approved"
-    ? "Approved — awaiting payment"
-    : "Not released";
+  r.amount == null ? "Needs attention (no tenure)" : r.released ? `Released — ${r.releasedAt}` : "Not released";
 
 export function ReleaseManager({
   benefits,
@@ -86,8 +73,6 @@ export function ReleaseManager({
   const releasable = useMemo(() => rows.filter((r) => r.amount != null), [rows]);
   const total = useMemo(() => rows.reduce((s, r) => s + (r.amount ?? 0), 0), [rows]);
   const releasedCount = rows.filter((r) => r.released).length;
-  const reimbursedCount = rows.filter((r) => !r.released && r.claimState === "reimbursed").length;
-  const awaitingCount = rows.filter((r) => !r.released && r.claimState === "approved").length;
 
   const activeCols = COLUMNS.filter((c) => c.anchor || cols.has(c.key));
 
@@ -246,13 +231,9 @@ export function ReleaseManager({
                       <td className="px-3 py-2 text-right tabular-nums text-ink">{egp(r.amount)}</td>
                       <td className="px-3 py-2">
                         {r.amount == null ? (
-                          <span className="text-xs font-medium text-gold-700">Needs attention — {r.attention || "no allowance"}</span>
+                          <span className="text-xs font-medium text-gold-700">Needs attention (no tenure)</span>
                         ) : r.released ? (
                           <span className="text-xs font-semibold text-navy-700">Released — {r.releasedAt}</span>
-                        ) : r.claimState === "reimbursed" ? (
-                          <span className="text-xs font-semibold text-green-700">Reimbursed — {r.claimDate}</span>
-                        ) : r.claimState === "approved" ? (
-                          <span className="text-xs font-semibold text-blue-700">Approved — awaiting payment</span>
                         ) : (
                           <span className="text-xs text-muted">Not released</span>
                         )}
@@ -264,9 +245,7 @@ export function ReleaseManager({
               {rows.length > 0 ? (
                 <tfoot>
                   <tr className="border-t border-line bg-surface text-sm">
-                    <td colSpan={4} className="px-3 py-2 text-right font-medium text-muted">
-                      Total · {rows.length} employees · {releasedCount} released{reimbursedCount ? ` · ${reimbursedCount} reimbursed` : ""}{awaitingCount ? ` · ${awaitingCount} awaiting payment` : ""}
-                    </td>
+                    <td colSpan={4} className="px-3 py-2 text-right font-medium text-muted">Total · {rows.length} employees · {releasedCount} released</td>
                     <td className="px-3 py-2 text-right font-serif text-navy-800 tabular-nums">{egp(total)}</td>
                     <td className="px-3 py-2" />
                   </tr>

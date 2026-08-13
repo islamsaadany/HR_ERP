@@ -7,7 +7,7 @@
  * money columns.
  *
  *  - people.csv       ← the employee registry (Consulting + Data teams): name,
- *                        role, net monthly salary, start date. Utilisation blank.
+ *                        role, net monthly salary, start date.
  *  - assignments.csv  ← the clients + lead/bd carried from the most recent PRIOR
  *                        cycle; the money/date columns are left blank to fill in.
  *  - contributions.csv← a client × people grid skeleton (blank shares).
@@ -55,9 +55,9 @@ async function priorCycle(currentCycleId: string) {
 }
 
 function peopleCsv(people: Awaited<ReturnType<typeof incentivePeople>>): string {
-  const header = "name,role,net_monthly_salary,start_date,utilization";
+  const header = "name,role,net_monthly_salary,start_date";
   const rows = people.map((p) =>
-    [cell(p.name), cell(p.title), cell(p.monthlySalary ?? ""), cell(isoDate(p.startDate)), ""].join(",")
+    [cell(p.name), cell(p.title), cell(p.monthlySalary ?? ""), cell(isoDate(p.startDate))].join(",")
   );
   return [header, ...rows].join("\n") + "\n";
 }

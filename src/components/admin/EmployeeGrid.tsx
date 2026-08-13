@@ -9,6 +9,7 @@ import {
   MARITAL_STATUS_LABEL,
   STATUS_LABEL,
   ROLE_LABEL,
+  tenureBandDisplay,
 } from "@/lib/labels";
 import { updateEmployeeField } from "@/app/(app)/admin/employees/actions";
 import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
@@ -609,6 +610,9 @@ function displayValue(row: GridRow, col: Col): string {
   const raw = row[col.key] as string;
   if (col.type === "date") return fmtDate(raw);
   if (col.type === "manager") return row.reportsToName || "—";
+  // Tenure is derived from the hire date; show "< 6 months" for a sub-6-month hire
+  // (consistent with the profile, edit form, and release list) rather than a bare "—".
+  if (col.key === "tenureBand") return tenureBandDisplay(row.startDate ? new Date(row.startDate) : null);
   if (col.type === "select") {
     return col.options?.find((o) => o.value === raw)?.label || "—";
   }

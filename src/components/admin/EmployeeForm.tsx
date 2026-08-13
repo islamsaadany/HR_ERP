@@ -2,8 +2,8 @@
 
 import { useActionState, useState } from "react";
 import type { ActionState } from "@/app/(app)/admin/employees/actions";
-import { deriveTenureBand, statusFromEndDate, formatYearsOfService } from "@/lib/tenure";
-import { TENURE_BAND_LABEL, STATUS_LABEL } from "@/lib/labels";
+import { statusFromEndDate, formatYearsOfService } from "@/lib/tenure";
+import { tenureBandDisplay, STATUS_LABEL } from "@/lib/labels";
 
 type Dep = { name: string | null; dateOfBirth: string; kind: "CHILD" | "SPOUSE" };
 
@@ -67,7 +67,6 @@ export function EmployeeForm({
   // status from the end date. Track the dates so the read-only displays update live.
   const [startDate, setStartDate] = useState(values.startDate ?? "");
   const [endDate, setEndDate] = useState(values.endDate ?? "");
-  const derivedBand = deriveTenureBand(startDate ? new Date(startDate) : null).band;
   const derivedStatus = statusFromEndDate(endDate ? new Date(endDate) : null);
   const yearsOfService = formatYearsOfService(
     startDate ? new Date(startDate) : null,
@@ -215,7 +214,7 @@ export function EmployeeForm({
               <div>
                 <label className={L}>Tenure band</label>
                 <div className={RO} aria-readonly="true">
-                  {derivedBand ? TENURE_BAND_LABEL[derivedBand] : "—"}
+                  {tenureBandDisplay(startDate ? new Date(startDate) : null)}
                 </div>
               </div>
             </div>
@@ -310,6 +309,8 @@ export function EmployeeForm({
                   </select>
                   <input
                     type="date"
+                    required
+                    aria-label="Dependant date of birth"
                     value={d.dateOfBirth}
                     onChange={(e) => {
                       const next = [...deps];
@@ -339,16 +340,16 @@ export function EmployeeForm({
         <h2 className="mb-4 font-serif text-lg text-ink">Emergency contact</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={L}>Contact name *</label>
-            <input name="emergencyContactName" defaultValue={values.emergencyContactName ?? ""} required className={I} />
+            <label className={L}>Contact name</label>
+            <input name="emergencyContactName" defaultValue={values.emergencyContactName ?? ""} className={I} />
           </div>
           <div>
-            <label className={L}>Relationship *</label>
-            <input name="emergencyContactRelationship" defaultValue={values.emergencyContactRelationship ?? ""} required className={I} />
+            <label className={L}>Relationship</label>
+            <input name="emergencyContactRelationship" defaultValue={values.emergencyContactRelationship ?? ""} className={I} />
           </div>
           <div className="sm:col-span-2">
-            <label className={L}>Contact phone *</label>
-            <input name="emergencyContactPhone" defaultValue={values.emergencyContactPhone ?? ""} required className={I} />
+            <label className={L}>Contact phone</label>
+            <input name="emergencyContactPhone" defaultValue={values.emergencyContactPhone ?? ""} className={I} />
           </div>
         </div>
       </section>

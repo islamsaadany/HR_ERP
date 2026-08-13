@@ -5,6 +5,7 @@ import type {
   TenureBand,
   EmployeeStatus,
 } from "@prisma/client";
+import { deriveTenureBand } from "./tenure";
 
 export const ROLE_LABEL: Record<Role, string> = {
   EMPLOYEE: "Employee",
@@ -24,6 +25,22 @@ export const TENURE_BAND_LABEL: Record<TenureBand, string> = {
   BAND_4_7Y: "4 – 7 years",
   BAND_7_10Y: "7 – 10 years",
 };
+
+/**
+ * Live tenure-band label derived from the hire date — never stale (the stored
+ * band is only recomputed on employee edit). Shows "< 6 months" for a hire under
+ * six months (not yet benefits-eligible) instead of a bare "—", and "—" when
+ * there is no hire date or it is in the future.
+ */
+export function tenureBandDisplay(
+  startDate: Date | null | undefined,
+  now: Date = new Date()
+): string {
+  if (!startDate) return "—";
+  const { band } = deriveTenureBand(startDate, now);
+  if (band) return TENURE_BAND_LABEL[band];
+  return startDate.getTime() > now.getTime() ? "—" : "< 6 months";
+}
 
 /** Order of the four tenure bands (index aligns with benefits ceiling arrays). */
 export const TENURE_BAND_ORDER: TenureBand[] = [

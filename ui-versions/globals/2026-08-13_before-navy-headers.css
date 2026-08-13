@@ -97,14 +97,12 @@ body {
 .ff-data-table {
   width: 100%;
 }
-/* Frozen header row (navy blue, bold white text, consistent across every data table) */
+/* Frozen header row (subtle navy tint, consistent across every data table) */
 .ff-data-table thead th {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--color-navy-800);
-  color: #ffffff;
-  font-weight: 700;
+  background: var(--color-navy-50);
 }
 /* Frozen first column (both header and body cells) */
 .ff-data-table tr > :first-child {
@@ -117,11 +115,9 @@ body {
   z-index: 1;
   box-shadow: 1px 0 0 var(--color-line), 6px 0 8px -6px rgba(15, 36, 68, 0.16);
 }
-/* Top-left corner cell: sticky in both directions, above everything else.
-   Repaints navy so the header's first column matches the rest of the header. */
+/* Top-left corner cell: sticky in both directions, above everything else */
 .ff-data-table thead tr > :first-child {
   z-index: 3;
-  background: var(--color-navy-800);
   box-shadow: 1px 0 0 var(--color-line), 6px 0 8px -6px rgba(15, 36, 68, 0.16);
 }
 /*
@@ -132,14 +128,6 @@ body {
 */
 .ff-data-table tbody tr.ff-zebra > td {
   background: #eef0f2;
-}
-/*
-  Emphasis / total rows — opt in with `ff-total-row`. Paints every cell (incl. the
-  sticky first column) with a solid navy tint so the fill reaches the first column.
-*/
-.ff-data-table tbody tr.ff-total-row > td {
-  background: var(--color-navy-50);
-  font-weight: 600;
 }
 
 /*
