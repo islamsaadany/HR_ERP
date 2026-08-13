@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
-import { getActivePlanYear, amountForBand, getMedicalCommitment, planYearWindow } from "@/lib/benefits/config";
+import { getActivePlanYear, amountForBand, getMedicalCommitment, planYearWindow, isSalaryDriven } from "@/lib/benefits/config";
 import { tracker } from "@/lib/benefits/claims";
 import { evaluateClaim, type AllowanceContext } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate, poolCycleFraction } from "@/lib/benefits/proration";
@@ -85,11 +85,17 @@ async function createClaimImpl(formData: FormData): Promise<void> {
     benefitName = gb.name;
     claimType = gb.claimType;
     if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
-    const bandAmount = amountForBand(user.employmentType, tenureBand, gb) ?? user.monthlySalary ?? null;
+    // The monthly-salary fallback is ONLY valid for genuinely salary-driven benefits
+    // (Loans — every band intentionally blank). For a band-based benefit that simply has
+    // no amount set for this employee's type/tenure (e.g. an unset part-time figure), a
+    // null band amount means "not available" — never authorize a claim off the salary.
+    const bandAmount =
+      amountForBand(user.employmentType, tenureBand, gb) ??
+      (isSalaryDriven(gb) ? user.monthlySalary : null);
+    if (bandAmount == null) fail("That benefit has no amount set for you yet — contact HR.");
     // Only benefits flagged `prorated` (Professional development) shrink to the cycle
     // length; event/season gifts (marriage, summer, special events, loans) stay full.
-    const allocated =
-      gb.prorated && bandAmount != null ? prorate(bandAmount, poolFraction) : bandAmount;
+    const allocated = gb.prorated ? prorate(bandAmount, poolFraction) : bandAmount;
     const existing = await prisma.benefitClaim.findMany({
       where: {
         userId: me.id,
