@@ -95,6 +95,28 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 2. Hand-off items accumulate in `HANDOFF.md` (Neon SQL, env, Google OAuth, team-seed file) — delivered at the end.
 
 ## Build log
+- **2026-08-13 — Guaranteed-benefit salary-fallback fix + release-table display (branch `claude/benefits-eligibility-display-d36tez`, no migration):**
+  Two changes, no schema/seed change. (1) **Salary-fallback correction (money + display).**
+  A guaranteed benefit with **no per-type band amount set** (e.g. Part-time Summer
+  allowance — part-timers get no summer/loans) was falling back to the employee's
+  **monthly salary** in two places: the employee Benefits card (showed the salary as the
+  benefit amount — a wrong figure **and** a salary leak) and, critically, the
+  **server-side claim check** (`claim-actions.ts` authorized a claim up to the salary — a
+  real over-claim risk). Now the monthly-salary fallback is guarded by `isSalaryDriven`
+  and applies **only** to genuinely salary-driven Loans; a band-based benefit with no
+  amount for the viewer is **not available** — its card is omitted from the Benefits page
+  **and** the orientation "what you already get" summary, and a claim is **blocked**
+  ("no amount set for you yet — contact HR"). Matches what the bulk-release sheet already
+  reported ("no part-time amount set"). Fixed in `benefits/page.tsx` + `benefits/claim-actions.ts`;
+  UI snapshot `ui-versions/BenefitsPage/2026-08-13_before-hide-unset-guaranteed.tsx`.
+  (2) **Release-table display refinements** (mockup-approved,
+  `design-mockups/benefits-release-table/2026-08-13_pt-ft-column-status.html`): a **Type**
+  column (FT/PT badge — navy FT, gold PT) after Tenure; the **Status** column drops the
+  "Needs attention —" prefix and shows only the real reason; **"Not released"** in **red**;
+  the full-row amber tint on attention rows removed. Display-only (`ReleaseManager.tsx`,
+  snapshot `ui-versions/ReleaseManager/2026-08-13_before-pt-ft-column.tsx`); CSV export
+  unchanged. Docs updated same-branch (PROJECT_DETAILS + specs 013/021). Verified: `tsc --noEmit`
+  clean + `npm run build` green.
 - **2026-08-12 — Incentive report restructure + tips + benefits catalogue scroll (spec 009, branch `claude/incentive-reports-templates-fse4oe`, no migration):**
   On-screen cycle report rebuilt (`CycleReport.tsx` now a client component): collapsible
   sections + Expand/Collapse-all; a **Review & validation** section (the 3 uploaded sheets)
@@ -529,4 +551,4 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 
 ---
 
-*Last Updated: 2026-08-10.*
+*Last Updated: 2026-08-13.*
