@@ -50,12 +50,9 @@ const csvCell = (v: string | number | null | undefined): string => {
 };
 
 const egp = (n: number | null) => (n == null ? "" : "EGP " + n.toLocaleString());
-// Short employment-type code for the Type column / CSV.
-const typeCode = (label: string) =>
-  label === "Full-time" ? "FT" : label === "Part-time" ? "PT" : "";
 const statusText = (r: ReleaseRow) =>
   r.amount == null
-    ? r.attention || "no allowance"
+    ? `Needs attention — ${r.attention || "no allowance"}`
     : r.released
     ? `Released — ${r.releasedAt}`
     : r.claimState === "reimbursed"
@@ -230,43 +227,26 @@ export function ReleaseManager({
                   <th className="px-3 py-2">#</th>
                   <th className="px-3 py-2">Employee</th>
                   <th className="px-3 py-2">Tenure</th>
-                  <th className="px-3 py-2">Type</th>
                   <th className="px-3 py-2 text-right">Allowance</th>
                   <th className="px-3 py-2">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={7} className="px-3 py-6 text-center text-sm italic text-muted">No applicable active employees for this benefit.</td></tr>
+                  <tr><td colSpan={6} className="px-3 py-6 text-center text-sm italic text-muted">No applicable active employees for this benefit.</td></tr>
                 ) : (
                   rows.map((r, i) => (
-                    <tr key={r.id} className="border-b border-line last:border-0">
+                    <tr key={r.id} className={"border-b border-line last:border-0 " + (r.amount == null ? "bg-gold-50/40" : "")}>
                       <td className="px-3 py-2">
                         <input type="checkbox" disabled={r.amount == null} checked={selected.has(r.id)} onChange={() => toggleOne(r.id)} aria-label={`Select ${r.name}`} />
                       </td>
                       <td className="px-3 py-2 tabular-nums text-muted">{i + 1}</td>
                       <td className="px-3 py-2 text-ink">{r.name}</td>
                       <td className="px-3 py-2 text-muted">{r.tenure || "—"}</td>
-                      <td className="px-3 py-2">
-                        {typeCode(r.employmentType) ? (
-                          <span
-                            className={
-                              "inline-block min-w-[30px] rounded-full px-2 py-0.5 text-center text-[11px] font-bold tracking-wide " +
-                              (r.employmentType === "Part-time"
-                                ? "bg-gold-100 text-gold-800"
-                                : "bg-navy-50 text-navy-700")
-                            }
-                          >
-                            {typeCode(r.employmentType)}
-                          </span>
-                        ) : (
-                          <span className="text-muted">—</span>
-                        )}
-                      </td>
                       <td className="px-3 py-2 text-right tabular-nums text-ink">{egp(r.amount)}</td>
                       <td className="px-3 py-2">
                         {r.amount == null ? (
-                          <span className="text-xs font-medium text-gold-700">{r.attention || "no allowance"}</span>
+                          <span className="text-xs font-medium text-gold-700">Needs attention — {r.attention || "no allowance"}</span>
                         ) : r.released ? (
                           <span className="text-xs font-semibold text-navy-700">Released — {r.releasedAt}</span>
                         ) : r.claimState === "reimbursed" ? (
@@ -274,7 +254,7 @@ export function ReleaseManager({
                         ) : r.claimState === "approved" ? (
                           <span className="text-xs font-semibold text-blue-700">Approved — awaiting payment</span>
                         ) : (
-                          <span className="text-xs font-semibold text-red-700">Not released</span>
+                          <span className="text-xs text-muted">Not released</span>
                         )}
                       </td>
                     </tr>
@@ -284,7 +264,7 @@ export function ReleaseManager({
               {rows.length > 0 ? (
                 <tfoot>
                   <tr className="border-t border-line bg-surface text-sm">
-                    <td colSpan={5} className="px-3 py-2 text-right font-medium text-muted">
+                    <td colSpan={4} className="px-3 py-2 text-right font-medium text-muted">
                       Total · {rows.length} employees · {releasedCount} released{reimbursedCount ? ` · ${reimbursedCount} reimbursed` : ""}{awaitingCount ? ` · ${awaitingCount} awaiting payment` : ""}
                     </td>
                     <td className="px-3 py-2 text-right font-serif text-navy-800 tabular-nums">{egp(total)}</td>

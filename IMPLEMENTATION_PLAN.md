@@ -100,6 +100,19 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   6mo–2y tier; built now against the **placeholder** rate card with the operator's confirmed prorated premium figures
   a later non-blocking data swap. Realizes the approved "medical available at 3 months" mockup. Money-sensitive defaults
   (whole-month floor, ÷12, nearest-EGP rounding) recorded in the spec's Assumptions.
+- **2026-08-13 — Guaranteed-benefit availability vs. salary fallback (fix, no migration).** Reported issue: a
+  **part-time** employee (Mohamed Selim) saw a **Summer allowance of EGP 12,500** on his Benefits page, while the
+  bulk-release sheet said "no part-time amount set". Root cause — a guaranteed benefit with a **null per-type band
+  amount** fell back to the employee's **monthly salary** (`amountForBand(...) ?? user.monthlySalary`) in **both** the
+  Benefits card and the **server-side claim check**. So a benefit the employee shouldn't get (part-timers get no
+  summer/loans) displayed their **salary** (wrong figure + salary leak) and the server would **authorize a claim up to
+  that salary** — a real over-claim risk against the server-authoritative money rule. **Product decision (aligned with
+  the user):** the monthly-salary fallback is valid **only** for genuinely salary-driven benefits (**Loans** — all bands
+  null, `isSalaryDriven`); a band-based benefit with no amount for the viewer's type/tenure is **not available** — the
+  card is **hidden** (chosen over showing "not set"), the orientation summary omits it, and a claim is **blocked**
+  server-side. Guarded in `benefits/page.tsx` + `benefits/claim-actions.ts`; `tsc`/`build` green. Bundled with a
+  **mockup-approved** release-table display refresh (Type FT/PT column, cleaner status text, red "Not released", row-tint
+  removed — display-only). Docs synced same-branch (PROJECT_DETAILS + specs 013/021 + progress tracker).
 - **2026-08-11 — Spec `019` revised: pool/Prof-dev prorate by CYCLE LENGTH (built).** Reported issue: opening a
   half-year cycle left the flexible basket at the full annual amount. Root cause — spec 019 only prorated mid-year
   *starters* and always divided by 12, so an existing (already-eligible) employee got `fraction = 1` regardless of
@@ -132,4 +145,4 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ---
 
-*Last Updated: 2026-07-27 (Phase 0).*
+*Last Updated: 2026-08-13.*

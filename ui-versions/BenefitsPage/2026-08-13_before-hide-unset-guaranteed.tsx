@@ -217,16 +217,11 @@ export default async function BenefitsPage({
     employmentTypeLabel: EMPLOYMENT_TYPE_LABEL[user.employmentType],
     tenureBandLabel: TENURE_BAND_LABEL[user.tenureBand],
     ceiling: ceilingRow ? prorate(ceilingRow.amount, poolFraction) : null,
-    // Mirror the board: only list a guaranteed benefit the employee actually gets — one
-    // with a band amount for their type/tenure, or a salary-driven benefit (Loans). A
-    // benefit with no amount set for them (e.g. an unset part-time figure) is omitted.
-    guaranteed: guaranteed
-      .map((g) => ({
-        name: g.name,
-        amount: amountForBand(user.employmentType!, user.tenureBand!, g),
-        salaryDriven: isSalaryDriven(g),
-      }))
-      .filter((g) => g.amount != null || g.salaryDriven),
+    guaranteed: guaranteed.map((g) => ({
+      name: g.name,
+      amount: amountForBand(user.employmentType!, user.tenureBand!, g),
+      salaryDriven: isSalaryDriven(g),
+    })),
     categories: Array.from(new Set(catalog.map((c) => c.category).filter((c): c is string => !!c))),
     autoOpen: !!(planYear && ceilingRow && medicalBands.length > 0 && catalog.length > 0) && !user.benefitsOrientationSeenAt,
   };
@@ -305,25 +300,18 @@ export default async function BenefitsPage({
 
   // Guaranteed band (all guaranteed benefits for this employment type). Only benefits flagged
   // `prorated` (Professional development) shrink to the cycle length; the rest stay full.
-  const guaranteedBoard: BoardGuaranteed[] = guaranteed.flatMap((g) => {
-    // The monthly-salary fallback applies ONLY to genuinely salary-driven benefits
-    // (Loans — all bands blank). A band-based benefit with no amount set for this
-    // employee's type/tenure (e.g. an unset part-time figure) isn't available to them —
-    // omit the card entirely rather than show a bogus (salary-derived) amount.
-    const fullAmount =
-      amountForBand(user.employmentType!, user.tenureBand!, g) ??
-      (isSalaryDriven(g) ? user.monthlySalary : null);
-    if (fullAmount == null) return [];
-    const allocated = g.prorated ? prorate(fullAmount, poolFraction) : fullAmount;
-    return [{
+  const guaranteedBoard: BoardGuaranteed[] = guaranteed.map((g) => {
+    const fullAmount = amountForBand(user.employmentType!, user.tenureBand!, g) ?? user.monthlySalary ?? null;
+    const allocated = g.prorated && fullAmount != null ? prorate(fullAmount, poolFraction) : fullAmount;
+    return {
       id: g.id,
       name: g.name,
       note: g.note,
       claimType: g.claimType,
       allocated,
-      proratedFrom: g.prorated && isProrated && allocated !== fullAmount ? fullAmount : null,
+      proratedFrom: g.prorated && isProrated && fullAmount != null && allocated !== fullAmount ? fullAmount : null,
       claims: byG.get(g.id) ?? [],
-    }];
+    };
   });
 
   // Medical eligibility (spec 021): computed from the eligible, active medical catalogue items.

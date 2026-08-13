@@ -1,5 +1,4 @@
 import { confirmPayment } from "@/app/(app)/finance/actions";
-import { ReimbursedCell } from "@/components/finance/ReimbursedCell";
 
 export type PaymentRow = {
   id: string;
@@ -10,7 +9,6 @@ export type PaymentRow = {
   approvedAt: string; // display-formatted
   paidAmount: number | null; // set once reimbursed
   paidDate: string | null; // display-formatted, set once reimbursed
-  paidDateInput: string; // reimbursement date as YYYY-MM-DD (for the edit form), "" if unset
   hasProof: boolean; // employee attached a proof-of-payment file
 };
 
@@ -37,7 +35,6 @@ export function PaymentsQueue({ rows }: { rows: PaymentRow[] }) {
             <th className="px-3 py-3 font-medium">Benefit</th>
             <th className="px-3 py-3 text-right font-medium">Covered amount</th>
             <th className="px-3 py-3 font-medium">Approved</th>
-            <th className="px-3 py-3 font-medium">Reimbursed on</th>
             <th className="px-3 py-3 font-medium">Proof</th>
             <th className="px-3 py-3 text-right font-medium">Payment</th>
           </tr>
@@ -49,7 +46,6 @@ export function PaymentsQueue({ rows }: { rows: PaymentRow[] }) {
               <td className="px-3 py-2 text-muted">{r.benefit}</td>
               <td className="px-3 py-2 text-right tabular-nums text-ink">{egp(r.covered)}</td>
               <td className="px-3 py-2 text-muted">{r.approvedAt}</td>
-              <td className="px-3 py-2 text-muted">{r.paidDate ?? "—"}</td>
               <td className="px-3 py-2">
                 {r.hasProof ? (
                   <a
@@ -87,11 +83,13 @@ export function PaymentsQueue({ rows }: { rows: PaymentRow[] }) {
                     </button>
                   </form>
                 ) : (
-                  <ReimbursedCell
-                    id={r.id}
-                    paidAmount={r.paidAmount ?? r.covered}
-                    paidDateInput={r.paidDateInput}
-                  />
+                  <div className="flex flex-wrap items-center justify-end gap-2 text-right">
+                    <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">Reimbursed</span>
+                    <span className="text-xs text-muted tabular-nums">
+                      {r.paidAmount != null ? egp(r.paidAmount) : egp(r.covered)}
+                      {r.paidDate ? ` · ${r.paidDate}` : ""}
+                    </span>
+                  </div>
                 )}
               </td>
             </tr>

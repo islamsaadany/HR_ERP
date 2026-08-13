@@ -1,6 +1,6 @@
 import { requireFinance } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
-import { formatDate, toDateInput } from "@/lib/labels";
+import { formatDate } from "@/lib/labels";
 import { PaymentsQueue, type PaymentRow } from "@/components/finance/PaymentsQueue";
 
 export const dynamic = "force-dynamic";
@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 export default async function FinancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ paid?: string; edited?: string; error?: string }>;
+  searchParams: Promise<{ paid?: string; error?: string }>;
 }) {
   await requireFinance();
-  const { paid, edited, error } = await searchParams;
+  const { paid, error } = await searchParams;
 
   const claims = await prisma.benefitClaim.findMany({
     where: { status: { in: ["APPROVED", "REIMBURSED"] } },
@@ -35,7 +35,6 @@ export default async function FinancePage({
       approvedAt: c.decidedAt ? formatDate(c.decidedAt) : "—",
       paidAmount: c.amountTransferred ?? null,
       paidDate: c.transferDate ? formatDate(c.transferDate) : null,
-      paidDateInput: c.transferDate ? toDateInput(c.transferDate) : "",
       // Proof-of-payment the employee attached (PROOF-policy claims) — Finance
       // views it before confirming. Streamed via /api/claims/[id]/proof.
       hasProof: !!c.proofUrl,
@@ -53,11 +52,6 @@ export default async function FinancePage({
       {paid ? (
         <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
           ✓ Payment confirmed for {paid}. The employee has been notified.
-        </p>
-      ) : null}
-      {edited ? (
-        <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
-          ✓ Reimbursed record updated for {edited}. No email sent — this is a record correction.
         </p>
       ) : null}
       {error ? (
