@@ -127,7 +127,6 @@ export default async function CyclePage({
               role: p.role,
               netMonthlySalary: p.netMonthlySalary,
               startDate: p.startDate ? p.startDate.toISOString().slice(0, 10) : null,
-              utilization: p.utilization,
             })),
             assignments: cycle.assignments.map((a) => ({
               client: a.client,

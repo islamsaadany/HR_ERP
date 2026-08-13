@@ -14,7 +14,7 @@ export function HoverTip({
   children,
   className,
 }: {
-  text: React.ReactNode;
+  text: string;
   children: React.ReactNode;
   className?: string;
 }) {
@@ -45,7 +45,7 @@ export function HoverTip({
         ref={tipRef}
         role="tooltip"
         className={
-          "pointer-events-none fixed left-0 top-0 z-[100] w-max max-w-[270px] whitespace-normal rounded-lg border border-white/10 bg-navy-900 px-3 py-2 text-left text-[11px] font-normal normal-case leading-relaxed tracking-normal text-white shadow-xl transition-opacity duration-100 " +
+          "pointer-events-none fixed left-0 top-0 z-[100] max-w-[240px] rounded-lg bg-navy-900 px-2.5 py-1.5 text-left text-[11px] font-normal normal-case leading-snug tracking-normal text-white shadow-lg transition-opacity duration-100 " +
           (open ? "opacity-100" : "opacity-0")
         }
       >

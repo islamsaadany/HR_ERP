@@ -25,6 +25,10 @@ error-prone; this reproduces the document's figures exactly and server-side.
   template and the report — whoever is entered as a lead in the Assignments sheet is
   paid their lead fee, so the flag was redundant with the assignment itself. The DB
   field remains, inert at its default (`true`), leaving the verified engine untouched.
+- **`utilization` retired from the operator flow (2026-08-13):** it fed no calculation
+  (a leftover from the original utilisation gate). Removed from the People CSV template
+  and the read-back table; the DB column and parser remain, inert (same treatment as
+  `eligible_to_lead`).
 - **Contributions flag-and-block:** a payable assignment whose contributions don't
   total ~100% (±1pp) is flagged and excluded until corrected — not normalised.
 - **Commission rate:** `bd == lead_source` ⇒ self-generated **5%**, else referred **3%**.
@@ -70,14 +74,27 @@ error-prone; this reproduces the document's figures exactly and server-side.
   scroll); tooltips render as a fixed floating layer so the scroll box never clips them.
   The manual `eligible_to_lead` flag is gone from the People template/report (see
   clarifications).
+- **FR-006c** (2026-08-13): Report polish. The **Review & validation → Assignments**
+  read-back shows every uploaded field (adds Lead source, Vendor cost, Markup %, Start
+  date, Closure date). **Commission by person** sits directly above **By person**; the
+  By-person table gains a **Grand total** (= Total + Commission). The **"Ended"** status
+  pill is blue (was grey). Section ⓘ tips move onto the column they explain (**Envelope**,
+  **Tier**, **Multiple**). The BPF **Contributor** figure hovers to a per-person
+  breakdown. Contributor-detail rows are **zebra-shaded per client** (white base, cool
+  grey alt). **Firm P&L** is squeezed and its % hover becomes a visible **Notes** column
+  stating each % as a plain-language equation (e.g. *Direct cost ÷ Revenue*). **Cost
+  recovery**'s Multiple is colour-banded (>3× best, 2–3× good, 1–2× poor, <1× critical).
+  **Commission by person** is squeezed with a **click-a-name** expansion to the per-deal
+  breakdown (client, self/referred, rate, net-revenue base, amount). `utilization` is
+  removed from the People template/read-back (see clarifications).
 - **FR-007**: Per-hour performance metrics (GP/hour, break-even, pricing floor)
   are **out of scope** until an hours column is provided; cost recovery uses
   contribution-weighted GP.
 
 ## Key entities
 - **IncentiveCycle**: label, status, firm revenue/deliveryCost/totalExpenses.
-- **IncentivePerson**: name, role, netMonthlySalary, utilization (`eligibleToLead`
-  retained inert; no longer in the template or report — see clarifications).
+- **IncentivePerson**: name, role, netMonthlySalary (`eligibleToLead` and `utilization`
+  retained inert in the DB; neither is in the template or report — see clarifications).
 - **IncentiveAssignment**: client, type, lead, bd, leadSource, revenue, directCost,
   vendorCost, markupPct, status.
 - **IncentiveContribution**: client, person, share.

@@ -81,7 +81,12 @@ export type CycleReport = {
     schemeCost: number; // lead fees + contributor payments + commission
   };
   byPerson: PersonTotals[];
-  commissionByPerson: { name: string; amount: number }[];
+  commissionByPerson: {
+    name: string;
+    amount: number;
+    /** Per-deal breakdown behind the total — surfaced when a name is expanded. */
+    deals: { client: string; selfGenerated: boolean; rate: number; base: number; amount: number }[];
+  }[];
   firm: {
     revenue: number;
     deliveryCost: number;
@@ -232,9 +237,28 @@ export function computeCycle(
     };
   });
   byPerson.sort((a, b) => b.total - a.total);
+  // Per-deal commission detail, grouped by earner (for the expandable rows).
+  const commDealsByPerson = new Map<string, CycleReport["commissionByPerson"][number]["deals"]>();
+  for (const r of results) {
+    if (r.commission && r.commission.amount > 0) {
+      const list = commDealsByPerson.get(key(r.commission.earner)) ?? [];
+      list.push({
+        client: r.client,
+        selfGenerated: r.commission.selfGenerated,
+        rate: r.commission.rate,
+        base: money(r.commission.base),
+        amount: money(r.commission.amount),
+      });
+      commDealsByPerson.set(key(r.commission.earner), list);
+    }
+  }
   const commissionByPerson = byPerson
     .filter((p) => p.commission > 0)
-    .map((p) => ({ name: p.name, amount: p.commission }))
+    .map((p) => ({
+      name: p.name,
+      amount: p.commission,
+      deals: (commDealsByPerson.get(key(p.name)) ?? []).slice().sort((a, b) => b.amount - a.amount),
+    }))
     .sort((a, b) => b.amount - a.amount);
 
   // Firm P&L.
