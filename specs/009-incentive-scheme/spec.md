@@ -76,17 +76,20 @@ error-prone; this reproduces the document's figures exactly and server-side.
   clarifications).
 - **FR-006c** (2026-08-13): Report polish. The **Review & validation → Assignments**
   read-back shows every uploaded field (adds Lead source, Vendor cost, Markup %, Start
-  date, Closure date). **Commission by person** sits directly above **By person**; the
-  By-person table gains a **Grand total** (= Total + Commission). The **"Ended"** status
-  pill is blue (was grey). Section ⓘ tips move onto the column they explain (**Envelope**,
-  **Tier**, **Multiple**). The BPF **Contributor** figure hovers to a per-person
-  breakdown. Contributor-detail rows are **zebra-shaded per client** (white base, cool
-  grey alt). **Firm P&L** is squeezed and its % hover becomes a visible **Notes** column
-  stating each % as a plain-language equation (e.g. *Direct cost ÷ Revenue*). **Cost
-  recovery**'s Multiple is colour-banded (>3× best, 2–3× good, 1–2× poor, <1× critical).
-  **Commission by person** is squeezed with a **click-a-name** expansion to the per-deal
-  breakdown (client, self/referred, rate, net-revenue base, amount). `utilization` is
-  removed from the People template/read-back (see clarifications).
+  date, Closure date). **Commission by person** sits directly above **Compensation by
+  person** (the by-person table, renamed from "By person"), which gains a **Grand total**
+  (= Total + Commission). The **"Ended"** status pill is blue (was grey). Section ⓘ tips
+  move onto the column they explain (**Envelope**, **Tier**, **Multiple**). The BPF
+  **Contributor** figure hovers to a per-person breakdown. Rows are **zebra-shaded**
+  (white base, cool grey alt; the sticky first column is repainted so the tint covers it)
+  in **Business Partner Fee**, **Contributor detail** (per client), **Compensation by
+  person**, and **Cost recovery** (every other row). **Firm P&L** is squeezed and its %
+  hover becomes a visible **Notes** column stating each % as a plain-language equation
+  (e.g. *Direct cost ÷ Revenue*). **Cost recovery**'s Multiple is colour-banded (>3×
+  best, 2–3× good, 1–2× poor, <1× critical). **Commission by person** is squeezed with a
+  **click-a-name** expansion to the per-deal breakdown (client, self/referred, rate,
+  net-revenue base, amount). `utilization` is removed from the People template/read-back
+  (see clarifications).
 - **FR-007**: Per-hour performance metrics (GP/hour, break-even, pricing floor)
   are **out of scope** until an hours column is provided; cost recovery uses
   contribution-weighted GP.
