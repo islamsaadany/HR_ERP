@@ -1,0 +1,87 @@
+<title>Navy Headers & Corners</title>
+<style>
+  :root {
+    --navy-900:#0d1a2e; --navy-800:#13233b; --navy-700:#1c3252; --navy-50:#eef2f8;
+    --ink:#14202e; --muted:#5c6b7a; --line:#dde3ea; --surface:#ffffff; --ground:#eef1f6;
+    --zebra:#eef0f2;
+    --head-bg:#13233b; --head-tx:#e8edf3;   /* navy header */
+    --total-bg:#e7ecf4;                       /* total-row tint (solid) */
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.45; padding:26px 24px 80px; }
+  .wrap { max-width:1120px; margin:0 auto; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:#a9822a; }
+  h1 { font-family:Georgia, serif; font-size:26px; margin:4px 0 2px; font-weight:600; }
+  .lede { color:var(--muted); font-size:13px; margin:4px 0 0; }
+  h2 { font-family:Georgia, serif; font-size:16px; margin:26px 0 8px; font-weight:600; }
+  .scroll { overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+  table { border-collapse:separate; border-spacing:0; width:100%; }
+  th, td { padding:8px 12px; font-size:13px; white-space:nowrap; border-bottom:1px solid var(--line); }
+  thead th {
+    position:sticky; top:0; z-index:2; text-align:left; font-size:11px; text-transform:uppercase;
+    letter-spacing:.04em; font-weight:600; background:var(--head-bg); color:var(--head-tx);
+  }
+  /* frozen first column */
+  tr > :first-child { position:sticky; left:0; background:var(--surface); }
+  tbody tr > :first-child { box-shadow:1px 0 0 var(--line), 6px 0 8px -6px rgba(15,36,68,.16); }
+  /* FIX 1 — header corner cell matches the header */
+  thead tr > :first-child { z-index:3; background:var(--head-bg); box-shadow:1px 0 0 var(--line), 6px 0 8px -6px rgba(15,36,68,.16); }
+  td.r, th.r { text-align:right; font-variant-numeric:tabular-nums; }
+  .muted-cell { color:var(--muted); }
+  /* zebra — covers first column too */
+  tbody tr.z > td { background:var(--zebra); }
+  /* FIX 2 — total row: first column matches the rest of the line */
+  tbody tr.total > td { background:var(--total-bg); font-weight:700; }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Super User · Confidential · MOCKUP for sign-off</p>
+  <h1>Navy headers + filled corners</h1>
+  <p class="lede">Three changes: (1) the header's <b>first-column cell</b> is filled like the rest of the header
+    (was white); (2) headers are <b>navy blue</b> with light text; (3) the <b>Total row's first column</b> is
+    filled to match the rest of that row (was white). Zebra rows still cover the first column.</p>
+
+  <h2>Business Partner Fee — navy header, zebra rows, filled total</h2>
+  <div class="scroll"><table>
+    <thead><tr>
+      <th>Client</th><th>Type</th><th class="r">GP</th><th class="r">GP%</th><th class="r">Envelope</th>
+      <th class="r">Ded</th><th>Lead</th><th class="r">Lead fee</th><th class="r">Contributor</th><th class="r">Firm</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>Wander</td><td>RET</td><td class="r">719,899.00</td><td class="r">72.7%</td><td class="r">21,596.97</td><td class="r">10%</td><td>Galal</td><td class="r">19,437.27</td><td class="r">2,159.70</td><td class="r muted-cell">—</td></tr>
+      <tr class="z"><td>Imtenan</td><td>RET</td><td class="r">506,991.00</td><td class="r">84.5%</td><td class="r">15,209.73</td><td class="r muted-cell">—</td><td>Galal</td><td class="r">15,209.73</td><td class="r muted-cell">—</td><td class="r muted-cell">—</td></tr>
+      <tr><td>Raya Trade</td><td>RET</td><td class="r">222,556.00</td><td class="r">54.3%</td><td class="r muted-cell">0.00</td><td class="r muted-cell">—</td><td>Islam</td><td class="r muted-cell">0.00</td><td class="r muted-cell">—</td><td class="r muted-cell">—</td></tr>
+      <tr class="total"><td colspan="7">Total</td><td class="r">34,647.00</td><td class="r">2,159.70</td><td class="r">—</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Contributor detail — per-client zebra, navy header</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Client</th><th>Person</th><th class="r">Share</th><th class="r">Tier</th><th class="r">Allocation</th><th class="r">Paid</th></tr></thead>
+    <tbody>
+      <tr><td>Wander</td><td>Aley</td><td class="r">22%</td><td class="r">10%</td><td class="r">2,159.70</td><td class="r">2,159.70</td></tr>
+      <tr><td>Wander</td><td>Islam</td><td class="r">14%</td><td class="r muted-cell">—</td><td class="r">0.00</td><td class="r">0 (floored)</td></tr>
+      <tr class="z"><td>Imtenan</td><td>Islam</td><td class="r">5%</td><td class="r muted-cell">—</td><td class="r">0.00</td><td class="r">0 (floored)</td></tr>
+      <tr><td>Raya Trade</td><td>Omar</td><td class="r">70%</td><td class="r muted-cell">—</td><td class="r">0.00</td><td class="r">0.00</td></tr>
+      <tr class="z"><td>Beverages</td><td>Momen</td><td class="r">40%</td><td class="r">10%</td><td class="r">3,120.00</td><td class="r">3,120.00</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Commission by person — navy header, filled total</h2>
+  <div class="scroll" style="max-width:440px"><table>
+    <thead><tr><th>Person</th><th class="r">Commission</th></tr></thead>
+    <tbody>
+      <tr><td>Islam</td><td class="r">12,300.00</td></tr>
+      <tr class="z"><td>Omar</td><td class="r">3,720.00</td></tr>
+      <tr class="total"><td>Total</td><td class="r">16,020.00</td></tr>
+    </tbody>
+  </table></div>
+
+  <p class="lede" style="margin-top:22px">
+    <b>Scope question:</b> the header style is shared by every data table in the app (employee registry, benefits
+    catalogue, time-off, etc.). Do you want navy headers <b>everywhere</b> (one consistent change), or <b>only on the
+    incentive report</b> (I'll scope it with a modifier class and leave the other pages as they are)? The two
+    first-column fixes I'll apply everywhere regardless — they're corrections, not a restyle.
+  </p>
+</div>
