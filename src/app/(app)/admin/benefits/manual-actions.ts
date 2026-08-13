@@ -311,15 +311,19 @@ export async function recordManualRelease(formData: FormData): Promise<ManualRes
       planYearId: planYear.id,
       ...alloc.claimWhere,
       amount,
-      status: "REIMBURSED", // back-filled = a payment that already happened → no emails
+      // Recorded as APPROVED so Finance confirms the payment in the Payments queue
+      // (they enter the actual transfer date, which may be in the past) → REIMBURSED.
+      // Keeps the HR-records / Finance-confirms separation of duties.
+      status: "APPROVED",
       decidedAt: approvalDate,
       reviewedById: actor.id,
-      note: "Recorded by HR (back-filled)",
+      note: "Recorded by HR (back-filled) — awaiting Finance payment",
     },
   });
 
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
+  revalidatePath("/finance");
   return { ok: true };
 }
 

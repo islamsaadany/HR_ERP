@@ -2,8 +2,8 @@
 
 import { useActionState, useState } from "react";
 import type { ActionState } from "@/app/(app)/admin/employees/actions";
-import { deriveTenureBand, statusFromEndDate, formatYearsOfService } from "@/lib/tenure";
-import { TENURE_BAND_LABEL, STATUS_LABEL } from "@/lib/labels";
+import { statusFromEndDate, formatYearsOfService } from "@/lib/tenure";
+import { tenureBandDisplay, STATUS_LABEL } from "@/lib/labels";
 
 type Dep = { name: string | null; dateOfBirth: string; kind: "CHILD" | "SPOUSE" };
 
@@ -67,7 +67,6 @@ export function EmployeeForm({
   // status from the end date. Track the dates so the read-only displays update live.
   const [startDate, setStartDate] = useState(values.startDate ?? "");
   const [endDate, setEndDate] = useState(values.endDate ?? "");
-  const derivedBand = deriveTenureBand(startDate ? new Date(startDate) : null).band;
   const derivedStatus = statusFromEndDate(endDate ? new Date(endDate) : null);
   const yearsOfService = formatYearsOfService(
     startDate ? new Date(startDate) : null,
@@ -215,7 +214,7 @@ export function EmployeeForm({
               <div>
                 <label className={L}>Tenure band</label>
                 <div className={RO} aria-readonly="true">
-                  {derivedBand ? TENURE_BAND_LABEL[derivedBand] : "—"}
+                  {tenureBandDisplay(startDate ? new Date(startDate) : null)}
                 </div>
               </div>
             </div>

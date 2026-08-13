@@ -1,7 +1,8 @@
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { getActivePlanYear, amountForBand, isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
-import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL, STATUS_LABEL, toDateInput } from "@/lib/labels";
+import { EMPLOYMENT_TYPE_LABEL, STATUS_LABEL, toDateInput, tenureBandDisplay } from "@/lib/labels";
+import { deriveTenureBand } from "@/lib/tenure";
 import { ReleaseManager, type ReleaseBenefit, type ReleaseRow } from "@/components/benefits/ReleaseManager";
 import { BackLink } from "@/components/admin/BackLink";
 
@@ -60,13 +61,13 @@ export default async function BenefitReleasePage({
       ...(selected.eligibleFullTime ? (["FULL_TIME"] as const) : []),
       ...(selected.eligiblePartTime ? (["PART_TIME"] as const) : []),
     ];
-    const [employees, releases, reimbursed] = await Promise.all([
+    const [employees, releases, claims] = await Promise.all([
       prisma.user.findMany({
         where: { status: "ACTIVE", employmentType: { in: typeIn.length ? [...typeIn] : ["FULL_TIME", "PART_TIME"] } },
         orderBy: { name: "asc" },
         select: {
           id: true, name: true, email: true, department: true, title: true,
-          employmentType: true, tenureBand: true, startDate: true, phone: true,
+          employmentType: true, startDate: true, phone: true,
           status: true, reportsTo: { select: { name: true } },
         },
       }),
@@ -74,29 +75,44 @@ export default async function BenefitReleasePage({
         where: { guaranteedBenefitId: selected.id, planYearId: planYear.id },
         select: { userId: true, releasedAt: true },
       }),
-      // Back-filled reimbursements for this benefit (recorded by HR as an already-paid
-      // claim, not a release). Surfaced as a distinct "Reimbursed (backfilled)" status
-      // so a paid person isn't mistaken for "not released".
+      // Claims recorded for this benefit (HR back-fills these as APPROVED; Finance
+      // confirms → REIMBURSED). Surfaced as a distinct status so a paid/in-flight
+      // person isn't mistaken for "not released".
       prisma.benefitClaim.findMany({
-        where: { guaranteedBenefitId: selected.id, planYearId: planYear.id, status: "REIMBURSED" },
-        select: { userId: true, decidedAt: true },
+        where: { guaranteedBenefitId: selected.id, planYearId: planYear.id, status: { in: ["APPROVED", "REIMBURSED"] } },
+        select: { userId: true, status: true, decidedAt: true, transferDate: true },
       }),
     ]);
     const releasedBy = new Map(releases.map((r) => [r.userId, toDateInput(r.releasedAt)]));
-    const reimbursedBy = new Map(reimbursed.map((c) => [c.userId, toDateInput(c.decidedAt)]));
+    // One claim state per employee: prefer REIMBURSED (terminal) over APPROVED (in-flight).
+    const claimBy = new Map<string, { state: "approved" | "reimbursed"; date: string }>();
+    for (const c of claims) {
+      const state = c.status === "REIMBURSED" ? ("reimbursed" as const) : ("approved" as const);
+      const date = toDateInput(state === "reimbursed" ? c.transferDate ?? c.decidedAt : c.decidedAt);
+      const prev = claimBy.get(c.userId);
+      if (!prev || (prev.state === "approved" && state === "reimbursed")) claimBy.set(c.userId, { state, date });
+    }
 
+    const now = new Date();
     rows = employees.map((e) => {
-      const amount = e.tenureBand && e.employmentType ? amountForBand(e.employmentType, e.tenureBand, selected) : null;
-      // When no amount resolves, say why — the tenure band, the employment type, or the
-      // benefit's per-type/band allowance may be the missing piece (not always "no tenure").
+      // Derive the tenure band live from the hire date so a stale stored band never
+      // drives the amount or the status.
+      const band = deriveTenureBand(e.startDate, now).band;
+      const amount = band && e.employmentType ? amountForBand(e.employmentType, band, selected) : null;
+      // When no amount resolves, name the real cause.
       const attention =
         amount != null
           ? ""
           : !e.employmentType
           ? "no employment type"
-          : !e.tenureBand
-          ? "no tenure band"
-          : "no allowance set for their type / band";
+          : !band
+          ? !e.startDate
+            ? "no hire date"
+            : e.startDate.getTime() > now.getTime()
+            ? "future hire date"
+            : "< 6 months — not yet eligible"
+          : `no ${e.employmentType === "FULL_TIME" ? "full-time" : "part-time"} amount set`;
+      const claim = claimBy.get(e.id);
       return {
         id: e.id,
         name: e.name,
@@ -104,7 +120,7 @@ export default async function BenefitReleasePage({
         department: e.department ?? "",
         title: e.title ?? "",
         employmentType: e.employmentType ? EMPLOYMENT_TYPE_LABEL[e.employmentType] : "",
-        tenure: e.tenureBand ? TENURE_BAND_LABEL[e.tenureBand] : "",
+        tenure: tenureBandDisplay(e.startDate, now),
         startDate: toDateInput(e.startDate),
         phone: e.phone ?? "",
         manager: e.reportsTo?.name ?? "",
@@ -113,8 +129,8 @@ export default async function BenefitReleasePage({
         attention,
         released: releasedBy.has(e.id),
         releasedAt: releasedBy.get(e.id) ?? "",
-        reimbursed: reimbursedBy.has(e.id),
-        reimbursedAt: reimbursedBy.get(e.id) ?? "",
+        claimState: claim?.state ?? "",
+        claimDate: claim?.date ?? "",
       };
     });
   }

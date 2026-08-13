@@ -5,7 +5,7 @@ import {
   EMPLOYMENT_TYPE_LABEL,
   MARITAL_STATUS_LABEL,
   ROLE_LABEL,
-  TENURE_BAND_LABEL,
+  tenureBandDisplay,
   formatDate,
 } from "@/lib/labels";
 import { uploadMyDocument, deleteMyDocument } from "./documents-actions";
@@ -77,7 +77,7 @@ export default async function ProfilePage({
         />
         <Field
           label="Tenure band"
-          value={me.tenureBand ? TENURE_BAND_LABEL[me.tenureBand] : "—"}
+          value={tenureBandDisplay(me.startDate)}
         />
         <Field label="Start date" value={formatDate(me.startDate)} />
         <Field

@@ -149,14 +149,23 @@ The allowance value for each employee is computed from the benefit's configured 
 
 ## Follow-ups (2026-08-13)
 
-- **Distinct "Reimbursed (backfilled)" status**: a benefit an employee already
-  received via HR's manual back-fill (an already-approved `BenefitClaim` with
-  status `REIMBURSED`, recorded outside the app — spec 016) is a **separate**
-  mechanism from a `BenefitRelease`. The release view now surfaces those people
-  as **"Reimbursed (backfilled) — <date>"** (and counts them in the footer) so a
-  paid person is no longer shown as "Not released". Release (payroll marking) and
-  reimbursement (already paid) remain distinct records.
+- **Claim state surfaced in the release view**: an HR back-fill records a
+  `BenefitClaim` (now **APPROVED** — Finance confirms it in Payments → `REIMBURSED`;
+  see spec 016), a **separate** mechanism from a `BenefitRelease`. The release view
+  now surfaces that claim state per person — **"Approved — awaiting payment"** or
+  **"Reimbursed — <date>"** — and counts them in the footer, so a paid/in-flight
+  person is no longer shown as "Not released". Release (payroll marking) and the
+  claim flow remain distinct records.
+- **Live tenure derivation**: the release derives each person's tenure band from
+  the **hire date at view time** (not the stored, possibly-stale band), so crossing
+  6 months / a band boundary is reflected without re-saving the employee.
 - **Truthful needs-attention reason**: when no amount resolves, the Status names
-  the actual cause — **no employment type**, **no tenure band**, or **no allowance
-  set for their type/band** — instead of always saying "no tenure". (A part-time
-  employee with no configured part-time band amount is the common case.)
+  the actual cause — **"< 6 months — not yet eligible"**, **"no hire date"**,
+  **"no employment type"**, or **"no part-time / full-time amount set"** — instead
+  of always saying "no tenure". (A part-time employee with no configured part-time
+  band amount, or a sub-6-month hire, are the common cases.) Eligibility (who a
+  benefit is assigned to) and the per-band **amount** are separate settings — the
+  release reads the amount.
+- **"< 6 months" tenure label**: employees under six months now read **"< 6 months"**
+  (not a bare "—") wherever their tenure band is shown — the profile, the employee
+  edit form, and the release list. (Registry grid: a later follow-up.)
