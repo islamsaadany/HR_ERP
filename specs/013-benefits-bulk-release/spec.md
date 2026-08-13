@@ -169,3 +169,11 @@ The allowance value for each employee is computed from the benefit's configured 
 - **"< 6 months" tenure label**: employees under six months now read **"< 6 months"**
   (not a bare "—") wherever their tenure band is shown — the profile, the employee
   edit form, and the release list. (Registry grid: a later follow-up.)
+- **Release-table display refinements**: a **Type** column (an **FT / PT** badge —
+  navy for FT, gold for PT) sits **after Tenure**, so a part-timer is obvious at a
+  glance and a "no part-time amount set" row reads clearly. The **Status** column
+  drops the **"Needs attention —"** prefix and shows only the real reason
+  ("no part-time amount set", "< 6 months — not yet eligible", …); **"Not released"**
+  now renders in **red** for clarity; and the former full-row amber tint on
+  attention rows is removed (the gold status text alone flags them). Display-only —
+  the CSV export (including the optional Employment-type column) is unchanged.
