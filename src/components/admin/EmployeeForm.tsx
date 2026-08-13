@@ -309,6 +309,8 @@ export function EmployeeForm({
                   </select>
                   <input
                     type="date"
+                    required
+                    aria-label="Dependant date of birth"
                     value={d.dateOfBirth}
                     onChange={(e) => {
                       const next = [...deps];

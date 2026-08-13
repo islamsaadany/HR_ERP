@@ -45,6 +45,25 @@ async function wouldCycle(
 
 export type ActionState = { error?: string } | null;
 
+/**
+ * Turn a Zod failure into an operator-friendly message. The common trap is a
+ * dependant added without a date of birth (required by the schema) — that would
+ * otherwise surface as a bare "Invalid input". Falls back to the first issue's
+ * own message, then a generic default.
+ */
+function friendlyError(error: import("zod").ZodError): string {
+  const depDob = error.issues.find(
+    (i) => i.path.includes("dependants") && i.path.includes("dateOfBirth")
+  );
+  if (depDob) return "Each dependant needs a date of birth.";
+  const first = error.issues[0];
+  return first?.message && first.message !== "Invalid input"
+    ? first.message
+    : first?.path.length
+    ? `Check the "${String(first.path[first.path.length - 1])}" field.`
+    : "Invalid input";
+}
+
 export async function createEmployee(
   _prev: ActionState,
   formData: FormData
@@ -52,7 +71,7 @@ export async function createEmployee(
   const actor = await requireAdmin();
   const parsed = employeeSchema.safeParse(parseForm(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: friendlyError(parsed.error) };
   }
   const data = parsed.data;
 
@@ -114,7 +133,7 @@ export async function updateEmployee(
   const actor = await requireAdmin();
   const parsed = employeeSchema.safeParse(parseForm(formData));
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    return { error: friendlyError(parsed.error) };
   }
   const data = parsed.data;
 
