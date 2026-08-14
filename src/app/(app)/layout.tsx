@@ -64,7 +64,6 @@ export default async function AppLayout({
       companyName={brand.companyName}
       shortName={brand.shortName}
       logoUrl={brand.logoUrl}
-      genericMark={!brand.logoUrl && !brand.fromBusinessUnit}
       impersonation={
         impersonation.isImpersonating
           ? { targetName: impersonation.targetName, targetTitle: impersonation.targetTitle }

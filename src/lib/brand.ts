@@ -10,9 +10,6 @@ export type Brand = {
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
-  // True when the brand was resolved from a business unit (spec 024). Lets the shell
-  // show a business unit's own initial while the DEFAULT brand shows the generic mark.
-  fromBusinessUnit?: boolean;
 };
 
 export const BRAND_DEFAULTS: Brand = {
@@ -177,7 +174,6 @@ export const getBrand = cache(async (): Promise<Brand> => {
             : null,
           primaryColor: bu.primaryColor || fallback.primaryColor,
           accentColor: bu.accentColor || fallback.accentColor,
-          fromBusinessUnit: true,
         };
       }
     }
