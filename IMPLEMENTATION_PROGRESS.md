@@ -582,6 +582,15 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     claims yet." when empty). Guaranteed tiles unchanged; no money-rule change.
   - No schema change. UI snapshots saved; typecheck + build green.
 
+- **2026-08-14 — Branding: single "Make default" button (branding follow-up):**
+  - Retired the separate **Default brand** section on Admin → Branding. Each business unit now
+    carries a **Default** badge or a **Make default** button; the default unit is the fallback brand
+    for unassigned users, the sign-in page, and the app icon. At most one unit is default (the
+    action clears the others in a transaction). `BusinessUnit.isDefault` added; `getDefaultBrand()`
+    prefers the default unit, then the `BrandSettings` singleton, then hard Forefront defaults.
+  - Migration: `043_default_business_unit.sql` (additive, idempotent). Verified on a throwaway
+    Postgres (add column twice → idempotent; Make-default leaves exactly one default). tsc + build green.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.

@@ -705,6 +705,9 @@ model BusinessUnit {
   primaryColor String   @default("#0f2444") // navy-800
   accentColor  String   @default("#c9a227") // gold-500
   order        Int      @default(0)
+  // The unit used as the default/fallback brand (unassigned users, sign-in, app
+  // icon). At most one unit is default; enforced by the setDefault action.
+  isDefault    Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
   members      User[]
