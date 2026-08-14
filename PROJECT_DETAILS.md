@@ -121,6 +121,40 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Scope:** branding only; data stays single-tenant per deployment (one DB per company). Full
   multi-tenant data isolation (an `orgId` on every model) is a separate future spec.
 
+### Multi-brand by business unit (spec 024, migration `039`) — super user
+- **Interim toward full multi-tenancy (spec 022), theming only.** A managed **`BusinessUnit`**
+  entity (group company) carries its own brand — company/app name, short name, logo, primary +
+  accent colors — reusing the spec-011 ramp + the hex-entry field. Each employee has an optional
+  **`User.businessUnitId`** FK (distinct from `department`; `ON DELETE SET NULL`, but deletion is
+  blocked in-app while any employee is assigned).
+- **The app theme follows the VIEWING user's business unit** (`getBrand()` in `src/lib/brand.ts`
+  now resolves the effective — session or impersonated — user's unit brand, **per-attribute merged**
+  over the `BrandSettings` default; signed-out / no-unit / un-migrated → default, so pre-auth and
+  today's look are unchanged). Because both layouts already flow through `getBrand()`, the whole app
+  re-themes with no component change. A unit's logo is served via `/api/business-units/[id]/logo`
+  (mirrors `/api/brand/logo`); a unit with no logo shows its wordmark, **never** the default
+  company's logo. **Impersonation composes**: "View as" an employee shows that employee's unit brand.
+- **Function/data are unchanged (theming only).** Admin/HR/Finance still see and manage **every**
+  employee across all units; no data isolation, no per-unit benefits/pool/directory scoping, no
+  money-rule change. PWA manifest, sign-in, and emails stay on the default brand (all future work,
+  folding into spec 022).
+- **Admin:** `/admin/business-units` (Super User) manages units + brands (add / edit brand / rename /
+  remove-blocked-while-in-use, case-insensitive dedupe; `BusinessUnitsManager` reuses `BrandColorField`).
+  HR assigns a unit via the employee **form + registry grid + CSV** (Business Unit column, matched by
+  name; unknown name flagged, blank left unchanged — never wipes). Seeds **Forefront Consulting,
+  Visual Shift Consulting, Omnisight Analytics** (navy/gold; no employees auto-assigned). Verified on a
+  throwaway Postgres (migration applies to a pre-039 schema, idempotent, assignment round-trips).
+
+### Admin impersonation — "View as employee" (super user)
+- A **Super User** can view the app exactly as an employee (demos, or reproducing a reported issue)
+  from **Admin → View as Employee** (`/admin/impersonate`, lists all employees with search). The
+  target's id is held in an httpOnly cookie (`ff_impersonate`); `requireUser()` resolves the
+  **effective** user centrally, so the whole app renders **and acts as** the target (act-as-them).
+  A gold-accented banner stays pinned with **Exit to admin**. Security: the cookie is only honored for
+  a real Super User session and **never** for a Super User target (no privilege escalation); the start
+  action guards on the real session; admin nav/routes are hidden/blocked while impersonating (exit
+  first); the temp-password gate is skipped; sign-out clears the cookie.
+
 ### PWA (spec 010)
 - Installable "Add to Home Screen": web manifest (`app/manifest.ts`), navy/gold "F" icons
   (`public/icons/*`), a minimal registration-only service worker (`public/sw.js`, no auth-content
@@ -169,4 +203,4 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 
 ---
 
-*Last Updated: 2026-08-13 — guaranteed-benefit salary-fallback correction (unset band amount ⇒ not available, not salary) and release-table display refinements (PT/FT column, status wording, red "Not released").*
+*Last Updated: 2026-08-14 — platform renamed **Forefront HR → Forefront People** (brand default); added **admin impersonation** ("View as employee", act-as-them) and **multi-brand by business unit** (spec 024, migration 039 — theming-only interim toward spec 022).*

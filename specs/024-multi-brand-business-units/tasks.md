@@ -16,7 +16,7 @@ management + assignment UI; US4 is the impersonation enhancement.
 
 ## Phase 1: Setup
 
-- [ ] T001 Build navy/gold static HTML mockups for the two new UI surfaces — (a) the Business Units admin (`/admin/business-units`) and (b) the employee-form + registry-grid Business Unit field — save under `design-mockups/business-units/2026-08-14_*.html`, publish as Artifacts, and get explicit user sign-off. **Blocks every UI task (T010–T016).** (Constitution II — MOCKUP-FIRST.)
+- [X] T001 Build navy/gold static HTML mockups for the two new UI surfaces — (a) the Business Units admin (`/admin/business-units`) and (b) the employee-form + registry-grid Business Unit field — save under `design-mockups/business-units/2026-08-14_*.html`, publish as Artifacts, and get explicit user sign-off. **Blocks every UI task (T010–T016).** (Constitution II — MOCKUP-FIRST.)
 
 ---
 
@@ -38,7 +38,7 @@ management + assignment UI; US4 is the impersonation enhancement.
 - [X] T005 [US1] Make `getBrand()` in `src/lib/brand.ts` viewer-aware: resolve the effective user (session via `auth()`, honoring the impersonation cookie with the same Super-User/non-Super-target guard as `requireUser`); if the effective user has a `businessUnitId`, return that unit's brand **per-attribute merged** over the `BrandSettings` default (per `contracts/brand-resolution.md`); else the default. Keep it request-cached; try/catch → default on any error or no session.
 - [X] T006 [US1] Confirm `src/app/layout.tsx` themes from the effective brand: `generateMetadata`, `generateViewport`, and the injected `brandThemeCss(<style>)` all read the updated `getBrand()` — verify no pre-auth crash on `/signin` (no session → default). Adjust only if a call bypasses `getBrand()`.
 - [X] T007 [US1] Confirm `src/app/(app)/layout.tsx` passes the effective brand's `companyName`/`shortName`/`logoUrl` to `AppShell` (it already calls `getBrand()` — verify the source now flows through the effective resolution; no component redesign).
-- [ ] T008 [US1] Manual end-to-end verification: assigned employee sees their unit's colors/name/logo/title across pages; no-BU user + fresh/un-migrated DB see byte-for-byte today's default (SC-001, SC-003).
+- [X] T008 [US1] Manual end-to-end verification: assigned employee sees their unit's colors/name/logo/title across pages; no-BU user + fresh/un-migrated DB see byte-for-byte today's default (SC-001, SC-003).
 
 **Checkpoint**: With a BU + assignment present, the per-company look works. This alone is a demoable MVP.
 
@@ -49,10 +49,10 @@ management + assignment UI; US4 is the impersonation enhancement.
 **Goal**: A Super User can add / edit-brand / rename / remove (blocked while in use) business units.
 **Independent test**: create a unit, set its colors/logo/name, confirm dedupe + delete-blocked-while-assigned + HR-Admin denied.
 
-- [ ] T009 [US2] Create `src/app/(app)/admin/business-units/actions.ts`: `addBusinessUnit`, `updateBusinessUnitBrand` (name, shortName, primaryColor, accentColor with `^#[0-9a-fA-F]{6}$`, logo upload/removeLogo via existing Vercel Blob `put`), `renameBusinessUnit`, `removeBusinessUnit` (blocked while any `User.businessUnitId` references it). Every action `requireSuperUser`; case-insensitive dedupe; `revalidatePath("/", "layout")` so brands re-apply.
-- [ ] T010 [US2] Create `src/components/admin/BusinessUnitsManager.tsx` (client): list units with per-unit brand editor reusing `BrandColorField` (primary + accent), name/shortName inputs, logo upload/remove, add-unit row, and remove with in-use guard messaging. Mirror the Departments admin interaction.
-- [ ] T011 [US2] Create `src/app/(app)/admin/business-units/page.tsx` (`requireSuperUser`, `force-dynamic`): `BackLink`, heading, render `BusinessUnitsManager` with `getBusinessUnitsWithUsage()`; surface `?saved`/`?error`.
-- [ ] T012 [US2] Add a Super-User-only **"Business Units"** card to `src/app/(app)/admin/page.tsx` (snapshot to `ui-versions/admin-home/` first).
+- [X] T009 [US2] Create `src/app/(app)/admin/business-units/actions.ts`: `addBusinessUnit`, `updateBusinessUnitBrand` (name, shortName, primaryColor, accentColor with `^#[0-9a-fA-F]{6}$`, logo upload/removeLogo via existing Vercel Blob `put`), `renameBusinessUnit`, `removeBusinessUnit` (blocked while any `User.businessUnitId` references it). Every action `requireSuperUser`; case-insensitive dedupe; `revalidatePath("/", "layout")` so brands re-apply.
+- [X] T010 [US2] Create `src/components/admin/BusinessUnitsManager.tsx` (client): list units with per-unit brand editor reusing `BrandColorField` (primary + accent), name/shortName inputs, logo upload/remove, add-unit row, and remove with in-use guard messaging. Mirror the Departments admin interaction.
+- [X] T011 [US2] Create `src/app/(app)/admin/business-units/page.tsx` (`requireSuperUser`, `force-dynamic`): `BackLink`, heading, render `BusinessUnitsManager` with `getBusinessUnitsWithUsage()`; surface `?saved`/`?error`.
+- [X] T012 [US2] Add a Super-User-only **"Business Units"** card to `src/app/(app)/admin/page.tsx` (snapshot to `ui-versions/admin-home/` first).
 
 **Checkpoint**: Brands are fully manageable in-app.
 
@@ -63,11 +63,11 @@ management + assignment UI; US4 is the impersonation enhancement.
 **Goal**: Set an employee's business unit via form, grid, and CSV — mirroring department.
 **Independent test**: assign via form; change via grid; export→edit→re-import round-trips; unknown name flagged not dropped.
 
-- [ ] T013 [US3] Employee create/edit form: add a "Business Unit" single-select (managed list from `getBusinessUnits()`, plus "— none —") to the shared employee form + `src/app/(app)/admin/employees/new/page.tsx` and `[id]/page.tsx`; persist `businessUnitId` in the create/update employee action. Snapshot edited UI files to `ui-versions/` first.
-- [ ] T014 [US3] Registry grid: add an inline "Business Unit" enum-style column to `src/components/admin/EmployeeGrid.tsx` (options from managed units) and handle it in `updateEmployeeField` (`src/app/(app)/admin/employees/actions.ts`) under existing HR governance. Snapshot `EmployeeGrid.tsx` first; add the column to the default/persisted column config.
-- [ ] T015 [P] [US3] CSV export: add a "Business Unit" column (unit name) to `src/app/api/admin/employees/export/route.ts`.
-- [ ] T016 [US3] CSV import: parse a "Business Unit" column in `src/app/(app)/admin/employees/import/actions.ts`, match by trimmed case-insensitive name → set FK, and **flag an unknown name in the per-row report** (do not drop). Keep role/status/salary excluded.
-- [ ] T017 [US3] Manual verification: assignment persists across all three paths; changing a unit re-themes the employee on next load (SC-006).
+- [X] T013 [US3] Employee create/edit form: add a "Business Unit" single-select (managed list from `getBusinessUnits()`, plus "— none —") to the shared employee form + `src/app/(app)/admin/employees/new/page.tsx` and `[id]/page.tsx`; persist `businessUnitId` in the create/update employee action. Snapshot edited UI files to `ui-versions/` first.
+- [X] T014 [US3] Registry grid: add an inline "Business Unit" enum-style column to `src/components/admin/EmployeeGrid.tsx` (options from managed units) and handle it in `updateEmployeeField` (`src/app/(app)/admin/employees/actions.ts`) under existing HR governance. Snapshot `EmployeeGrid.tsx` first; add the column to the default/persisted column config.
+- [X] T015 [P] [US3] CSV export: add a "Business Unit" column (unit name) to `src/app/api/admin/employees/export/route.ts`.
+- [X] T016 [US3] CSV import: parse a "Business Unit" column in `src/app/(app)/admin/employees/import/actions.ts`, match by trimmed case-insensitive name → set FK, and **flag an unknown name in the per-row report** (do not drop). Keep role/status/salary excluded.
+- [X] T017 [US3] Manual verification: assignment persists across all three paths; changing a unit re-themes the employee on next load (SC-006).
 
 **Checkpoint**: End-to-end — a Super User themes a unit, HR assigns employees, employees see their brand.
 
@@ -78,15 +78,15 @@ management + assignment UI; US4 is the impersonation enhancement.
 **Goal**: Viewing as an employee also shows that employee's business-unit brand.
 **Independent test**: impersonate employees across the three units; each shows its brand + banner; exit restores the actor's brand.
 
-- [ ] T018 [US4] Verify the effective-user path in `getBrand()` (T005) resolves the impersonation target's `businessUnitId`, so "View as" themes to the target while the banner stays; exit restores the actor's brand (SC-005). Add a fix only if the impersonation cookie isn't reflected in resolution.
+- [X] T018 [US4] Verify the effective-user path in `getBrand()` (T005) resolves the impersonation target's `businessUnitId`, so "View as" themes to the target while the banner stays; exit restores the actor's brand (SC-005). Add a fix only if the impersonation cookie isn't reflected in resolution.
 
 ---
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T019 [P] Update docs in the same commit as the code: `PROJECT_DETAILS.md` (BusinessUnit + effective-brand model), `IMPLEMENTATION_PROGRESS.md` (feature built), `IMPLEMENTATION_PLAN.md` (decisions log: multi-brand interim toward 022), `CLAUDE.md` (if a new pattern), and set `specs/024-multi-brand-business-units/spec.md` status to Implemented.
-- [ ] T020 Run `npx tsc --noEmit` and `npm run build`; resolve all errors.
-- [ ] T021 Final throwaway-Postgres verification of `0NN_business_units.sql` + a `businessUnitId` assignment; confirm no benefits figure, money rule, or permission changed (OOS-002, FR-007).
+- [X] T019 [P] Update docs in the same commit as the code: `PROJECT_DETAILS.md` (BusinessUnit + effective-brand model), `IMPLEMENTATION_PROGRESS.md` (feature built), `IMPLEMENTATION_PLAN.md` (decisions log: multi-brand interim toward 022), `CLAUDE.md` (if a new pattern), and set `specs/024-multi-brand-business-units/spec.md` status to Implemented.
+- [X] T020 Run `npx tsc --noEmit` and `npm run build`; resolve all errors.
+- [X] T021 Final throwaway-Postgres verification of `0NN_business_units.sql` + a `businessUnitId` assignment; confirm no benefits figure, money rule, or permission changed (OOS-002, FR-007).
 
 ---
 

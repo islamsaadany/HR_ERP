@@ -23,6 +23,7 @@ export type EmployeeFormValues = {
   dateOfBirth: string | null;
   maritalStatus: string | null;
   reportsToId: string | null;
+  businessUnitId: string | null;
   emergencyContactName: string | null;
   emergencyContactRelationship: string | null;
   emergencyContactPhone: string | null;
@@ -40,6 +41,7 @@ export function EmployeeForm({
   values,
   managers,
   departments,
+  businessUnits,
   canEditRole,
   canSeeSalary,
   submitLabel,
@@ -50,6 +52,8 @@ export function EmployeeForm({
   managers: { id: string; name: string }[];
   /** Managed department list (spec 014). The employee's current value is kept even if not in the list. */
   departments: string[];
+  /** Managed business units (spec 024) — drives the employee's brand. */
+  businessUnits: { id: string; name: string }[];
   canEditRole: boolean;
   /** Salary is confidential — the field is omitted entirely unless the actor is a Super User. */
   canSeeSalary: boolean;
@@ -135,6 +139,17 @@ export function EmployeeForm({
           <div>
             <label className={L}>Title</label>
             <input name="title" defaultValue={values.title ?? ""} className={I} />
+          </div>
+          <div>
+            <label className={L}>Business Unit</label>
+            <select name="businessUnitId" defaultValue={values.businessUnitId ?? ""} className={I}>
+              <option value="">— none —</option>
+              {businessUnits.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </section>

@@ -167,9 +167,11 @@ export const getBrand = cache(async (): Promise<Brand> => {
         return {
           companyName: bu.name || fallback.companyName,
           shortName: bu.shortName || fallback.shortName,
-          // A business unit uses its OWN logo (wordmark when unset) — not the
-          // default company's logo. Per-BU logo upload arrives in spec 024 US2.
-          logoUrl: null,
+          // A business unit uses its OWN logo (wordmark when unset) — never the
+          // default company's logo. Served through the authorized BU logo route.
+          logoUrl: bu.logoUrl
+            ? `/api/business-units/${bu.id}/logo?v=${encodeURIComponent(bu.logoUrl.split("/").pop() ?? "1")}`
+            : null,
           primaryColor: bu.primaryColor || fallback.primaryColor,
           accentColor: bu.accentColor || fallback.accentColor,
         };

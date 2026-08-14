@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-14
 
-**Status**: Draft (aligned with user; ready for `/speckit-plan`)
+**Status**: Implemented 2026-08-14 (code + build verified; live click-through pending) — migration 039 applied to Neon by user
 
 **Input**: User description: "For an easier shift for now (before the full multi-tenancy of spec 022), take a multi-brand approach: the brand carries multiple brands with colors and names, and each employee is set to a business unit — in our case Forefront Consulting, Visual Shift Consulting, Omnisight Analytics. Based on each business unit we set a brand color and app name that gives a look and feel to the users, while Admin, Finance and HR keep the same function. Theme follows the user's own business unit; theming only for now."
 

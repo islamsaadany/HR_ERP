@@ -111,6 +111,7 @@ export async function createEmployee(
       emergencyContactRelationship: data.emergencyContactRelationship ?? null,
       emergencyContactPhone: data.emergencyContactPhone ?? null,
       reportsToId: data.reportsToId ?? null,
+      businessUnitId: data.businessUnitId ?? null,
       dependants: {
         create: data.dependants.map((d) => ({
           name: d.name ?? null,
@@ -185,6 +186,7 @@ export async function updateEmployee(
         emergencyContactRelationship: data.emergencyContactRelationship ?? null,
         emergencyContactPhone: data.emergencyContactPhone ?? null,
         reportsToId: data.reportsToId ?? null,
+        businessUnitId: data.businessUnitId ?? null,
         dependants: {
           create: data.dependants.map((d) => ({
             name: d.name ?? null,
@@ -229,6 +231,7 @@ const FIELD_SCHEMAS = {
   emergencyContactRelationship: employeeSchema.shape.emergencyContactRelationship,
   emergencyContactPhone: employeeSchema.shape.emergencyContactPhone,
   reportsToId: employeeSchema.shape.reportsToId,
+  businessUnitId: employeeSchema.shape.businessUnitId,
 } as const;
 
 type EditableField = keyof typeof FIELD_SCHEMAS;
@@ -286,6 +289,15 @@ export async function updateEmployeeField(
         return { ok: false, error: "An employee cannot report to themselves." };
       if (await wouldCycle(id, managerId))
         return { ok: false, error: "That reporting line would create a cycle." };
+    }
+  }
+
+  // Business unit must be a real unit (the FK would otherwise throw a raw error).
+  if (key === "businessUnitId") {
+    const buId = (next as string | null) ?? null;
+    if (buId) {
+      const bu = await prisma.businessUnit.findUnique({ where: { id: buId }, select: { id: true } });
+      if (!bu) return { ok: false, error: "That business unit no longer exists." };
     }
   }
 

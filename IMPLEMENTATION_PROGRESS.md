@@ -18,6 +18,21 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Spec 024 — Multi-brand by business unit (built, pending Neon migration `039`)
+- [x] Spec-kit run: `specs/024-multi-brand-business-units/` (spec, plan, research, data-model, contracts, quickstart, tasks).
+- [x] Schema: `BusinessUnit` model + `User.businessUnitId` FK + index. Migration `prisma/sql/039_business_units.sql` (table + FK `ON DELETE SET NULL` + seed 3 units) — **verified on a throwaway Postgres**: applies to a pre-039 schema, idempotent, assignment round-trips, SET NULL works.
+- [x] Lib: `src/lib/business-units.ts` (list, usage counts, name normalize/dedupe, brand lookup). `getBrand()` made **viewer-aware** (effective/impersonated user's unit brand, per-attribute merged over default; pre-auth/no-unit/error → default).
+- [x] US2 admin: `/admin/business-units` (Super User) + `BusinessUnitsManager` (reuses `BrandColorField`) + actions (add/update-brand/rename/remove-blocked-while-in-use) + per-unit logo route `/api/business-units/[id]/logo` + admin home card.
+- [x] US3 assignment: employee form select, registry grid column, CSV export/import column (matched by name; unknown flagged, blank left unchanged). US4: impersonation shows the target's unit brand (free via `getBrand`).
+- [x] `npx tsc --noEmit` + `npm run build` green (incl. `/signin` pre-auth). UI snapshots in `ui-versions/`; mockup approved. Docs updated (this file, PROJECT_DETAILS, spec 024).
+- [ ] **Apply `039_business_units.sql` to Neon** — *done by user 2026-08-14.* Then assign employees to units and set each unit's colors/name at Admin → Business Units. Live click-through of the per-unit look + impersonation remains.
+
+## Platform rename + admin impersonation (2026-08-14, shipped)
+- [x] **Renamed Forefront HR → Forefront People** across code defaults (brand, schema, AppShell, emails, README) + `036_rename_brand_forefront_people.sql` for the live row (or Admin → Brand). `tsc`/`build` green.
+- [x] **Admin impersonation "View as employee"** (act-as-them): `/admin/impersonate` (Super User), effective-user resolution in `requireUser()`, pinned exit banner, cookie cleared on sign-out; security guards (no escalation, admin blocked while impersonating). `tsc`/`build` green.
+- [x] **Hex color entry** in Admin → Brand (`BrandColorField`) — paste a code like `#0F2C69`.
+- [x] **Demo persona** Ahmed Ali seed `037` / cleanup `038` (verified on throwaway Postgres) — user seeded and is keeping him.
+
 ## Spec 021 — Unified catalogue: FT/PT eligibility + medical split (built, pending Neon migration)
 - [x] Spec `specs/021-benefit-eligibility-medical-split/spec.md`.
 - [x] Schema: `GuaranteedBenefit` → one row per benefit (`eligibleFullTime`/`eligiblePartTime`, `ftBand*`/`ptBand*`; dropped `employmentType` + `band*`); `BenefitCatalogItem` + `eligibleFullTime`/`eligiblePartTime`/`medicalScope`; new enum `MedicalScope`. Migration `prisma/sql/032_benefit_eligibility_and_medical_split.sql` — **verified on a throwaway Postgres across the full 000→032 chain**: 8 guaranteed rows folded to 5 (Marriage/ProfDev/Special-events carry FT+PT amounts; Summer/Loans FT-only), old columns dropped, medical split into Personal+Family, no orphaned rows, columns match schema.

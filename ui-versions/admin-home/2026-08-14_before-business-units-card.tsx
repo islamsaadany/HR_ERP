@@ -62,12 +62,6 @@ export default async function AdminPage() {
           ready: true,
         },
         {
-          href: "/admin/business-units",
-          title: "Business Units",
-          body: "Group companies + their brand (name, logo, colors) — employees see their own unit's look.",
-          ready: true,
-        },
-        {
           href: "/admin/notifications",
           title: "Notifications",
           body: "Claim-workflow emails: HR/Finance inboxes, on/off, and a test send.",
