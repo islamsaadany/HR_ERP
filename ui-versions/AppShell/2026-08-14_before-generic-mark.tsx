@@ -59,7 +59,6 @@ export function AppShell({
   companyName = "Forefront People",
   shortName = "Forefront",
   logoUrl = null,
-  genericMark = false,
   impersonation = null,
   children,
 }: {
@@ -73,8 +72,6 @@ export function AppShell({
   companyName?: string;
   shortName?: string;
   logoUrl?: string | null;
-  /** Default brand with no logo → show the generic People mark instead of an initial (spec 024). */
-  genericMark?: boolean;
   impersonation?: { targetName?: string | null; targetTitle?: string | null } | null;
   children: React.ReactNode;
 }) {
@@ -124,10 +121,6 @@ export function AppShell({
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt={companyName} className="h-8 w-8 rounded-md object-contain" />
-              ) : genericMark ? (
-                <div className="grid h-8 w-8 place-items-center rounded-md bg-navy-800">
-                  <PeopleMark className="h-5 w-5" />
-                </div>
               ) : (
                 <div className="grid h-8 w-8 place-items-center rounded-md bg-navy-800 font-serif text-lg text-gold-400">
                   {shortName.charAt(0).toUpperCase()}
@@ -234,18 +227,11 @@ export function AppShell({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt={companyName} className="h-9 max-w-[150px] object-contain" />
               ) : (
-                <div className="flex items-center gap-2.5">
-                  {genericMark ? (
-                    <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-md bg-navy-800">
-                      <PeopleMark className="h-5 w-5" />
-                    </div>
-                  ) : null}
-                  <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-400">
-                      {shortName}
-                    </div>
-                    <div className="font-serif text-xl uppercase">{companyName}</div>
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-400">
+                    {shortName}
                   </div>
+                  <div className="font-serif text-xl uppercase">{companyName}</div>
                 </div>
               )}
               <button
@@ -404,18 +390,6 @@ export function AppShell({
         </main>
       </div>
     </div>
-  );
-}
-
-/** Generic "People" app mark (spec 024) — gold on navy, brand-neutral default. */
-function PeopleMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 48 48" className={className} fill="none" aria-hidden="true">
-      <circle cx="18" cy="17" r="7" fill="#c9a227" />
-      <path d="M6 39c0-7 5.4-12 12-12s12 5 12 12" stroke="#c9a227" strokeWidth="4" strokeLinecap="round" />
-      <circle cx="32" cy="15" r="6" fill="#e0c05a" />
-      <path d="M28 34c1.2-6 5.6-9 10.5-9 3 0 5.6 1.1 7.5 3" stroke="#e0c05a" strokeWidth="4" strokeLinecap="round" />
-    </svg>
   );
 }
 
