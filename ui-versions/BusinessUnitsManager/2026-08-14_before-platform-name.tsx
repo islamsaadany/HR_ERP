@@ -6,18 +6,15 @@ import {
   addBusinessUnit,
   updateBusinessUnit,
   removeBusinessUnit,
-  setDefaultBusinessUnit,
 } from "@/app/(app)/admin/business-units/actions";
 
 export type ManagedUnit = {
   id: string;
   name: string;
-  platformName: string | null;
   shortName: string;
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
-  isDefault: boolean;
   inUse: number;
 };
 
@@ -52,23 +49,6 @@ export function BusinessUnitsManager({ units }: { units: ManagedUnit[] }) {
                 {u.inUse} employee{u.inUse === 1 ? "" : "s"}
               </div>
             </div>
-            <div className="ml-auto flex-shrink-0">
-              {u.isDefault ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-gold-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-gold-500" aria-hidden="true" /> Default
-                </span>
-              ) : (
-                <ToastResultForm action={setDefaultBusinessUnit} savedMessage="Default brand set.">
-                  <input type="hidden" name="id" value={u.id} />
-                  <button
-                    type="submit"
-                    className="rounded-lg border border-navy-200 px-3 py-1.5 text-xs font-semibold text-navy-700 transition hover:border-navy-800 hover:bg-navy-800 hover:text-white"
-                  >
-                    Make default
-                  </button>
-                </ToastResultForm>
-              )}
-            </div>
           </div>
 
           <ToastResultForm
@@ -78,21 +58,15 @@ export function BusinessUnitsManager({ units }: { units: ManagedUnit[] }) {
             className="space-y-4"
           >
             <input type="hidden" name="id" value={u.id} />
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className={L}>Company name (official)</label>
+                <label className={L}>Company / app name</label>
                 <input name="name" defaultValue={u.name} required className={I} />
               </div>
               <div>
-                <label className={L}>Platform name (shown in-app)</label>
-                <input name="platformName" defaultValue={u.platformName ?? ""} placeholder={u.name} className={I} />
-              </div>
-              <div>
-                <label className={L}>Short name (eyebrow)</label>
+                <label className={L}>Short name</label>
                 <input name="shortName" defaultValue={u.shortName} required className={I} />
               </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
               <BrandColorField name="primaryColor" label="Primary color" defaultValue={u.primaryColor} />
               <BrandColorField name="accentColor" label="Accent color" defaultValue={u.accentColor} />
             </div>

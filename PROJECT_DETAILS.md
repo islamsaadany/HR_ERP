@@ -142,6 +142,12 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
   the "Forefront People" fallback, badged) on top, then **Business units** (add / edit brand / rename /
   remove-blocked-while-in-use, case-insensitive dedupe; `BusinessUnitsManager` reuses `BrandColorField`).
   The old `/admin/business-units` route redirects here; the admin home shows a single **Branding** card.
+- **Three names (migration `042`):** each brand (default + unit) separates **Company name** (official/legal),
+  **Platform name** (what shows in-app — wordmark, page title, PWA; nullable, **falls back to the company
+  name**), and **Short name** (eyebrow). `getBrand()` returns a resolved `platformName`; the sidebar
+  wordmark, `<title>`, manifest, and sign-in all use it, while `companyName` stays the official name. The
+  default-brand form reads the raw `BrandSettings` (not viewer-aware `getBrand`) so it never shows a unit's
+  brand. Verified on a throwaway Postgres (additive/idempotent; platformName resolves, blank → company name).
   HR assigns a unit via the employee **form + registry grid + CSV** (Business Unit column, matched by
   name; unknown name flagged, blank left unchanged — never wipes). Seeds **Forefront Consulting,
   Visual Shift Consulting, Omnisight Analytics** (navy/gold; no employees auto-assigned). Verified on a

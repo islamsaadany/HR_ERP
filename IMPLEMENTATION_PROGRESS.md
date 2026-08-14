@@ -582,6 +582,45 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     claims yet." when empty). Guaranteed tiles unchanged; no money-rule change.
   - No schema change. UI snapshots saved; typecheck + build green.
 
+- **2026-08-14 — Branding: single "Make default" button (branding follow-up):**
+  - Retired the separate **Default brand** section on Admin → Branding. Each business unit now
+    carries a **Default** badge or a **Make default** button; the default unit is the fallback brand
+    for unassigned users, the sign-in page, and the app icon. At most one unit is default (the
+    action clears the others in a transaction). `BusinessUnit.isDefault` added; `getDefaultBrand()`
+    prefers the default unit, then the `BrandSettings` singleton, then hard Forefront defaults.
+  - Migration: `043_default_business_unit.sql` (additive, idempotent). Verified on a throwaway
+    Postgres (add column twice → idempotent; Make-default leaves exactly one default). tsc + build green.
+
+- **2026-08-14 — Employees grid: account-level column layout + Business Unit filter:**
+  - **Column layout follows the user across devices.** Which columns are open and their
+    drag order now save to the account (`User.uiPrefs` JSON, namespaced key
+    `employees.columns`) via a fire-and-forget server action — not just this browser.
+    localStorage stays as an instant same-browser cache; the account layout is the source
+    of truth and seeds the grid at render (SSR-safe, no flash). Cosmetic only — never
+    touches data access or money rules.
+  - **New Business Unit filter** in the grid toolbar (shown only when units exist),
+    persisted alongside the other filters.
+  - Migration: `044_user_ui_prefs.sql` (additive, idempotent — adds `User.uiPrefs jsonb`).
+    Verified on a throwaway Postgres (add column twice → idempotent; namespaced read works).
+    tsc + build green. UI snapshot saved.
+
+- **2026-08-14 — Admin home grouped into categories (mockup-approved):**
+  - The HR Admin home cards are now grouped under four section headers — **People**,
+    **Benefits & Time-Off**, **Content & Communications**, and **Platform** (Super User
+    only). Header = a gold dot + navy uppercase label + hairline rule + a subtle count.
+  - Cards, colors, the "N pending" pill, and the hover-to-reveal behavior are **unchanged**
+    — only the category headers are new (static HTML mockup approved before building;
+    saved under `design-mockups/admin-home/`). No schema change; tsc + build green; UI
+    snapshot saved.
+
+- **2026-08-14 — Admin home grouped into categories (mockup-approved):**
+  - The HR Admin home cards are now organised under four category headers — **People**,
+    **Benefits & Time-Off**, **Content & Communications**, and **Platform** (Super-User-only).
+    Header style: a gold dot, an uppercase navy label, a hairline rule, and a subtle count.
+    The cards, navy/gold palette, and hover-to-reveal behavior are **unchanged** — grouping
+    is the only new device. Static HTML mockup approved before building
+    (`design-mockups/admin-home/2026-08-14_categorized.html`). tsc + build green; UI snapshot saved.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.

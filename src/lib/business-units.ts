@@ -11,10 +11,12 @@ import { prisma } from "@/lib/prisma";
 export type BusinessUnitBrand = {
   id: string;
   name: string;
+  platformName: string | null;
   shortName: string;
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
+  isDefault: boolean;
 };
 
 /** Trim a typed business-unit name. */
@@ -35,10 +37,12 @@ export async function getBusinessUnits(): Promise<BusinessUnitBrand[]> {
       select: {
         id: true,
         name: true,
+        platformName: true,
         shortName: true,
         logoUrl: true,
         primaryColor: true,
         accentColor: true,
+        isDefault: true,
       },
     });
     return rows;
@@ -66,6 +70,27 @@ export async function getBusinessUnitsWithUsage(): Promise<
   return units.map((u) => ({ ...u, inUse: byId.get(u.id) ?? 0 }));
 }
 
+/** The business unit marked as default (the fallback brand), or null if none/un-migrated. */
+export async function getDefaultBusinessUnitBrand(): Promise<BusinessUnitBrand | null> {
+  try {
+    return await prisma.businessUnit.findFirst({
+      where: { isDefault: true },
+      select: {
+        id: true,
+        name: true,
+        platformName: true,
+        shortName: true,
+        logoUrl: true,
+        primaryColor: true,
+        accentColor: true,
+        isDefault: true,
+      },
+    });
+  } catch {
+    return null;
+  }
+}
+
 /** A single business unit's brand by id, or null (missing / un-migrated). */
 export async function getBusinessUnitBrand(id: string): Promise<BusinessUnitBrand | null> {
   if (!id) return null;
@@ -75,10 +100,12 @@ export async function getBusinessUnitBrand(id: string): Promise<BusinessUnitBran
       select: {
         id: true,
         name: true,
+        platformName: true,
         shortName: true,
         logoUrl: true,
         primaryColor: true,
         accentColor: true,
+        isDefault: true,
       },
     });
   } catch {

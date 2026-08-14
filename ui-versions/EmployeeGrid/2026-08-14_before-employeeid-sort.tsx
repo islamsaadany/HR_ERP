@@ -12,7 +12,6 @@ import {
   tenureBandDisplay,
 } from "@/lib/labels";
 import { updateEmployeeField } from "@/app/(app)/admin/employees/actions";
-import { saveEmployeeColumns } from "@/app/(app)/admin/employees/grid-prefs-actions";
 import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
 
 // Serializable row shape passed from the server page (dates as YYYY-MM-DD).
@@ -58,7 +57,6 @@ const FILTERS_STORAGE_KEY = "employees:grid:filters:v1";
 // Columns whose header title is clickable to sort the table (A→Z, then Z→A).
 const SORTABLE_KEYS = new Set<string>([
   "name",
-  "employeeId",
   "department",
   "employmentType",
   "status",
@@ -77,21 +75,9 @@ const DEFAULT_VISIBLE = new Set([
   "role",
 ]);
 
-export type ColCfg = { key: string; visible: boolean };
+type ColCfg = { key: string; visible: boolean };
 
 const blank = (label = "—"): Option => ({ value: "", label });
-
-/**
- * Merge a saved column layout with the current column set: keep saved columns
- * that still exist (in their saved order + visibility), append any columns added
- * since the layout was saved, and keep Name always visible.
- */
-function mergeCfg(saved: ColCfg[], defaultCfg: ColCfg[], knownKeys: Set<string>): ColCfg[] {
-  const kept = saved.filter((c) => knownKeys.has(c.key));
-  const keptKeys = new Set(kept.map((c) => c.key));
-  const appended = defaultCfg.filter((c) => !keptKeys.has(c.key));
-  return [...kept, ...appended].map((c) => (c.key === "name" ? { ...c, visible: true } : c));
-}
 
 export function EmployeeGrid({
   rows,
@@ -100,7 +86,6 @@ export function EmployeeGrid({
   businessUnits,
   canEditRole,
   canSeeSalary,
-  initialColumns,
 }: {
   rows: GridRow[];
   managers: { id: string; name: string }[];
@@ -109,8 +94,6 @@ export function EmployeeGrid({
   canEditRole: boolean;
   /** Salary is confidential — hidden entirely (column + inline edit) unless the actor is a Super User. */
   canSeeSalary: boolean;
-  /** This admin's saved column layout (account-level, cross-device). Null = none saved. */
-  initialColumns?: ColCfg[] | null;
 }) {
   const columns: Col[] = useMemo(() => {
     const managerOptions: Option[] = [
@@ -226,15 +209,7 @@ export function EmployeeGrid({
     [columns]
   );
 
-  const knownKeys = useMemo(() => new Set(columns.map((c) => c.key)), [columns]);
-  // Seed from the account-level layout when present (SSR-safe: it's a prop, so the
-  // server and client first render agree — no flash, no hydration mismatch). When
-  // absent, start from defaults and let the mount effect apply the localStorage cache.
-  const [cfg, setCfg] = useState<ColCfg[]>(() =>
-    initialColumns && initialColumns.length
-      ? mergeCfg(initialColumns, defaultCfg, new Set(columns.map((c) => c.key)))
-      : defaultCfg
-  );
+  const [cfg, setCfg] = useState<ColCfg[]>(defaultCfg);
   const [rowsState, setRowsState] = useState<GridRow[]>(rows);
   const [editing, setEditing] = useState<{ id: string; key: string } | null>(null);
   const [savingCell, setSavingCell] = useState<string | null>(null);
@@ -251,7 +226,6 @@ export function EmployeeGrid({
   const [fStatus, setFStatus] = useState("");
   const [fType, setFType] = useState("");
   const [fRole, setFRole] = useState("");
-  const [fBu, setFBu] = useState("");
 
   // Load persisted filter selections once on mount (loaded in an effect, not a
   // useState initializer, to avoid a server/client hydration mismatch).
@@ -265,7 +239,6 @@ export function EmployeeGrid({
       if (f.fStatus) setFStatus(f.fStatus);
       if (f.fType) setFType(f.fType);
       if (f.fRole) setFRole(f.fRole);
-      if (f.fBu) setFBu(f.fBu);
     } catch {
       /* ignore malformed filters */
     }
@@ -278,27 +251,29 @@ export function EmployeeGrid({
     fStatus: string;
     fType: string;
     fRole: string;
-    fBu: string;
   }) {
     window.localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(next));
   }
-  const onQ = (v: string) => { setQ(v); persistFilters({ q: v, fDept, fStatus, fType, fRole, fBu }); };
-  const onDept = (v: string) => { setFDept(v); persistFilters({ q, fDept: v, fStatus, fType, fRole, fBu }); };
-  const onStatus = (v: string) => { setFStatus(v); persistFilters({ q, fDept, fStatus: v, fType, fRole, fBu }); };
-  const onType = (v: string) => { setFType(v); persistFilters({ q, fDept, fStatus, fType: v, fRole, fBu }); };
-  const onRole = (v: string) => { setFRole(v); persistFilters({ q, fDept, fStatus, fType, fRole: v, fBu }); };
-  const onBu = (v: string) => { setFBu(v); persistFilters({ q, fDept, fStatus, fType, fRole, fBu: v }); };
+  const onQ = (v: string) => { setQ(v); persistFilters({ q: v, fDept, fStatus, fType, fRole }); };
+  const onDept = (v: string) => { setFDept(v); persistFilters({ q, fDept: v, fStatus, fType, fRole }); };
+  const onStatus = (v: string) => { setFStatus(v); persistFilters({ q, fDept, fStatus: v, fType, fRole }); };
+  const onType = (v: string) => { setFType(v); persistFilters({ q, fDept, fStatus, fType: v, fRole }); };
+  const onRole = (v: string) => { setFRole(v); persistFilters({ q, fDept, fStatus, fType, fRole: v }); };
 
-  // Fall back to the localStorage cache only when there's no account-level layout
-  // (a fresh browser before the first save, or an un-migrated DB). The account
-  // layout, when present, already seeded state above and is the source of truth.
+  // Load persisted column config, merging in any columns added since it was saved.
   useEffect(() => {
-    if (initialColumns && initialColumns.length) return;
     const saved = window.localStorage.getItem(COL_STORAGE_KEY);
     if (!saved) return;
     try {
       const parsed = JSON.parse(saved) as ColCfg[];
-      const merged = mergeCfg(parsed, defaultCfg, knownKeys);
+      const known = new Set<string>(columns.map((c) => c.key));
+      const kept = parsed.filter((c) => known.has(c.key));
+      const keptKeys = new Set(kept.map((c) => c.key));
+      const appended = defaultCfg.filter((c) => !keptKeys.has(c.key));
+      // name is never hideable
+      const merged = [...kept, ...appended].map((c) =>
+        c.key === "name" ? { ...c, visible: true } : c
+      );
       if (merged.length) setCfg(merged);
     } catch {
       /* ignore malformed config */
@@ -308,15 +283,7 @@ export function EmployeeGrid({
 
   function persistCfg(next: ColCfg[]) {
     setCfg(next);
-    // Instant same-browser cache…
-    try {
-      window.localStorage.setItem(COL_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      /* storage disabled → account save still runs below */
-    }
-    // …and account-level so it follows the user across devices. Fire-and-forget:
-    // cosmetic, so a failed save never blocks or disrupts the grid.
-    void saveEmployeeColumns(next).catch(() => {});
+    window.localStorage.setItem(COL_STORAGE_KEY, JSON.stringify(next));
   }
 
   function toggleColumn(key: string) {
@@ -357,14 +324,13 @@ export function EmployeeGrid({
       if (fStatus && r.status !== fStatus) return false;
       if (fType && r.employmentType !== fType) return false;
       if (fRole && r.role !== fRole) return false;
-      if (fBu && r.businessUnitId !== fBu) return false;
       if (needle) {
         const hay = `${r.name} ${r.email} ${r.title}`.toLowerCase();
         if (!hay.includes(needle)) return false;
       }
       return true;
     });
-  }, [rowsState, q, fDept, fStatus, fType, fRole, fBu]);
+  }, [rowsState, q, fDept, fStatus, fType, fRole]);
 
   // Sort is a view-only layer over the filtered rows — it never changes data,
   // and it re-runs whenever filters or the sort selection change.
@@ -464,13 +430,6 @@ export function EmployeeGrid({
           <option value="HR_ADMIN">{ROLE_LABEL.HR_ADMIN}</option>
           <option value="SUPER_USER">{ROLE_LABEL.SUPER_USER}</option>
         </FilterSelect>
-        {businessUnits.length > 0 ? (
-          <FilterSelect value={fBu} onChange={onBu} allLabel="All business units">
-            {businessUnits.map((b) => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </FilterSelect>
-        ) : null}
 
         <div className="relative">
           <button

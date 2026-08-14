@@ -60,6 +60,7 @@ export function AppShell({
   companyName = "Forefront People",
   shortName = "Forefront",
   logoUrl = null,
+  genericMark = false,
   linkedAccounts = [],
   impersonation = null,
   children,
@@ -74,6 +75,8 @@ export function AppShell({
   companyName?: string;
   shortName?: string;
   logoUrl?: string | null;
+  /** Default brand with no logo → show the generic People mark in the collapsed rail (spec 024). */
+  genericMark?: boolean;
   /** Other active accounts sharing this person's Employee ID — the "Switch account" list (spec 025). */
   linkedAccounts?: { email: string; label: string }[];
   impersonation?: { targetName?: string | null; targetTitle?: string | null } | null;
@@ -125,11 +128,13 @@ export function AppShell({
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt={companyName} className="h-8 w-8 rounded-md object-contain" />
-              ) : (
-                // No uploaded logo → the generic People mark (never a bare initial),
-                // for the default brand and business units alike (spec 024/025).
+              ) : genericMark ? (
                 <div className="grid h-8 w-8 place-items-center rounded-md bg-navy-800">
                   <PeopleMark className="h-5 w-5" />
+                </div>
+              ) : (
+                <div className="grid h-8 w-8 place-items-center rounded-md bg-navy-800 font-serif text-lg text-gold-400">
+                  {shortName.charAt(0).toUpperCase()}
                 </div>
               )}
               <button

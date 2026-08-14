@@ -2,21 +2,20 @@ import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { readImpersonationCookie } from "@/lib/impersonation";
-import { getBusinessUnitBrand } from "@/lib/business-units";
+import { getBusinessUnitBrand, getDefaultBusinessUnitBrand } from "@/lib/business-units";
 
 export type Brand = {
-  companyName: string;
-  shortName: string;
+  companyName: string; // official/legal name (spec 024/025 branding split)
+  platformName: string; // what shows in-app (wordmark/title/PWA); always populated (falls back to companyName)
+  shortName: string; // eyebrow / initial
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
-  // True when resolved from a business unit (spec 024). Lets the collapsed sidebar
-  // show a unit's own initial while the DEFAULT brand shows the generic mark.
-  fromBusinessUnit?: boolean;
 };
 
 export const BRAND_DEFAULTS: Brand = {
   companyName: "Forefront People",
+  platformName: "Forefront People",
   shortName: "Forefront",
   logoUrl: null,
   primaryColor: "#0f2444", // navy-800
@@ -111,13 +110,33 @@ function rampVars(name: string, base: string, steps: number[], prof: HSL[], anch
     .join("");
 }
 
-/** The deployment default brand (singleton row → Forefront defaults). Request-cached. */
+/**
+ * The deployment default brand (the fallback for unassigned users, sign-in, and the
+ * app icon). Prefers the business unit marked as default; falls back to the
+ * BrandSettings singleton, then the hard Forefront defaults. Request-cached.
+ */
 const getDefaultBrand = cache(async (): Promise<Brand> => {
+  // 1) A business unit marked as default (branding follow-up).
+  const def = await getDefaultBusinessUnitBrand();
+  if (def) {
+    return {
+      companyName: def.name,
+      platformName: def.platformName || def.name,
+      shortName: def.shortName,
+      logoUrl: def.logoUrl
+        ? `/api/business-units/${def.id}/logo?v=${encodeURIComponent(def.logoUrl.split("/").pop() ?? "1")}`
+        : null,
+      primaryColor: def.primaryColor,
+      accentColor: def.accentColor,
+    };
+  }
+  // 2) The BrandSettings singleton, else the hard defaults.
   try {
     const row = await prisma.brandSettings.findFirst();
     if (row) {
       return {
         companyName: row.companyName,
+        platformName: row.platformName || row.companyName,
         shortName: row.shortName,
         // The logo lives in a PRIVATE blob store, so it can't be an <img src>
         // directly — point every consumer at the public serving route instead.
@@ -183,6 +202,7 @@ export const getBrand = cache(async (): Promise<Brand> => {
       if (bu) {
         return {
           companyName: bu.name || fallback.companyName,
+          platformName: bu.platformName || bu.name || fallback.platformName,
           shortName: bu.shortName || fallback.shortName,
           // A business unit uses its OWN logo (wordmark when unset) — never the
           // default company's logo. Served through the authorized BU logo route.
@@ -191,7 +211,6 @@ export const getBrand = cache(async (): Promise<Brand> => {
             : null,
           primaryColor: bu.primaryColor || fallback.primaryColor,
           accentColor: bu.accentColor || fallback.accentColor,
-          fromBusinessUnit: true,
         };
       }
     }

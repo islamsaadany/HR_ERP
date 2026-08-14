@@ -38,6 +38,7 @@ export async function updateBusinessUnit(formData: FormData): Promise<BuResult> 
   await requireSuperUser();
   const id = (formData.get("id") as string | null)?.trim() || "";
   const name = normalizeBuName((formData.get("name") as string | null) ?? "");
+  const platformName = ((formData.get("platformName") as string | null) ?? "").trim();
   const shortName = ((formData.get("shortName") as string | null) ?? "").trim();
   const primaryColor = ((formData.get("primaryColor") as string | null) ?? "").trim().toLowerCase();
   const accentColor = ((formData.get("accentColor") as string | null) ?? "").trim().toLowerCase();
@@ -77,8 +78,22 @@ export async function updateBusinessUnit(formData: FormData): Promise<BuResult> 
 
   await prisma.businessUnit.update({
     where: { id },
-    data: { name, shortName, primaryColor, accentColor, logoUrl },
+    data: { name, platformName: platformName || null, shortName, primaryColor, accentColor, logoUrl },
   });
+  revalidatePath("/", "layout");
+  return ok();
+}
+
+/** Mark a unit as the default/fallback brand (unassigned users, sign-in, app icon). At most one. */
+export async function setDefaultBusinessUnit(formData: FormData): Promise<BuResult> {
+  await requireSuperUser();
+  const id = (formData.get("id") as string | null)?.trim() || "";
+  const unit = await prisma.businessUnit.findUnique({ where: { id }, select: { id: true } });
+  if (!unit) return err("That business unit no longer exists.");
+  await prisma.$transaction([
+    prisma.businessUnit.updateMany({ where: { isDefault: true }, data: { isDefault: false } }),
+    prisma.businessUnit.update({ where: { id }, data: { isDefault: true } }),
+  ]);
   revalidatePath("/", "layout");
   return ok();
 }

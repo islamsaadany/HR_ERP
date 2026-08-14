@@ -102,6 +102,11 @@ model User {
   // links them for the account switcher. Email stays the unique per-account login.
   employeeId String?
 
+  // Per-user UI preferences (namespaced JSON) — e.g. the Employees grid column
+  // layout {"employees.columns":[{key,visible},…]} so it follows the person across
+  // browsers/devices. Cosmetic only; never affects data access or money rules.
+  uiPrefs Json?
+
   dependants Dependant[]
 
   // Personal documents owned by this user
@@ -682,8 +687,9 @@ model ModuleFlag {
 /// navy/gold; when unchanged, no theme override is injected (identical look).
 model BrandSettings {
   id           String   @id @default("singleton")
-  companyName  String   @default("Forefront People")
-  shortName    String   @default("Forefront")
+  companyName  String   @default("Forefront People") // official/legal name
+  platformName String? // what shows in-app (wordmark); falls back to companyName
+  shortName    String   @default("Forefront") // eyebrow / initial
   logoUrl      String?
   primaryColor String   @default("#0f2444") // navy-800
   accentColor  String   @default("#c9a227") // gold-500
@@ -697,12 +703,16 @@ model BrandSettings {
 /// isolation (that is spec 022's full multi-tenancy). Distinct from Department.
 model BusinessUnit {
   id           String   @id @default(cuid())
-  name         String   @unique // company/app name; unique (case-insensitive enforced in app)
+  name         String   @unique // official company name; unique (case-insensitive enforced in app)
+  platformName String? // what shows in-app (wordmark); falls back to name
   shortName    String // eyebrow / initial
   logoUrl      String? // private Blob URL; null = wordmark
   primaryColor String   @default("#0f2444") // navy-800
   accentColor  String   @default("#c9a227") // gold-500
   order        Int      @default(0)
+  // The unit used as the default/fallback brand (unassigned users, sign-in, app
+  // icon). At most one unit is default; enforced by the setDefault action.
+  isDefault    Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @default(now()) @updatedAt
   members      User[]
