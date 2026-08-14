@@ -57,7 +57,6 @@ const FILTERS_STORAGE_KEY = "employees:grid:filters:v1";
 // Columns whose header title is clickable to sort the table (A→Z, then Z→A).
 const SORTABLE_KEYS = new Set<string>([
   "name",
-  "employeeId",
   "department",
   "employmentType",
   "status",
