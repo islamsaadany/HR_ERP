@@ -1,0 +1,181 @@
+<title>View As — Impersonation</title>
+<style>
+  :root{
+    --navy-900:#0a1a30; --navy-800:#0f2444; --navy-700:#163055; --navy-600:#1f3a63;
+    --navy-100:#d6deea; --navy-50:#eceff5;
+    --gold-600:#a8821e; --gold-500:#c9a227; --gold-200:#ecd894; --gold-100:#f6ecca; --gold-50:#fbf7ea;
+    --paper:#f4f1ea; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e6e1d7;
+    --green:#2f7a4d; --red:#a3311f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.5;padding:32px 20px 64px}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-family:Georgia,"Times New Roman",serif;font-size:26px;letter-spacing:.2px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 28px}
+  .scene-label{display:flex;align-items:center;gap:10px;margin:34px 0 12px;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-600);font-weight:700}
+  .scene-label span.n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:999px;
+    background:var(--navy-800);color:#fff;font-size:12px;font-weight:700;font-family:Georgia,serif}
+  .frame{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    box-shadow:0 8px 30px rgba(15,36,68,.07)}
+  .browser-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;background:var(--navy-50);border-bottom:1px solid var(--line)}
+  .dot{width:10px;height:10px;border-radius:50%;background:#cdd4df}
+  .url{margin-left:10px;font-size:12px;color:var(--muted);font-family:ui-monospace,monospace}
+
+  /* App chrome */
+  .app{display:flex;min-height:340px}
+  .side{width:190px;background:var(--navy-800);color:#cdd6e6;padding:16px 12px;flex-shrink:0}
+  .brand{font-family:Georgia,serif;color:#fff;font-size:16px;font-weight:600;padding:4px 8px 16px}
+  .brand .b2{color:var(--gold-500)}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .nav a{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;color:#cdd6e6;text-decoration:none}
+  .nav a.active{background:var(--navy-600);color:#fff}
+  .nav a.admin{color:var(--gold-200)}
+  .main{flex:1;padding:22px 24px;background:var(--surface)}
+  .crumb{font-size:12px;color:var(--muted);margin-bottom:12px}
+  .h2{font-family:Georgia,serif;font-size:20px;margin:0 0 14px}
+
+  /* Grid */
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{background:var(--navy-50);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--navy-700);font-weight:700}
+  tbody tr:hover{background:var(--gold-50)}
+  .name-cell{font-weight:600}
+  .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600}
+  .chip.ft{background:var(--navy-50);color:var(--navy-700)}
+  .chip.demo{background:var(--gold-100);color:var(--gold-600)}
+  .viewas{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:7px;
+    border:1px solid var(--navy-100);background:#fff;color:var(--navy-700);font-size:12px;font-weight:600;cursor:pointer}
+  .viewas:hover{background:var(--navy-800);color:#fff;border-color:var(--navy-800)}
+  .viewas svg{width:13px;height:13px}
+
+  /* Impersonation banner */
+  .imp-banner{display:flex;align-items:center;gap:14px;padding:10px 16px;
+    background:var(--navy-800);color:#fff;border-bottom:2px solid var(--gold-500)}
+  .imp-eye{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;
+    background:var(--gold-500);color:var(--navy-900);flex-shrink:0}
+  .imp-eye svg{width:15px;height:15px}
+  .imp-text{font-size:13px;line-height:1.35}
+  .imp-text b{color:var(--gold-200)}
+  .imp-text .muted{color:#aebacb;font-size:12px}
+  .imp-exit{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;
+    background:transparent;border:1px solid var(--gold-500);color:var(--gold-200);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .imp-exit:hover{background:var(--gold-500);color:var(--navy-900)}
+
+  /* Benefits mini */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  .card{border:1px solid var(--line);border-radius:11px;padding:14px}
+  .card .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+  .card .val{font-family:Georgia,serif;font-size:22px;margin-top:4px}
+  .card .val small{font-size:13px;color:var(--muted);font-family:inherit}
+  .meter{height:8px;border-radius:999px;background:var(--navy-50);margin-top:10px;overflow:hidden}
+  .meter i{display:block;height:100%;width:38%;background:var(--gold-500)}
+
+  .note{background:var(--gold-50);border:1px solid var(--gold-200);border-radius:10px;padding:12px 15px;margin-top:14px;font-size:13px;color:#6b5312}
+  .note b{color:var(--gold-600)}
+  .legend{margin-top:26px;border-top:1px solid var(--line);padding-top:16px;font-size:13px;color:var(--muted)}
+  .legend b{color:var(--ink)}
+  .legend ul{margin:8px 0 0;padding-left:18px}
+  .legend li{margin:4px 0}
+</style>
+
+<div class="wrap">
+  <h1>“View As” — Admin Impersonation</h1>
+  <p class="sub">Mockup for sign-off · navy/gold · two states: the admin control, and the employee view with the exit banner. Nothing is built yet.</p>
+
+  <!-- SCENE 1 -->
+  <div class="scene-label"><span class="n">1</span> The control — Admin → Employees</div>
+  <div class="frame">
+    <div class="browser-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="url">forefront-people.app/admin/employees</span></div>
+    <div class="app">
+      <div class="side">
+        <div class="brand">Forefront <span class="b2">People</span></div>
+        <div class="nav">
+          <a>▦ Dashboard</a>
+          <a>♦ Benefits</a>
+          <a>👋 Onboarding</a>
+          <a class="admin active">⚙ Employees</a>
+          <a class="admin">⚙ Benefits admin</a>
+        </div>
+      </div>
+      <div class="main">
+        <div class="crumb">← Admin</div>
+        <div class="h2">Employees</div>
+        <table>
+          <thead><tr><th>Name</th><th>Title</th><th>Type</th><th>Department</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="name-cell">Ahmed Ali <span class="chip demo">demo</span></td>
+              <td>Strategy Specialist</td><td><span class="chip ft">FT</span></td><td>Consulting</td>
+              <td><button class="viewas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>View as</button></td>
+            </tr>
+            <tr>
+              <td class="name-cell">Nadia Hassan</td>
+              <td>Senior Consultant</td><td><span class="chip ft">FT</span></td><td>Consulting</td>
+              <td><button class="viewas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>View as</button></td>
+            </tr>
+            <tr>
+              <td class="name-cell">Omar Farouk</td>
+              <td>Analyst</td><td><span class="chip ft">FT</span></td><td>Delivery</td>
+              <td><button class="viewas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>View as</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="note"><b>Super-user only.</b> A small “View as” action on each employee row. Click it to see the app exactly as that person sees it.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 2 -->
+  <div class="scene-label"><span class="n">2</span> The result — you are now seeing Ahmed’s own screens</div>
+  <div class="frame">
+    <div class="browser-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="url">forefront-people.app/benefits</span></div>
+
+    <!-- banner -->
+    <div class="imp-banner">
+      <span class="imp-eye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
+      <div class="imp-text">
+        Viewing as <b>Ahmed Ali</b> · Strategy Specialist<br>
+        <span class="muted">You’re seeing this employee’s own screens. Your data isn’t shown.</span>
+      </div>
+      <button class="imp-exit">✕ Exit to admin</button>
+    </div>
+
+    <div class="app">
+      <div class="side">
+        <div class="brand">Forefront <span class="b2">People</span></div>
+        <div class="nav">
+          <a>▦ Dashboard</a>
+          <a class="active">♦ Benefits</a>
+          <a>🗓 Time off</a>
+          <a>👥 Directory</a>
+          <a>📄 My documents</a>
+          <!-- note: no admin/⚙ items while impersonating an employee -->
+        </div>
+      </div>
+      <div class="main">
+        <div class="h2">Your benefits</div>
+        <div class="cards">
+          <div class="card"><div class="lbl">Your pool ceiling</div><div class="val">EGP 30,000</div><div class="meter"><i></i></div></div>
+          <div class="card"><div class="lbl">Employment</div><div class="val">Full-time <small>· 2–4y band</small></div></div>
+          <div class="card"><div class="lbl">Medical (self + family)</div><div class="val">EGP 18,240<small>/yr</small></div></div>
+          <div class="card"><div class="lbl">Monthly salary</div><div class="val">EGP 25,000</div></div>
+        </div>
+        <div class="note">Every figure here is <b>Ahmed’s</b> — the demo persona. Sign-out is never needed; press <b>Exit to admin</b> to return to yourself.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <b>How it behaves</b>
+    <ul>
+      <li><b>Who:</b> only a Super User sees “View as”, and can’t impersonate another Super User.</li>
+      <li><b>No logout:</b> your real session stays; a cookie flags who you’re viewing. The banner is always visible so it’s unmistakable.</li>
+      <li><b>Employee shell:</b> admin/incentive nav disappears while impersonating — you see exactly what they see (so no real salaries leak from admin screens).</li>
+      <li><b>Reusable:</b> use it any time to walk an employee through their own benefits, time-off, or profile.</li>
+      <li><b>Acting as them:</b> to be decided — view-only, or allowed to submit (e.g. file a claim) as them for live demos. See my question below.</li>
+    </ul>
+  </div>
+</div>
