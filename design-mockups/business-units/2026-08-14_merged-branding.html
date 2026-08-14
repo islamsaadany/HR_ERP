@@ -1,0 +1,109 @@
+<title>Merged Branding</title>
+<style>
+  :root{
+    --navy-800:#0f2444; --navy-700:#163055; --navy-50:#eceff5; --navy-200:#aebfd6;
+    --gold-600:#a8821e; --gold-500:#c9a227; --gold-100:#f6ecca; --gold-50:#fbf7ea;
+    --paper:#f4f1ea; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e6e1d7;
+    --vs:#3a2c74; --om:#0d5c63;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;padding:32px 20px 64px}
+  .wrap{max-width:720px;margin:0 auto}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-600)}
+  h1{font-family:Georgia,serif;font-size:28px;margin:2px 0 6px}
+  .lead{color:var(--muted);font-size:14px;margin:0 0 8px}
+  .frame{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(15,36,68,.06);margin-top:18px}
+  .browser-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;background:var(--navy-50);border-bottom:1px solid var(--line)}
+  .dot{width:10px;height:10px;border-radius:50%;background:#cdd4df}
+  .url{margin-left:10px;font-size:12px;color:var(--muted);font-family:ui-monospace,monospace}
+  .pad{padding:22px 24px}
+  .bu{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px;background:var(--surface)}
+  .bu.def{border-color:var(--gold-200);box-shadow:0 0 0 1px var(--gold-100)}
+  .bu-head{display:flex;align-items:center;gap:12px}
+  .logo{width:40px;height:40px;border-radius:9px;display:grid;place-items:center;color:#fff;font-family:Georgia,serif;font-size:17px;flex-shrink:0}
+  .nm{font-weight:600;font-size:15px}
+  .sub{font-size:12px;color:var(--muted)}
+  .badge{margin-left:auto;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-600);background:var(--gold-100);border-radius:999px;padding:3px 10px}
+  .count{margin-left:auto;font-size:12px;color:var(--navy-700);background:var(--navy-50);padding:3px 10px;border-radius:999px;font-weight:600}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  .f label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:4px}
+  .f input{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;background:#fff}
+  .crow{display:flex;align-items:center;gap:8px}
+  .sw{width:36px;height:32px;border-radius:7px;border:1px solid rgba(0,0,0,.12);flex-shrink:0}
+  .hex{flex:1;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;font-family:ui-monospace,monospace;text-transform:uppercase;background:#fff}
+  .acts{display:flex;gap:8px;margin-top:14px;align-items:center}
+  .btn{padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:600;border:1px solid transparent;cursor:pointer}
+  .save{background:var(--navy-800);color:#fff}.ghost{background:#fff;color:var(--navy-700);border-color:var(--navy-200)}
+  .rm{margin-left:auto;background:#fff;color:#a3311f;border-color:#e6c3bd}
+  .rm[disabled]{color:var(--muted);border-color:var(--line);cursor:not-allowed}
+  .add{display:flex;gap:8px;align-items:center;border:1px dashed var(--navy-200);border-radius:10px;padding:12px;margin-top:4px}
+  .add input{flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fff}
+  .note{background:var(--gold-50);border:1px solid var(--gold-200);border-radius:10px;padding:13px 16px;margin-top:18px;font-size:13px;color:#6b5312}
+  .note b{color:var(--gold-600)}
+</style>
+<div class="wrap">
+  <div class="eyebrow">Admin · Branding</div>
+  <h1>Branding</h1>
+  <p class="lead">One screen for every brand. Each business unit has its own name, colors, and logo. The <b>first unit is the Default</b> — shown to anyone not assigned to a unit, on sign-in, and as the browser/app identity.</p>
+
+  <div class="frame">
+    <div class="browser-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="url">forefront-people.app/admin/branding</span></div>
+    <div class="pad">
+
+      <!-- DEFAULT (first BU) -->
+      <div class="bu def">
+        <div class="bu-head">
+          <div class="logo" style="background:var(--navy-800)">F</div>
+          <div><div class="nm">Forefront Consulting</div><div class="sub">Short name: Forefront</div></div>
+          <span class="badge">Default · fallback</span>
+        </div>
+        <div class="fields">
+          <div class="f"><label>Company / app name</label><input value="Forefront Consulting"></div>
+          <div class="f"><label>Short name</label><input value="Forefront"></div>
+          <div class="f"><label>Primary color</label><div class="crow"><span class="sw" style="background:var(--navy-800)"></span><input class="hex" value="#0F2444"></div></div>
+          <div class="f"><label>Accent color</label><div class="crow"><span class="sw" style="background:var(--gold-500)"></span><input class="hex" value="#C9A227"></div></div>
+        </div>
+        <div class="acts"><button class="btn save">Save</button><button class="btn ghost">Upload logo</button><button class="btn rm" disabled title="The default can't be removed">Remove</button></div>
+        <div class="sub" style="margin-top:6px">The default can’t be removed. Unassigned employees and the sign-in page use this brand.</div>
+      </div>
+
+      <!-- Visual Shift -->
+      <div class="bu">
+        <div class="bu-head">
+          <div class="logo" style="background:var(--vs)">V</div>
+          <div><div class="nm">Visual Shift Consulting</div><div class="sub">Short name: Visual Shift</div></div>
+          <span class="count">4 employees</span>
+        </div>
+        <div class="fields">
+          <div class="f"><label>Company / app name</label><input value="Visual Shift Consulting"></div>
+          <div class="f"><label>Short name</label><input value="Visual Shift"></div>
+          <div class="f"><label>Primary color</label><div class="crow"><span class="sw" style="background:var(--vs)"></span><input class="hex" value="#3A2C74"></div></div>
+          <div class="f"><label>Accent color</label><div class="crow"><span class="sw" style="background:var(--gold-500)"></span><input class="hex" value="#C9A227"></div></div>
+        </div>
+        <div class="acts"><button class="btn save">Save</button><button class="btn ghost">Upload logo</button><button class="btn rm">Remove</button></div>
+      </div>
+
+      <!-- Omnisight -->
+      <div class="bu">
+        <div class="bu-head">
+          <div class="logo" style="background:var(--om)">O</div>
+          <div><div class="nm">Omnisight Analytics</div><div class="sub">Short name: Omnisight</div></div>
+          <span class="count">0 employees</span>
+        </div>
+        <div class="fields">
+          <div class="f"><label>Company / app name</label><input value="Omnisight Analytics"></div>
+          <div class="f"><label>Short name</label><input value="Omnisight"></div>
+          <div class="f"><label>Primary color</label><div class="crow"><span class="sw" style="background:var(--om)"></span><input class="hex" value="#0D5C63"></div></div>
+          <div class="f"><label>Accent color</label><div class="crow"><span class="sw" style="background:var(--gold-500)"></span><input class="hex" value="#C9A227"></div></div>
+        </div>
+        <div class="acts"><button class="btn save">Save</button><button class="btn ghost">Upload logo</button><button class="btn rm">Remove</button></div>
+      </div>
+
+      <div class="add"><input placeholder="New business unit name…"><button class="btn save">Add unit</button></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>What changes:</b> the separate “Admin → Brand” page goes away — everything lives here under <b>Admin → Branding</b>. The <b>first unit becomes the fallback</b> that today’s single default brand plays. Heads-up: that makes <b>Forefront Consulting</b> the face shown to unassigned users, sign-in, and the app icon — not the generic “Forefront People”. If you’d rather the default stay “Forefront People”, we just name the first unit that. Tell me which.
+  </div>
+</div>
