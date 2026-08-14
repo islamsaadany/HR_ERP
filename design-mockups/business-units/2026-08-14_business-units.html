@@ -1,0 +1,190 @@
+<title>Business Units — Admin</title>
+<style>
+  :root{
+    --navy-900:#0a1a30; --navy-800:#0f2444; --navy-700:#163055; --navy-600:#1f3a63;
+    --navy-100:#d6deea; --navy-50:#eceff5;
+    --gold-600:#a8821e; --gold-500:#c9a227; --gold-200:#ecd894; --gold-100:#f6ecca; --gold-50:#fbf7ea;
+    --paper:#f4f1ea; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e6e1d7;
+    --red:#a3311f; --green:#2f7a4d;
+    /* sample BU colors for the preview swatches */
+    --vs:#3a2c74; --om:#0d5c63;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;padding:32px 20px 64px}
+  .wrap{max-width:940px;margin:0 auto}
+  h1{font-family:Georgia,serif;font-size:26px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 26px;max-width:64ch}
+  .scene-label{display:flex;align-items:center;gap:10px;margin:34px 0 12px;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-600);font-weight:700}
+  .scene-label span.n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:12px;font-weight:700;font-family:Georgia,serif}
+  .frame{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(15,36,68,.07)}
+  .browser-bar{display:flex;align-items:center;gap:7px;padding:10px 14px;background:var(--navy-50);border-bottom:1px solid var(--line)}
+  .dot{width:10px;height:10px;border-radius:50%;background:#cdd4df}
+  .url{margin-left:10px;font-size:12px;color:var(--muted);font-family:ui-monospace,monospace}
+  .pad{padding:22px 24px}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-600)}
+  .h2{font-family:Georgia,serif;font-size:22px;margin:2px 0 4px}
+  .lead{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+
+  /* BU cards */
+  .bu{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px;background:var(--surface)}
+  .bu-head{display:flex;align-items:center;gap:12px}
+  .bu-logo{width:40px;height:40px;border-radius:9px;display:grid;place-items:center;color:#fff;font-family:Georgia,serif;font-size:17px;flex-shrink:0}
+  .bu-name{font-weight:600;font-size:15px}
+  .bu-meta{font-size:12px;color:var(--muted)}
+  .bu-count{margin-left:auto;font-size:12px;color:var(--navy-700);background:var(--navy-50);padding:3px 10px;border-radius:999px;font-weight:600}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  .f label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:4px}
+  .f input{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;background:#fff}
+  .colorrow{display:flex;align-items:center;gap:8px}
+  .swatch{width:38px;height:34px;border-radius:7px;border:1px solid rgba(0,0,0,.12);flex-shrink:0}
+  .hex{flex:1;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;font-family:ui-monospace,monospace;text-transform:uppercase;background:#fff}
+  .bu-actions{display:flex;gap:8px;margin-top:14px;align-items:center}
+  .btn{padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:600;border:1px solid transparent;cursor:pointer}
+  .btn.save{background:var(--navy-800);color:#fff}
+  .btn.ghost{background:#fff;color:var(--navy-700);border-color:var(--navy-200)}
+  .btn.remove{background:#fff;color:var(--red);border-color:#e6c3bd;margin-left:auto}
+  .btn.remove[disabled]{color:var(--muted);border-color:var(--line);cursor:not-allowed}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+  .addbar{display:flex;gap:8px;align-items:center;border:1px dashed var(--navy-200);border-radius:10px;padding:12px;margin-top:6px}
+  .addbar input{flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fff}
+
+  /* form + grid */
+  .formcard{border:1px solid var(--line);border-radius:12px;padding:18px;max-width:520px}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  select.sel{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fff}
+  .new-tag{display:inline-block;font-size:10px;font-weight:700;color:var(--gold-600);background:var(--gold-100);border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:middle;letter-spacing:.04em}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:6px}
+  th,td{text-align:left;padding:8px 11px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{background:var(--navy-50);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--navy-700);font-weight:700}
+  th.hl,td.hl{background:var(--gold-50)}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;color:#fff}
+  .note{background:var(--gold-50);border:1px solid var(--gold-200);border-radius:10px;padding:12px 15px;margin-top:16px;font-size:13px;color:#6b5312}
+  .note b{color:var(--gold-600)}
+  .legend{margin-top:30px;border-top:1px solid var(--line);padding-top:16px;font-size:13px;color:var(--muted)}
+  .legend b{color:var(--ink)} .legend ul{margin:8px 0 0;padding-left:18px} .legend li{margin:5px 0}
+</style>
+
+<div class="wrap">
+  <h1>Business Units &amp; per-company branding</h1>
+  <p class="sub">Mockup for sign-off (spec 024). Two surfaces: the Super-User admin that manages the units + their brand, and the new “Business Unit” field where HR assigns an employee. Reuses the existing hex swatch field. Nothing is built into the app yet.</p>
+
+  <!-- SCENE 1 -->
+  <div class="scene-label"><span class="n">1</span> Admin → Business Units (Super User)</div>
+  <div class="frame">
+    <div class="browser-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="url">forefront-people.app/admin/business-units</span></div>
+    <div class="pad">
+      <div class="eyebrow">Admin · Business Units</div>
+      <div class="h2">Business Units</div>
+      <p class="lead">Each unit is a group company with its own name, logo, and colors. Employees see their own unit’s brand; Admin/HR/Finance keep the same access.</p>
+
+      <!-- Unit 1 -->
+      <div class="bu">
+        <div class="bu-head">
+          <div class="bu-logo" style="background:var(--navy-800)">F</div>
+          <div><div class="bu-name">Forefront Consulting</div><div class="bu-meta">Short name: Forefront</div></div>
+          <span class="bu-count">12 employees</span>
+        </div>
+        <div class="fields">
+          <div class="f"><label>Company / app name</label><input value="Forefront Consulting"></div>
+          <div class="f"><label>Short name</label><input value="Forefront"></div>
+          <div class="f"><label>Primary color</label><div class="colorrow"><span class="swatch" style="background:var(--navy-800)"></span><input class="hex" value="#0F2444"></div></div>
+          <div class="f"><label>Accent color</label><div class="colorrow"><span class="swatch" style="background:var(--gold-500)"></span><input class="hex" value="#C9A227"></div></div>
+        </div>
+        <div class="bu-actions">
+          <button class="btn save">Save</button>
+          <button class="btn ghost">Upload logo</button>
+          <button class="btn remove" disabled title="Employees are assigned">Remove</button>
+        </div>
+        <div class="hint">Remove is disabled while employees are assigned.</div>
+      </div>
+
+      <!-- Unit 2 -->
+      <div class="bu">
+        <div class="bu-head">
+          <div class="bu-logo" style="background:var(--vs)">V</div>
+          <div><div class="bu-name">Visual Shift Consulting</div><div class="bu-meta">Short name: Visual Shift</div></div>
+          <span class="bu-count">4 employees</span>
+        </div>
+        <div class="fields">
+          <div class="f"><label>Company / app name</label><input value="Visual Shift Consulting"></div>
+          <div class="f"><label>Short name</label><input value="Visual Shift"></div>
+          <div class="f"><label>Primary color</label><div class="colorrow"><span class="swatch" style="background:var(--vs)"></span><input class="hex" value="#3A2C74"></div></div>
+          <div class="f"><label>Accent color</label><div class="colorrow"><span class="swatch" style="background:var(--gold-500)"></span><input class="hex" value="#C9A227"></div></div>
+        </div>
+        <div class="bu-actions">
+          <button class="btn save">Save</button>
+          <button class="btn ghost">Upload logo</button>
+          <button class="btn remove">Remove</button>
+        </div>
+      </div>
+
+      <!-- Unit 3 -->
+      <div class="bu">
+        <div class="bu-head">
+          <div class="bu-logo" style="background:var(--om)">O</div>
+          <div><div class="bu-name">Omnisight Analytics</div><div class="bu-meta">Short name: Omnisight</div></div>
+          <span class="bu-count">0 employees</span>
+        </div>
+        <div class="fields">
+          <div class="f"><label>Company / app name</label><input value="Omnisight Analytics"></div>
+          <div class="f"><label>Short name</label><input value="Omnisight"></div>
+          <div class="f"><label>Primary color</label><div class="colorrow"><span class="swatch" style="background:var(--om)"></span><input class="hex" value="#0D5C63"></div></div>
+          <div class="f"><label>Accent color</label><div class="colorrow"><span class="swatch" style="background:var(--gold-500)"></span><input class="hex" value="#C9A227"></div></div>
+        </div>
+        <div class="bu-actions">
+          <button class="btn save">Save</button>
+          <button class="btn ghost">Upload logo</button>
+          <button class="btn remove">Remove</button>
+        </div>
+      </div>
+
+      <div class="addbar">
+        <input placeholder="New business unit name…">
+        <button class="btn save">Add unit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 2 -->
+  <div class="scene-label"><span class="n">2</span> Assigning an employee — form &amp; grid (HR)</div>
+  <div class="frame">
+    <div class="browser-bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="url">forefront-people.app/admin/employees</span></div>
+    <div class="pad">
+      <div class="eyebrow">Employee · Edit</div>
+      <div class="h2" style="font-size:18px">Edit employee</div>
+      <p class="lead">A new “Business Unit” select sits beside Department (a separate field). HR-set; the employee doesn’t choose it.</p>
+      <div class="formcard">
+        <div class="frow">
+          <div class="f"><label>Department</label><select class="sel"><option>Consulting</option></select></div>
+          <div class="f"><label>Business Unit <span class="new-tag">new</span></label><select class="sel"><option>Visual Shift Consulting</option><option>Forefront Consulting</option><option>Omnisight Analytics</option><option>— none —</option></select></div>
+        </div>
+      </div>
+
+      <p class="lead" style="margin-top:22px">…and an inline “Business Unit” column in the registry grid (like other fields):</p>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Name</th><th>Title</th><th>Department</th><th class="hl">Business Unit</th><th>Type</th></tr></thead>
+        <tbody>
+          <tr><td>Ahmed Ali</td><td>Strategy Specialist</td><td>Consulting</td><td class="hl"><span class="pill" style="background:var(--vs)">Visual Shift</span></td><td>FT</td></tr>
+          <tr><td>Nadia Hassan</td><td>Senior Consultant</td><td>Consulting</td><td class="hl"><span class="pill" style="background:var(--navy-800)">Forefront</span></td><td>FT</td></tr>
+          <tr><td>Omar Farouk</td><td>Analyst</td><td>Delivery</td><td class="hl"><span class="pill" style="background:var(--om)">Omnisight</span></td><td>FT</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="note"><b>CSV too:</b> Export/Import gain a “Business Unit” column, matched by name (an unknown name is flagged in the report, not dropped) — exactly like Department.</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <b>What you’re signing off on (visual only)</b>
+    <ul>
+      <li>The <b>Business Units admin</b> layout: one card per unit with name, short name, two hex color fields (reusing the swatch+paste field you approved), a logo upload, member count, and a remove that’s blocked while in use — plus an “Add unit” row.</li>
+      <li>The <b>Business Unit field</b> on the employee form (beside Department) and as a grid column + CSV column.</li>
+      <li>The <b>employee-facing look</b> (sidebar name/logo/colors following their unit) reuses the existing shell — no screen is redesigned; only the brand values change. That part is already built and verified behind the scenes.</li>
+    </ul>
+    Swatch colors here (purple / teal) are just examples — you set the real ones per unit.
+  </div>
+</div>

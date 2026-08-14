@@ -2,6 +2,7 @@ import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { EmployeeForm } from "@/components/admin/EmployeeForm";
 import { getDepartments } from "@/lib/departments";
+import { getBusinessUnits } from "@/lib/business-units";
 import { BackLink } from "@/components/admin/BackLink";
 import { createEmployee } from "../actions";
 
@@ -9,13 +10,14 @@ export const dynamic = "force-dynamic";
 
 export default async function NewEmployeePage() {
   const actor = await requireAdmin();
-  const [managers, departments] = await Promise.all([
+  const [managers, departments, businessUnits] = await Promise.all([
     prisma.user.findMany({
       where: { status: "ACTIVE" },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
     getDepartments(),
+    getBusinessUnits(),
   ]);
 
   return (
@@ -31,6 +33,7 @@ export default async function NewEmployeePage() {
         canSeeSalary={isSuperUser(actor.role)}
         managers={managers}
         departments={departments}
+        businessUnits={businessUnits.map((b) => ({ id: b.id, name: b.name }))}
         companyDomain={(process.env.ALLOWED_EMAIL_DOMAIN ?? "forefront.consulting").toLowerCase()}
         submitLabel="Create employee"
         values={{
@@ -49,6 +52,8 @@ export default async function NewEmployeePage() {
           dateOfBirth: null,
           maritalStatus: null,
           reportsToId: null,
+          businessUnitId: null,
+          employeeId: null,
           emergencyContactName: null,
           emergencyContactRelationship: null,
           emergencyContactPhone: null,

@@ -12,12 +12,12 @@ const I =
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; email?: string }>;
 }) {
   const session = await auth();
   if (session?.user?.id) redirect("/dashboard");
 
-  const { error } = await searchParams;
+  const { error, email } = await searchParams;
   const brand = await getBrand();
 
   async function credentialsSignIn(formData: FormData) {
@@ -77,9 +77,13 @@ export default async function SignInPage({
                 inputMode="email"
                 autoComplete="username"
                 placeholder="you@forefront.consulting"
+                defaultValue={email ?? ""}
                 required
                 className={I}
               />
+              {email ? (
+                <p className="mt-1 text-xs text-muted">Switching account — enter this account&apos;s password.</p>
+              ) : null}
             </div>
             <div>
               <label htmlFor="password" className={L}>

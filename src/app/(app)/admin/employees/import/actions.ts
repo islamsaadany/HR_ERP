@@ -71,6 +71,10 @@ export async function importEmployees(
     return { ok: false, error: "No data rows found under the header." };
   }
 
+  // Managed business units (spec 024) — resolve the "Business Unit" column by name.
+  const units = await prisma.businessUnit.findMany({ select: { id: true, name: true } });
+  const buByName = new Map(units.map((u) => [u.name.trim().toLowerCase(), u.id]));
+
   // Guard against duplicate emails within the same file (last one would silently win).
   const seen = new Map<string, number>();
   for (const r of parsed.rows) {
@@ -103,6 +107,24 @@ export async function importEmployees(
       messages.push("email appears more than once in this file — the last row wins");
     }
 
+    // Resolve the business unit by name + the Employee ID (spec 025). Blank/absent
+    // values leave the existing assignment untouched (no wipe). An unknown BU name
+    // is flagged; a shared Employee ID is noted (it links the accounts).
+    const extra: { businessUnitId?: string; employeeId?: string } = {};
+    if (r.businessUnitName) {
+      const buId = buByName.get(r.businessUnitName.trim().toLowerCase());
+      if (buId) {
+        extra.businessUnitId = buId;
+      } else {
+        messages.push(
+          `business unit "${r.businessUnitName}" isn't a known unit — left unchanged; add it under Admin → Business Units`
+        );
+      }
+    }
+    if (r.employeeId) {
+      extra.employeeId = r.employeeId;
+    }
+
     try {
       const existing = await prisma.user.findUnique({
         where: { email: r.email },
@@ -122,7 +144,7 @@ export async function importEmployees(
           prisma.dependant.deleteMany({ where: { userId: existing.id } }),
           prisma.user.update({
             where: { id: existing.id },
-            data: { ...profileData(r), dependants: deps },
+            data: { ...profileData(r), ...extra, dependants: deps },
           }),
         ]);
         updated++;
@@ -138,6 +160,7 @@ export async function importEmployees(
         await prisma.user.create({
           data: {
             ...profileData(r),
+            ...extra,
             role: "EMPLOYEE",
             status: "ACTIVE",
             dependants: deps,

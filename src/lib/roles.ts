@@ -2,6 +2,7 @@ import type { Role } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { readImpersonationCookie } from "@/lib/impersonation";
 
 export const isAdmin = (role?: Role) =>
   role === "HR_ADMIN" || role === "SUPER_USER";
@@ -21,11 +22,65 @@ export async function getSession() {
   return auth();
 }
 
-/** Require a signed-in user; redirect to /signin otherwise. Returns the session user. */
+/**
+ * Require a signed-in user; redirect to /signin otherwise. Returns the EFFECTIVE
+ * user — normally the real session user, but the impersonation target when a
+ * Super User is "viewing as" an employee (see lib/impersonation.ts). Because
+ * nearly every page/action resolves the current user through here, honoring
+ * impersonation at this one point makes the whole app render and act as the
+ * target. The cookie is only honored for a real Super User session and never for
+ * a Super User target, so it can't be used to gain privilege.
+ */
 export async function requireUser() {
   const session = await auth();
   if (!session?.user?.id) redirect("/signin");
-  return session.user;
+  const real = session.user;
+
+  if (isSuperUser(real.role)) {
+    const targetId = await readImpersonationCookie();
+    if (targetId && targetId !== real.id) {
+      const target = await prisma.user.findUnique({
+        where: { id: targetId },
+        select: { id: true, role: true, name: true, email: true, photoUrl: true },
+      });
+      if (target && !isSuperUser(target.role)) {
+        return {
+          ...real,
+          id: target.id,
+          role: target.role,
+          name: target.name,
+          email: target.email,
+          image: target.photoUrl ?? null,
+        };
+      }
+    }
+  }
+  return real;
+}
+
+export type ImpersonationInfo =
+  | { isImpersonating: false }
+  | { isImpersonating: true; targetName: string | null; targetTitle: string | null };
+
+/**
+ * Whether the current request is a Super User impersonating an employee, plus the
+ * target's name/title for the banner. Mirrors the guard in `requireUser` so the
+ * banner shows exactly when the effective user is the target.
+ */
+export async function getImpersonation(): Promise<ImpersonationInfo> {
+  const session = await auth();
+  const real = session?.user;
+  if (!real?.id || !isSuperUser(real.role)) return { isImpersonating: false };
+
+  const targetId = await readImpersonationCookie();
+  if (!targetId || targetId === real.id) return { isImpersonating: false };
+
+  const target = await prisma.user.findUnique({
+    where: { id: targetId },
+    select: { role: true, name: true, title: true },
+  });
+  if (!target || isSuperUser(target.role)) return { isImpersonating: false };
+  return { isImpersonating: true, targetName: target.name, targetTitle: target.title };
 }
 
 /** Require HR Admin or Super User; redirect home otherwise. */

@@ -2,6 +2,7 @@ import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { toDateInput } from "@/lib/labels";
 import { getDepartments, unionDepartments } from "@/lib/departments";
+import { getBusinessUnits } from "@/lib/business-units";
 import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
 import { EmployeeGrid, type GridRow } from "@/components/admin/EmployeeGrid";
 import { RegistryHeader } from "@/components/admin/RegistryHeader";
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function EmployeesPage() {
   const actor = await requireAdmin();
   const canSalary = isSuperUser(actor.role);
-  const [employees, managers, managedDepartments] = await Promise.all([
+  const [employees, managers, managedDepartments, businessUnits] = await Promise.all([
     prisma.user.findMany({
       orderBy: [{ status: "asc" }, { name: "asc" }],
       select: {
@@ -35,6 +36,8 @@ export default async function EmployeesPage() {
         role: true,
         reportsToId: true,
         reportsTo: { select: { name: true } },
+        businessUnitId: true,
+        employeeId: true,
       },
     }),
     prisma.user.findMany({
@@ -43,6 +46,7 @@ export default async function EmployeesPage() {
       select: { id: true, name: true },
     }),
     getDepartments(),
+    getBusinessUnits(),
   ]);
 
   const rows: GridRow[] = employees.map((e) => ({
@@ -69,6 +73,8 @@ export default async function EmployeesPage() {
     role: e.role,
     reportsToId: e.reportsToId ?? "",
     reportsToName: e.reportsTo?.name ?? "",
+    businessUnitId: e.businessUnitId ?? "",
+    employeeId: e.employeeId ?? "",
   }));
 
   // Known departments = the managed list plus any stray values already present on records.
@@ -92,6 +98,7 @@ export default async function EmployeesPage() {
         rows={rows}
         managers={managers}
         departments={departments}
+        businessUnits={businessUnits.map((b) => ({ id: b.id, name: b.name }))}
         canEditRole={isSuperUser(actor.role)}
         canSeeSalary={canSalary}
       />

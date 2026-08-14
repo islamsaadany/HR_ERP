@@ -5,6 +5,7 @@ import { EmployeeForm } from "@/components/admin/EmployeeForm";
 import { AdminPasswordCard } from "@/components/admin/AdminPasswordCard";
 import { ResetBenefitsCard } from "@/components/admin/ResetBenefitsCard";
 import { getDepartments } from "@/lib/departments";
+import { getBusinessUnits } from "@/lib/business-units";
 import { BackLink } from "@/components/admin/BackLink";
 import { updateEmployee } from "../actions";
 import { toDateInput } from "@/lib/labels";
@@ -19,7 +20,7 @@ export default async function EditEmployeePage({
   const actor = await requireAdmin();
   const { id } = await params;
 
-  const [employee, managers, departments, claimRows, medicalAgg] = await Promise.all([
+  const [employee, managers, departments, businessUnits, claimRows, medicalAgg] = await Promise.all([
     prisma.user.findUnique({
       where: { id },
       include: { dependants: { orderBy: { dateOfBirth: "asc" } } },
@@ -30,6 +31,7 @@ export default async function EditEmployeePage({
       select: { id: true, name: true },
     }),
     getDepartments(),
+    getBusinessUnits(),
     // Per-benefit breakdown for the reset card (all plan years).
     prisma.benefitClaim.findMany({
       where: { userId: id },
@@ -91,6 +93,7 @@ export default async function EditEmployeePage({
         canSeeSalary={isSuperUser(actor.role)}
         managers={managers}
         departments={departments}
+        businessUnits={businessUnits.map((b) => ({ id: b.id, name: b.name }))}
         companyDomain={(process.env.ALLOWED_EMAIL_DOMAIN ?? "forefront.consulting").toLowerCase()}
         submitLabel="Save changes"
         values={{
@@ -110,6 +113,8 @@ export default async function EditEmployeePage({
           dateOfBirth: toDateInput(employee.dateOfBirth),
           maritalStatus: employee.maritalStatus,
           reportsToId: employee.reportsToId,
+          businessUnitId: employee.businessUnitId,
+          employeeId: employee.employeeId,
           emergencyContactName: employee.emergencyContactName,
           emergencyContactRelationship: employee.emergencyContactRelationship,
           emergencyContactPhone: employee.emergencyContactPhone,

@@ -54,14 +54,14 @@ export async function sendTestEmail(to: string): Promise<{ ok: boolean; error?: 
   const fromHeader = settings.fromName ? `${settings.fromName} <${from}>` : from;
   const html = `<div style="font-family:Helvetica,Arial,sans-serif;color:#16202e;padding:24px;">
     <h2 style="margin:0 0 8px;">Test email ✓</h2>
-    <p>If you can read this, your Forefront HR email sending (Resend) is working.</p>
+    <p>If you can read this, your Forefront People email sending (Resend) is working.</p>
     <p style="color:#5f6472;font-size:12px;">Sent from ${from}. This is only a test — no action needed.</p>
   </div>`;
   try {
     const res = await resend.emails.send({
       from: fromHeader,
       to: recipient,
-      subject: "Test email — Forefront HR",
+      subject: "Test email — Forefront People",
       html,
     });
     if (res.error) return { ok: false, error: res.error.message ?? "Resend rejected the send." };

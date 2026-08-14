@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { signOutAction } from "@/lib/signout-action";
+import { stopImpersonation } from "@/app/(app)/admin/impersonate/actions";
+import { switchAccountAction } from "@/lib/switch-account-action";
 
 const NAV = [
   { href: "/dashboard", label: "Home", icon: "home" },
@@ -55,9 +57,12 @@ export function AppShell({
   showPayments = false,
   hiddenNav = [],
   navBadges = {},
-  companyName = "Forefront HR",
+  companyName = "Forefront People",
   shortName = "Forefront",
   logoUrl = null,
+  genericMark = false,
+  linkedAccounts = [],
+  impersonation = null,
   children,
 }: {
   name?: string | null;
@@ -70,6 +75,11 @@ export function AppShell({
   companyName?: string;
   shortName?: string;
   logoUrl?: string | null;
+  /** Default brand with no logo → show the generic People mark in the collapsed rail (spec 024). */
+  genericMark?: boolean;
+  /** Other active accounts sharing this person's Employee ID — the "Switch account" list (spec 025). */
+  linkedAccounts?: { email: string; label: string }[];
+  impersonation?: { targetName?: string | null; targetTitle?: string | null } | null;
   children: React.ReactNode;
 }) {
   const nav = NAV.filter((item) => !hiddenNav.includes(item.href));
@@ -118,6 +128,10 @@ export function AppShell({
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt={companyName} className="h-8 w-8 rounded-md object-contain" />
+              ) : genericMark ? (
+                <div className="grid h-8 w-8 place-items-center rounded-md bg-navy-800">
+                  <PeopleMark className="h-5 w-5" />
+                </div>
               ) : (
                 <div className="grid h-8 w-8 place-items-center rounded-md bg-navy-800 font-serif text-lg text-gold-400">
                   {shortName.charAt(0).toUpperCase()}
@@ -315,6 +329,28 @@ export function AppShell({
             <div className="border-t border-navy-700 px-4 py-4">
               <div className="truncate text-sm text-white">{name}</div>
               <div className="truncate text-xs text-navy-200">{email}</div>
+              {linkedAccounts.length > 0 ? (
+                <div className="mt-3 border-t border-navy-700 pt-3">
+                  <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-navy-300">
+                    Switch account
+                  </div>
+                  <div className="space-y-1">
+                    {linkedAccounts.map((a) => (
+                      <form key={a.email} action={switchAccountAction}>
+                        <input type="hidden" name="email" value={a.email} />
+                        <button
+                          type="submit"
+                          title={`Switch to ${a.email}`}
+                          className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-xs text-navy-100 transition hover:bg-navy-800 hover:text-white"
+                        >
+                          <SwitchIcon />
+                          <span className="truncate">{a.label}</span>
+                        </button>
+                      </form>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               <form action={signOutAction}>
                 <button
                   type="submit"
@@ -336,6 +372,31 @@ export function AppShell({
           (singleScroll ? " md:h-screen md:overflow-hidden" : "")
         }
       >
+        {impersonation ? (
+          <div className="sticky top-0 z-30 flex items-center gap-3 border-b-2 border-gold-500 bg-navy-900 px-4 py-2.5 text-white">
+            <span className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-gold-500 text-navy-900" aria-hidden="true">
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </span>
+            <div className="min-w-0 text-sm leading-tight">
+              <div className="truncate">
+                Viewing as <span className="font-semibold text-gold-200">{impersonation.targetName}</span>
+                {impersonation.targetTitle ? <span className="text-navy-200"> · {impersonation.targetTitle}</span> : null}
+              </div>
+              <div className="truncate text-xs text-navy-300">You’re seeing this employee’s own screens. Your data isn’t shown.</div>
+            </div>
+            <form action={stopImpersonation} className="ml-auto flex-shrink-0">
+              <button
+                type="submit"
+                className="rounded-lg border border-gold-500 px-3 py-1.5 text-xs font-bold text-gold-200 transition hover:bg-gold-500 hover:text-navy-900"
+              >
+                ✕ Exit to admin
+              </button>
+            </form>
+          </div>
+        ) : null}
         <header className="flex items-center justify-between bg-navy-900 px-4 py-3 text-white md:hidden">
           <span className="font-serif text-lg uppercase">{companyName}</span>
           <form action={signOutAction}>
@@ -362,6 +423,27 @@ export function AppShell({
         </main>
       </div>
     </div>
+  );
+}
+
+/** Two-arrows "switch" glyph for the account switcher (spec 025). */
+function SwitchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 8h13l-3-3M20 16H7l3 3" />
+    </svg>
+  );
+}
+
+/** Generic "People" app mark (spec 024) — gold on navy, brand-neutral default. */
+function PeopleMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} fill="none" aria-hidden="true">
+      <circle cx="18" cy="17" r="7" fill="#c9a227" />
+      <path d="M6 39c0-7 5.4-12 12-12s12 5 12 12" stroke="#c9a227" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="32" cy="15" r="6" fill="#e0c05a" />
+      <path d="M28 34c1.2-6 5.6-9 10.5-9 3 0 5.6 1.1 7.5 3" stroke="#e0c05a" strokeWidth="4" strokeLinecap="round" />
+    </svg>
   );
 }
 

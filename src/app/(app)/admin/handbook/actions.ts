@@ -66,7 +66,7 @@ export async function createSection(
     },
   });
   revalidatePath("/admin/handbook");
-  redirect("/admin/handbook");
+  redirect("/admin/handbook?toast=" + encodeURIComponent("Section saved."));
 }
 
 export async function updateSection(
@@ -96,7 +96,7 @@ export async function updateSection(
     },
   });
   revalidatePath("/admin/handbook");
-  redirect("/admin/handbook");
+  redirect("/admin/handbook?toast=" + encodeURIComponent("Section saved."));
 }
 
 export async function deleteSection(formData: FormData): Promise<void> {

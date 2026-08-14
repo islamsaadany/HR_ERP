@@ -26,7 +26,9 @@ export async function GET() {
     select: {
       name: true,
       email: true,
+      employeeId: true,
       department: true,
+      businessUnit: { select: { name: true } },
       title: true,
       employmentType: true,
       startDate: true,
@@ -50,7 +52,9 @@ export async function GET() {
   const header = [
     "Name",
     "Email",
+    "Employee ID",
     "Department",
+    "Business Unit",
     "Title",
     "Contract Type",
     "Date of Hiring",
@@ -74,7 +78,9 @@ export async function GET() {
     const row = [
       e.name,
       e.email,
+      e.employeeId ?? "",
       e.department ?? "",
+      e.businessUnit?.name ?? "",
       e.title ?? "",
       e.employmentType ? EMPLOYMENT_TYPE_LABEL[e.employmentType] : "",
       iso(e.startDate),

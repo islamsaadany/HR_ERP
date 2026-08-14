@@ -36,6 +36,8 @@ export type GridRow = {
   role: "EMPLOYEE" | "HR_ADMIN" | "SUPER_USER" | "FINANCE";
   reportsToId: string;
   reportsToName: string;
+  businessUnitId: string;
+  employeeId: string;
 };
 
 type ColType = "text" | "email" | "date" | "select" | "manager";
@@ -81,12 +83,14 @@ export function EmployeeGrid({
   rows,
   managers,
   departments,
+  businessUnits,
   canEditRole,
   canSeeSalary,
 }: {
   rows: GridRow[];
   managers: { id: string; name: string }[];
   departments: string[];
+  businessUnits: { id: string; name: string }[];
   canEditRole: boolean;
   /** Salary is confidential — hidden entirely (column + inline edit) unless the actor is a Super User. */
   canSeeSalary: boolean;
@@ -99,12 +103,21 @@ export function EmployeeGrid({
     return ([
       { key: "name", label: "Name", type: "text", editable: false, hideable: false },
       { key: "email", label: "Email", type: "email", editable: true, hideable: true },
+      { key: "employeeId", label: "Employee ID", type: "text", editable: true, hideable: true },
       { key: "title", label: "Title", type: "text", editable: true, hideable: true },
       {
         key: "department",
         label: "Department",
         type: "select",
         options: [blank(), ...departments.map((d) => ({ value: d, label: d }))],
+        editable: true,
+        hideable: true,
+      },
+      {
+        key: "businessUnitId",
+        label: "Business Unit",
+        type: "select",
+        options: [blank(), ...businessUnits.map((b) => ({ value: b.id, label: b.name }))],
         editable: true,
         hideable: true,
       },
@@ -185,7 +198,7 @@ export function EmployeeGrid({
         hideable: true,
       },
     ] as Col[]).filter((c) => canSeeSalary || c.key !== "monthlySalary");
-  }, [departments, managers, canEditRole, canSeeSalary]);
+  }, [departments, businessUnits, managers, canEditRole, canSeeSalary]);
 
   const colByKey = useMemo(
     () => new Map<string, Col>(columns.map((c) => [c.key, c])),
