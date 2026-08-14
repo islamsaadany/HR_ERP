@@ -123,7 +123,7 @@ export async function createEmployee(
   });
 
   revalidatePath("/admin/employees");
-  redirect("/admin/employees");
+  redirect("/admin/employees?toast=" + encodeURIComponent("Employee created."));
 }
 
 export async function updateEmployee(
@@ -200,7 +200,7 @@ export async function updateEmployee(
 
   revalidatePath("/admin/employees");
   revalidatePath(`/admin/employees/${id}`);
-  redirect("/admin/employees");
+  redirect("/admin/employees?toast=" + encodeURIComponent("Employee updated."));
 }
 
 /**

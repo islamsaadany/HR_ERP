@@ -164,7 +164,7 @@ export async function createArticle(
   }
   revalidatePath("/admin/knowledge");
   revalidatePath("/knowledge");
-  redirect("/admin/knowledge");
+  redirect("/admin/knowledge?toast=" + encodeURIComponent("Article saved."));
 }
 
 export async function updateArticle(
@@ -209,7 +209,7 @@ export async function updateArticle(
   }
   revalidatePath("/admin/knowledge");
   revalidatePath("/knowledge");
-  redirect("/admin/knowledge");
+  redirect("/admin/knowledge?toast=" + encodeURIComponent("Article saved."));
 }
 
 export async function deleteArticle(formData: FormData): Promise<void> {

@@ -5,6 +5,7 @@ import { getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
 import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/AppShell";
+import { QueryToast } from "@/components/QueryToast";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,7 @@ export default async function AppLayout({
       }
     >
       {children}
+      <QueryToast />
     </AppShell>
   );
 }

@@ -56,7 +56,7 @@ export async function createActivity(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   await prisma.onboardingActivity.create({ data: parsed.data });
   revalidatePath("/admin/onboarding");
-  redirect("/admin/onboarding");
+  redirect("/admin/onboarding?toast=" + encodeURIComponent("Saved."));
 }
 
 export async function updateActivity(
@@ -70,7 +70,7 @@ export async function updateActivity(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   await prisma.onboardingActivity.update({ where: { id }, data: parsed.data });
   revalidatePath("/admin/onboarding");
-  redirect("/admin/onboarding");
+  redirect("/admin/onboarding?toast=" + encodeURIComponent("Saved."));
 }
 
 export async function deleteActivity(formData: FormData): Promise<void> {
