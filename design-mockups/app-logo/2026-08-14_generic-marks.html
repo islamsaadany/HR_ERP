@@ -1,0 +1,121 @@
+<title>Generic App Marks</title>
+<style>
+  :root{
+    --navy-900:#0a1a30; --navy-800:#0f2444; --navy-700:#163055; --navy-50:#eceff5;
+    --gold-500:#c9a227; --gold-300:#e0c05a;
+    --paper:#f4f1ea; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e6e1d7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;padding:32px 20px 64px}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{font-family:Georgia,serif;font-size:26px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 30px;max-width:64ch}
+  .opt{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px;box-shadow:0 8px 26px rgba(15,36,68,.06)}
+  .opt-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+  .opt-head .tag{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-500)}
+  .opt-head h2{font-family:Georgia,serif;font-size:19px;margin:0}
+  .opt p{color:var(--muted);font-size:13.5px;margin:2px 0 16px}
+  .row{display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+  .tile{display:flex;flex-direction:column;align-items:center;gap:7px}
+  .tile .cap{font-size:11px;color:var(--muted)}
+  .mk{background:var(--navy-800);display:grid;place-items:center;border-radius:22%}
+  .mk.s96{width:96px;height:96px}
+  .mk.s40{width:40px;height:40px;border-radius:26%}
+  .mk.s24{width:24px;height:24px;border-radius:28%}
+  /* sidebar preview */
+  .side{background:var(--navy-900);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;min-width:210px}
+  .side .txt .ey{font-size:9px;font-weight:700;letter-spacing:.2em;color:var(--gold-300);text-transform:uppercase}
+  .side .txt .wm{font-family:Georgia,serif;color:#fff;font-size:15px;text-transform:uppercase;line-height:1.05}
+  .note{background:#fff;border:1px solid var(--line);border-radius:10px;padding:13px 16px;margin-top:22px;font-size:13.5px;color:var(--muted)}
+  .note b{color:var(--ink)}
+</style>
+
+<div class="wrap">
+  <h1>A generic app mark</h1>
+  <p class="sub">Replaces the “F” default only — each business unit still shows its own initial or uploaded logo. Shown on the navy tile at app-icon (96px), sidebar (40px) and favicon (24px) sizes, plus in the sidebar next to the wordmark. Pick one (or tell me a different direction).</p>
+
+  <!-- OPTION A: People -->
+  <div class="opt">
+    <div class="opt-head"><span class="tag">Option A · recommended</span><h2>People</h2></div>
+    <p>Two overlapping figures — reads as “people / team,” on-theme for <em>Forefront People</em> and brand-neutral.</p>
+    <div class="row">
+      <div class="tile"><div class="mk s96">
+        <svg width="58" height="58" viewBox="0 0 48 48" fill="none">
+          <circle cx="18" cy="17" r="7" fill="#c9a227"/>
+          <path d="M6 39c0-7 5.4-12 12-12s12 5 12 12" stroke="#c9a227" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="32" cy="15" r="6" fill="#e0c05a" fill-opacity=".92"/>
+          <path d="M28 34c1.2-6 5.6-9 10.5-9 3 0 5.6 1.1 7.5 3" stroke="#e0c05a" stroke-opacity=".92" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </div><span class="cap">96 · app icon</span></div>
+      <div class="tile"><div class="mk s40">
+        <svg width="24" height="24" viewBox="0 0 48 48" fill="none">
+          <circle cx="18" cy="17" r="7" fill="#c9a227"/><path d="M6 39c0-7 5.4-12 12-12s12 5 12 12" stroke="#c9a227" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="32" cy="15" r="6" fill="#e0c05a"/><path d="M28 34c1.2-6 5.6-9 10.5-9 3 0 5.6 1.1 7.5 3" stroke="#e0c05a" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </div><span class="cap">40 · sidebar</span></div>
+      <div class="tile"><div class="mk s24">
+        <svg width="15" height="15" viewBox="0 0 48 48" fill="none">
+          <circle cx="18" cy="17" r="8" fill="#c9a227"/><path d="M6 39c0-7 5.4-12 12-12s12 5 12 12" stroke="#c9a227" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="33" cy="15" r="6" fill="#e0c05a"/>
+        </svg>
+      </div><span class="cap">24 · favicon</span></div>
+      <div class="side">
+        <div class="mk s40"><svg width="24" height="24" viewBox="0 0 48 48" fill="none"><circle cx="18" cy="17" r="7" fill="#c9a227"/><path d="M6 39c0-7 5.4-12 12-12s12 5 12 12" stroke="#c9a227" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="15" r="6" fill="#e0c05a"/><path d="M28 34c1.2-6 5.6-9 10.5-9 3 0 5.6 1.1 7.5 3" stroke="#e0c05a" stroke-width="4" stroke-linecap="round"/></svg></div>
+        <div class="txt"><div class="ey">Forefront</div><div class="wm">Forefront People</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION B: Ascending -->
+  <div class="opt">
+    <div class="opt-head"><span class="tag">Option B</span><h2>Forefront (ascending)</h2></div>
+    <p>Three ascending rounded bars — “leading / forefront,” corporate and neutral, not tied to any letter.</p>
+    <div class="row">
+      <div class="tile"><div class="mk s96">
+        <svg width="54" height="54" viewBox="0 0 48 48" fill="none">
+          <rect x="8" y="28" width="8" height="12" rx="4" fill="#c9a227"/>
+          <rect x="20" y="20" width="8" height="20" rx="4" fill="#d4ac39"/>
+          <rect x="32" y="10" width="8" height="30" rx="4" fill="#e0c05a"/>
+        </svg>
+      </div><span class="cap">96 · app icon</span></div>
+      <div class="tile"><div class="mk s40">
+        <svg width="22" height="22" viewBox="0 0 48 48" fill="none"><rect x="8" y="28" width="8" height="12" rx="4" fill="#c9a227"/><rect x="20" y="20" width="8" height="20" rx="4" fill="#d4ac39"/><rect x="32" y="10" width="8" height="30" rx="4" fill="#e0c05a"/></svg>
+      </div><span class="cap">40 · sidebar</span></div>
+      <div class="tile"><div class="mk s24">
+        <svg width="14" height="14" viewBox="0 0 48 48" fill="none"><rect x="7" y="27" width="9" height="13" rx="4" fill="#c9a227"/><rect x="19" y="19" width="9" height="21" rx="4" fill="#d4ac39"/><rect x="32" y="9" width="9" height="31" rx="4" fill="#e0c05a"/></svg>
+      </div><span class="cap">24 · favicon</span></div>
+      <div class="side">
+        <div class="mk s40"><svg width="22" height="22" viewBox="0 0 48 48" fill="none"><rect x="8" y="28" width="8" height="12" rx="4" fill="#c9a227"/><rect x="20" y="20" width="8" height="20" rx="4" fill="#d4ac39"/><rect x="32" y="10" width="8" height="30" rx="4" fill="#e0c05a"/></svg></div>
+        <div class="txt"><div class="ey">Forefront</div><div class="wm">Forefront People</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION C: Orbit -->
+  <div class="opt">
+    <div class="opt-head"><span class="tag">Option C</span><h2>Orbit</h2></div>
+    <p>A ring with an offset dot — abstract, modern, fully brand-neutral (no people or letter reference).</p>
+    <div class="row">
+      <div class="tile"><div class="mk s96">
+        <svg width="56" height="56" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="15" stroke="#c9a227" stroke-width="4"/>
+          <circle cx="24" cy="9" r="5" fill="#e0c05a"/>
+        </svg>
+      </div><span class="cap">96 · app icon</span></div>
+      <div class="tile"><div class="mk s40">
+        <svg width="23" height="23" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="15" stroke="#c9a227" stroke-width="4"/><circle cx="24" cy="9" r="5" fill="#e0c05a"/></svg>
+      </div><span class="cap">40 · sidebar</span></div>
+      <div class="tile"><div class="mk s24">
+        <svg width="14" height="14" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="14" stroke="#c9a227" stroke-width="5"/><circle cx="24" cy="9" r="6" fill="#e0c05a"/></svg>
+      </div><span class="cap">24 · favicon</span></div>
+      <div class="side">
+        <div class="mk s40"><svg width="23" height="23" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="15" stroke="#c9a227" stroke-width="4"/><circle cx="24" cy="9" r="5" fill="#e0c05a"/></svg></div>
+        <div class="txt"><div class="ey">Forefront</div><div class="wm">Forefront People</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Scope of the change:</b> replaces the default “F” in the sidebar mark and the installable-app / browser-tab icons (<code>public/icons/*</code>). A business unit with its own uploaded logo, or just its initial, is unchanged. The mark uses the current gold on navy; if you pick a light business-unit theme it inherits that unit’s colors where the initial does today.
+  </div>
+</div>
