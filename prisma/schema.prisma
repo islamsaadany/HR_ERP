@@ -92,6 +92,11 @@ model User {
   reportsTo   User?   @relation("Reports", fields: [reportsToId], references: [id], onDelete: SetNull)
   reports     User[]  @relation("Reports")
 
+  // Business unit (multi-brand, spec 024) — HR-managed; drives which brand this
+  // user sees. Optional; null = the default brand. Distinct from `department`.
+  businessUnitId String?
+  businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id], onDelete: SetNull)
+
   dependants Dependant[]
 
   // Personal documents owned by this user
@@ -120,6 +125,7 @@ model User {
   @@index([department])
   @@index([status])
   @@index([reportsToId])
+  @@index([businessUnitId])
 }
 
 /// A dependant of an employee — name + DOB, and a kind (CHILD or SPOUSE). Age is derived, never stored.
@@ -676,6 +682,24 @@ model BrandSettings {
   primaryColor String   @default("#0f2444") // navy-800
   accentColor  String   @default("#c9a227") // gold-500
   updatedAt    DateTime @default(now()) @updatedAt
+}
+
+// ─── Business Units (multi-brand, spec 024) ─────────────────────────────────
+/// A group company an employee belongs to, carrying its own brand (name, logo,
+/// primary + accent colors). The app theme follows the VIEWING user's business
+/// unit; unset falls back to the BrandSettings default. Theming only — no data
+/// isolation (that is spec 022's full multi-tenancy). Distinct from Department.
+model BusinessUnit {
+  id           String   @id @default(cuid())
+  name         String   @unique // company/app name; unique (case-insensitive enforced in app)
+  shortName    String // eyebrow / initial
+  logoUrl      String? // private Blob URL; null = wordmark
+  primaryColor String   @default("#0f2444") // navy-800
+  accentColor  String   @default("#c9a227") // gold-500
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+  members      User[]
 }
 
 // ─── Notification settings (super-user, spec 020) ───────────────────────────

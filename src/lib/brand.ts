@@ -1,5 +1,8 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { readImpersonationCookie } from "@/lib/impersonation";
+import { getBusinessUnitBrand } from "@/lib/business-units";
 
 export type Brand = {
   companyName: string;
@@ -91,8 +94,8 @@ function rampVars(name: string, base: string, steps: number[], prof: HSL[], anch
     .join("");
 }
 
-/** Fetch the singleton brand row, falling back to Forefront defaults. Request-cached. */
-export const getBrand = cache(async (): Promise<Brand> => {
+/** The deployment default brand (singleton row → Forefront defaults). Request-cached. */
+const getDefaultBrand = cache(async (): Promise<Brand> => {
   try {
     const row = await prisma.brandSettings.findFirst();
     if (row) {
@@ -114,6 +117,68 @@ export const getBrand = cache(async (): Promise<Brand> => {
     /* table not migrated yet → defaults */
   }
   return { ...BRAND_DEFAULTS };
+});
+
+/**
+ * The business unit id of the effective (viewing) user, honoring impersonation —
+ * a Super User "viewing as" a non-Super employee resolves to that employee's unit
+ * (spec 024 · FR-008). Returns null when signed out (no query → pre-auth safe) or
+ * when the user has no business unit.
+ */
+async function effectiveBusinessUnitId(): Promise<string | null> {
+  const session = await auth();
+  const real = session?.user;
+  if (!real?.id) return null;
+
+  if (real.role === "SUPER_USER") {
+    const targetId = await readImpersonationCookie();
+    if (targetId && targetId !== real.id) {
+      const target = await prisma.user.findUnique({
+        where: { id: targetId },
+        select: { role: true, businessUnitId: true },
+      });
+      if (target && target.role !== "SUPER_USER") return target.businessUnitId ?? null;
+    }
+  }
+  const me = await prisma.user.findUnique({
+    where: { id: real.id },
+    select: { businessUnitId: true },
+  });
+  return me?.businessUnitId ?? null;
+}
+
+/**
+ * The brand to show for THIS request — the effective (viewing/impersonated) user's
+ * business-unit brand (spec 024), falling back to the deployment default when the
+ * user has no business unit, is signed out, or on any error. Request-cached, so the
+ * root layout (theme CSS + metadata) and the app shell resolve it once.
+ *
+ * A business unit supplies name / short name / colors; its logo is its own (added in
+ * a later increment) and, when unset, the unit shows its wordmark — never the default
+ * company's logo. All other attributes fall back per-attribute to the default.
+ */
+export const getBrand = cache(async (): Promise<Brand> => {
+  const fallback = await getDefaultBrand();
+  try {
+    const buId = await effectiveBusinessUnitId();
+    if (buId) {
+      const bu = await getBusinessUnitBrand(buId);
+      if (bu) {
+        return {
+          companyName: bu.name || fallback.companyName,
+          shortName: bu.shortName || fallback.shortName,
+          // A business unit uses its OWN logo (wordmark when unset) — not the
+          // default company's logo. Per-BU logo upload arrives in spec 024 US2.
+          logoUrl: null,
+          primaryColor: bu.primaryColor || fallback.primaryColor,
+          accentColor: bu.accentColor || fallback.accentColor,
+        };
+      }
+    }
+  } catch {
+    /* not migrated / no session / error → default brand */
+  }
+  return fallback;
 });
 
 /**
