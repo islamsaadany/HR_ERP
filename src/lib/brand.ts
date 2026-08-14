@@ -78,17 +78,31 @@ function profile(ramp: string[]) {
 const NAVY_PROFILE = profile(NAVY);
 const GOLD_PROFILE = profile(GOLD);
 
+// How much the ramp may be LIGHTENED (in lightness %) to honor a light base color.
+// Lets the picked color actually drive the surfaces, while keeping the darkest step
+// dark enough that white text on the sidebar/buttons stays readable. Darkening
+// (a darker pick) is unbounded.
+const MAX_RAMP_LIFT = 22;
+
 /**
- * Generate CSS-variable overrides for a ramp from one base color, reusing the
- * original ramp's saturation/lightness structure but with the base's hue+saturation.
+ * Generate CSS-variable overrides for a ramp from one base color. The ramp reuses
+ * the original ramp's per-step saturation/lightness STRUCTURE but is re-anchored on
+ * the base color's own hue, saturation, AND lightness — so the anchor step becomes
+ * ~ the picked color and the whole scale (incl. the sidebar) visibly reflects it,
+ * instead of only shifting hue while keeping every shade's original darkness.
  */
 function rampVars(name: string, base: string, steps: number[], prof: HSL[], anchor: number): string {
-  const { h, s } = hexToHsl(base);
+  const { h, s, l } = hexToHsl(base);
   const anchorS = prof[anchor].s || 1;
+  // Shift every step's lightness by the gap between the base and the anchor, so the
+  // anchor step lands on the base's lightness. Capped on the lightening side only.
+  const rawOffset = l - prof[anchor].l;
+  const offset = rawOffset > MAX_RAMP_LIFT ? MAX_RAMP_LIFT : rawOffset;
   return steps
     .map((step, i) => {
       const stepS = Math.max(0, Math.min(100, (s * prof[i].s) / anchorS));
-      const hex = hslToHex(h, stepS, prof[i].l);
+      const stepL = Math.max(0, Math.min(100, prof[i].l + offset));
+      const hex = hslToHex(h, stepS, stepL);
       return `--color-${name}-${step}:${hex};`;
     })
     .join("");
