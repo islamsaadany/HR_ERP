@@ -37,6 +37,7 @@ export default async function EmployeesPage() {
         reportsToId: true,
         reportsTo: { select: { name: true } },
         businessUnitId: true,
+        employeeId: true,
       },
     }),
     prisma.user.findMany({
@@ -73,6 +74,7 @@ export default async function EmployeesPage() {
     reportsToId: e.reportsToId ?? "",
     reportsToName: e.reportsTo?.name ?? "",
     businessUnitId: e.businessUnitId ?? "",
+    employeeId: e.employeeId ?? "",
   }));
 
   // Known departments = the managed list plus any stray values already present on records.

@@ -186,6 +186,7 @@ export function normalizeMaritalStatus(raw: string): MaritalStatus | null {
 
 type FieldKey =
   | "name"
+  | "employeeId"
   | "department"
   | "businessUnit"
   | "startDate"
@@ -205,6 +206,7 @@ type FieldKey =
 
 const HEADER_ALIASES: Record<FieldKey, string[]> = {
   name: ["name", "full name", "employee name"],
+  employeeId: ["employee id", "employeeid", "emp id", "staff id", "employee number"],
   department: ["department", "dept"],
   businessUnit: ["business unit", "businessunit", "bu"],
   startDate: [
@@ -291,6 +293,7 @@ export interface ParsedRow {
   email: string;
   emailIsExternal: boolean;
   phone: string | null;
+  employeeId: string | null; // person identifier (spec 025); a duplicate links accounts
   department: string | null;
   businessUnitName: string | null; // raw name; resolved to a BU id in the import action
   title: string | null;
@@ -487,6 +490,7 @@ export function parseEmployeesCsv(
       email,
       emailIsExternal,
       phone: cell(raw, "phone") || null,
+      employeeId: cell(raw, "employeeId") || null,
       department: departmentValue,
       businessUnitName: cell(raw, "businessUnit") || null,
       title: cell(raw, "title") || null,

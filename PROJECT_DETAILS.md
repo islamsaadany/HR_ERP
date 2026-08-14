@@ -157,6 +157,24 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
   action guards on the real session; admin nav/routes are hidden/blocked while impersonating (exit
   first); the temp-password gate is skipped; sign-out clears the cookie.
 
+### Employee ID + linked-account switching (spec 025, migration `040`)
+- **For a person holding two contracts across two group companies** (kept as **two independent
+  employee records with two distinct emails** — email stays the unique per-account login; the login
+  model is unchanged). Adds **`User.employeeId`** — an HR-managed **person** identifier that is
+  **optional and NOT unique**: the two records share the same Employee ID, and that shared value links
+  them. Settable on the employee **form + grid + CSV** (like business unit).
+- **Link confirm:** saving an Employee ID already used by another active record warns "this links the
+  accounts as the same person" and requires ticking **Link accounts** on the form (`employeeIdLinkGuard`);
+  the inline grid **blocks** a linking duplicate and points to the form (linking is deliberate).
+- **Account switcher:** when the signed-in user's Employee ID is shared with other **active** accounts,
+  the sidebar shows **"Switch account"** listing them (name · business unit). Selecting one signs out and
+  lands on `/signin?email=…` with the email pre-filled; the person enters **that account's own password**
+  once (`switchAccountAction`). No simultaneous multi-session, no password-less hop, never lists an
+  unlinked account; suppressed while impersonating. Each linked account stays fully independent (own
+  brand/benefits/data). Interim toward spec 022's "one identity, many employments". Verified on a
+  throwaway Postgres (migration additive + idempotent; two accounts share an Employee ID; linked-accounts
+  query returns only same-ID actives).
+
 ### PWA (spec 010)
 - Installable "Add to Home Screen": web manifest (`app/manifest.ts`), navy/gold "F" icons
   (`public/icons/*`), a minimal registration-only service worker (`public/sw.js`, no auth-content

@@ -24,6 +24,7 @@ export type EmployeeFormValues = {
   maritalStatus: string | null;
   reportsToId: string | null;
   businessUnitId: string | null;
+  employeeId: string | null;
   emergencyContactName: string | null;
   emergencyContactRelationship: string | null;
   emergencyContactPhone: string | null;
@@ -150,6 +151,14 @@ export function EmployeeForm({
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className={L}>Employee ID</label>
+            <input name="employeeId" defaultValue={values.employeeId ?? ""} className={I} />
+            <label className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+              <input type="checkbox" name="linkConfirmed" className="h-3.5 w-3.5" />
+              Link accounts sharing this Employee ID (same person, e.g. a second contract)
+            </label>
           </div>
         </div>
       </section>

@@ -46,6 +46,33 @@ async function wouldCycle(
 export type ActionState = { error?: string } | null;
 
 /**
+ * Employee ID linking guard (spec 025). A duplicate Employee ID links the two
+ * accounts as the same person (for the account switcher) — so if the given id is
+ * already used by another ACTIVE record, require an explicit "Link accounts"
+ * confirm (the `linkConfirmed` checkbox) before saving. Returns an error message
+ * to show, or null when it's safe to proceed. `selfId` excludes the record being
+ * edited (null on create).
+ */
+async function employeeIdLinkGuard(
+  employeeId: string | null,
+  formData: FormData,
+  selfId: string | null
+): Promise<string | null> {
+  if (!employeeId) return null;
+  if (formData.get("linkConfirmed") === "on") return null;
+  const other = await prisma.user.findFirst({
+    where: {
+      employeeId,
+      status: "ACTIVE",
+      ...(selfId ? { NOT: { id: selfId } } : {}),
+    },
+    select: { name: true, email: true },
+  });
+  if (!other) return null;
+  return `Employee ID "${employeeId}" is already used by ${other.name} (${other.email}). If they're the same person, tick "Link accounts with this Employee ID" and save again — otherwise change it.`;
+}
+
+/**
  * Turn a Zod failure into an operator-friendly message. The common trap is a
  * dependant added without a date of birth (required by the schema) — that would
  * otherwise surface as a bare "Invalid input". Falls back to the first issue's
@@ -88,6 +115,11 @@ export async function createEmployee(
   });
   if (existing) return { error: "An employee with that email already exists." };
 
+  // Employee ID (spec 025): a duplicate links the two accounts as the same person —
+  // require an explicit confirm so it isn't done accidentally.
+  const linkError = await employeeIdLinkGuard(data.employeeId ?? null, formData, null);
+  if (linkError) return { error: linkError };
+
   await prisma.user.create({
     data: {
       name: data.name,
@@ -112,6 +144,7 @@ export async function createEmployee(
       emergencyContactPhone: data.emergencyContactPhone ?? null,
       reportsToId: data.reportsToId ?? null,
       businessUnitId: data.businessUnitId ?? null,
+      employeeId: data.employeeId ?? null,
       dependants: {
         create: data.dependants.map((d) => ({
           name: d.name ?? null,
@@ -163,6 +196,10 @@ export async function updateEmployee(
   // Role is Super-User-only; otherwise keep the existing role.
   const role = actor.role === "SUPER_USER" ? data.role : current.role;
 
+  // Employee ID link confirm (spec 025) — excludes this record.
+  const linkError = await employeeIdLinkGuard(data.employeeId ?? null, formData, id);
+  if (linkError) return { error: linkError };
+
   await prisma.$transaction([
     prisma.dependant.deleteMany({ where: { userId: id } }),
     prisma.user.update({
@@ -187,6 +224,7 @@ export async function updateEmployee(
         emergencyContactPhone: data.emergencyContactPhone ?? null,
         reportsToId: data.reportsToId ?? null,
         businessUnitId: data.businessUnitId ?? null,
+        employeeId: data.employeeId ?? null,
         dependants: {
           create: data.dependants.map((d) => ({
             name: d.name ?? null,
@@ -232,6 +270,7 @@ const FIELD_SCHEMAS = {
   emergencyContactPhone: employeeSchema.shape.emergencyContactPhone,
   reportsToId: employeeSchema.shape.reportsToId,
   businessUnitId: employeeSchema.shape.businessUnitId,
+  employeeId: employeeSchema.shape.employeeId,
 } as const;
 
 type EditableField = keyof typeof FIELD_SCHEMAS;
@@ -298,6 +337,24 @@ export async function updateEmployeeField(
     if (buId) {
       const bu = await prisma.businessUnit.findUnique({ where: { id: buId }, select: { id: true } });
       if (!bu) return { ok: false, error: "That business unit no longer exists." };
+    }
+  }
+
+  // Linking accounts by Employee ID is a deliberate action — do it on the edit
+  // form (with the confirm), not via a quick inline grid edit.
+  if (key === "employeeId") {
+    const eid = (next as string | null) ?? null;
+    if (eid) {
+      const other = await prisma.user.findFirst({
+        where: { employeeId: eid, status: "ACTIVE", NOT: { id } },
+        select: { name: true },
+      });
+      if (other) {
+        return {
+          ok: false,
+          error: `Employee ID "${eid}" is already used by ${other.name}. To link them as the same person, set it on the employee's edit form.`,
+        };
+      }
     }
   }
 

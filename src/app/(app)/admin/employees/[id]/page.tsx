@@ -114,6 +114,7 @@ export default async function EditEmployeePage({
           maritalStatus: employee.maritalStatus,
           reportsToId: employee.reportsToId,
           businessUnitId: employee.businessUnitId,
+          employeeId: employee.employeeId,
           emergencyContactName: employee.emergencyContactName,
           emergencyContactRelationship: employee.emergencyContactRelationship,
           emergencyContactPhone: employee.emergencyContactPhone,

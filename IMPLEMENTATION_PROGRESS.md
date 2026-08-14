@@ -18,6 +18,14 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Spec 025 — Employee ID + linked-account switching (built, pending Neon migration `040`)
+- [x] Spec `specs/025-employee-id-account-switch/` (aligned; checklist passes). Interim toward spec 022.
+- [x] Schema: `User.employeeId` (nullable, **non-unique**, indexed). Migration `prisma/sql/040_employee_id.sql` — verified on a throwaway Postgres (additive, idempotent; two accounts share an Employee ID; linked-accounts query returns only same-ID actives).
+- [x] Field on employee **form + grid + CSV** (export/import); link-confirm guard on the form (`employeeIdLinkGuard`), inline grid blocks a linking duplicate.
+- [x] **Account switcher** in the sidebar (`switchAccountAction` → sign-out + `/signin?email=…` prefilled; enter target password once). Suppressed while impersonating; never lists unlinked/inactive accounts.
+- [x] `npx tsc --noEmit` + `npm run build` green. AppShell snapshot saved. Docs updated (this file, PROJECT_DETAILS, spec 025).
+- [ ] **Apply `040_employee_id.sql` to Neon**, then set the same Employee ID on the dual-contract person's two records to link + enable switching.
+
 ## Spec 024 — Multi-brand by business unit (built, pending Neon migration `039`)
 - [x] Spec-kit run: `specs/024-multi-brand-business-units/` (spec, plan, research, data-model, contracts, quickstart, tasks).
 - [x] Schema: `BusinessUnit` model + `User.businessUnitId` FK + index. Migration `prisma/sql/039_business_units.sql` (table + FK `ON DELETE SET NULL` + seed 3 units) — **verified on a throwaway Postgres**: applies to a pre-039 schema, idempotent, assignment round-trips, SET NULL works.

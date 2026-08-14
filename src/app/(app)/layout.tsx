@@ -53,6 +53,34 @@ export default async function AppLayout({
     timeoffBadge = 0;
   }
 
+  // Linked accounts (spec 025): other active accounts sharing this person's
+  // Employee ID, for the "Switch account" control. Suppressed while impersonating
+  // (that's the actor's context, not the person's own accounts). Guarded for an
+  // un-migrated DB (no employeeId column).
+  let linkedAccounts: { email: string; label: string }[] = [];
+  if (!impersonation.isImpersonating) {
+    try {
+      const me = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { employeeId: true },
+      });
+      if (me?.employeeId) {
+        const others = await prisma.user.findMany({
+          where: { employeeId: me.employeeId, status: "ACTIVE", NOT: { id: user.id } },
+          select: { email: true, name: true, businessUnit: { select: { name: true } } },
+          orderBy: { name: "asc" },
+          take: 10,
+        });
+        linkedAccounts = others.map((o) => ({
+          email: o.email,
+          label: o.businessUnit?.name ? `${o.name} · ${o.businessUnit.name}` : o.name,
+        }));
+      }
+    } catch {
+      linkedAccounts = [];
+    }
+  }
+
   return (
     <AppShell
       name={user.name}
@@ -66,6 +94,7 @@ export default async function AppLayout({
       shortName={brand.shortName}
       logoUrl={brand.logoUrl}
       genericMark={!brand.logoUrl && !brand.fromBusinessUnit}
+      linkedAccounts={linkedAccounts}
       impersonation={
         impersonation.isImpersonating
           ? { targetName: impersonation.targetName, targetTitle: impersonation.targetTitle }

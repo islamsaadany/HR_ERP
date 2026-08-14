@@ -26,6 +26,7 @@ export async function GET() {
     select: {
       name: true,
       email: true,
+      employeeId: true,
       department: true,
       businessUnit: { select: { name: true } },
       title: true,
@@ -51,6 +52,7 @@ export async function GET() {
   const header = [
     "Name",
     "Email",
+    "Employee ID",
     "Department",
     "Business Unit",
     "Title",
@@ -76,6 +78,7 @@ export async function GET() {
     const row = [
       e.name,
       e.email,
+      e.employeeId ?? "",
       e.department ?? "",
       e.businessUnit?.name ?? "",
       e.title ?? "",

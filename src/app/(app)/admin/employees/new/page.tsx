@@ -53,6 +53,7 @@ export default async function NewEmployeePage() {
           maritalStatus: null,
           reportsToId: null,
           businessUnitId: null,
+          employeeId: null,
           emergencyContactName: null,
           emergencyContactRelationship: null,
           emergencyContactPhone: null,

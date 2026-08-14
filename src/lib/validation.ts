@@ -63,6 +63,8 @@ export const employeeSchema = z.object({
   // Business unit (multi-brand, spec 024) — HR-managed FK; optional. Drives the
   // brand this employee sees. Distinct from `department`.
   businessUnitId: strOrNull,
+  // Employee ID (spec 025) — HR-managed person identifier; optional, not unique.
+  employeeId: strOrNull,
   // Emergency contact (HR-managed, spec 001 registry extension) — optional so HR is
   // never blocked from saving other edits on a record that lacks them; filled when known.
   emergencyContactName: strOrNull,

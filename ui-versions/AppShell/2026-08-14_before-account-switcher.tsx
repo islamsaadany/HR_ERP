@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { signOutAction } from "@/lib/signout-action";
 import { stopImpersonation } from "@/app/(app)/admin/impersonate/actions";
-import { switchAccountAction } from "@/lib/switch-account-action";
 
 const NAV = [
   { href: "/dashboard", label: "Home", icon: "home" },
@@ -61,7 +60,6 @@ export function AppShell({
   shortName = "Forefront",
   logoUrl = null,
   genericMark = false,
-  linkedAccounts = [],
   impersonation = null,
   children,
 }: {
@@ -77,8 +75,6 @@ export function AppShell({
   logoUrl?: string | null;
   /** Default brand with no logo → show the generic People mark in the collapsed rail (spec 024). */
   genericMark?: boolean;
-  /** Other active accounts sharing this person's Employee ID — the "Switch account" list (spec 025). */
-  linkedAccounts?: { email: string; label: string }[];
   impersonation?: { targetName?: string | null; targetTitle?: string | null } | null;
   children: React.ReactNode;
 }) {
@@ -329,28 +325,6 @@ export function AppShell({
             <div className="border-t border-navy-700 px-4 py-4">
               <div className="truncate text-sm text-white">{name}</div>
               <div className="truncate text-xs text-navy-200">{email}</div>
-              {linkedAccounts.length > 0 ? (
-                <div className="mt-3 border-t border-navy-700 pt-3">
-                  <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-navy-300">
-                    Switch account
-                  </div>
-                  <div className="space-y-1">
-                    {linkedAccounts.map((a) => (
-                      <form key={a.email} action={switchAccountAction}>
-                        <input type="hidden" name="email" value={a.email} />
-                        <button
-                          type="submit"
-                          title={`Switch to ${a.email}`}
-                          className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-xs text-navy-100 transition hover:bg-navy-800 hover:text-white"
-                        >
-                          <SwitchIcon />
-                          <span className="truncate">{a.label}</span>
-                        </button>
-                      </form>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
               <form action={signOutAction}>
                 <button
                   type="submit"
@@ -423,15 +397,6 @@ export function AppShell({
         </main>
       </div>
     </div>
-  );
-}
-
-/** Two-arrows "switch" glyph for the account switcher (spec 025). */
-function SwitchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M4 8h13l-3-3M20 16H7l3 3" />
-    </svg>
   );
 }
 

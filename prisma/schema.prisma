@@ -97,6 +97,11 @@ model User {
   businessUnitId String?
   businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id], onDelete: SetNull)
 
+  // Employee ID (spec 025) — HR-managed PERSON identifier. Optional and NOT unique:
+  // a person holding two contracts is two accounts sharing one Employee ID, which
+  // links them for the account switcher. Email stays the unique per-account login.
+  employeeId String?
+
   dependants Dependant[]
 
   // Personal documents owned by this user
@@ -126,6 +131,7 @@ model User {
   @@index([status])
   @@index([reportsToId])
   @@index([businessUnitId])
+  @@index([employeeId])
 }
 
 /// A dependant of an employee — name + DOB, and a kind (CHILD or SPOUSE). Age is derived, never stored.

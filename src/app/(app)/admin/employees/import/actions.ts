@@ -107,18 +107,22 @@ export async function importEmployees(
       messages.push("email appears more than once in this file — the last row wins");
     }
 
-    // Resolve the business unit by name. An unknown name is flagged (not dropped);
-    // a blank/absent value leaves the existing assignment untouched (no wipe).
-    let buData: { businessUnitId?: string } = {};
+    // Resolve the business unit by name + the Employee ID (spec 025). Blank/absent
+    // values leave the existing assignment untouched (no wipe). An unknown BU name
+    // is flagged; a shared Employee ID is noted (it links the accounts).
+    const extra: { businessUnitId?: string; employeeId?: string } = {};
     if (r.businessUnitName) {
       const buId = buByName.get(r.businessUnitName.trim().toLowerCase());
       if (buId) {
-        buData = { businessUnitId: buId };
+        extra.businessUnitId = buId;
       } else {
         messages.push(
           `business unit "${r.businessUnitName}" isn't a known unit — left unchanged; add it under Admin → Business Units`
         );
       }
+    }
+    if (r.employeeId) {
+      extra.employeeId = r.employeeId;
     }
 
     try {
@@ -140,7 +144,7 @@ export async function importEmployees(
           prisma.dependant.deleteMany({ where: { userId: existing.id } }),
           prisma.user.update({
             where: { id: existing.id },
-            data: { ...profileData(r), ...buData, dependants: deps },
+            data: { ...profileData(r), ...extra, dependants: deps },
           }),
         ]);
         updated++;
@@ -156,7 +160,7 @@ export async function importEmployees(
         await prisma.user.create({
           data: {
             ...profileData(r),
-            ...buData,
+            ...extra,
             role: "EMPLOYEE",
             status: "ACTIVE",
             dependants: deps,

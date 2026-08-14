@@ -37,6 +37,7 @@ export type GridRow = {
   reportsToId: string;
   reportsToName: string;
   businessUnitId: string;
+  employeeId: string;
 };
 
 type ColType = "text" | "email" | "date" | "select" | "manager";
@@ -102,6 +103,7 @@ export function EmployeeGrid({
     return ([
       { key: "name", label: "Name", type: "text", editable: false, hideable: false },
       { key: "email", label: "Email", type: "email", editable: true, hideable: true },
+      { key: "employeeId", label: "Employee ID", type: "text", editable: true, hideable: true },
       { key: "title", label: "Title", type: "text", editable: true, hideable: true },
       {
         key: "department",

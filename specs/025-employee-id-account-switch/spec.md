@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-14
 
-**Status**: Draft (aligned with user; ready for `/speckit-plan`)
+**Status**: Implemented 2026-08-14 (code + build + throwaway-Postgres verified; run migration 040 on Neon)
 
 **Input**: A person holds two real contracts across two group companies. They are kept as **two independent employee records** with **two distinct company emails**. Add an **Employee ID** that identifies the person and links their accounts, and let them **switch between their linked accounts** quickly (re-authenticating once per switch). Interim toward the spec-022 "one identity, many employments" model.
 
