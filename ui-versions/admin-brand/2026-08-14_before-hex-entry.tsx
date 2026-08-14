@@ -2,7 +2,6 @@ import { requireSuperUser } from "@/lib/roles";
 import { getBrand } from "@/lib/brand";
 import { updateBrand, resetBrand } from "./actions";
 import { BackLink } from "@/components/admin/BackLink";
-import { BrandColorField } from "@/components/admin/BrandColorField";
 
 export const dynamic = "force-dynamic";
 
@@ -48,18 +47,20 @@ export default async function AdminBrandPage({
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <BrandColorField
-            name="primaryColor"
-            label="Primary color (main surfaces)"
-            hint="Paste a hex code or use the swatch — e.g. #0F2C69."
-            defaultValue={brand.primaryColor}
-          />
-          <BrandColorField
-            name="accentColor"
-            label="Accent color (highlights)"
-            hint="Paste a hex code or use the swatch — e.g. #C9A227."
-            defaultValue={brand.accentColor}
-          />
+          <div>
+            <label className={label}>Primary color (main surfaces)</label>
+            <div className="flex items-center gap-2">
+              <input type="color" name="primaryColor" defaultValue={brand.primaryColor} className="h-10 w-14 rounded border border-line bg-surface" />
+              <span className="text-sm text-muted tabular-nums">{brand.primaryColor}</span>
+            </div>
+          </div>
+          <div>
+            <label className={label}>Accent color (highlights)</label>
+            <div className="flex items-center gap-2">
+              <input type="color" name="accentColor" defaultValue={brand.accentColor} className="h-10 w-14 rounded border border-line bg-surface" />
+              <span className="text-sm text-muted tabular-nums">{brand.accentColor}</span>
+            </div>
+          </div>
         </div>
 
         <div>
