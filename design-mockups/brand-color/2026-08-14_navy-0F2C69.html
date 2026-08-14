@@ -1,0 +1,90 @@
+<title>Navy 0F2C69 Preview</title>
+<style>
+  :root{
+    --gold-500:#c9a227; --gold-200:#ecd894; --gold-100:#f6ecca;
+    --paper:#f4f1ea; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e6e1d7;
+    /* OLD ramp */
+    --o50:#eceff5; --o700:#163055; --o800:#0f2444; --o600:#1f3a63; --o500:#2f4d78;
+    /* NEW ramp from #0F2C69 */
+    --n50:#ebeff6; --n700:#11285a; --n800:#0a1e49; --n600:#193369; --n500:#29447e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Hanken Grotesk",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;padding:32px 20px 64px}
+  .wrap{max-width:940px;margin:0 auto}
+  h1{font-family:Georgia,serif;font-size:26px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 26px;max-width:62ch}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:10px}
+  .col-label{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted);margin:0 0 8px}
+  .col-label b{color:var(--ink)}
+  .frame{border:1px solid var(--line);border-radius:13px;overflow:hidden;box-shadow:0 8px 26px rgba(15,36,68,.07);background:var(--surface)}
+  .app{display:flex;min-height:230px}
+  .side{width:150px;padding:14px 10px;flex-shrink:0}
+  .side.old{background:var(--o800)} .side.new{background:var(--n800)}
+  .brand{font-family:Georgia,serif;color:#fff;font-size:14px;font-weight:600;padding:2px 6px 14px}
+  .brand .g{color:var(--gold-500)}
+  .nav a{display:block;padding:7px 9px;border-radius:7px;font-size:12.5px;color:#cdd6e6;text-decoration:none;margin-bottom:2px}
+  .side.old .nav a.active{background:var(--o600);color:#fff}
+  .side.new .nav a.active{background:var(--n600);color:#fff}
+  .main{flex:1;padding:16px 18px;background:var(--surface)}
+  .head{font-size:11px;padding:6px 10px;border-radius:6px;margin-bottom:12px}
+  .head.old{background:var(--o50);color:var(--o700)} .head.new{background:var(--n50);color:var(--n700)}
+  .h2{font-family:Georgia,serif;font-size:16px;margin:0 0 12px}
+  .btn{display:inline-block;padding:7px 14px;border-radius:8px;color:#fff;font-size:12.5px;font-weight:600}
+  .btn.old{background:var(--o800)} .btn.new{background:var(--n800)}
+  .btn.ghost.old{background:#fff;color:var(--o700);border:1px solid var(--o700)}
+  .btn.ghost.new{background:#fff;color:var(--n700);border:1px solid var(--n700)}
+  .btns{display:flex;gap:8px;align-items:center}
+  .gold{background:var(--gold-500);color:#0a1e2f}
+  .swatches{display:flex;margin-top:14px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+  .swatches span{flex:1;height:34px;display:flex;align-items:flex-end;justify-content:center;font-size:9px;color:#fff;padding-bottom:2px}
+  .base{margin-top:16px;display:flex;gap:14px;align-items:center;font-size:13px}
+  .chip{width:46px;height:46px;border-radius:9px;border:1px solid rgba(0,0,0,.12)}
+  .note{background:var(--gold-100);border:1px solid var(--gold-200);border-radius:10px;padding:13px 16px;margin-top:26px;font-size:13.5px;color:#6b5312}
+  .note b{color:#8a6a12}
+  code{font-family:ui-monospace,monospace;background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px}
+</style>
+
+<div class="wrap">
+  <h1>Navy → #0F2C69</h1>
+  <p class="sub">Left is today’s navy (<code>#0f2444</code>). Right is what setting the brand primary to <code>#0F2C69</code> produces across the app — bluer and more royal, same dark sidebar. Gold accent is unchanged.</p>
+
+  <div class="base">
+    <div style="display:flex;gap:8px;align-items:center"><span class="chip" style="background:#0f2444"></span> <span>Today · <code>#0f2444</code></span></div>
+    <div style="display:flex;gap:8px;align-items:center"><span class="chip" style="background:#0F2C69"></span> <span>Your pick · <code>#0F2C69</code></span></div>
+  </div>
+
+  <div class="row">
+    <div>
+      <p class="col-label">Today — <b>#0f2444</b></p>
+      <div class="frame"><div class="app">
+        <div class="side old"><div class="brand">Forefront <span class="g">People</span></div>
+          <div class="nav"><a class="active">Dashboard</a><a>Benefits</a><a>Directory</a></div></div>
+        <div class="main"><div class="head old">Admin → Employees</div><div class="h2">Your benefits</div>
+          <div class="btns"><span class="btn old">Save</span><span class="btn ghost old">Edit</span><span class="btn gold">Claim</span></div>
+        </div>
+      </div></div>
+      <div class="swatches">
+        <span style="background:#eceff5;color:#333">50</span><span style="background:#7d97ba">300</span><span style="background:#2f4d78">500</span><span style="background:#1f3a63">600</span><span style="background:#163055">700</span><span style="background:#0f2444">800</span>
+      </div>
+    </div>
+
+    <div>
+      <p class="col-label">With <b>#0F2C69</b></p>
+      <div class="frame"><div class="app">
+        <div class="side new"><div class="brand">Forefront <span class="g">People</span></div>
+          <div class="nav"><a class="active">Dashboard</a><a>Benefits</a><a>Directory</a></div></div>
+        <div class="main"><div class="head new">Admin → Employees</div><div class="h2">Your benefits</div>
+          <div class="btns"><span class="btn new">Save</span><span class="btn ghost new">Edit</span><span class="btn gold">Claim</span></div>
+        </div>
+      </div></div>
+      <div class="swatches">
+        <span style="background:#ebeff6;color:#333">50</span><span style="background:#788fbf">300</span><span style="background:#29447e">500</span><span style="background:#193369">600</span><span style="background:#11285a">700</span><span style="background:#0a1e49">800</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Heads-up:</b> because the theme keeps each shade’s darkness, <code>#0F2C69</code> lands around the <b>600–700</b> step (mid buttons, borders) — the sidebar stays a deep navy. If you actually want the sidebar itself to be the brighter <code>#0F2C69</code> royal-blue, that’s a lighter overall UI and I’d show you a separate preview. Tell me which you’re after.
+  </div>
+</div>
