@@ -613,6 +613,14 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     saved under `design-mockups/admin-home/`). No schema change; tsc + build green; UI
     snapshot saved.
 
+- **2026-08-14 — Admin home grouped into categories (mockup-approved):**
+  - The HR Admin home cards are now organised under four category headers — **People**,
+    **Benefits & Time-Off**, **Content & Communications**, and **Platform** (Super-User-only).
+    Header style: a gold dot, an uppercase navy label, a hairline rule, and a subtle count.
+    The cards, navy/gold palette, and hover-to-reveal behavior are **unchanged** — grouping
+    is the only new device. Static HTML mockup approved before building
+    (`design-mockups/admin-home/2026-08-14_categorized.html`). tsc + build green; UI snapshot saved.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
