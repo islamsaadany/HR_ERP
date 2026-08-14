@@ -44,12 +44,6 @@ export default async function AdminPage() {
     ? [
         ...CARDS,
         {
-          href: "/admin/impersonate",
-          title: "View as Employee",
-          body: "See the app exactly as an employee does — for demos or to reproduce an issue.",
-          ready: true,
-        },
-        {
           href: "/admin/modules",
           title: "Modules",
           body: "Switch platform modules on or off to release when ready.",

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { signOutAction } from "@/lib/signout-action";
-import { stopImpersonation } from "@/app/(app)/admin/impersonate/actions";
 
 const NAV = [
   { href: "/dashboard", label: "Home", icon: "home" },
@@ -59,7 +58,6 @@ export function AppShell({
   companyName = "Forefront People",
   shortName = "Forefront",
   logoUrl = null,
-  impersonation = null,
   children,
 }: {
   name?: string | null;
@@ -72,7 +70,6 @@ export function AppShell({
   companyName?: string;
   shortName?: string;
   logoUrl?: string | null;
-  impersonation?: { targetName?: string | null; targetTitle?: string | null } | null;
   children: React.ReactNode;
 }) {
   const nav = NAV.filter((item) => !hiddenNav.includes(item.href));
@@ -339,31 +336,6 @@ export function AppShell({
           (singleScroll ? " md:h-screen md:overflow-hidden" : "")
         }
       >
-        {impersonation ? (
-          <div className="sticky top-0 z-30 flex items-center gap-3 border-b-2 border-gold-500 bg-navy-900 px-4 py-2.5 text-white">
-            <span className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-gold-500 text-navy-900" aria-hidden="true">
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            </span>
-            <div className="min-w-0 text-sm leading-tight">
-              <div className="truncate">
-                Viewing as <span className="font-semibold text-gold-200">{impersonation.targetName}</span>
-                {impersonation.targetTitle ? <span className="text-navy-200"> · {impersonation.targetTitle}</span> : null}
-              </div>
-              <div className="truncate text-xs text-navy-300">You’re seeing this employee’s own screens. Your data isn’t shown.</div>
-            </div>
-            <form action={stopImpersonation} className="ml-auto flex-shrink-0">
-              <button
-                type="submit"
-                className="rounded-lg border border-gold-500 px-3 py-1.5 text-xs font-bold text-gold-200 transition hover:bg-gold-500 hover:text-navy-900"
-              >
-                ✕ Exit to admin
-              </button>
-            </form>
-          </div>
-        ) : null}
         <header className="flex items-center justify-between bg-navy-900 px-4 py-3 text-white md:hidden">
           <span className="font-serif text-lg uppercase">{companyName}</span>
           <form action={signOutAction}>

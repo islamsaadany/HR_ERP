@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireUser, getImpersonation } from "@/lib/roles";
+import { requireUser } from "@/lib/roles";
 import { isAdmin, isFinance, canAccessIncentive } from "@/lib/roles";
 import { getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
@@ -14,25 +14,20 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser();
-  const impersonation = await getImpersonation();
 
   // Gate anyone on a temporary password to /set-password until they choose their own.
   // Guarded so a pre-migration DB (no mustChangePassword column) never breaks the shell.
-  // Skipped while impersonating — the real Super User already passed their own gate,
-  // and we must not redirect them based on the target employee's flag.
-  if (!impersonation.isImpersonating) {
-    let mustChangePassword = false;
-    try {
-      const flag = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { mustChangePassword: true },
-      });
-      mustChangePassword = !!flag?.mustChangePassword;
-    } catch {
-      mustChangePassword = false;
-    }
-    if (mustChangePassword) redirect("/set-password");
+  let mustChangePassword = false;
+  try {
+    const flag = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { mustChangePassword: true },
+    });
+    mustChangePassword = !!flag?.mustChangePassword;
+  } catch {
+    mustChangePassword = false;
   }
+  if (mustChangePassword) redirect("/set-password");
 
   const hiddenNav = await getDisabledHrefs();
   const brand = await getBrand();
@@ -64,11 +59,6 @@ export default async function AppLayout({
       companyName={brand.companyName}
       shortName={brand.shortName}
       logoUrl={brand.logoUrl}
-      impersonation={
-        impersonation.isImpersonating
-          ? { targetName: impersonation.targetName, targetTitle: impersonation.targetTitle }
-          : null
-      }
     >
       {children}
     </AppShell>
