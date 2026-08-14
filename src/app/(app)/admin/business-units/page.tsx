@@ -1,26 +1,7 @@
-import { requireSuperUser } from "@/lib/roles";
-import { getBusinessUnitsWithUsage } from "@/lib/business-units";
-import { BusinessUnitsManager } from "@/components/admin/BusinessUnitsManager";
-import { BackLink } from "@/components/admin/BackLink";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function AdminBusinessUnitsPage() {
-  await requireSuperUser();
-  const units = await getBusinessUnitsWithUsage();
-
-  return (
-    <div className="max-w-3xl">
-      <BackLink href="/admin" label="Admin" />
-      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin · Business Units</p>
-      <h1 className="mt-1 font-serif text-3xl text-ink">Business Units</h1>
-      <p className="mt-1 text-muted">
-        Each unit is a group company with its own name, logo, and brand colors. Employees see their own unit&apos;s
-        brand across the app; Admin, HR, and Finance keep the same access — only the look changes. Unset employees use
-        the deployment default brand.
-      </p>
-
-      <BusinessUnitsManager units={units} />
-    </div>
-  );
+// Business units are now managed on the merged Branding screen (spec 024 follow-up).
+// Keep this route as a redirect so old links/bookmarks still land in the right place.
+export default function AdminBusinessUnitsRedirect() {
+  redirect("/admin/brand");
 }

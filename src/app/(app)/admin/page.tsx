@@ -57,14 +57,8 @@ export default async function AdminPage() {
         },
         {
           href: "/admin/brand",
-          title: "Brand",
-          body: "Company name, logo, and brand colors for this deployment.",
-          ready: true,
-        },
-        {
-          href: "/admin/business-units",
-          title: "Business Units",
-          body: "Group companies + their brand (name, logo, colors) — employees see their own unit's look.",
+          title: "Branding",
+          body: "Default brand + each business unit's name, logo, and colors — employees see their unit's look.",
           ready: true,
         },
         {

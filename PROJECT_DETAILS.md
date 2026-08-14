@@ -138,8 +138,10 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
   employee across all units; no data isolation, no per-unit benefits/pool/directory scoping, no
   money-rule change. PWA manifest, sign-in, and emails stay on the default brand (all future work,
   folding into spec 022).
-- **Admin:** `/admin/business-units` (Super User) manages units + brands (add / edit brand / rename /
+- **Admin:** one merged **Branding** screen (`/admin/brand`, Super User) — the **default brand** (kept as
+  the "Forefront People" fallback, badged) on top, then **Business units** (add / edit brand / rename /
   remove-blocked-while-in-use, case-insensitive dedupe; `BusinessUnitsManager` reuses `BrandColorField`).
+  The old `/admin/business-units` route redirects here; the admin home shows a single **Branding** card.
   HR assigns a unit via the employee **form + registry grid + CSV** (Business Unit column, matched by
   name; unknown name flagged, blank left unchanged — never wipes). Seeds **Forefront Consulting,
   Visual Shift Consulting, Omnisight Analytics** (navy/gold; no employees auto-assigned). Verified on a
