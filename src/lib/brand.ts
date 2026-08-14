@@ -5,8 +5,9 @@ import { readImpersonationCookie } from "@/lib/impersonation";
 import { getBusinessUnitBrand } from "@/lib/business-units";
 
 export type Brand = {
-  companyName: string;
-  shortName: string;
+  companyName: string; // official/legal name (spec 024/025 branding split)
+  platformName: string; // what shows in-app (wordmark/title/PWA); always populated (falls back to companyName)
+  shortName: string; // eyebrow / initial
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
@@ -14,6 +15,7 @@ export type Brand = {
 
 export const BRAND_DEFAULTS: Brand = {
   companyName: "Forefront People",
+  platformName: "Forefront People",
   shortName: "Forefront",
   logoUrl: null,
   primaryColor: "#0f2444", // navy-800
@@ -115,6 +117,7 @@ const getDefaultBrand = cache(async (): Promise<Brand> => {
     if (row) {
       return {
         companyName: row.companyName,
+        platformName: row.platformName || row.companyName,
         shortName: row.shortName,
         // The logo lives in a PRIVATE blob store, so it can't be an <img src>
         // directly — point every consumer at the public serving route instead.
@@ -180,6 +183,7 @@ export const getBrand = cache(async (): Promise<Brand> => {
       if (bu) {
         return {
           companyName: bu.name || fallback.companyName,
+          platformName: bu.platformName || bu.name || fallback.platformName,
           shortName: bu.shortName || fallback.shortName,
           // A business unit uses its OWN logo (wordmark when unset) — never the
           // default company's logo. Served through the authorized BU logo route.

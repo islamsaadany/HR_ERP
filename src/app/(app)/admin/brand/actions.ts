@@ -16,6 +16,7 @@ export async function updateBrand(formData: FormData): Promise<BrandResult> {
   await requireSuperUser();
 
   const companyName = (formData.get("companyName") as string | null)?.trim() || "";
+  const platformName = (formData.get("platformName") as string | null)?.trim() || "";
   const shortName = (formData.get("shortName") as string | null)?.trim() || "";
   const primaryColor = ((formData.get("primaryColor") as string | null)?.trim() || "").toLowerCase();
   const accentColor = ((formData.get("accentColor") as string | null)?.trim() || "").toLowerCase();
@@ -48,8 +49,8 @@ export async function updateBrand(formData: FormData): Promise<BrandResult> {
 
   await prisma.brandSettings.upsert({
     where: { id: "singleton" },
-    update: { companyName, shortName, primaryColor, accentColor, logoUrl },
-    create: { id: "singleton", companyName, shortName, primaryColor, accentColor, logoUrl },
+    update: { companyName, platformName: platformName || null, shortName, primaryColor, accentColor, logoUrl },
+    create: { id: "singleton", companyName, platformName: platformName || null, shortName, primaryColor, accentColor, logoUrl },
   });
 
   revalidatePath("/", "layout"); // re-theme + re-name across the whole app
@@ -62,6 +63,7 @@ export async function resetBrand(): Promise<BrandResult> {
     where: { id: "singleton" },
     update: {
       companyName: BRAND_DEFAULTS.companyName,
+      platformName: null,
       shortName: BRAND_DEFAULTS.shortName,
       logoUrl: null,
       primaryColor: BRAND_DEFAULTS.primaryColor,

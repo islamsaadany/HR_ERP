@@ -90,7 +90,7 @@ export default async function AppLayout({
       showPayments={isFinance(user.role)}
       hiddenNav={hiddenNav}
       navBadges={{ "/time-off": timeoffBadge }}
-      companyName={brand.companyName}
+      companyName={brand.platformName}
       shortName={brand.shortName}
       logoUrl={brand.logoUrl}
       linkedAccounts={linkedAccounts}

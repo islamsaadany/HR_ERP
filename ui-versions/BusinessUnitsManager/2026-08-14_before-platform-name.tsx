@@ -11,7 +11,6 @@ import {
 export type ManagedUnit = {
   id: string;
   name: string;
-  platformName: string | null;
   shortName: string;
   logoUrl: string | null;
   primaryColor: string;
@@ -59,21 +58,15 @@ export function BusinessUnitsManager({ units }: { units: ManagedUnit[] }) {
             className="space-y-4"
           >
             <input type="hidden" name="id" value={u.id} />
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className={L}>Company name (official)</label>
+                <label className={L}>Company / app name</label>
                 <input name="name" defaultValue={u.name} required className={I} />
               </div>
               <div>
-                <label className={L}>Platform name (shown in-app)</label>
-                <input name="platformName" defaultValue={u.platformName ?? ""} placeholder={u.name} className={I} />
-              </div>
-              <div>
-                <label className={L}>Short name (eyebrow)</label>
+                <label className={L}>Short name</label>
                 <input name="shortName" defaultValue={u.shortName} required className={I} />
               </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
               <BrandColorField name="primaryColor" label="Primary color" defaultValue={u.primaryColor} />
               <BrandColorField name="accentColor" label="Accent color" defaultValue={u.accentColor} />
             </div>

@@ -38,6 +38,7 @@ export async function updateBusinessUnit(formData: FormData): Promise<BuResult> 
   await requireSuperUser();
   const id = (formData.get("id") as string | null)?.trim() || "";
   const name = normalizeBuName((formData.get("name") as string | null) ?? "");
+  const platformName = ((formData.get("platformName") as string | null) ?? "").trim();
   const shortName = ((formData.get("shortName") as string | null) ?? "").trim();
   const primaryColor = ((formData.get("primaryColor") as string | null) ?? "").trim().toLowerCase();
   const accentColor = ((formData.get("accentColor") as string | null) ?? "").trim().toLowerCase();
@@ -77,7 +78,7 @@ export async function updateBusinessUnit(formData: FormData): Promise<BuResult> 
 
   await prisma.businessUnit.update({
     where: { id },
-    data: { name, shortName, primaryColor, accentColor, logoUrl },
+    data: { name, platformName: platformName || null, shortName, primaryColor, accentColor, logoUrl },
   });
   revalidatePath("/", "layout");
   return ok();

@@ -24,10 +24,10 @@ const sans = Hanken_Grotesk({
 export async function generateMetadata(): Promise<Metadata> {
   const brand = await getBrand();
   return {
-    title: brand.companyName,
+    title: brand.platformName,
     description: `${brand.shortName} — internal HR platform`,
-    applicationName: brand.companyName,
-    appleWebApp: { capable: true, statusBarStyle: "default", title: brand.companyName },
+    applicationName: brand.platformName,
+    appleWebApp: { capable: true, statusBarStyle: "default", title: brand.platformName },
     icons: {
       icon: "/icons/icon-192.png?v=2",
       apple: "/icons/apple-touch-icon.png?v=2",

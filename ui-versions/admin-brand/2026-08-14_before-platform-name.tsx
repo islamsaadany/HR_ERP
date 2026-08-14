@@ -1,6 +1,5 @@
 import { requireSuperUser } from "@/lib/roles";
-import { BRAND_DEFAULTS } from "@/lib/brand";
-import { prisma } from "@/lib/prisma";
+import { getBrand } from "@/lib/brand";
 import { getBusinessUnitsWithUsage } from "@/lib/business-units";
 import { updateBrand, resetBrand } from "./actions";
 import { BackLink } from "@/components/admin/BackLink";
@@ -12,22 +11,8 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminBrandPage() {
   await requireSuperUser();
+  const brand = await getBrand();
   const units = await getBusinessUnitsWithUsage();
-
-  // The DEFAULT-brand form edits the BrandSettings singleton directly (raw, so the
-  // Platform-name field shows blank when unset) — NOT the viewer-aware getBrand(),
-  // which could return the editor's own business-unit brand.
-  const settings = await prisma.brandSettings.findFirst().catch(() => null);
-  const brand = {
-    companyName: settings?.companyName ?? BRAND_DEFAULTS.companyName,
-    platformName: settings?.platformName ?? "",
-    shortName: settings?.shortName ?? BRAND_DEFAULTS.shortName,
-    primaryColor: settings?.primaryColor ?? BRAND_DEFAULTS.primaryColor,
-    accentColor: settings?.accentColor ?? BRAND_DEFAULTS.accentColor,
-    logoUrl: settings?.logoUrl
-      ? `/api/brand/logo?v=${encodeURIComponent(settings.logoUrl.split("/").pop() ?? "1")}`
-      : null,
-  };
 
   const label = "block text-xs font-medium uppercase tracking-wide text-muted mb-1";
   const input =
@@ -51,17 +36,13 @@ export default async function AdminBrandPage() {
       </div>
 
       <ToastResultForm action={updateBrand} savedMessage="Brand saved." encType="multipart/form-data" className="mt-3 space-y-5 rounded-xl border border-line bg-surface p-6">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={label}>Company name (official)</label>
+            <label className={label}>Company name</label>
             <input name="companyName" defaultValue={brand.companyName} required className={input} />
           </div>
           <div>
-            <label className={label}>Platform name (shown in-app)</label>
-            <input name="platformName" defaultValue={brand.platformName} placeholder={brand.companyName} className={input} />
-          </div>
-          <div>
-            <label className={label}>Short name (eyebrow)</label>
+            <label className={label}>Short name (eyebrow / initial)</label>
             <input name="shortName" defaultValue={brand.shortName} required className={input} />
           </div>
         </div>

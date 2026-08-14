@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 export type BusinessUnitBrand = {
   id: string;
   name: string;
+  platformName: string | null;
   shortName: string;
   logoUrl: string | null;
   primaryColor: string;
@@ -35,6 +36,7 @@ export async function getBusinessUnits(): Promise<BusinessUnitBrand[]> {
       select: {
         id: true,
         name: true,
+        platformName: true,
         shortName: true,
         logoUrl: true,
         primaryColor: true,
@@ -75,6 +77,7 @@ export async function getBusinessUnitBrand(id: string): Promise<BusinessUnitBran
       select: {
         id: true,
         name: true,
+        platformName: true,
         shortName: true,
         logoUrl: true,
         primaryColor: true,
