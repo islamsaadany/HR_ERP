@@ -3,12 +3,16 @@ import { getBrand } from "@/lib/brand";
 import { updateBrand, resetBrand } from "./actions";
 import { BackLink } from "@/components/admin/BackLink";
 import { BrandColorField } from "@/components/admin/BrandColorField";
-import { ToastResultForm } from "@/components/admin/ToastResultForm";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminBrandPage() {
+export default async function AdminBrandPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string; error?: string }>;
+}) {
   await requireSuperUser();
+  const { saved, error } = await searchParams;
   const brand = await getBrand();
 
   const label = "block text-xs font-medium uppercase tracking-wide text-muted mb-1";
@@ -24,7 +28,14 @@ export default async function AdminBrandPage() {
         Set this deployment&apos;s company name, logo, and brand colors. Changes apply across the app.
       </p>
 
-      <ToastResultForm action={updateBrand} savedMessage="Brand saved." encType="multipart/form-data" className="mt-6 space-y-5 rounded-xl border border-line bg-surface p-6">
+      {saved ? (
+        <p className="mt-4 rounded-lg bg-navy-50 px-4 py-3 text-sm text-navy-700">Brand saved.</p>
+      ) : null}
+      {error ? (
+        <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+      ) : null}
+
+      <form action={updateBrand} encType="multipart/form-data" className="mt-6 space-y-5 rounded-xl border border-line bg-surface p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className={label}>Company name</label>
@@ -70,13 +81,13 @@ export default async function AdminBrandPage() {
             Save brand
           </button>
         </div>
-      </ToastResultForm>
+      </form>
 
-      <ToastResultForm action={resetBrand} savedMessage="Reset to Forefront defaults." className="mt-4">
+      <form action={resetBrand} className="mt-4">
         <button className="text-sm font-medium text-muted underline underline-offset-2 hover:text-red-600">
           Reset to Forefront defaults
         </button>
-      </ToastResultForm>
+      </form>
 
       <p className="mt-4 text-xs text-muted">
         Tip: pick a <strong>primary</strong> (your main brand color — becomes the sidebar/buttons) and an

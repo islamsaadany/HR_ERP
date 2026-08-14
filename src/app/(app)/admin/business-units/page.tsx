@@ -5,13 +5,8 @@ import { BackLink } from "@/components/admin/BackLink";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminBusinessUnitsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
-}) {
+export default async function AdminBusinessUnitsPage() {
   await requireSuperUser();
-  const { saved, error } = await searchParams;
   const units = await getBusinessUnitsWithUsage();
 
   return (
@@ -24,13 +19,6 @@ export default async function AdminBusinessUnitsPage({
         brand across the app; Admin, HR, and Finance keep the same access — only the look changes. Unset employees use
         the deployment default brand.
       </p>
-
-      {saved ? (
-        <p className="mt-4 rounded-lg bg-navy-50 px-4 py-3 text-sm text-navy-700">Business units saved.</p>
-      ) : null}
-      {error ? (
-        <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
-      ) : null}
 
       <BusinessUnitsManager units={units} />
     </div>

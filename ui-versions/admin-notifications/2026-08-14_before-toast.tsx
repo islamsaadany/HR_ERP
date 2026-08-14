@@ -2,13 +2,17 @@ import { requireSuperUser } from "@/lib/roles";
 import { getNotificationSettings } from "@/lib/notifications/settings";
 import { emailConfigured, emailFromAddress } from "@/lib/email/client";
 import { BackLink } from "@/components/admin/BackLink";
-import { ToastResultForm } from "@/components/admin/ToastResultForm";
 import { updateNotificationSettings, sendTestEmailAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminNotificationsPage() {
+export default async function AdminNotificationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string; error?: string; testSent?: string; testError?: string }>;
+}) {
   const actor = await requireSuperUser();
+  const { saved, error, testSent, testError } = await searchParams;
   const settings = await getNotificationSettings();
   const configured = emailConfigured();
 
@@ -24,6 +28,13 @@ export default async function AdminNotificationsPage() {
       <p className="mt-1 text-muted">
         Control the claim-workflow emails to HR, Finance, and employees. Super User only.
       </p>
+
+      {saved ? (
+        <p className="mt-4 rounded-lg bg-navy-50 px-4 py-3 text-sm text-navy-700">Settings saved.</p>
+      ) : null}
+      {error ? (
+        <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+      ) : null}
 
       {/* Env status (read-only) */}
       <section className="mt-6 rounded-xl border border-line bg-surface p-5">
@@ -57,7 +68,7 @@ export default async function AdminNotificationsPage() {
       </section>
 
       {/* Settings form */}
-      <ToastResultForm action={updateNotificationSettings} savedMessage="Settings saved." className="mt-4 space-y-5 rounded-xl border border-line bg-surface p-5">
+      <form action={updateNotificationSettings} className="mt-4 space-y-5 rounded-xl border border-line bg-surface p-5">
         <div>
           <h2 className="text-sm font-semibold text-ink">Notification settings</h2>
           <p className="mt-1 text-xs text-muted">Where hand-off emails go, and whether they&apos;re sent at all.</p>
@@ -96,7 +107,7 @@ export default async function AdminNotificationsPage() {
         <button className="rounded-lg bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-700">
           Save settings
         </button>
-      </ToastResultForm>
+      </form>
 
       {/* Test send */}
       <section className="mt-4 rounded-xl border border-line bg-surface p-5">
@@ -105,7 +116,16 @@ export default async function AdminNotificationsPage() {
           Confirms your key + address work end-to-end, before the workflow emails go live.
         </p>
 
-        <ToastResultForm action={sendTestEmailAction} savedMessage="Test email sent — check the inbox (and spam)." className="mt-3 flex flex-wrap items-end gap-2">
+        {testSent ? (
+          <p className="mt-3 rounded-lg bg-green-50 px-4 py-2 text-sm text-green-700">
+            ✓ Test email sent to {testSent}. Check the inbox (and spam).
+          </p>
+        ) : null}
+        {testError ? (
+          <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{testError}</p>
+        ) : null}
+
+        <form action={sendTestEmailAction} className="mt-3 flex flex-wrap items-end gap-2">
           <div className="min-w-[240px] flex-1">
             <label className={label}>Send to</label>
             <input name="to" type="email" defaultValue={actor.email ?? ""} required className={input} />
@@ -113,7 +133,7 @@ export default async function AdminNotificationsPage() {
           <button className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">
             Send test email
           </button>
-        </ToastResultForm>
+        </form>
         {!configured ? (
           <p className="mt-2 text-xs text-muted">Configure the environment variables above first.</p>
         ) : null}

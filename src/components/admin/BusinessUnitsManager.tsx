@@ -1,6 +1,7 @@
 "use client";
 
 import { BrandColorField } from "@/components/admin/BrandColorField";
+import { ToastResultForm } from "@/components/admin/ToastResultForm";
 import {
   addBusinessUnit,
   updateBusinessUnit,
@@ -50,7 +51,12 @@ export function BusinessUnitsManager({ units }: { units: ManagedUnit[] }) {
             </div>
           </div>
 
-          <form action={updateBusinessUnit} encType="multipart/form-data" className="space-y-4">
+          <ToastResultForm
+            action={updateBusinessUnit}
+            savedMessage="Business unit saved."
+            encType="multipart/form-data"
+            className="space-y-4"
+          >
             <input type="hidden" name="id" value={u.id} />
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -83,9 +89,9 @@ export function BusinessUnitsManager({ units }: { units: ManagedUnit[] }) {
             <button className="rounded-lg bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-700">
               Save
             </button>
-          </form>
+          </ToastResultForm>
 
-          <form action={removeBusinessUnit} className="mt-3">
+          <ToastResultForm action={removeBusinessUnit} savedMessage="Business unit removed." className="mt-3">
             <input type="hidden" name="id" value={u.id} />
             <button
               disabled={u.inUse > 0}
@@ -97,19 +103,21 @@ export function BusinessUnitsManager({ units }: { units: ManagedUnit[] }) {
             {u.inUse > 0 ? (
               <span className="ml-2 text-xs text-muted">(blocked while employees are assigned)</span>
             ) : null}
-          </form>
+          </ToastResultForm>
         </div>
       ))}
 
-      <form
+      <ToastResultForm
         action={addBusinessUnit}
+        savedMessage="Business unit added."
+        resetOnSuccess
         className="flex items-center gap-2 rounded-xl border border-dashed border-navy-200 bg-surface p-4"
       >
         <input name="name" placeholder="New business unit name…" required className={I + " flex-1"} />
         <button className="rounded-lg bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-700">
           Add unit
         </button>
-      </form>
+      </ToastResultForm>
     </div>
   );
 }
