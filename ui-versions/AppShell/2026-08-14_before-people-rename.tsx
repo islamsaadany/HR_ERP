@@ -55,7 +55,7 @@ export function AppShell({
   showPayments = false,
   hiddenNav = [],
   navBadges = {},
-  companyName = "Forefront People",
+  companyName = "Forefront HR",
   shortName = "Forefront",
   logoUrl = null,
   children,

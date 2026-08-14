@@ -3,7 +3,7 @@
 BEGIN;
 CREATE TABLE IF NOT EXISTS "BrandSettings" (
   "id"           text PRIMARY KEY DEFAULT 'singleton',
-  "companyName"  text NOT NULL DEFAULT 'Forefront HR',
+  "companyName"  text NOT NULL DEFAULT 'Forefront People',
   "shortName"    text NOT NULL DEFAULT 'Forefront',
   "logoUrl"      text,
   "primaryColor" text NOT NULL DEFAULT '#0f2444',

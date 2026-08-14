@@ -24,7 +24,7 @@ function layout(heading: string, bodyHtml: string, cta?: { href: string; label: 
   <div style="background:${PAPER};padding:28px;font-family:Helvetica,Arial,sans-serif;color:${INK};">
     <table role="presentation" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fefdfb;border:1px solid ${LINE};border-radius:14px;overflow:hidden;">
       <tr><td style="background:${NAVY};padding:16px 24px;">
-        <span style="color:${GOLD};font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;">Forefront HR · Benefits</span>
+        <span style="color:${GOLD};font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;">Forefront People · Benefits</span>
       </td></tr>
       <tr><td style="padding:24px;">
         <h1 style="margin:0 0 14px;font-size:19px;color:${INK};">${heading}</h1>
@@ -32,7 +32,7 @@ function layout(heading: string, bodyHtml: string, cta?: { href: string; label: 
         ${button}
       </td></tr>
       <tr><td style="padding:14px 24px;border-top:1px solid ${LINE};color:${MUTED};font-size:11px;">
-        Automated notification from the Forefront HR benefits workflow.
+        Automated notification from the Forefront People benefits workflow.
       </td></tr>
     </table>
   </div>`;

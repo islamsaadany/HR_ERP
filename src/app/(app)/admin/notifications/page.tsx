@@ -101,7 +101,7 @@ export default async function AdminNotificationsPage({
         </div>
         <div>
           <label className={label}>From name (shown on emails)</label>
-          <input name="fromName" defaultValue={settings.fromName ?? ""} placeholder="Forefront HR" className={input} />
+          <input name="fromName" defaultValue={settings.fromName ?? ""} placeholder="Forefront People" className={input} />
         </div>
 
         <button className="rounded-lg bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-700">

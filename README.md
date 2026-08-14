@@ -1,4 +1,4 @@
-# HR_ERP — Forefront HR
+# HR_ERP — Forefront People
 
 Internal HR platform for **Forefront Consulting**. Google SSO (company domain only), three
 roles (Employee / HR Admin / Super User), and the v1 modules: Foundation (registry + My

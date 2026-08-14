@@ -10,7 +10,7 @@ export type Brand = {
 };
 
 export const BRAND_DEFAULTS: Brand = {
-  companyName: "Forefront HR",
+  companyName: "Forefront People",
   shortName: "Forefront",
   logoUrl: null,
   primaryColor: "#0f2444", // navy-800
