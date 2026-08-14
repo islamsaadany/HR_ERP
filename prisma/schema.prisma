@@ -102,6 +102,11 @@ model User {
   // links them for the account switcher. Email stays the unique per-account login.
   employeeId String?
 
+  // Per-user UI preferences (namespaced JSON) — e.g. the Employees grid column
+  // layout {"employees.columns":[{key,visible},…]} so it follows the person across
+  // browsers/devices. Cosmetic only; never affects data access or money rules.
+  uiPrefs Json?
+
   dependants Dependant[]
 
   // Personal documents owned by this user

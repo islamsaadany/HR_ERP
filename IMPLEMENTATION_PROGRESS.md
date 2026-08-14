@@ -591,6 +591,19 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
   - Migration: `043_default_business_unit.sql` (additive, idempotent). Verified on a throwaway
     Postgres (add column twice → idempotent; Make-default leaves exactly one default). tsc + build green.
 
+- **2026-08-14 — Employees grid: account-level column layout + Business Unit filter:**
+  - **Column layout follows the user across devices.** Which columns are open and their
+    drag order now save to the account (`User.uiPrefs` JSON, namespaced key
+    `employees.columns`) via a fire-and-forget server action — not just this browser.
+    localStorage stays as an instant same-browser cache; the account layout is the source
+    of truth and seeds the grid at render (SSR-safe, no flash). Cosmetic only — never
+    touches data access or money rules.
+  - **New Business Unit filter** in the grid toolbar (shown only when units exist),
+    persisted alongside the other filters.
+  - Migration: `044_user_ui_prefs.sql` (additive, idempotent — adds `User.uiPrefs jsonb`).
+    Verified on a throwaway Postgres (add column twice → idempotent; namespaced read works).
+    tsc + build green. UI snapshot saved.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.

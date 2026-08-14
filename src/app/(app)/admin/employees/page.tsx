@@ -4,15 +4,32 @@ import { toDateInput } from "@/lib/labels";
 import { getDepartments, unionDepartments } from "@/lib/departments";
 import { getBusinessUnits } from "@/lib/business-units";
 import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
-import { EmployeeGrid, type GridRow } from "@/components/admin/EmployeeGrid";
+import { EmployeeGrid, type GridRow, type ColCfg } from "@/components/admin/EmployeeGrid";
 import { RegistryHeader } from "@/components/admin/RegistryHeader";
+import { EMPLOYEES_COLUMNS_PREF } from "@/app/(app)/admin/employees/grid-prefs";
 
 export const dynamic = "force-dynamic";
+
+/** Read this admin's saved Employees-grid column layout (account-level), or null. */
+function readSavedColumns(uiPrefs: unknown): ColCfg[] | null {
+  if (!uiPrefs || typeof uiPrefs !== "object" || Array.isArray(uiPrefs)) return null;
+  const raw = (uiPrefs as Record<string, unknown>)[EMPLOYEES_COLUMNS_PREF];
+  if (!Array.isArray(raw)) return null;
+  const out: ColCfg[] = [];
+  for (const item of raw) {
+    if (item && typeof item === "object") {
+      const key = (item as { key?: unknown }).key;
+      const visible = (item as { visible?: unknown }).visible;
+      if (typeof key === "string" && key && typeof visible === "boolean") out.push({ key, visible });
+    }
+  }
+  return out.length ? out : null;
+}
 
 export default async function EmployeesPage() {
   const actor = await requireAdmin();
   const canSalary = isSuperUser(actor.role);
-  const [employees, managers, managedDepartments, businessUnits] = await Promise.all([
+  const [employees, managers, managedDepartments, businessUnits, prefRow] = await Promise.all([
     prisma.user.findMany({
       orderBy: [{ status: "asc" }, { name: "asc" }],
       select: {
@@ -47,7 +64,10 @@ export default async function EmployeesPage() {
     }),
     getDepartments(),
     getBusinessUnits(),
+    prisma.user.findUnique({ where: { id: actor.id }, select: { uiPrefs: true } }),
   ]);
+
+  const initialColumns = readSavedColumns(prefRow?.uiPrefs);
 
   const rows: GridRow[] = employees.map((e) => ({
     id: e.id,
@@ -101,6 +121,7 @@ export default async function EmployeesPage() {
         businessUnits={businessUnits.map((b) => ({ id: b.id, name: b.name }))}
         canEditRole={isSuperUser(actor.role)}
         canSeeSalary={canSalary}
+        initialColumns={initialColumns}
       />
     </div>
   );
