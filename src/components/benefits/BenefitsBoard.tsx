@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useTransition, useRef, useCallback, useContext, createContext, type FormEvent } from "react";
+import { useState, useTransition, useRef, useCallback, useContext, useEffect, useId, createContext, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { ClaimType, ClaimStatus } from "@prisma/client";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS, tracker } from "@/lib/benefits/claims";
 import { coveredAmount } from "@/lib/benefits/coverage";
-import { formatDate } from "@/lib/labels";
+import { formatDate, formatEGP as egp, formatNumber } from "@/lib/labels";
 import { createClaim } from "@/app/(app)/benefits/claim-actions";
 import { commitMedical } from "@/app/(app)/benefits/actions";
-
-const egp = (n: number) => "EGP " + Math.round(n).toLocaleString();
 
 // Lightweight success-toast plumbing: a claim form calls notify(text); toasts
 // float bottom-left and auto-dismiss. Errors stay inline near the form.
@@ -33,6 +31,21 @@ function ToastRegion({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: n
       ))}
     </div>
   );
+}
+
+/**
+ * Close on Escape (audit F5). Both modals below commit or claim real money, so they need the same
+ * dismissal affordance as every other dialog in the app — the sibling modals (BenefitsOrientation,
+ * PlanYearDialog, ManualReleaseModal) already had it.
+ */
+function useEscapeToClose(onClose: () => void) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 }
 
 export type BoardClaim = {
@@ -232,11 +245,17 @@ export function BenefitsBoard({
         </div>
       </section>
 
-      <h2 className="mt-8 font-serif text-2xl text-ink">Your flexible benefits</h2>
-      <p className="mt-1 max-w-[62ch] text-sm text-muted">
-        Claim as you spend — any time this year. Enter the full price you paid; the company covers a set % of each
-        benefit, and only that covered share draws from your pool.
-      </p>
+      {/* Flexible band — the same header shape as the guaranteed band above, filled gold
+          instead of navy. The palette flip is what signals the switch from "the company
+          gives you this" to "you choose and claim this". */}
+      <div className="mt-8 rounded-2xl border border-gold-300 bg-gold-100 px-6 py-4">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-700">You choose · claim as you spend</div>
+        <h2 className="mt-0.5 font-serif text-xl text-navy-900">Your flexible benefits</h2>
+        <p className="mt-1.5 max-w-[62ch] text-sm text-gold-800">
+          Enter the full price you paid; the company covers a set % of each benefit, and only that covered share
+          draws from your pool.
+        </p>
+      </div>
 
       {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
       {automatic.length > 0 ? (
@@ -276,29 +295,38 @@ export function BenefitsBoard({
         </div>
 
         {/* Right: sticky meter + how it works */}
-        <aside className="space-y-4 lg:sticky lg:top-24">
-          <div className="rounded-2xl border border-line bg-surface p-5">
+        {/* On a phone the two columns stack, and the pool card is the second one — which put the
+            employee's balance BELOW every benefit row, at the far end of the page from where the
+            decision is made (audit F6). `order-first` lifts it above the list on small screens;
+            `lg:order-none` leaves the desktop two-column layout exactly as it was. */}
+        <aside className="order-first space-y-4 lg:order-none lg:sticky lg:top-24">
+          {/* The pool is the most important number on the page, so it is the one dark
+              object in the rail — it outranks the "How it works" card below it. */}
+          <div className="rounded-2xl bg-navy-900 p-5 text-white shadow-[0_6px_20px_rgba(10,26,48,0.18)]">
             {proratedBadge ? <div className="mb-2">{proratedBadge}</div> : null}
-            <div className="font-serif text-3xl text-ink tabular-nums">{egp(poolRemaining)}</div>
-            <div className="text-sm text-muted">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gold-300">Your pool</div>
+            <div className="mt-1.5 font-serif text-[34px] leading-tight text-white tabular-nums">{egp(poolRemaining)}</div>
+            <div className="mt-1 text-sm text-navy-200">
               left of your {egp(ceiling)} {proration ? "prorated" : "annual"} pool (company share)
             </div>
             {proration ? (
-              <p className="mt-2 rounded-lg bg-navy-50 px-3 py-2 text-xs text-navy-700">
+              <p className="mt-3 rounded-lg bg-white/10 px-3 py-2 text-xs text-navy-100">
                 This benefits cycle runs {proration.months} of 12 {proration.months === 1 ? "month" : "months"}, so
                 your pool is scaled to that period. A full-length cycle carries the full annual amount.
               </p>
             ) : null}
-            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
+            <div className="mt-3.5 h-2.5 w-full overflow-hidden rounded-full bg-navy-700">
               <div className="h-full rounded-full bg-gold-500" style={{ width: `${pct}%` }} />
             </div>
-            <div className="mt-3 flex justify-between text-sm">
-              <span className="text-muted">Used</span>
-              <span className="font-semibold tabular-nums text-ink">{egp(poolUsed)}</span>
-            </div>
-            <div className="mt-1 flex justify-between text-sm">
-              <span className="text-muted">Per-benefit cap (50%)</span>
-              <span className="font-semibold tabular-nums text-ink">{egp(cap)}</span>
+            <div className="mt-3.5 border-t border-white/15">
+              <div className="flex items-baseline justify-between py-2.5 text-sm">
+                <span className="text-navy-200">Used</span>
+                <span className="font-semibold tabular-nums text-white">{egp(poolUsed)}</span>
+              </div>
+              <div className="flex items-baseline justify-between border-t border-white/10 py-2.5 text-sm">
+                <span className="text-navy-200">Per-benefit cap (50%)</span>
+                <span className="font-semibold tabular-nums text-white">{egp(cap)}</span>
+              </div>
             </div>
           </div>
           <div className="rounded-2xl border border-line bg-surface p-5">
@@ -437,6 +465,9 @@ function FlexRow({ item }: { item: BoardFlex }) {
 function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; remaining: number; onSubmitted: () => void }) {
   const router = useRouter();
   const notify = useContext(ToastContext);
+  // One of these renders per flexible benefit, so literal ids would collide across the page
+  // — generate them (audit F3).
+  const fieldId = useId();
   const [fullCost, setFullCost] = useState(0);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -467,11 +498,12 @@ function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; rema
       <input type="hidden" name="kind" value="catalog" />
       <input type="hidden" name="benefitId" value={item.id} />
       <div>
-        <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Full price you paid (EGP)</label>
+        <label htmlFor={`${fieldId}-amount`} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Full price you paid (EGP)</label>
         <input
+          id={`${fieldId}-amount`}
           name="amount"
           inputMode="numeric"
-          value={fullCost ? fullCost.toLocaleString() : ""}
+          value={fullCost ? formatNumber(fullCost) : ""}
           onChange={(e) => setFullCost(parseInt(e.target.value.replace(/[^0-9]/g, ""), 10) || 0)}
           placeholder="e.g. 10,000"
           required
@@ -484,13 +516,13 @@ function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; rema
       </div>
       {item.claimType === "PROOF" ? (
         <div className="mt-3">
-          <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Proof of payment (required)</label>
-          <input type="file" name="proof" required className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-navy-700" />
+          <label htmlFor={`${fieldId}-proof`} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Proof of payment (required)</label>
+          <input id={`${fieldId}-proof`} type="file" name="proof" required className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-navy-700" />
         </div>
       ) : null}
       <div className="mt-3">
-        <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Note (optional)</label>
-        <input name="note" className="w-full max-w-[280px] rounded-lg border border-line px-3 py-2 text-sm" />
+        <label htmlFor={`${fieldId}-note`} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Note (optional)</label>
+        <input id={`${fieldId}-note`} name="note" className="w-full max-w-[280px] rounded-lg border border-line px-3 py-2 text-sm" />
       </div>
       <button disabled={pending || fullCost <= 0 || over} className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50">
         {pending ? "Submitting…" : "Submit claim"}
@@ -592,10 +624,18 @@ function MedicalModal({
     });
   }
 
+  useEscapeToClose(onClose);
+
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-navy-950/60 p-4 backdrop-blur-md" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-navy-950/60 p-4 backdrop-blur-md"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="medical-modal-title"
+    >
       <div className="w-full max-w-md rounded-2xl bg-surface p-6" onClick={(e) => e.stopPropagation()}>
-        <h3 className="font-serif text-xl text-ink">{familyMedical ? "Family medical insurance" : "Personal medical insurance"}</h3>
+        <h3 id="medical-modal-title" className="font-serif text-xl text-ink">{familyMedical ? "Family medical insurance" : "Personal medical insurance"}</h3>
         <p className="mt-1 text-sm text-muted">
           You are always covered.{familyMedical ? " Tick the people you want covered — each is priced by age. Add or edit dependants in your profile." : " This is personal cover — just you."} 100% company-covered; once committed it&apos;s locked (HR-managed).
         </p>
@@ -662,6 +702,7 @@ function MedicalModal({
 function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; onClose: () => void }) {
   const router = useRouter();
   const notify = useContext(ToastContext);
+  const fieldId = useId();
   const t = tracker(benefit.allocated, benefit.claims);
   const isProof = benefit.claimType === "PROOF";
   const [pending, startTransition] = useTransition();
@@ -683,10 +724,18 @@ function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; 
     });
   }
 
+  useEscapeToClose(onClose);
+
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-navy-950/60 p-4 backdrop-blur-md" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-navy-950/60 p-4 backdrop-blur-md"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="guaranteed-claim-title"
+    >
       <div className="w-full max-w-md rounded-2xl bg-surface p-6" onClick={(e) => e.stopPropagation()}>
-        <h3 className="font-serif text-xl text-ink">{benefit.name}</h3>
+        <h3 id="guaranteed-claim-title" className="font-serif text-xl text-ink">{benefit.name}</h3>
         <p className="mt-1 text-sm text-muted">
           {isProof ? "Upload proof of your spend; you're reimbursed up to your allocation." : "Request this benefit — HR reviews and pays it out."}
           {benefit.allocated != null ? ` Up to ${egp(t.remaining ?? 0)} left.` : ""}
@@ -696,20 +745,20 @@ function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; 
           <input type="hidden" name="benefitId" value={benefit.id} />
           {isProof ? (
             <div className="mb-3">
-              <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Amount to claim (EGP)</label>
-              <input name="amount" inputMode="numeric" placeholder={t.remaining != null ? String(t.remaining) : "Amount"} required className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
+              <label htmlFor={`${fieldId}-amount`} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Amount to claim (EGP)</label>
+              <input id={`${fieldId}-amount`} name="amount" inputMode="numeric" placeholder={t.remaining != null ? String(t.remaining) : "Amount"} required className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
             </div>
           ) : (
             <p className="mb-3 text-xs text-muted">Requests the full amount{benefit.allocated != null ? ` (${egp(benefit.allocated)})` : ""}.</p>
           )}
           <div className="mb-3">
-            <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Note (optional)</label>
-            <input name="note" className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
+            <label htmlFor={`${fieldId}-note`} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Note (optional)</label>
+            <input id={`${fieldId}-note`} name="note" className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
           </div>
           {isProof ? (
             <div className="mb-3">
-              <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Proof of payment (required)</label>
-              <input type="file" name="proof" required className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-navy-700" />
+              <label htmlFor={`${fieldId}-proof`} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Proof of payment (required)</label>
+              <input id={`${fieldId}-proof`} type="file" name="proof" required className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-line file:bg-surface file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-navy-700" />
             </div>
           ) : null}
           {error ? <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{error}</p> : null}

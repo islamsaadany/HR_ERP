@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -24,6 +24,9 @@ export function BrandColorField({
   defaultValue: string;
 }) {
   const [value, setValue] = useState(defaultValue);
+  // Rendered more than once per page (primary + accent, and again per business unit),
+  // so the id must be generated rather than literal (audit F3).
+  const hexId = useId();
   const valid = HEX.test(value.trim());
 
   const inputCls =
@@ -31,7 +34,7 @@ export function BrandColorField({
 
   return (
     <div>
-      <label className="block text-xs font-medium uppercase tracking-wide text-muted mb-1">
+      <label htmlFor={hexId} className="block text-xs font-medium uppercase tracking-wide text-muted mb-1">
         {label}
       </label>
       <div className="flex items-center gap-2">
@@ -43,6 +46,7 @@ export function BrandColorField({
           className="h-10 w-14 flex-shrink-0 rounded border border-line bg-surface"
         />
         <input
+          id={hexId}
           type="text"
           name={name}
           value={value}

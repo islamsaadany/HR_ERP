@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatNumber } from "@/lib/labels";
 
 /**
  * Firm P&L figures for a cycle. After the figures are saved the card shows a locked, read-only
@@ -52,16 +53,16 @@ export function FirmFiguresCard({
       <div className="text-sm font-semibold text-ink">Firm P&amp;L</div>
       <div className="mt-3 space-y-2">
         <div className="flex items-center justify-between gap-3">
-          <label className="text-[11px] uppercase tracking-wide text-muted">Revenue</label>
-          <input name="revenue" defaultValue={revenue ?? ""} className={input + " w-full max-w-[220px] text-right"} />
+          <label htmlFor={"firm-revenue"} className="text-[11px] uppercase tracking-wide text-muted">Revenue</label>
+          <input id={"firm-revenue"} name="revenue" defaultValue={revenue ?? ""} className={input + " w-full max-w-[220px] text-right"} />
         </div>
         <div className="flex items-center justify-between gap-3">
-          <label className="text-[11px] uppercase tracking-wide text-muted">Direct cost</label>
-          <input name="deliveryCost" defaultValue={deliveryCost ?? ""} className={input + " w-full max-w-[220px] text-right"} />
+          <label htmlFor={"firm-deliveryCost"} className="text-[11px] uppercase tracking-wide text-muted">Direct cost</label>
+          <input id={"firm-deliveryCost"} name="deliveryCost" defaultValue={deliveryCost ?? ""} className={input + " w-full max-w-[220px] text-right"} />
         </div>
         <div className="flex items-center justify-between gap-3">
-          <label className="text-[11px] uppercase tracking-wide text-muted">Total expenses</label>
-          <input name="totalExpenses" defaultValue={totalExpenses ?? ""} className={input + " w-full max-w-[220px] text-right"} />
+          <label htmlFor={"firm-totalExpenses"} className="text-[11px] uppercase tracking-wide text-muted">Total expenses</label>
+          <input id={"firm-totalExpenses"} name="totalExpenses" defaultValue={totalExpenses ?? ""} className={input + " w-full max-w-[220px] text-right"} />
         </div>
       </div>
       <button className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">
@@ -76,7 +77,7 @@ function Figure({ label, value }: { label: string; value: number | null }) {
     <div className="flex items-center justify-between gap-3">
       <div className="text-[11px] uppercase tracking-wide text-muted">{label}</div>
       <div className="w-full max-w-[220px] rounded-lg border border-line bg-paper px-3 py-2 text-right text-sm font-semibold tabular-nums text-ink">
-        {value == null ? "—" : value.toLocaleString()}
+        {value == null ? "—" : formatNumber(value)}
       </div>
     </div>
   );

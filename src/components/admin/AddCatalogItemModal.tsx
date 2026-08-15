@@ -34,27 +34,34 @@ export function AddCatalogItemModal({ categories }: { categories: string[] }) {
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-navy-950/60 p-4 backdrop-blur-md" onClick={() => setOpen(false)}>
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-navy-950/60 p-4 backdrop-blur-md"
+          onClick={() => setOpen(false)}
+          onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-benefit-title"
+        >
           <div className="w-full max-w-md rounded-2xl bg-surface p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-serif text-xl text-ink">Add a flexible benefit</h3>
+            <h3 id="add-benefit-title" className="font-serif text-xl text-ink">Add a flexible benefit</h3>
             <p className="mt-1 text-sm text-muted">
               A claim-as-you-go benefit. Set its FT/PT eligibility and claim requirement in the table after adding.
             </p>
             <form onSubmit={onSubmit} className="mt-4 space-y-3">
               <div>
-                <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Benefit name</label>
-                <input name="name" required autoFocus placeholder="e.g. Eyewear allowance" className={input} />
+                <label htmlFor={"addbenefit-name"} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Benefit name</label>
+                <input id={"addbenefit-name"} name="name" required autoFocus placeholder="e.g. Eyewear allowance" className={input} />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Category</label>
-                <input name="category" list="add-catalogue-categories" placeholder="Pick or type a category" className={input} />
+                <label htmlFor={"addbenefit-category"} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Category</label>
+                <input id={"addbenefit-category"} name="category" list="add-catalogue-categories" placeholder="Pick or type a category" className={input} />
                 <datalist id="add-catalogue-categories">
                   {categories.map((c) => <option key={c} value={c} />)}
                 </datalist>
               </div>
               <div>
-                <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Company coverage %</label>
-                <input name="coverageRate" type="number" min={1} max={100} defaultValue={100} className={input} />
+                <label htmlFor={"addbenefit-coverageRate"} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Company coverage %</label>
+                <input id={"addbenefit-coverageRate"} name="coverageRate" type="number" min={1} max={100} defaultValue={100} className={input} />
                 <p className="mt-1 text-xs text-muted">The share the company reimburses on each claim (1–100).</p>
               </div>
               <div className="mt-5 flex justify-end gap-2">

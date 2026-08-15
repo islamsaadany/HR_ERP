@@ -70,6 +70,52 @@ export const DEPARTMENTS = [
   "Data Management Unit",
 ] as const;
 
+/**
+ * Money — the single formatter for every EGP figure the product shows (spec 026 audit F1).
+ *
+ * Two things are deliberate:
+ *
+ * 1. **The locale is pinned.** `toLocaleString()` with no locale follows the VIEWER's browser, so
+ *    the same figure rendered as "EGP 45,000" for one employee renders as "EGP ٤٥٬٠٠٠" for a
+ *    colleague on an Arabic-locale browser — a real prospect for an Egypt-based company, and the
+ *    claim emails (which were already pinned) would then disagree with the app. Pinned to `en-GB`
+ *    to match `formatDate` above.
+ * 2. **One rounding rule.** Previously four copies rounded and four did not. Every stored money
+ *    field is an integer and `coveredAmount` already rounds, so nothing visibly changes today —
+ *    this just stops the two behaviours drifting apart later. Where a domain rule requires
+ *    TRUNCATION (medical drops cents, spec 023), the server truncates before the figure ever
+ *    reaches here.
+ */
+export function formatEGP(n: number): string {
+  if (!Number.isFinite(n)) return "EGP 0";
+  return "EGP " + Math.round(n).toLocaleString("en-GB");
+}
+
+/**
+ * A grouped number with NO currency prefix, locale pinned — for numeric inputs and for grids that
+ * carry their own EGP header.
+ *
+ * Pinning matters most for the INPUT case: the claim amount field displays
+ * `formatNumber(value)` and parses the user's typing back with `/[^0-9]/g`. Under an unpinned
+ * locale an Arabic-locale browser renders "١٬٢٣٤", which that regex strips to nothing — so every
+ * keystroke wiped the amount and a claim over 9 EGP could not be entered at all.
+ */
+export function formatNumber(n: number): string {
+  if (!Number.isFinite(n)) return "0";
+  return Math.round(n).toLocaleString("en-GB");
+}
+
+/**
+ * Money with two decimals — for the medical rate card only, where the admin Amounts tab keeps the
+ * operator's exact figures to the cent (spec 023). `annualPremium` is a Prisma `Decimal`, so this
+ * accepts unknown and coerces.
+ */
+export function formatEGP2(n: unknown): string {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "EGP 0.00";
+  return "EGP " + v.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export function formatDate(d: Date | null | undefined): string {
   if (!d) return "—";
   return d.toLocaleDateString("en-GB", {

@@ -14,7 +14,7 @@ type Benefit = { value: string; label: string; group: "Guaranteed" | "Medical" |
 
 const INP = "w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-sm";
 const LBL = "mb-1 block text-[11px] uppercase tracking-wide text-muted";
-const egp = (n: number) => "EGP " + Math.round(n).toLocaleString();
+import { formatEGP as egp } from "@/lib/labels";
 
 export function ManualReleaseForm({ employees, benefits }: { employees: Emp[]; benefits: Benefit[] }) {
   const [state, formAction, pending] = useActionState<ManualResult | null, FormData>(
@@ -75,8 +75,8 @@ export function ManualReleaseForm({ employees, benefits }: { employees: Emp[]; b
     <form action={formAction} className="mt-3">
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[160px] flex-1">
-          <label className={LBL}>Employee</label>
-          <select name="userId" required className={INP} value={userId} onChange={(e) => setUserId(e.target.value)}>
+          <label htmlFor={"manualrelease-userId"} className={LBL}>Employee</label>
+          <select id={"manualrelease-userId"} name="userId" required className={INP} value={userId} onChange={(e) => setUserId(e.target.value)}>
             <option value="" disabled>Choose…</option>
             {employees.map((e) => (
               <option key={e.id} value={e.id}>{e.name}</option>
@@ -84,8 +84,8 @@ export function ManualReleaseForm({ employees, benefits }: { employees: Emp[]; b
           </select>
         </div>
         <div className="min-w-[180px] flex-1">
-          <label className={LBL}>Benefit</label>
-          <select name="benefit" required className={INP} value={benefit} onChange={(e) => setBenefit(e.target.value)}>
+          <label htmlFor={"manualrelease-benefit"} className={LBL}>Benefit</label>
+          <select id={"manualrelease-benefit"} name="benefit" required className={INP} value={benefit} onChange={(e) => setBenefit(e.target.value)}>
             <option value="" disabled>Choose…</option>
             {groups.map((g) => {
               const items = benefits.filter((b) => b.group === g);
@@ -101,8 +101,8 @@ export function ManualReleaseForm({ employees, benefits }: { employees: Emp[]; b
           </select>
         </div>
         <div className="w-40">
-          <label className={LBL}>Approval date</label>
-          <input name="approvalDate" type="date" required className={INP} value={date} onChange={(e) => setDate(e.target.value)} />
+          <label htmlFor={"manualrelease-approvalDate"} className={LBL}>Approval date</label>
+          <input id={"manualrelease-approvalDate"} name="approvalDate" type="date" required className={INP} value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
       </div>
 
@@ -136,7 +136,7 @@ export function ManualReleaseForm({ employees, benefits }: { employees: Emp[]; b
 
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <div className="w-44">
-          <label className={LBL}>
+          <label htmlFor="manualrelease-amount" className={LBL}>
             Amount (covered)
             {sug?.ok ? (
               <span className="ml-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-green-700">
@@ -145,6 +145,7 @@ export function ManualReleaseForm({ employees, benefits }: { employees: Emp[]; b
             ) : null}
           </label>
           <input
+            id="manualrelease-amount"
             name="amount"
             inputMode="numeric"
             required

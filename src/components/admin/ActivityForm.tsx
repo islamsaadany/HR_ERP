@@ -45,12 +45,12 @@ export function ActivityForm({
       ) : null}
 
       <div>
-        <label className={L}>Title *</label>
-        <input name="title" defaultValue={values.title} required className={I} />
+        <label htmlFor={"activity-title"} className={L}>Title *</label>
+        <input id={"activity-title"} name="title" defaultValue={values.title} required className={I} />
       </div>
       <div>
-        <label className={L}>Description</label>
-        <textarea
+        <label htmlFor={"activity-description"} className={L}>Description</label>
+        <textarea id={"activity-description"}
           name="description"
           defaultValue={values.description ?? ""}
           rows={2}
@@ -59,15 +59,15 @@ export function ActivityForm({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className={L}>Type</label>
-          <select name="type" defaultValue={values.type} className={I}>
+          <label htmlFor={"activity-type"} className={L}>Type</label>
+          <select id={"activity-type"} name="type" defaultValue={values.type} className={I}>
             <option value="POLICY">Policy (read &amp; acknowledge)</option>
             <option value="ACTION">Action (do &amp; complete)</option>
           </select>
         </div>
         <div>
-          <label className={L}>Stage</label>
-          <input name="stage" defaultValue={values.stage} list="stage-suggestions" placeholder="e.g. Week 1" className={I} />
+          <label htmlFor={"activity-stage"} className={L}>Stage</label>
+          <input id={"activity-stage"} name="stage" defaultValue={values.stage} list="stage-suggestions" placeholder="e.g. Week 1" className={I} />
           <datalist id="stage-suggestions">
             {STAGE_SUGGESTIONS.map((s) => (
               <option key={s} value={s} />
@@ -76,15 +76,15 @@ export function ActivityForm({
           <p className="mt-1 text-xs text-muted">Free text — activities group by stage, ordered by the Order field.</p>
         </div>
         <div>
-          <label className={L}>Track</label>
-          <select name="track" defaultValue={values.track} className={I}>
+          <label htmlFor={"activity-track"} className={L}>Track</label>
+          <select id={"activity-track"} name="track" defaultValue={values.track} className={I}>
             <option value="COMMON_CORE">Everyone (common core)</option>
             <option value="CONSULTING">Consulting</option>
           </select>
         </div>
         <div>
-          <label className={L}>Order</label>
-          <input
+          <label htmlFor={"activity-order"} className={L}>Order</label>
+          <input id={"activity-order"}
             name="order"
             type="number"
             defaultValue={values.order}
@@ -93,16 +93,16 @@ export function ActivityForm({
         </div>
       </div>
       <div>
-        <label className={L}>Link (optional)</label>
-        <input
+        <label htmlFor={"activity-linkUrl"} className={L}>Link (optional)</label>
+        <input id={"activity-linkUrl"}
           name="linkUrl"
           defaultValue={values.linkUrl ?? ""}
           placeholder="https://…"
           className={I}
         />
       </div>
-      <label className="flex items-center gap-2 text-sm text-ink">
-        <input
+      <label htmlFor={"activity-active"} className="flex items-center gap-2 text-sm text-ink">
+        <input id={"activity-active"}
           name="active"
           type="checkbox"
           defaultChecked={values.active}

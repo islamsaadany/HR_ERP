@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ConfirmSubmitButton } from "@/components/admin/ConfirmSubmitButton";
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { deleteArticle, reorderKnowledge } from "./actions";
@@ -132,7 +133,7 @@ export default async function AdminKnowledgePage() {
                                   <Link href={`/admin/knowledge/${a.id}`} className="text-sm font-medium text-navy-700 hover:text-navy-900">Edit</Link>
                                   <form action={deleteArticle}>
                                     <input type="hidden" name="id" value={a.id} />
-                                    <button className="text-sm text-muted hover:text-red-600">Delete</button>
+                                    <ConfirmSubmitButton message={`Delete the article “${a.title}”? This can't be undone.`} className="text-sm text-muted hover:text-red-600">Delete</ConfirmSubmitButton>
                                   </form>
                                 </div>
                               </li>

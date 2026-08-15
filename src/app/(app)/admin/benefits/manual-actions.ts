@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { formatEGP } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isSuperUser } from "@/lib/roles";
 import {
@@ -301,7 +302,7 @@ export async function recordManualRelease(formData: FormData): Promise<ManualRes
   if (amount > alloc.remaining) {
     return {
       ok: false,
-      error: `That exceeds what's left to claim (${alloc.remaining.toLocaleString()} of ${alloc.allocation.toLocaleString()}).`,
+      error: `That exceeds what's left to claim (${formatEGP(alloc.remaining)} of ${formatEGP(alloc.allocation)}).`,
     };
   }
 
@@ -379,10 +380,10 @@ async function recordMedicalBackfill(
   revalidatePath("/benefits");
 
   const parts = [
-    `Committed EGP ${premium.toLocaleString()} for ${priced.coveredCount} covered ${priced.coveredCount === 1 ? "person" : "people"}, dated ${dateRaw}.`,
+    `Committed ${formatEGP(premium)} for ${priced.coveredCount} covered ${priced.coveredCount === 1 ? "person" : "people"}, dated ${dateRaw}.`,
   ];
   if (ctx.eligibility.status === "PRORATED") parts.push(`Prorated ${ctx.eligibility.remainingWholeMonths}/12.`);
-  if (adjusted) parts.push(`HR-adjusted from the computed EGP ${priced.premium.toLocaleString()}.`);
+  if (adjusted) parts.push(`HR-adjusted from the computed ${formatEGP(priced.premium)}.`);
   else if (premium < priced.proratedPremium) parts.push("Capped at the pool ceiling.");
   if (priced.anyOverTop) parts.push("A covered person is over 75 (top band) — review.");
   return { ok: true, message: parts.join(" ") };

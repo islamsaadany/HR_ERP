@@ -125,8 +125,9 @@ export function ArticleForm({
 
         {/* Paste + parse */}
         <div>
-          <label className="mb-1 block text-sm font-semibold text-ink">2 · Paste Claude&apos;s output</label>
+          <label htmlFor="article-paste" className="mb-1 block text-sm font-semibold text-ink">2 · Paste Claude&apos;s output</label>
           <textarea
+            id="article-paste"
             value={paste}
             onChange={(e) => setPaste(e.target.value)}
             placeholder="Paste the full article (front-matter + body) here…"
@@ -141,12 +142,12 @@ export function ArticleForm({
         <div className="space-y-3 border-t border-line pt-4">
           <div className="text-sm font-semibold text-ink">3 · Review &amp; save</div>
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Title</label>
-            <input name="title" value={title} onChange={(e) => setTitle(e.target.value)} className={input} />
+            <label htmlFor={"article-title"} className="mb-1 block text-xs uppercase tracking-wide text-muted">Title</label>
+            <input id={"article-title"} name="title" value={title} onChange={(e) => setTitle(e.target.value)} className={input} />
           </div>
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Cluster</label>
-            <input name="cluster" value={cluster} onChange={(e) => setCluster(e.target.value)} list="cluster-suggestions" placeholder="e.g. Consulting" className={input} />
+            <label htmlFor={"article-cluster"} className="mb-1 block text-xs uppercase tracking-wide text-muted">Cluster</label>
+            <input id={"article-cluster"} name="cluster" value={cluster} onChange={(e) => setCluster(e.target.value)} list="cluster-suggestions" placeholder="e.g. Consulting" className={input} />
             <datalist id="cluster-suggestions">
               {CLUSTER_SUGGESTIONS.map((c) => (
                 <option key={c} value={c} />
@@ -154,47 +155,48 @@ export function ArticleForm({
             </datalist>
           </div>
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Topic</label>
-            <input name="category" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. The Consultant's Craft" className={input} />
+            <label htmlFor={"article-category"} className="mb-1 block text-xs uppercase tracking-wide text-muted">Topic</label>
+            <input id={"article-category"} name="category" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. The Consultant's Craft" className={input} />
           </div>
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Summary</label>
-            <input name="summary" value={summary} onChange={(e) => setSummary(e.target.value)} className={input} />
+            <label htmlFor={"article-summary"} className="mb-1 block text-xs uppercase tracking-wide text-muted">Summary</label>
+            <input id={"article-summary"} name="summary" value={summary} onChange={(e) => setSummary(e.target.value)} className={input} />
           </div>
           <div className="flex gap-3">
             <div className="w-28">
-              <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Read (min)</label>
-              <input name="readingMinutes" value={readingMinutes} onChange={(e) => setReadingMinutes(e.target.value)} inputMode="numeric" placeholder="auto" className={input} />
+              <label htmlFor={"article-readingMinutes"} className="mb-1 block text-xs uppercase tracking-wide text-muted">Read (min)</label>
+              <input id={"article-readingMinutes"} name="readingMinutes" value={readingMinutes} onChange={(e) => setReadingMinutes(e.target.value)} inputMode="numeric" placeholder="auto" className={input} />
             </div>
             <div className="w-24">
-              <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Order</label>
-              <input name="order" value={order} onChange={(e) => setOrder(e.target.value)} inputMode="numeric" className={input} />
+              <label htmlFor={"article-order"} className="mb-1 block text-xs uppercase tracking-wide text-muted">Order</label>
+              <input id={"article-order"} name="order" value={order} onChange={(e) => setOrder(e.target.value)} inputMode="numeric" className={input} />
             </div>
-            <label className="flex items-end gap-2 pb-2 text-sm text-ink">
-              <input type="checkbox" name="published" checked={published} onChange={(e) => setPublished(e.target.checked)} className="h-4 w-4" />
+            <label htmlFor={"article-published"} className="flex items-end gap-2 pb-2 text-sm text-ink">
+              <input id={"article-published"} type="checkbox" name="published" checked={published} onChange={(e) => setPublished(e.target.checked)} className="h-4 w-4" />
               Published
             </label>
           </div>
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Body (Markdown)</label>
-            <textarea name="body" value={body} onChange={(e) => setBody(e.target.value)} className={input + " h-56 font-mono text-xs"} />
+            <label htmlFor={"article-body"} className="mb-1 block text-xs uppercase tracking-wide text-muted">Body (Markdown)</label>
+            <textarea id={"article-body"} name="body" value={body} onChange={(e) => setBody(e.target.value)} className={input + " h-56 font-mono text-xs"} />
           </div>
 
           {/* Deck attachment (PDF) — shown embedded under the article on the reader */}
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Deck (PDF, optional)</label>
+            <label htmlFor="article-deck" className="mb-1 block text-xs uppercase tracking-wide text-muted">Deck (PDF, optional)</label>
             {hasStoredDeck && !removeDeck ? (
               <div className="mb-2 flex items-center justify-between gap-3 rounded-lg border border-line bg-navy-50/50 px-3 py-2 text-sm">
                 <a href={start.attachmentUrl} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate font-medium text-navy-700 hover:underline">
                   📎 {start.attachmentName || "Current deck"}
                 </a>
-                <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted">
-                  <input type="checkbox" name="removeDeck" checked={removeDeck} onChange={(e) => setRemoveDeck(e.target.checked)} className="h-3.5 w-3.5" />
+                <label htmlFor={"article-removeDeck"} className="flex shrink-0 items-center gap-1.5 text-xs text-muted">
+                  <input id={"article-removeDeck"} type="checkbox" name="removeDeck" checked={removeDeck} onChange={(e) => setRemoveDeck(e.target.checked)} className="h-3.5 w-3.5" />
                   Remove
                 </label>
               </div>
             ) : null}
             <input
+              id="article-deck"
               type="file"
               name="deck"
               accept="application/pdf,.pdf"

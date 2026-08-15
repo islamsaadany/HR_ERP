@@ -40,13 +40,13 @@ export function SectionForm({
         </p>
       ) : null}
       <div>
-        <label className={L}>Title *</label>
-        <input name="title" defaultValue={values.title} required className={I} />
+        <label htmlFor={"section-title"} className={L}>Title *</label>
+        <input id={"section-title"} name="title" defaultValue={values.title} required className={I} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className={L}>Slug (optional)</label>
-          <input
+          <label htmlFor={"section-slug"} className={L}>Slug (optional)</label>
+          <input id={"section-slug"}
             name="slug"
             defaultValue={values.slug ?? ""}
             placeholder="auto from title"
@@ -54,20 +54,20 @@ export function SectionForm({
           />
         </div>
         <div>
-          <label className={L}>Order</label>
-          <input name="order" type="number" defaultValue={values.order} className={I} />
+          <label htmlFor={"section-order"} className={L}>Order</label>
+          <input id={"section-order"} name="order" type="number" defaultValue={values.order} className={I} />
         </div>
       </div>
       <div>
-        <label className={L}>Summary</label>
-        <input name="summary" defaultValue={values.summary ?? ""} className={I} />
+        <label htmlFor={"section-summary"} className={L}>Summary</label>
+        <input id={"section-summary"} name="summary" defaultValue={values.summary ?? ""} className={I} />
       </div>
       <div>
-        <label className={L}>Body</label>
-        <textarea name="body" defaultValue={values.body} rows={12} className={I} />
+        <label htmlFor={"section-body"} className={L}>Body</label>
+        <textarea id={"section-body"} name="body" defaultValue={values.body} rows={12} className={I} />
       </div>
-      <label className="flex items-center gap-2 text-sm text-ink">
-        <input
+      <label htmlFor={"section-active"} className="flex items-center gap-2 text-sm text-ink">
+        <input id={"section-active"}
           name="active"
           type="checkbox"
           defaultChecked={values.active}

@@ -18,11 +18,24 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Spec 026 — Password-less linked-account switching (built; no migration)
+- [x] Spec-kit run: `specs/026-passwordless-account-switch/` (spec, plan, research, data-model, contracts, quickstart, tasks — 30/30 tasks done; requirements checklist 16/16).
+- [x] **Supersedes spec 025's password-per-switch decision** — marked in place in `specs/025-…/spec.md` and above, so the two specs never silently disagree.
+- [x] `src/lib/switch-account.ts` — the shared `isLinked` predicate (both ACTIVE, not self, **trimmed non-empty** Employee IDs equal) plus 60-second HMAC ticket mint/verify over `AUTH_SECRET`. **No new dependency, no new env var, no migration.**
+- [x] `switch-account` credentials provider in `src/lib/auth.ts` — verifies the ticket **and re-reads both employee records**, re-running `isLinked` before issuing a session (its callback route is publicly POST-able, so nothing it receives is trusted). Fails closed on any error, incl. an un-migrated DB.
+- [x] `switchAccountAction` rewritten: clears impersonation **first**, verifies session + link, mints the ticket, signs in as the target. Refusals are indistinguishable (never reveals whether an account exists); self-switch is a silent no-op.
+- [x] Sidebar list in `(app)/layout.tsx` filtered through the **same predicate**, so what is offered can never exceed what is permitted — this closed a latent gap where a **whitespace-only** Employee ID counted as a link.
+- [x] **No UI change** (the switcher's markup is untouched), so no `ui-versions/` snapshot was owed.
+- [x] Verified: `npx tsc --noEmit` + `npm run build` green; `scripts/verify-switch-account.mts` **27/27** against a throwaway Postgres 16 — forged ticket, tampered target, correctly-signed **expired** ticket, unlinked target, LEFT target, and a **link revoked after the ticket was minted** all refused; the happy path issues the target's session.
+- [x] Session lifetime **unchanged** (NextAuth default 30 days) — reviewed and deliberately kept.
+- ⚠️ **Accepted residual risk** (product decision 2026-08-15): a **mistyped shared Employee ID links two different people** and now grants password-less access between them; an unlocked device reaches every linked account; an **elevated-role** linked account is reachable with no password. A role-gated password step was offered and declined for the simpler flow — it remains the named mitigation. See `specs/026-…/spec.md` *Residual Risks*.
+- [ ] Depends on spec 025's **`040_employee_id.sql`** already being applied to Neon (no new migration of its own).
+
 ## Spec 025 — Employee ID + linked-account switching (built, pending Neon migration `040`)
 - [x] Spec `specs/025-employee-id-account-switch/` (aligned; checklist passes). Interim toward spec 022.
 - [x] Schema: `User.employeeId` (nullable, **non-unique**, indexed). Migration `prisma/sql/040_employee_id.sql` — verified on a throwaway Postgres (additive, idempotent; two accounts share an Employee ID; linked-accounts query returns only same-ID actives).
 - [x] Field on employee **form + grid + CSV** (export/import); link-confirm guard on the form (`employeeIdLinkGuard`), inline grid blocks a linking duplicate.
-- [x] **Account switcher** in the sidebar (`switchAccountAction` → sign-out + `/signin?email=…` prefilled; enter target password once). Suppressed while impersonating; never lists unlinked/inactive accounts.
+- [x] **Account switcher** in the sidebar (`switchAccountAction`). Suppressed while impersonating; never lists unlinked/inactive accounts. ⚠️ The password-per-switch step described here was **superseded by spec 026** (2026-08-15) — switching is now password-less.
 - [x] `npx tsc --noEmit` + `npm run build` green. AppShell snapshot saved. Docs updated (this file, PROJECT_DETAILS, spec 025).
 - [ ] **Apply `040_employee_id.sql` to Neon**, then set the same Employee ID on the dual-contract person's two records to link + enable switching.
 

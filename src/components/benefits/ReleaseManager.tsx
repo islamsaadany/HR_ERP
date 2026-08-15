@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { formatEGP } from "@/lib/labels";
 import { useRouter } from "next/navigation";
 import { setReleased } from "@/app/(app)/admin/benefits/release-actions";
 
@@ -49,7 +50,9 @@ const csvCell = (v: string | number | null | undefined): string => {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-const egp = (n: number | null) => (n == null ? "" : "EGP " + n.toLocaleString());
+// Blank (not "EGP 0") when a band amount isn't set for this employee — the Status column
+// carries the reason. Formatting itself is the shared one.
+const egp = (n: number | null) => (n == null ? "" : formatEGP(n));
 // Short employment-type code for the Type column / CSV.
 const typeCode = (label: string) =>
   label === "Full-time" ? "FT" : label === "Part-time" ? "PT" : "";
@@ -158,8 +161,9 @@ export function ReleaseManager({
       {/* Benefit picker */}
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="block text-xs font-medium uppercase tracking-wide text-muted mb-1">Benefit to release</label>
+          <label htmlFor="release-benefit" className="block text-xs font-medium uppercase tracking-wide text-muted mb-1">Benefit to release</label>
           <select
+            id="release-benefit"
             value={selectedBenefitId ?? ""}
             onChange={(e) => {
               const v = e.target.value;

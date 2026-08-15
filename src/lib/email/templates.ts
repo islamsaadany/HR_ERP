@@ -11,7 +11,7 @@ const MUTED = "#5f6472";
 const LINE = "#e7e3da";
 const PAPER = "#f5f3ee";
 
-const egp = (n: number) => "EGP " + n.toLocaleString("en-US");
+import { formatEGP as egp } from "@/lib/labels";
 const link = (path: string) => `${appBaseUrl}${path}`;
 
 function layout(heading: string, bodyHtml: string, cta?: { href: string; label: string }): string {

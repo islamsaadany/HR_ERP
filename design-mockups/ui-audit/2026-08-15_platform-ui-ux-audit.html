@@ -1,0 +1,572 @@
+<title>Platform UI Audit</title>
+<style>
+  :root {
+    --navy-50: #eceff5; --navy-100: #d6deea; --navy-200: #aebfd6; --navy-300: #7d97ba;
+    --navy-600: #1f3a63; --navy-700: #163055; --navy-800: #0f2444; --navy-900: #0a1a30;
+    --gold-100: #f6ecca; --gold-300: #e0c05a; --gold-500: #c9a227; --gold-600: #a8821e;
+    --gold-700: #85641b; --gold-800: #6f521c;
+
+    --bg: #f5f3ee;
+    --card: #fefdfb;
+    --card-2: #faf8f3;
+    --ink: #16202e;
+    --muted: #5f6472;
+    --line: #e7e3da;
+    --accent: var(--gold-600);
+    --brand: var(--navy-800);
+    --brand-ink: #ffffff;
+
+    --sev-high-bg: #fbeaea; --sev-high-fg: #8d3b3b;
+    --sev-med-bg: #fdf3e2;  --sev-med-fg: #8a5d1b;
+    --sev-low-bg: #eef1f6;  --sev-low-fg: #3c5578;
+    --sev-ok-bg: #e8f1e8;   --sev-ok-fg: #2f5d3a;
+
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b1220;
+      --card: #121b2c;
+      --card-2: #0f1726;
+      --ink: #e8ecf3;
+      --muted: #a3adbf;
+      --line: #24314a;
+      --accent: var(--gold-300);
+      --brand: #16233c;
+      --brand-ink: #ffffff;
+      --sev-high-bg: #3a1f22; --sev-high-fg: #f0a9a9;
+      --sev-med-bg: #37291325; --sev-med-fg: #e8c07a;
+      --sev-low-bg: #1c2740;  --sev-low-fg: #a9c0e4;
+      --sev-ok-bg: #1b2f22;   --sev-ok-fg: #a6d4b1;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b1220;
+    --card: #121b2c;
+    --card-2: #0f1726;
+    --ink: #e8ecf3;
+    --muted: #a3adbf;
+    --line: #24314a;
+    --accent: var(--gold-300);
+    --brand: #16233c;
+    --brand-ink: #ffffff;
+    --sev-high-bg: #3a1f22; --sev-high-fg: #f0a9a9;
+    --sev-med-bg: #372913; --sev-med-fg: #e8c07a;
+    --sev-low-bg: #1c2740;  --sev-low-fg: #a9c0e4;
+    --sev-ok-bg: #1b2f22;   --sev-ok-fg: #a6d4b1;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.top { border-bottom: 2px solid var(--line); padding-bottom: 28px; margin-bottom: 8px; }
+  .eyebrow {
+    margin: 0; font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.16em; color: var(--accent);
+  }
+  h1 {
+    margin: 8px 0 0; font-family: var(--font-serif); font-size: clamp(30px, 5vw, 42px);
+    font-weight: 400; letter-spacing: -0.01em; text-wrap: balance;
+  }
+  .lede { margin: 12px 0 0; max-width: 62ch; color: var(--muted); font-size: 16px; }
+
+  .scope {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px;
+  }
+  .chip {
+    border: 1px solid var(--line); border-radius: 999px; background: var(--card);
+    padding: 5px 13px; font-size: 12px; color: var(--muted);
+  }
+  .chip b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  h2 {
+    margin: 52px 0 4px; font-family: var(--font-serif); font-size: 26px; font-weight: 400;
+    text-wrap: balance;
+  }
+  h2 + .sub { margin: 0 0 20px; color: var(--muted); font-size: 14px; max-width: 62ch; }
+
+  /* Findings */
+  .finding {
+    border: 1px solid var(--line); border-radius: 14px; background: var(--card);
+    padding: 20px 22px; margin-top: 16px;
+  }
+  .finding.high { border-left: 4px solid #b45252; }
+  .finding.med  { border-left: 4px solid var(--gold-500); }
+  .finding.low  { border-left: 4px solid var(--navy-300); }
+
+  .fhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+  .fid {
+    font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+    color: var(--muted); letter-spacing: 0.04em;
+  }
+  .ftitle { font-size: 17px; font-weight: 600; flex: 1; min-width: 220px; text-wrap: balance; }
+  .sev {
+    border-radius: 999px; padding: 3px 10px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap;
+  }
+  .sev.high { background: var(--sev-high-bg); color: var(--sev-high-fg); }
+  .sev.med  { background: var(--sev-med-bg);  color: var(--sev-med-fg); }
+  .sev.low  { background: var(--sev-low-bg);  color: var(--sev-low-fg); }
+  .sev.ok   { background: var(--sev-ok-bg);   color: var(--sev-ok-fg); }
+
+  .finding p { margin: 12px 0 0; font-size: 14.5px; }
+  .finding p.what { color: var(--ink); }
+  .finding p.why { color: var(--muted); }
+
+  .ev {
+    margin-top: 12px; border-radius: 9px; background: var(--card-2);
+    border: 1px solid var(--line); padding: 10px 13px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+    overflow-x: auto; white-space: pre;
+  }
+  .fix {
+    margin-top: 12px; border-radius: 9px; padding: 11px 14px;
+    background: var(--sev-ok-bg); color: var(--sev-ok-fg); font-size: 14px;
+  }
+  .fix b { font-weight: 700; }
+
+  code {
+    font-family: var(--font-mono); font-size: 0.88em;
+    background: var(--card-2); border: 1px solid var(--line);
+    padding: 1px 5px; border-radius: 4px;
+  }
+
+  /* Summary table */
+  .tablebox { margin-top: 20px; overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--card); }
+  thead th {
+    background: var(--brand); color: var(--brand-ink); text-align: left;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 11px 14px; font-weight: 700; white-space: nowrap;
+  }
+  tbody td { padding: 11px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+  tbody td:first-child { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; color: var(--muted); }
+
+  .retracted {
+    border: 1px dashed var(--line); border-radius: 14px; background: var(--card-2);
+    padding: 20px 22px; margin-top: 16px;
+  }
+  .retracted .ftitle { text-decoration: line-through; text-decoration-thickness: 1px; opacity: 0.75; }
+
+  ul.enh { margin: 14px 0 0; padding: 0; list-style: none; }
+  ul.enh li {
+    border-top: 1px solid var(--line); padding: 14px 0; display: grid;
+    grid-template-columns: 26px 1fr; gap: 12px; font-size: 14.5px;
+  }
+  ul.enh li:first-child { border-top: 0; }
+  ul.enh .n {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+    color: var(--accent); padding-top: 3px;
+  }
+  ul.enh .t b { display: block; margin-bottom: 3px; }
+  ul.enh .t span { color: var(--muted); }
+
+  .note {
+    margin-top: 28px; border-left: 3px solid var(--accent); background: var(--card);
+    border-radius: 0 10px 10px 0; padding: 16px 20px; font-size: 14.5px;
+  }
+  footer { margin-top: 60px; border-top: 1px solid var(--line); padding-top: 20px; color: var(--muted); font-size: 13px; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Forefront People · Platform Review</p>
+    <h1>UI &amp; UX Audit</h1>
+    <p class="lede">
+      A pass over every employee- and admin-facing surface, looking for defects that are provable from
+      the code rather than matters of taste. Each finding carries its file and line.
+      <strong>All nine are fixed.</strong> The six suggestions further down remain open.
+    </p>
+    <div class="scope">
+      <span class="chip"><b>41</b> routes</span>
+      <span class="chip"><b>52</b> components</span>
+      <span class="chip"><b>~22,000</b> lines</span>
+      <span class="chip"><b>9</b> findings · <b>all fixed</b></span>
+      <span class="chip"><b>3</b> false positives discarded</span>
+      <span class="chip">2026-08-15</span>
+    </div>
+  </header>
+
+  <h2>Summary</h2>
+  <p class="sub">
+    Nothing here breaks the money rules or leaks data — the server-authoritative parts hold up. What I
+    found is concentrated in two places: <strong>how money is formatted</strong>, and
+    <strong>whether the app can be operated without a mouse</strong>.
+  </p>
+
+  <div class="tablebox">
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Finding</th><th>Severity</th><th>Effort</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>F1</td><td>Currency renders differently across screens — including Arabic numerals for Arabic-locale browsers</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
+        <tr><td>F2</td><td>Delete buttons fire instantly, no confirmation, across 6 admin surfaces</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
+        <tr><td>F3</td><td>102 of 106 form labels aren't attached to their field</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
+        <tr><td>F4</td><td>Table column sorting can't be reached by keyboard</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
+        <tr><td>F5</td><td>The medical-commitment modal has no dialog semantics or Escape key</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
+        <tr><td>F6 →</td><td>On a phone, the benefits pool balance sits below every benefit row</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
+        <tr><td>F7</td><td>Expandable incentive report rows are mouse-only</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
+        <tr><td>F8</td><td>Finance "Confirm payment" gives no feedback while submitting</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
+        <tr><td>F9</td><td>Two small consistency slips (sort caret contrast, one date format)</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Findings</h2>
+  <p class="sub">Ordered by how much they cost the team day to day.</p>
+
+  <div class="finding high">
+    <div class="fhead">
+      <span class="fid">F1 ✓</span>
+      <span class="ftitle">The same amount of money renders differently depending on the browser</span>
+      <span class="sev high">High</span>
+    </div>
+    <p class="what">
+      The <code>egp()</code> formatter is copy-pasted into <strong>eight</strong> files, in
+      <strong>three different behaviours</strong>: some round, some don't; some pin the locale to
+      <code>en-US</code>, most leave it to the browser.
+    </p>
+    <div class="ev">BenefitsBoard.tsx:12   "EGP " + Math.round(n).toLocaleString()      → rounds, browser locale
+PaymentsQueue.tsx:17   "EGP " + n.toLocaleString("en-US")           → no rounding, pinned
+admin/benefits/page.tsx:33  "EGP " + n.toLocaleString()             → no rounding, browser locale
+email/templates.ts:14  "EGP " + n.toLocaleString("en-US")           → no rounding, pinned
+…plus ResetBenefitsCard, ManualReleaseForm, ReimbursedCell, BenefitsOrientation, ReleaseManager</div>
+    <p class="why">
+      Two consequences, both verified by running the code. A figure of 45,000.5 shows as
+      <code>EGP 45,001</code> on the benefits page but <code>EGP 45,000.5</code> on the Finance queue.
+      More importantly, <code>toLocaleString()</code> with no locale follows the <em>viewer's</em>
+      browser — and on an Arabic-locale browser, which is entirely normal in Cairo, it renders
+      <code>EGP ٤٥٬٠٠٠</code>. So an employee could see Eastern Arabic numerals in the app and Western
+      numerals in the very same claim's email. For the one module that handles money, that reads as a
+      bug in the numbers themselves.
+    </p>
+    <div class="fix">
+      <b>Fix:</b> one shared <code>formatEGP()</code> in <code>src/lib/labels.ts</code> (beside the
+      existing <code>formatDate</code>, which already pins <code>en-GB</code> and is the model to
+      follow), locale pinned, one rounding rule. Replace all eight copies. No visual change on an
+      English browser — this only stops the drift.
+    </div>
+  </div>
+
+  <div class="finding high">
+    <div class="fhead">
+      <span class="fid">F2 ✓</span>
+      <span class="ftitle">Delete buttons destroy authored content on a single click</span>
+      <span class="sev high">High</span>
+    </div>
+    <p class="what">
+      Handbook sections, handbook resources, knowledge articles, announcements, onboarding activities
+      and a medical commitment can all be deleted with one click and no confirmation.
+    </p>
+    <div class="ev">admin/handbook/page.tsx:45      Delete section    — no confirm
+admin/handbook/page.tsx:73      Delete resource   — no confirm
+admin/knowledge/page.tsx:135    Delete article    — no confirm
+admin/announcements/page.tsx:44 Delete            — no confirm
+admin/onboarding/page.tsx:55    Delete activity   — no confirm
+admin/benefits/page.tsx:358     Remove medical    — no confirm
+
+DepartmentsManager.tsx:69       confirm("Remove …? This can't be undone.")   ← the right pattern
+RegistryHeader.tsx:142          confirm(…)                                   ← already does it</div>
+    <p class="why">
+      A knowledge article is a long authored piece; a handbook section is company policy. These sit
+      next to an "Edit" link, in a list, at small text size — a misclick is one pixel away and there
+      is no undo. Two surfaces in the same admin area already confirm before destroying, so the
+      inconsistency is an oversight rather than a decision.
+    </p>
+    <div class="fix">
+      <b>Fix:</b> reuse the existing <code>confirm()</code> pattern from
+      <code>DepartmentsManager.tsx:69</code>, naming the item being deleted. Six one-line changes,
+      no redesign.
+    </div>
+  </div>
+
+  <div class="finding med">
+    <div class="fhead">
+      <span class="fid">F3 ✓</span>
+      <span class="ftitle">Almost no form label is actually attached to its field</span>
+      <span class="sev med">Medium</span>
+    </div>
+    <p class="what">
+      Across the app there are <strong>106</strong> <code>&lt;label&gt;</code> elements. Only
+      <strong>4</strong> use <code>htmlFor</code>. Roughly nine more wrap a checkbox (which is fine).
+      The rest sit as a <em>sibling</em> of the input, with nothing connecting them.
+    </p>
+    <div class="ev">EmployeeForm.tsx:129   &lt;label className={L}&gt;Department&lt;/label&gt;
+                       &lt;select name="department" …&gt;   ← sibling, not associated
+
+Worst affected: EmployeeForm (22 labels) · ArticleForm (11) · ActivityForm (8)
+                BenefitsBoard (7) · SectionForm (6) · PlanYearDialog (5)</div>
+    <p class="why">
+      Two practical effects. Clicking the word "Department" doesn't focus the field — a small daily
+      friction on the longest form in the app, the employee record. And a screen reader announces
+      those fields as unlabelled, so the HR employee form is close to unusable that way. It also
+      makes the fields harder to hit on a phone, where the label is a much bigger tap target than the
+      input.
+    </p>
+    <div class="fix">
+      <b>Fix:</b> add matching <code>htmlFor</code>/<code>id</code> pairs. Mechanical, but ~90 edits
+      across ~20 files, so worth doing as its own pass. Nothing changes visually.
+    </div>
+  </div>
+
+  <div class="finding med">
+    <div class="fhead">
+      <span class="fid">F4 ✓</span>
+      <span class="ftitle">Sorting a table column is impossible without a mouse</span>
+      <span class="sev med">Medium</span>
+    </div>
+    <p class="what">
+      In the employee registry and the benefits catalogue, sorting is an <code>onClick</code> on the
+      <code>&lt;th&gt;</code> itself — no button, no <code>tabIndex</code>, no <code>role</code>, no
+      key handler. Nothing focusable exists, so the keyboard can never trigger it.
+    </p>
+    <div class="ev">EmployeeGrid.tsx:560    &lt;th … onClick={() =&gt; onHeaderSort(col.key)}&gt;   no tabIndex/onKeyDown/role
+CatalogueGrid.tsx:225   &lt;th … onClick={() =&gt; onHeaderSort(col.key)}&gt;   no tabIndex/onKeyDown/role
+
+DirectoryBrowser.tsx    sorting is a real &lt;button&gt;   ← the pattern to copy</div>
+    <p class="why">
+      The registry is the densest screen in the product and sorting is how you find anyone in it.
+      Note the inline <em>editing</em> in these same grids is done properly with real
+      <code>&lt;button&gt;</code> elements — so it's specifically the header that was missed.
+    </p>
+    <div class="fix">
+      <b>Fix:</b> wrap the header label in a <code>&lt;button type="button"&gt;</code>, as the Team
+      Directory already does. Drag-to-reorder stays mouse-only, which is acceptable for an
+      enhancement. Also move <code>aria-sort</code> onto the <code>&lt;th&gt;</code> — in
+      <code>DirectoryBrowser.tsx:219</code> it currently sits on the button, where assistive tech
+      ignores it.
+    </div>
+  </div>
+
+  <div class="finding med">
+    <div class="fhead">
+      <span class="fid">F5 ✓</span>
+      <span class="ftitle">The medical-commitment modal isn't announced as a dialog and won't close on Escape</span>
+      <span class="sev med">Medium</span>
+    </div>
+    <p class="what">
+      Of six modals in the app, three declare <code>role="dialog"</code> and <code>aria-modal</code>.
+      The three that don't include both modals in <code>BenefitsBoard</code> — the medical cover
+      setup and the guaranteed-benefit claim.
+    </p>
+    <div class="ev">BenefitsOrientation.tsx   role=dialog ✓   PlanYearDialog.tsx     role=dialog ✓
+ManualReleaseModal.tsx    role=dialog ✓   AddCatalogItemModal.tsx  ✗
+BenefitsBoard.tsx  (MedicalModal, GuaranteedClaimModal)          ✗  and no Escape handler</div>
+    <p class="why">
+      Committing medical cover is the single most consequential thing an employee does in this
+      product — it's locked afterwards and only HR can change it. That modal has no focus trap, no
+      Escape key, and screen-reader users aren't told a dialog opened. Its sibling modals in the same
+      feature already do all three, so this is an inconsistency inside one module.
+    </p>
+    <div class="fix">
+      <b>Fix:</b> copy the semantics already used in <code>BenefitsOrientation.tsx</code> —
+      <code>role="dialog"</code>, <code>aria-modal="true"</code>, a labelled title, and Escape-to-close.
+      No visual change.
+    </div>
+  </div>
+
+  <div class="finding med">
+    <div class="fhead">
+      <span class="fid">F6 ✓</span>
+      <span class="ftitle">On a phone, the pool balance is buried under every benefit row</span>
+      <span class="sev med">Medium</span>
+    </div>
+    <p class="what">
+      The benefits page is a two-column grid that collapses to one column below <code>lg</code>. The
+      pool card is the second child, so on a phone it renders <em>after</em> the entire list of
+      benefits.
+    </p>
+    <div class="ev">BenefitsBoard.tsx:248   grid … lg:grid-cols-[1fr_320px]
+  ├─ &lt;div&gt;    benefit rows        → first on mobile
+  └─ &lt;aside&gt;  pool meter          → last on mobile, below everything
+
+PROJECT_DETAILS.md:81   "The live summary stays visible while scrolling —
+                         sticky panel on desktop, pinned floating bar on mobile"</div>
+    <p class="why">
+      "How much have I got left" is the context for every decision on that page, and on mobile you
+      must scroll past all of it to find out. Worth flagging separately: the documented mobile
+      behaviour — a pinned floating bar — <strong>no longer exists</strong>; it was lost in the
+      spec-018 redesign and the docs were never updated. Per the constitution that's a documentation
+      bug to report rather than quietly realign, so I've left the line alone pending your call.
+    </p>
+    <div class="fix">
+      <b>Fix (needs a mockup first):</b> either restore a compact pinned summary bar on mobile, or
+      reorder so the pool card comes first on small screens and the sticky column keeps its place on
+      desktop. The second is a one-line change; the first matches what the docs promise. Your call
+      which — and either way the docs need correcting.
+    </div>
+  </div>
+
+  <div class="finding low">
+    <div class="fhead">
+      <span class="fid">F7 ✓</span>
+      <span class="ftitle">Expandable rows in the incentive report are mouse-only</span>
+      <span class="sev low">Low</span>
+    </div>
+    <p class="what">
+      Two expandable sections are <code>onClick</code> handlers on a <code>&lt;tr&gt;</code>.
+    </p>
+    <div class="ev">CycleReport.tsx:490   &lt;tr className="cursor-pointer …" onClick={() =&gt; toggleComm(c.name)}&gt;
+CycleReport.tsx:610   &lt;tr className="cursor-pointer …" onClick={() =&gt; setSchemeOpen(…)}&gt;</div>
+    <p class="why">
+      Same class of issue as F4, but on a screen used by two or three people rather than the whole
+      company, which is why it's ranked lower.
+    </p>
+    <div class="fix"><b>Fix:</b> make the first cell a real button, or give the row a button-like affordance.</div>
+  </div>
+
+  <div class="finding low">
+    <div class="fhead">
+      <span class="fid">F8 ✓</span>
+      <span class="ftitle">"Confirm payment" gives no sign it's working</span>
+      <span class="sev low">Low</span>
+    </div>
+    <p class="what">
+      The Finance confirm form has no pending state — the button doesn't disable or change label
+      while the action runs.
+    </p>
+    <div class="ev">PaymentsQueue.tsx:85   &lt;button …&gt;Confirm&lt;/button&gt;      no disabled / pending
+finance/actions.ts:47  if (!claim || claim.status !== "APPROVED") redirect(…)   ← server guard</div>
+    <p class="why">
+      I checked whether this could double-pay: it can't. <code>confirmPayment</code> refuses anything
+      not in <code>APPROVED</code>, so the second submission is rejected. The cost is confidence, not
+      correctness — on a slow connection there's no feedback, and an impatient double-click produces
+      "That claim isn't awaiting payment anymore", which reads like a failure when the payment
+      actually succeeded.
+    </p>
+    <div class="fix">
+      <b>Fix:</b> use the <code>useTransition</code> pending pattern already used in
+      <code>BenefitsBoard</code>'s claim form ("Submitting…" + disabled).
+    </div>
+  </div>
+
+  <div class="finding low">
+    <div class="fhead">
+      <span class="fid">F9 ✓</span>
+      <span class="ftitle">Two small consistency slips</span>
+      <span class="sev low">Low</span>
+    </div>
+    <p class="what">
+      The active sort caret in the employee registry is <code>gold-600</code> on the navy header —
+      <strong>4.33:1</strong>, which clears AA for large text but not for the 10px it's actually set
+      at. And <code>PlanYearDialog</code> formats dates itself rather than using the shared helper,
+      so it shows "1 Jan 2026" where the rest of the app shows "01 Jan 2026".
+    </p>
+    <div class="ev">EmployeeGrid.tsx:572     text-[10px] … text-gold-600      4.33:1 on navy-800
+PlanYearDialog.tsx:27    toLocaleDateString("en-GB", { day: "numeric", … })
+lib/labels.ts:73         formatDate() → { day: "2-digit", … }   ← the shared one</div>
+    <div class="fix">
+      <b>Fix:</b> move the caret to <code>gold-300</code> (8.74:1, already used in the Team Directory
+      after this week's fix) and point the dialog at <code>formatDate</code>.
+    </div>
+  </div>
+
+  <h2>Checked and cleared</h2>
+  <p class="sub">
+    Things I suspected, chased, and found were <em>not</em> defects. Recording them so nobody re-opens
+    the same trail.
+  </p>
+
+  <div class="retracted">
+    <div class="fhead">
+      <span class="fid">R1</span>
+      <span class="ftitle">Column headers turn invisible on hover</span>
+      <span class="sev ok">Not a bug</span>
+    </div>
+    <p class="why">
+      Both grids put <code>hover:text-navy-700</code> on a <code>&lt;th&gt;</code> whose background is
+      <code>navy-800</code> — a contrast ratio of <strong>1.17:1</strong>, which would make the label
+      vanish. It doesn't, because <code>.ff-data-table thead th</code> is declared <em>outside</em> any
+      cascade layer in <code>globals.css</code>, and unlayered CSS beats Tailwind's
+      <code>@layer utilities</code> regardless of specificity. I confirmed this in the built
+      stylesheet rather than reasoning about it. The hover class is dead code — harmless, but worth
+      deleting so it doesn't mislead the next person.
+    </p>
+  </div>
+
+  <div class="retracted">
+    <div class="fhead">
+      <span class="fid">R2</span>
+      <span class="ftitle">Links opening in new tabs without <code>rel="noopener"</code></span>
+      <span class="sev ok">Not a bug</span>
+    </div>
+    <p class="why">
+      Four <code>target="_blank"</code> links looked bare on a line-by-line scan. All four carry
+      <code>rel="noopener noreferrer"</code> on the following line.
+    </p>
+  </div>
+
+  <div class="retracted">
+    <div class="fhead">
+      <span class="fid">R3</span>
+      <span class="ftitle">Images missing alt text</span>
+      <span class="sev ok">Not a bug</span>
+    </div>
+    <p class="why">
+      Both raw <code>&lt;img&gt;</code> elements (the avatar and the business-unit logo) set
+      <code>alt</code> correctly.
+    </p>
+  </div>
+
+  <h2>Suggestions</h2>
+  <p class="sub">
+    Not defects — things that would make the platform nicer to live with. Each would need a mockup and
+    your sign-off before I touched anything.
+  </p>
+
+  <ul class="enh">
+    <li><span class="n">01</span><span class="t"><b>Remember filters between visits</b>
+      <span>The registry already persists column choices to <code>localStorage</code>, but search and
+      filter selections reset on every visit — including the directory's new business-unit filter.
+      Persisting them the same way would make the daily path shorter.</span></span></li>
+    <li><span class="n">02</span><span class="t"><b>Give the empty states somewhere to go</b>
+      <span>Most empty states state a fact ("No one matches that search"). Pairing each with the
+      obvious next action — clear the filter, add the first employee, write the first announcement —
+      turns a dead end into a step forward.</span></span></li>
+    <li><span class="n">03</span><span class="t"><b>A confirmation step for money that can't be undone</b>
+      <span>Committing medical locks for the plan year and only HR can change it, but it commits on a
+      single button press. A short "here's what you're committing to, for the year" summary would fit
+      the weight of the decision.</span></span></li>
+    <li><span class="n">04</span><span class="t"><b>One toast pattern instead of three</b>
+      <span>Employee benefits toasts appear bottom-left, admin <code>ToastForm</code> toasts elsewhere,
+      and several screens still surface success through a redirect banner. Consolidating on one would
+      make "did that save?" answerable at a glance anywhere in the app.</span></span></li>
+    <li><span class="n">05</span><span class="t"><b>Loading feedback on the heavy screens</b>
+      <span>The registry, directory and incentive report are all <code>force-dynamic</code> and can
+      pause visibly on a slow connection with no skeleton or spinner. A loading state would stop them
+      feeling stalled.</span></span></li>
+    <li><span class="n">06</span><span class="t"><b>Make the sticky benefits header earn its space on mobile</b>
+      <span>The page header is <code>sticky top-0</code> and takes a real bite out of a phone screen
+      while scrolling a long benefit list. Condensing it once scrolling starts would give the content
+      back.</span></span></li>
+  </ul>
+
+  <div class="note">
+    <strong>All nine findings are fixed and pushed.</strong> Fixing F1 also uncovered a defect this
+    audit had missed: the flexible-claim amount input formatted its own value and parsed it back with
+    <code>/[^0-9]/g</code>, so on an Arabic-locale browser every keystroke stripped the value —
+    1,234 + "5" became <strong>5</strong>, and no claim above 9 EGP could be entered at all.
+    <br><br>
+    F6 was taken as the non-floating option: the pool summary moves above the benefit list on small
+    screens and the desktop layout is untouched. The pinned bottom bar was mocked up and declined —
+    it would have permanently spent about an eighth of a phone screen. The six suggestions below are
+    still open.
+</div>
+
+  <footer>
+    Forefront People · UI &amp; UX audit · 2026-08-15 · 41 routes, 52 components, ~22,000 lines reviewed.
+    Contrast figures are WCAG 2.1 ratios computed against the project's own palette tokens.
+  </footer>
+</div>

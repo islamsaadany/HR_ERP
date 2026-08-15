@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { resetBenefits, type ResetBenefitsState } from "@/app/(app)/admin/employees/reset-benefits-actions";
 
-const egp = (n: number) => "EGP " + Math.round(n).toLocaleString();
+import { formatEGP as egp } from "@/lib/labels";
 
 export type BenefitLine = {
   target: string; // "medical" | "guaranteed:<id>" | "catalog:<id>"
@@ -104,10 +104,10 @@ export function ResetBenefitsCard({
               employee (all statuses, all years). To wipe everything at once, type the name and use{" "}
               <span className="font-medium text-ink">Reset all</span>.
               <div className="mt-2">
-                <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">
+                <label htmlFor={"resetbenefits-confirmName"} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">
                   Type <span className="font-semibold text-ink">{name}</span> to enable Reset all
                 </label>
-                <input
+                <input id={"resetbenefits-confirmName"}
                   name="confirmName"
                   value={typed}
                   onChange={(e) => setTyped(e.target.value)}

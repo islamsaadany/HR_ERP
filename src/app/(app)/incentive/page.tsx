@@ -50,8 +50,8 @@ export default async function IncentiveHome({
 
       <form action={createCycle} className="mt-6 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4">
         <div>
-          <label className="mb-1 block text-xs uppercase tracking-wide text-muted">New cycle label</label>
-          <input name="label" placeholder="H1-2026" className={input} />
+          <label htmlFor={"incentive-label"} className="mb-1 block text-xs uppercase tracking-wide text-muted">New cycle label</label>
+          <input id={"incentive-label"} name="label" placeholder="H1-2026" className={input} />
         </div>
         <button type="submit" className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">
           Create cycle

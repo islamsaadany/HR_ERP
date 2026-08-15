@@ -1,5 +1,6 @@
 import { confirmPayment } from "@/app/(app)/finance/actions";
 import { ReimbursedCell } from "@/components/finance/ReimbursedCell";
+import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 
 export type PaymentRow = {
   id: string;
@@ -14,7 +15,7 @@ export type PaymentRow = {
   hasProof: boolean; // employee attached a proof-of-payment file
 };
 
-const egp = (n: number) => "EGP " + n.toLocaleString("en-US");
+import { formatEGP as egp } from "@/lib/labels";
 
 /**
  * Finance payments queue — APPROVED claims (awaiting payment, with an inline confirm form) followed
@@ -82,9 +83,12 @@ export function PaymentsQueue({ rows }: { rows: PaymentRow[] }) {
                       aria-label="Transfer date"
                       className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm focus:border-navy-500 focus:outline-none"
                     />
-                    <button className="rounded-lg bg-navy-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-navy-700">
+                    <PendingSubmitButton
+                      pendingLabel="Confirming…"
+                      className="rounded-lg bg-navy-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-60"
+                    >
                       Confirm
-                    </button>
+                    </PendingSubmitButton>
                   </form>
                 ) : (
                   <ReimbursedCell

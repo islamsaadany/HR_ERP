@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ConfirmSubmitButton } from "@/components/admin/ConfirmSubmitButton";
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/labels";
@@ -42,7 +43,7 @@ export default async function AdminHandbookPage({
             </div>
             <div className="flex shrink-0 items-center gap-3">
               <Link href={`/admin/handbook/${s.id}`} className="text-sm font-medium text-navy-600 hover:text-navy-800">Edit</Link>
-              <form action={deleteSection}><input type="hidden" name="id" value={s.id} /><button className="text-sm text-muted hover:text-red-600">Delete</button></form>
+              <form action={deleteSection}><input type="hidden" name="id" value={s.id} /><ConfirmSubmitButton message={`Delete the handbook section “${s.title}”? This can't be undone.`} className="text-sm text-muted hover:text-red-600">Delete</ConfirmSubmitButton></form>
             </div>
           </li>
         ))}
@@ -52,12 +53,12 @@ export default async function AdminHandbookPage({
       {resError ? <p className="mt-2 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{resError}</p> : null}
       <form action={uploadResource} encType="multipart/form-data" className="mt-3 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4">
         <div className="min-w-[160px] flex-1">
-          <label className="block text-xs uppercase tracking-wide text-muted mb-1">Title</label>
-          <input name="title" placeholder="e.g. Company profile" className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
+          <label htmlFor={"handbook-title"} className="block text-xs uppercase tracking-wide text-muted mb-1">Title</label>
+          <input id={"handbook-title"} name="title" placeholder="e.g. Company profile" className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wide text-muted mb-1">Category</label>
-          <select name="category" className="rounded-lg border border-line px-3 py-2 text-sm">
+          <label htmlFor={"handbook-category"} className="block text-xs uppercase tracking-wide text-muted mb-1">Category</label>
+          <select id={"handbook-category"} name="category" className="rounded-lg border border-line px-3 py-2 text-sm">
             <option>Company profile</option><option>Template</option><option>Policy</option><option>Other</option>
           </select>
         </div>
@@ -70,7 +71,7 @@ export default async function AdminHandbookPage({
         ) : resources.map((r) => (
           <li key={r.id} className="flex items-center justify-between px-4 py-3">
             <div><div className="text-sm font-medium text-ink">{r.title}</div><div className="text-xs text-muted">{r.category} · {formatDate(r.createdAt)}</div></div>
-            <form action={deleteResource}><input type="hidden" name="id" value={r.id} /><button className="text-sm text-muted hover:text-red-600">Delete</button></form>
+            <form action={deleteResource}><input type="hidden" name="id" value={r.id} /><ConfirmSubmitButton message={`Delete the resource “${r.title}”? This can't be undone.`} className="text-sm text-muted hover:text-red-600">Delete</ConfirmSubmitButton></form>
           </li>
         ))}
       </ul>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ConfirmSubmitButton } from "@/components/admin/ConfirmSubmitButton";
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { groupByStage, TRACK_LABEL } from "@/lib/onboarding";
@@ -52,7 +53,7 @@ export default async function AdminOnboardingPage() {
                       <Link href={`/admin/onboarding/${a.id}`} className="text-sm font-medium text-navy-600 hover:text-navy-800">Edit</Link>
                       <form action={deleteActivity}>
                         <input type="hidden" name="id" value={a.id} />
-                        <button className="text-sm text-muted hover:text-red-600">Delete</button>
+                        <ConfirmSubmitButton message={`Delete the activity “${a.title}”? This can't be undone.`} className="text-sm text-muted hover:text-red-600">Delete</ConfirmSubmitButton>
                       </form>
                     </div>
                   </li>

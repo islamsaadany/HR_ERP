@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatDate } from "@/lib/labels";
 import { createPlanYear, setPlanYearStatus, editPlanYearWindow } from "@/app/(app)/admin/benefits/actions";
 
 type PlanYear = {
@@ -18,13 +19,12 @@ function toInputDate(d: Date | string | null): string {
   return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
 }
 
-/** Short human date for display, or a placeholder when unset. */
+/** Short human date for display, or a placeholder when unset. Uses the shared app-wide
+ *  formatter so this dialog can't drift from every other date in the product. */
 function label(d: Date | string | null): string {
   if (!d) return "—";
   const date = typeof d === "string" ? new Date(d) : d;
-  return Number.isNaN(date.getTime())
-    ? "—"
-    : date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return Number.isNaN(date.getTime()) ? "—" : formatDate(date);
 }
 
 /**
@@ -121,12 +121,12 @@ export function PlanYearDialog({ planYears, activeName }: { planYears: PlanYear[
                     <form action={editPlanYearWindow} className="mt-3 flex flex-wrap items-end gap-2 rounded-lg bg-navy-50 p-3">
                       <input type="hidden" name="id" value={p.id} />
                       <div className="flex-1">
-                        <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Start date</label>
-                        <input type="date" name="startDate" defaultValue={toInputDate(p.startDate)} className={dateField} />
+                        <label htmlFor={"planyear-startDate"} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Start date</label>
+                        <input id={"planyear-startDate"} type="date" name="startDate" defaultValue={toInputDate(p.startDate)} className={dateField} />
                       </div>
                       <div className="flex-1">
-                        <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">End date</label>
-                        <input type="date" name="endDate" defaultValue={toInputDate(p.endDate)} className={dateField} />
+                        <label htmlFor={"planyear-endDate"} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">End date</label>
+                        <input id={"planyear-endDate"} type="date" name="endDate" defaultValue={toInputDate(p.endDate)} className={dateField} />
                       </div>
                       <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">
                         Save
@@ -138,20 +138,20 @@ export function PlanYearDialog({ planYears, activeName }: { planYears: PlanYear[
             </ul>
 
             <form action={createPlanYear} className="mt-4 border-t border-line pt-4">
-              <label className="mb-1 block text-xs uppercase tracking-wide text-muted">New plan year</label>
-              <input
+              <label htmlFor={"planyear-name"} className="mb-1 block text-xs uppercase tracking-wide text-muted">New plan year</label>
+              <input id={"planyear-name"}
                 name="name"
                 placeholder="e.g. 2027"
                 className="w-full rounded-lg border border-line px-3 py-2 text-sm"
               />
               <div className="mt-2 flex flex-wrap items-end gap-2">
                 <div className="flex-1">
-                  <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Start date</label>
-                  <input type="date" name="startDate" className={dateField} />
+                  <label htmlFor={"planyear-startDate"} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Start date</label>
+                  <input id={"planyear-startDate"} type="date" name="startDate" className={dateField} />
                 </div>
                 <div className="flex-1">
-                  <label className="mb-1 block text-[11px] uppercase tracking-wide text-muted">End date</label>
-                  <input type="date" name="endDate" className={dateField} />
+                  <label htmlFor={"planyear-endDate"} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">End date</label>
+                  <input id={"planyear-endDate"} type="date" name="endDate" className={dateField} />
                 </div>
                 <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">
                   Open new year

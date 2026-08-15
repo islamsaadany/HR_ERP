@@ -1,0 +1,296 @@
+<title>Directory Filter Fixes</title>
+<style>
+  :root {
+    --navy-50: #eceff5;
+    --navy-100: #d6deea;
+    --navy-200: #aebfd6;
+    --navy-300: #7d97ba;
+    --navy-600: #1f3a63;
+    --navy-700: #163055;
+    --navy-800: #0f2444;
+    --navy-900: #0a1a30;
+    --gold-100: #f6ecca;
+    --gold-300: #e0c05a;
+    --gold-500: #c9a227;
+    --gold-600: #a8821e;
+    --gold-800: #6f521c;
+    --paper: #f5f3ee;
+    --surface: #fefdfb;
+    --ink: #16202e;
+    --muted: #5f6472;
+    --line: #e7e3da;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  .mock-note {
+    margin-bottom: 32px;
+    border: 1px dashed var(--navy-200);
+    border-radius: 12px;
+    background: #fff;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .mock-note strong { color: var(--navy-700); }
+  .mock-note code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    background: var(--navy-50);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--navy-700);
+  }
+  .mock-note ul { margin: 8px 0 0; padding-left: 18px; }
+  .mock-note li { margin-top: 4px; }
+
+  .stage-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 44px 0 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .stage-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .stage-label .tag { border-radius: 999px; padding: 2px 9px; font-size: 10px; letter-spacing: 0.06em; }
+  .tag-before { background: #f3e6e6; color: #8d3b3b; }
+  .tag-after { background: var(--gold-100); color: var(--gold-800); }
+
+  .eyebrow-page {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold-600);
+  }
+  h1.page {
+    margin: 4px 0 0;
+    font-family: var(--font-serif);
+    font-size: 30px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+  .page-sub { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+  .fi {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: 8px 12px;
+    font-size: 14px;
+    color: var(--ink);
+    font-family: inherit;
+  }
+  .fi.search { flex: 1; min-width: 220px; color: var(--muted); }
+  .fi.sel { padding-right: 30px; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: right 14px center, right 9px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+  .fi.sel-mine { border-color: var(--navy-300); background-color: var(--navy-50); font-weight: 600; color: var(--navy-800); }
+  .count { margin-top: 12px; font-size: 12px; color: var(--muted); }
+  .count b { color: var(--navy-700); }
+
+  .tablebox {
+    margin-top: 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th {
+    background: var(--navy-800);
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: left;
+    padding: 12px 16px;
+  }
+  tbody td { padding: 12px 16px; border-bottom: 1px solid var(--line); color: var(--muted); }
+  tbody tr:last-child td { border-bottom: 0; }
+  .nm { font-weight: 500; color: var(--navy-700); }
+  .av {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin-right: 10px;
+    border-radius: 999px;
+    background: var(--navy-100);
+    color: var(--navy-700);
+    font-size: 11px;
+    font-weight: 700;
+    vertical-align: middle;
+  }
+
+  /* The bug: a sort button that repaints itself grey/navy on the navy header */
+  .sortbtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 0;
+    background: transparent;
+    padding: 2px 4px;
+    font: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .sort-broken { color: var(--muted); }
+  .sort-broken-active { color: var(--navy-700); }
+  .sort-broken .caret { color: var(--line); }
+  .sort-fixed { color: #fff; }
+  .sort-fixed .caret { color: var(--navy-300); }
+  .sort-fixed-active { color: var(--gold-300); }
+  .sort-fixed-active .caret { color: var(--gold-300); }
+
+  .callout {
+    margin-top: 10px;
+    display: inline-block;
+    border-radius: 8px;
+    background: #fbeaea;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: #8d3b3b;
+  }
+  .callout.ok { background: #e8f1e8; color: #2f5d3a; }
+</style>
+
+<div class="wrap">
+  <div class="mock-note">
+    <strong>Mockup — for sign-off before any code changes.</strong> Two fixes to the Team Directory:
+    <ul>
+      <li><strong>Business unit filter</strong>, defaulting to the signed-in person’s own unit. Same control style as the existing department filter, placed before it. Someone with no unit set defaults to “All business units”, and the filter is hidden entirely when the company has only one unit.</li>
+      <li><strong>Header contrast.</strong> The Title and Department headers are the only two wrapped in a sort button, and that button paints itself <code>text-muted</code> (grey) — overriding the white the navy header row sets. Fix: white like every other header, with the <em>active</em> sort shown in gold instead of dark navy.</li>
+    </ul>
+    Nothing else changes — no new column, no layout change, same sort behaviour.
+  </div>
+
+  <p class="eyebrow-page">Team Directory</p>
+  <h1 class="page">The team</h1>
+  <p class="page-sub">Find and reach your colleagues.</p>
+
+  <!-- ================= BEFORE ================= -->
+  <div class="stage-label"><span class="tag tag-before">Before</span> today’s screen</div>
+
+  <div class="filters">
+    <div class="fi search">Search by name…</div>
+    <select class="fi sel"><option>All departments</option></select>
+  </div>
+  <p class="count">24 people</p>
+
+  <div class="tablebox">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th><button class="sortbtn sort-broken-active" type="button">Title <span class="caret" style="color: var(--gold-600);">▲</span></button></th>
+          <th><button class="sortbtn sort-broken" type="button">Department <span class="caret">↕</span></button></th>
+          <th>Email</th>
+          <th>Phone</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="av">AH</span><span class="nm">Amira Hassan</span></td>
+          <td>Associate Consultant</td>
+          <td>Consulting</td>
+          <td>amira.hassan@forefront.consulting</td>
+          <td>+20 100 555 0142</td>
+        </tr>
+        <tr>
+          <td><span class="av">KM</span><span class="nm">Karim Mostafa</span></td>
+          <td>Engagement Manager</td>
+          <td>Consulting</td>
+          <td>karim.mostafa@forefront.consulting</td>
+          <td>+20 100 555 0198</td>
+        </tr>
+        <tr>
+          <td><span class="av">NS</span><span class="nm">Nour Selim</span></td>
+          <td>People Operations Lead</td>
+          <td>People</td>
+          <td>nour.selim@forefront.consulting</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">Title and Department read grey / dark navy on the navy header — the two hardest headers to see.</div>
+
+  <!-- ================= AFTER ================= -->
+  <div class="stage-label"><span class="tag tag-after">After</span> proposed</div>
+
+  <div class="filters">
+    <div class="fi search">Search by name…</div>
+    <select class="fi sel sel-mine"><option>Forefront Consulting</option></select>
+    <select class="fi sel"><option>All departments</option></select>
+  </div>
+  <p class="count">18 people in <b>Forefront Consulting</b></p>
+
+  <div class="tablebox">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th><button class="sortbtn sort-fixed sort-fixed-active" type="button">Title <span class="caret">▲</span></button></th>
+          <th><button class="sortbtn sort-fixed" type="button">Department <span class="caret">↕</span></button></th>
+          <th>Email</th>
+          <th>Phone</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="av">AH</span><span class="nm">Amira Hassan</span></td>
+          <td>Associate Consultant</td>
+          <td>Consulting</td>
+          <td>amira.hassan@forefront.consulting</td>
+          <td>+20 100 555 0142</td>
+        </tr>
+        <tr>
+          <td><span class="av">KM</span><span class="nm">Karim Mostafa</span></td>
+          <td>Engagement Manager</td>
+          <td>Consulting</td>
+          <td>karim.mostafa@forefront.consulting</td>
+          <td>+20 100 555 0198</td>
+        </tr>
+        <tr>
+          <td><span class="av">NS</span><span class="nm">Nour Selim</span></td>
+          <td>People Operations Lead</td>
+          <td>People</td>
+          <td>nour.selim@forefront.consulting</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout ok">All five headers now white; the active sort column is gold, matching the caret.</div>
+
+  <div class="stage-label">Business unit filter — open</div>
+  <div class="filters">
+    <div class="fi search">Search by name…</div>
+    <select class="fi sel sel-mine" size="4" style="padding: 4px; background-image: none;">
+      <option selected>Forefront Consulting</option>
+      <option>Visual Shift Consulting</option>
+      <option>Omnisight Analytics</option>
+      <option>All business units</option>
+    </select>
+    <select class="fi sel" style="align-self: flex-start;"><option>All departments</option></select>
+  </div>
+  <p class="count">The signed-in person’s own unit is pre-selected; “All business units” is always available.</p>
+</div>

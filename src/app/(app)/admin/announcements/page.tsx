@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/roles";
+import { ConfirmSubmitButton } from "@/components/admin/ConfirmSubmitButton";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/labels";
 import { createAnnouncement, deleteAnnouncement } from "./actions";
@@ -19,12 +20,12 @@ export default async function AdminAnnouncementsPage() {
 
       <ToastResultForm action={createAnnouncement} savedMessage="Announcement posted." resetOnSuccess className="mt-6 space-y-3 rounded-xl border border-line bg-surface p-6">
         <div>
-          <label className="block text-xs uppercase tracking-wide text-muted mb-1">Title</label>
-          <input name="title" required className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
+          <label htmlFor={"announcement-title"} className="block text-xs uppercase tracking-wide text-muted mb-1">Title</label>
+          <input id={"announcement-title"} name="title" required className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wide text-muted mb-1">Message</label>
-          <textarea name="body" rows={3} required className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
+          <label htmlFor={"announcement-body"} className="block text-xs uppercase tracking-wide text-muted mb-1">Message</label>
+          <textarea id={"announcement-body"} name="body" rows={3} required className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
         </div>
         <button className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">Post announcement</button>
       </ToastResultForm>
@@ -41,7 +42,7 @@ export default async function AdminAnnouncementsPage() {
               </div>
               <form action={deleteAnnouncement}>
                 <input type="hidden" name="id" value={a.id} />
-                <button className="shrink-0 text-sm text-muted hover:text-red-600">Delete</button>
+                <ConfirmSubmitButton message={`Delete the announcement “${a.title}”? This can't be undone.`} className="shrink-0 text-sm text-muted hover:text-red-600">Delete</ConfirmSubmitButton>
               </form>
             </div>
           </li>

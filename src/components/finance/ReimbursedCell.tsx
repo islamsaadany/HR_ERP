@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { editPayment } from "@/app/(app)/finance/actions";
 
-const egp = (n: number) => "EGP " + n.toLocaleString("en-US");
+import { formatEGP as egp } from "@/lib/labels";
 
 /**
  * The Payment cell for a REIMBURSED claim on the Finance Payments queue. Reads as a status

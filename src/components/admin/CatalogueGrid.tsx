@@ -168,7 +168,8 @@ export function CatalogueGrid({
 
   const arrow = (key: ColKey) => {
     const isSorted = sort?.key === key;
-    return <span className={"ml-1.5 text-[10px] " + (isSorted ? "text-gold-600" : "text-navy-300")}>{isSorted ? (sort!.dir === 1 ? "↑" : "↓") : "↕"}</span>;
+    // gold-300 (8.74:1 on the navy header) not gold-600 (4.33:1) — a 10px caret is small text (audit F9).
+    return <span aria-hidden="true" className={"ml-1.5 text-[10px] " + (isSorted ? "text-gold-300" : "text-navy-300")}>{isSorted ? (sort!.dir === 1 ? "↑" : "↓") : "↕"}</span>;
   };
 
   return (
@@ -222,12 +223,23 @@ export function CatalogueGrid({
                   onDragStart={() => setDragKey(col.key)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => { if (dragKey) reorder(dragKey, col.key); setDragKey(null); }}
-                  onClick={() => onHeaderSort(col.key)}
                   title={col.sortable ? "Click to sort · drag to reorder" : "Drag to reorder"}
                   aria-sort={sort?.key === col.key ? (sort.dir === 1 ? "ascending" : "descending") : undefined}
-                  className={"cursor-move select-none whitespace-nowrap px-3 py-3 font-medium " + (col.sortable ? "hover:text-navy-700" : "")}
+                  className="cursor-move select-none whitespace-nowrap px-3 py-3 font-medium"
                 >
-                  {col.label}{col.sortable ? arrow(col.key) : null}
+                  {/* Sorting is a real button so it is keyboard-reachable (audit F4);
+                      drag-to-reorder stays a mouse enhancement. */}
+                  {col.sortable ? (
+                    <button
+                      type="button"
+                      onClick={() => onHeaderSort(col.key)}
+                      className="-mx-1 inline-flex items-center rounded px-1 py-0.5 font-medium text-white transition hover:text-gold-200"
+                    >
+                      {col.label}{arrow(col.key)}
+                    </button>
+                  ) : (
+                    col.label
+                  )}
                 </th>
               ))}
             </tr>

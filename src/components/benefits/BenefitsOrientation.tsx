@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { markOrientationSeen } from "@/app/(app)/benefits/actions";
 
-const egp = (n: number) => "EGP " + Math.round(n).toLocaleString();
+import { formatEGP as egp } from "@/lib/labels";
 
 export type OrientationProps = {
   employeeName: string;

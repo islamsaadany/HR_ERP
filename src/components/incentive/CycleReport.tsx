@@ -489,10 +489,17 @@ export function CycleReportView({
                   <Fragment key={c.name}>
                     <tr className="cursor-pointer hover:bg-navy-50/40" onClick={() => toggleComm(c.name)}>
                       <td className={td}>
-                        <span className="inline-flex items-center gap-1.5">
+                        {/* A real button so the breakdown is reachable by keyboard (audit F7);
+                            the row keeps its click target for the mouse. */}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); toggleComm(c.name); }}
+                          aria-expanded={!!expandedComm[c.name]}
+                          className="inline-flex items-center gap-1.5 rounded text-left"
+                        >
                           <Chevron open={!!expandedComm[c.name]} />
                           {c.name}
-                        </span>
+                        </button>
                       </td>
                       <td className={tdr}>{m(c.amount)}</td>
                     </tr>
@@ -608,7 +615,16 @@ export function CycleReportView({
                   <td className={tdNote + " font-normal"}>Profit before scheme ÷ Revenue</td>
                 </tr>
                 <tr className="cursor-pointer hover:bg-navy-50/40" onClick={() => setSchemeOpen((s) => !s)}>
-                  <td className={td}><span className="inline-flex items-center gap-1.5"><Chevron open={schemeOpen} /> Scheme cost</span></td>
+                  <td className={td}>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setSchemeOpen((v) => !v); }}
+                      aria-expanded={schemeOpen}
+                      className="inline-flex items-center gap-1.5 rounded text-left"
+                    >
+                      <Chevron open={schemeOpen} /> Scheme cost
+                    </button>
+                  </td>
                   <td className={tdr}>{whole(firm.schemeCost)}</td>
                   <td className={tdr}>{`${pct(firm.schemePctOfGrossProfit)} of GP`}</td>
                   <td className={tdNote}>Scheme cost ÷ Gross profit</td>
