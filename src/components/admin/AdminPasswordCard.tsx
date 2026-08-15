@@ -26,8 +26,8 @@ export function AdminPasswordCard({ userId, name }: { userId: string; name: stri
 
       <form action={formAction} className="mt-4 flex flex-wrap items-end gap-3">
         <div className="min-w-[220px] flex-1">
-          <label className="mb-1 block text-xs uppercase tracking-wide text-muted">New password (optional)</label>
-          <input name="password" type="text" autoComplete="off" placeholder="Leave blank to generate" className={input} />
+          <label htmlFor={"adminpw-password"} className="mb-1 block text-xs uppercase tracking-wide text-muted">New password (optional)</label>
+          <input id={"adminpw-password"} name="password" type="text" autoComplete="off" placeholder="Leave blank to generate" className={input} />
         </div>
         <button
           type="submit"

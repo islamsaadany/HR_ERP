@@ -31,13 +31,13 @@ export function ChangePasswordCard({ hasPassword }: { hasPassword: boolean }) {
       <form action={formAction} className="mt-4 space-y-3">
         {hasPassword ? (
           <div>
-            <label className="mb-1 block text-xs uppercase tracking-wide text-muted">Current password</label>
-            <input name="current" type="password" autoComplete="current-password" className={input} />
+            <label htmlFor={"changepw-current"} className="mb-1 block text-xs uppercase tracking-wide text-muted">Current password</label>
+            <input id={"changepw-current"} name="current" type="password" autoComplete="current-password" className={input} />
           </div>
         ) : null}
         <div>
-          <label className="mb-1 block text-xs uppercase tracking-wide text-muted">New password</label>
-          <input
+          <label htmlFor={"changepw-next"} className="mb-1 block text-xs uppercase tracking-wide text-muted">New password</label>
+          <input id={"changepw-next"}
             name="next"
             type="password"
             autoComplete="new-password"

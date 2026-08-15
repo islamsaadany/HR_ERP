@@ -80,17 +80,17 @@ export default async function AdminNotificationsPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={label}>HR team inbox</label>
-            <input name="hrInbox" type="email" defaultValue={settings.hrInbox ?? ""} placeholder="hr@…" className={input} />
+            <label htmlFor={"notif-hrInbox"} className={label}>HR team inbox</label>
+            <input id={"notif-hrInbox"} name="hrInbox" type="email" defaultValue={settings.hrInbox ?? ""} placeholder="hr@…" className={input} />
           </div>
           <div>
-            <label className={label}>Finance team inbox</label>
-            <input name="financeInbox" type="email" defaultValue={settings.financeInbox ?? ""} placeholder="finance@…" className={input} />
+            <label htmlFor={"notif-financeInbox"} className={label}>Finance team inbox</label>
+            <input id={"notif-financeInbox"} name="financeInbox" type="email" defaultValue={settings.financeInbox ?? ""} placeholder="finance@…" className={input} />
           </div>
         </div>
         <div>
-          <label className={label}>From name (shown on emails)</label>
-          <input name="fromName" defaultValue={settings.fromName ?? ""} placeholder="Forefront People" className={input} />
+          <label htmlFor={"notif-fromName"} className={label}>From name (shown on emails)</label>
+          <input id={"notif-fromName"} name="fromName" defaultValue={settings.fromName ?? ""} placeholder="Forefront People" className={input} />
         </div>
 
         <button className="rounded-lg bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-700">
@@ -107,8 +107,8 @@ export default async function AdminNotificationsPage() {
 
         <ToastResultForm action={sendTestEmailAction} savedMessage="Test email sent — check the inbox (and spam)." className="mt-3 flex flex-wrap items-end gap-2">
           <div className="min-w-[240px] flex-1">
-            <label className={label}>Send to</label>
-            <input name="to" type="email" defaultValue={actor.email ?? ""} required className={input} />
+            <label htmlFor={"notif-to"} className={label}>Send to</label>
+            <input id={"notif-to"} name="to" type="email" defaultValue={actor.email ?? ""} required className={input} />
           </div>
           <button className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">
             Send test email

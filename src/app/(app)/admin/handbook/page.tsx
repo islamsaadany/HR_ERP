@@ -53,12 +53,12 @@ export default async function AdminHandbookPage({
       {resError ? <p className="mt-2 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{resError}</p> : null}
       <form action={uploadResource} encType="multipart/form-data" className="mt-3 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4">
         <div className="min-w-[160px] flex-1">
-          <label className="block text-xs uppercase tracking-wide text-muted mb-1">Title</label>
-          <input name="title" placeholder="e.g. Company profile" className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
+          <label htmlFor={"handbook-title"} className="block text-xs uppercase tracking-wide text-muted mb-1">Title</label>
+          <input id={"handbook-title"} name="title" placeholder="e.g. Company profile" className="w-full rounded-lg border border-line px-3 py-2 text-sm" />
         </div>
         <div>
-          <label className="block text-xs uppercase tracking-wide text-muted mb-1">Category</label>
-          <select name="category" className="rounded-lg border border-line px-3 py-2 text-sm">
+          <label htmlFor={"handbook-category"} className="block text-xs uppercase tracking-wide text-muted mb-1">Category</label>
+          <select id={"handbook-category"} name="category" className="rounded-lg border border-line px-3 py-2 text-sm">
             <option>Company profile</option><option>Template</option><option>Policy</option><option>Other</option>
           </select>
         </div>

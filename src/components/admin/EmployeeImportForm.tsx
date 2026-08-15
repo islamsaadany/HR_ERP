@@ -28,10 +28,10 @@ export function EmployeeImportForm() {
         encType="multipart/form-data"
         className="rounded-xl border border-line bg-surface p-6"
       >
-        <label className="block text-xs font-medium uppercase tracking-wide text-muted mb-1">
+        <label htmlFor={"import-file"} className="block text-xs font-medium uppercase tracking-wide text-muted mb-1">
           Employee CSV
         </label>
-        <input
+        <input id={"import-file"}
           type="file"
           name="file"
           accept=".csv,text/csv,text/tab-separated-values,.tsv,.txt"

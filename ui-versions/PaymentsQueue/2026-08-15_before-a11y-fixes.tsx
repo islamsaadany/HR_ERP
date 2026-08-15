@@ -1,6 +1,5 @@
 import { confirmPayment } from "@/app/(app)/finance/actions";
 import { ReimbursedCell } from "@/components/finance/ReimbursedCell";
-import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 
 export type PaymentRow = {
   id: string;
@@ -83,12 +82,9 @@ export function PaymentsQueue({ rows }: { rows: PaymentRow[] }) {
                       aria-label="Transfer date"
                       className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm focus:border-navy-500 focus:outline-none"
                     />
-                    <PendingSubmitButton
-                      pendingLabel="Confirming…"
-                      className="rounded-lg bg-navy-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-60"
-                    >
+                    <button className="rounded-lg bg-navy-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-navy-700">
                       Confirm
-                    </PendingSubmitButton>
+                    </button>
                   </form>
                 ) : (
                   <ReimbursedCell

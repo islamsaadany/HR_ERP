@@ -557,33 +557,24 @@ export function EmployeeGrid({
                       if (dragKey) reorder(dragKey, col.key);
                       setDragKey(null);
                     }}
+                    onClick={() => onHeaderSort(col.key)}
                     title={isSortable ? "Click to sort · drag to reorder" : "Drag to reorder"}
                     aria-sort={isSorted ? (sort!.dir === 1 ? "ascending" : "descending") : undefined}
-                    className="cursor-move select-none whitespace-nowrap px-3 py-3 font-medium"
+                    className={
+                      "cursor-move select-none whitespace-nowrap px-3 py-3 font-medium " +
+                      (isSortable ? "hover:text-navy-700" : "")
+                    }
                   >
-                    {/* Sorting is a real button so it is reachable by keyboard (audit F4). Dragging
-                        to reorder stays mouse-only — it is an enhancement, not the primary path. */}
+                    {col.label}
                     {isSortable ? (
-                      <button
-                        type="button"
-                        onClick={() => onHeaderSort(col.key)}
-                        className="-mx-1 inline-flex items-center rounded px-1 py-0.5 font-medium text-white transition hover:text-gold-200"
+                      <span
+                        className={
+                          "ml-1.5 text-[10px] " + (isSorted ? "text-gold-600" : "text-navy-300")
+                        }
                       >
-                        {col.label}
-                        <span
-                          className={
-                            // gold-300 (8.74:1 on the navy header) rather than gold-600 (4.33:1) — the
-                            // caret is 10px, which counts as small text for contrast.
-                            "ml-1.5 text-[10px] " + (isSorted ? "text-gold-300" : "text-navy-300")
-                          }
-                          aria-hidden="true"
-                        >
-                          {isSorted ? (sort!.dir === 1 ? "↑" : "↓") : "↕"}
-                        </span>
-                      </button>
-                    ) : (
-                      col.label
-                    )}
+                        {isSorted ? (sort!.dir === 1 ? "↑" : "↓") : "↕"}
+                      </span>
+                    ) : null}
                   </th>
                 );
               })}

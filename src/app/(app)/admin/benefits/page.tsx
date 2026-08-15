@@ -337,8 +337,8 @@ export default async function AdminBenefitsPage({
                             {m.user.dependants.length > 0 ? (
                               <div className="flex flex-wrap gap-2">
                                 {m.user.dependants.map((d) => (
-                                  <label key={d.id} className="flex items-center gap-1 text-xs text-muted">
-                                    <input type="checkbox" name="dependantIds" value={d.id} defaultChecked={coveredDepIds.has(d.id)} className="h-4 w-4" />
+                                  <label htmlFor={"adminbenefits-dependantIds"} key={d.id} className="flex items-center gap-1 text-xs text-muted">
+                                    <input id={"adminbenefits-dependantIds"} type="checkbox" name="dependantIds" value={d.id} defaultChecked={coveredDepIds.has(d.id)} className="h-4 w-4" />
                                     {d.kind === "SPOUSE" ? "Spouse" : "Child"}{d.name ? ` · ${d.name}` : ""}
                                   </label>
                                 ))}

@@ -161,8 +161,9 @@ export function ReleaseManager({
       {/* Benefit picker */}
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="block text-xs font-medium uppercase tracking-wide text-muted mb-1">Benefit to release</label>
+          <label htmlFor="release-benefit" className="block text-xs font-medium uppercase tracking-wide text-muted mb-1">Benefit to release</label>
           <select
+            id="release-benefit"
             value={selectedBenefitId ?? ""}
             onChange={(e) => {
               const v = e.target.value;

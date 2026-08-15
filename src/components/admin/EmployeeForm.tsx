@@ -102,12 +102,12 @@ export function EmployeeForm({
         <h2 className="mb-4 font-serif text-lg text-ink">Identity & contact</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={L}>Full name *</label>
-            <input name="name" defaultValue={values.name} required className={I} />
+            <label htmlFor={"emp-name"} className={L}>Full name *</label>
+            <input id={"emp-name"} name="name" defaultValue={values.name} required className={I} />
           </div>
           <div>
-            <label className={L}>Email *</label>
-            <input
+            <label htmlFor={"emp-email"} className={L}>Email *</label>
+            <input id={"emp-email"}
               name="email"
               type="email"
               value={email}
@@ -123,12 +123,12 @@ export function EmployeeForm({
             ) : null}
           </div>
           <div>
-            <label className={L}>Phone</label>
-            <input name="phone" defaultValue={values.phone ?? ""} className={I} />
+            <label htmlFor={"emp-phone"} className={L}>Phone</label>
+            <input id={"emp-phone"} name="phone" defaultValue={values.phone ?? ""} className={I} />
           </div>
           <div>
-            <label className={L}>Department</label>
-            <select name="department" defaultValue={values.department ?? ""} className={I}>
+            <label htmlFor={"emp-department"} className={L}>Department</label>
+            <select id={"emp-department"} name="department" defaultValue={values.department ?? ""} className={I}>
               <option value="">—</option>
               {deptOptions.map((d) => (
                 <option key={d} value={d}>
@@ -138,12 +138,12 @@ export function EmployeeForm({
             </select>
           </div>
           <div>
-            <label className={L}>Title</label>
-            <input name="title" defaultValue={values.title ?? ""} className={I} />
+            <label htmlFor={"emp-title"} className={L}>Title</label>
+            <input id={"emp-title"} name="title" defaultValue={values.title ?? ""} className={I} />
           </div>
           <div>
-            <label className={L}>Business Unit</label>
-            <select name="businessUnitId" defaultValue={values.businessUnitId ?? ""} className={I}>
+            <label htmlFor={"emp-businessUnitId"} className={L}>Business Unit</label>
+            <select id={"emp-businessUnitId"} name="businessUnitId" defaultValue={values.businessUnitId ?? ""} className={I}>
               <option value="">— none —</option>
               {businessUnits.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -153,10 +153,10 @@ export function EmployeeForm({
             </select>
           </div>
           <div>
-            <label className={L}>Employee ID</label>
-            <input name="employeeId" defaultValue={values.employeeId ?? ""} className={I} />
-            <label className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
-              <input type="checkbox" name="linkConfirmed" className="h-3.5 w-3.5" />
+            <label htmlFor={"emp-employeeId"} className={L}>Employee ID</label>
+            <input id={"emp-employeeId"} name="employeeId" defaultValue={values.employeeId ?? ""} className={I} />
+            <label htmlFor={"emp-linkConfirmed"} className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+              <input id={"emp-linkConfirmed"} type="checkbox" name="linkConfirmed" className="h-3.5 w-3.5" />
               Link accounts sharing this Employee ID (same person, e.g. a second contract)
             </label>
           </div>
@@ -186,8 +186,8 @@ export function EmployeeForm({
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Employment type + Monthly salary (salary is Super-User-only) */}
           <div>
-            <label className={L}>Employment type</label>
-            <select name="employmentType" defaultValue={values.employmentType ?? ""} className={I}>
+            <label htmlFor={"emp-employmentType"} className={L}>Employment type</label>
+            <select id={"emp-employmentType"} name="employmentType" defaultValue={values.employmentType ?? ""} className={I}>
               <option value="">—</option>
               <option value="FULL_TIME">Full-time</option>
               <option value="PART_TIME">Part-time</option>
@@ -195,8 +195,8 @@ export function EmployeeForm({
           </div>
           {canSeeSalary ? (
             <div>
-              <label className={L}>Monthly salary (EGP)</label>
-              <input name="monthlySalary" inputMode="numeric" defaultValue={values.monthlySalary ?? ""} className={I} />
+              <label htmlFor={"emp-monthlySalary"} className={L}>Monthly salary (EGP)</label>
+              <input id={"emp-monthlySalary"} name="monthlySalary" inputMode="numeric" defaultValue={values.monthlySalary ?? ""} className={I} />
             </div>
           ) : (
             <div />
@@ -204,8 +204,8 @@ export function EmployeeForm({
 
           {/* Start & End date side by side — the start date drives the values below. */}
           <div>
-            <label className={L}>Start date</label>
-            <input
+            <label htmlFor={"emp-startDate"} className={L}>Start date</label>
+            <input id={"emp-startDate"}
               name="startDate"
               type="date"
               value={startDate}
@@ -214,8 +214,8 @@ export function EmployeeForm({
             />
           </div>
           <div>
-            <label className={L}>End date</label>
-            <input
+            <label htmlFor={"emp-endDate"} className={L}>End date</label>
+            <input id={"emp-endDate"}
               name="endDate"
               type="date"
               value={endDate}
@@ -232,11 +232,11 @@ export function EmployeeForm({
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className={L}>Years of service</label>
+                <div className={L}>Years of service</div>
                 <div className={RO} aria-readonly="true">{yearsOfService}</div>
               </div>
               <div>
-                <label className={L}>Tenure band</label>
+                <div className={L}>Tenure band</div>
                 <div className={RO} aria-readonly="true">
                   {tenureBandDisplay(startDate ? new Date(startDate) : null)}
                 </div>
@@ -246,8 +246,8 @@ export function EmployeeForm({
 
           {/* Reports to + Role */}
           <div>
-            <label className={L}>Reports to</label>
-            <select name="reportsToId" defaultValue={values.reportsToId ?? ""} className={I}>
+            <label htmlFor={"emp-reportsToId"} className={L}>Reports to</label>
+            <select id={"emp-reportsToId"} name="reportsToId" defaultValue={values.reportsToId ?? ""} className={I}>
               <option value="">—</option>
               {managers.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -257,8 +257,8 @@ export function EmployeeForm({
             </select>
           </div>
           <div>
-            <label className={L}>Role {canEditRole ? "" : "(Super User only)"}</label>
-            <select
+            <label htmlFor={"emp-role"} className={L}>Role {canEditRole ? "" : "(Super User only)"}</label>
+            <select id={"emp-role"}
               name="role"
               defaultValue={values.role}
               disabled={!canEditRole}
@@ -277,12 +277,12 @@ export function EmployeeForm({
         <h2 className="mb-4 font-serif text-lg text-ink">Personal</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={L}>Date of birth</label>
-            <input name="dateOfBirth" type="date" defaultValue={values.dateOfBirth ?? ""} className={I} />
+            <label htmlFor={"emp-dateOfBirth"} className={L}>Date of birth</label>
+            <input id={"emp-dateOfBirth"} name="dateOfBirth" type="date" defaultValue={values.dateOfBirth ?? ""} className={I} />
           </div>
           <div>
-            <label className={L}>Marital status</label>
-            <select name="maritalStatus" defaultValue={values.maritalStatus ?? ""} className={I}>
+            <label htmlFor={"emp-maritalStatus"} className={L}>Marital status</label>
+            <select id={"emp-maritalStatus"} name="maritalStatus" defaultValue={values.maritalStatus ?? ""} className={I}>
               <option value="">—</option>
               <option value="SINGLE">Single</option>
               <option value="MARRIED">Married</option>
@@ -294,7 +294,7 @@ export function EmployeeForm({
 
         <div className="mt-5">
           <div className="flex items-center justify-between">
-            <label className={L}>Dependants</label>
+            <div className={L}>Dependants</div>
             <button
               type="button"
               onClick={() => setDeps([...deps, { name: "", dateOfBirth: "", kind: "CHILD" }])}
@@ -364,16 +364,16 @@ export function EmployeeForm({
         <h2 className="mb-4 font-serif text-lg text-ink">Emergency contact</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={L}>Contact name</label>
-            <input name="emergencyContactName" defaultValue={values.emergencyContactName ?? ""} className={I} />
+            <label htmlFor={"emp-emergencyContactName"} className={L}>Contact name</label>
+            <input id={"emp-emergencyContactName"} name="emergencyContactName" defaultValue={values.emergencyContactName ?? ""} className={I} />
           </div>
           <div>
-            <label className={L}>Relationship</label>
-            <input name="emergencyContactRelationship" defaultValue={values.emergencyContactRelationship ?? ""} className={I} />
+            <label htmlFor={"emp-emergencyContactRelationship"} className={L}>Relationship</label>
+            <input id={"emp-emergencyContactRelationship"} name="emergencyContactRelationship" defaultValue={values.emergencyContactRelationship ?? ""} className={I} />
           </div>
           <div className="sm:col-span-2">
-            <label className={L}>Contact phone</label>
-            <input name="emergencyContactPhone" defaultValue={values.emergencyContactPhone ?? ""} className={I} />
+            <label htmlFor={"emp-emergencyContactPhone"} className={L}>Contact phone</label>
+            <input id={"emp-emergencyContactPhone"} name="emergencyContactPhone" defaultValue={values.emergencyContactPhone ?? ""} className={I} />
           </div>
         </div>
       </section>

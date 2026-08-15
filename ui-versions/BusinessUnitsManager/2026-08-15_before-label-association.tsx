@@ -80,16 +80,16 @@ export function BusinessUnitsManager({ units }: { units: ManagedUnit[] }) {
             <input type="hidden" name="id" value={u.id} />
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
-                <label htmlFor={`bu-${u.id}-name`} className={L}>Company name (official)</label>
-                <input id={`bu-${u.id}-name`} name="name" defaultValue={u.name} required className={I} />
+                <label className={L}>Company name (official)</label>
+                <input name="name" defaultValue={u.name} required className={I} />
               </div>
               <div>
-                <label htmlFor={`bu-${u.id}-platformName`} className={L}>Platform name (shown in-app)</label>
-                <input id={`bu-${u.id}-platformName`} name="platformName" defaultValue={u.platformName ?? ""} placeholder={u.name} className={I} />
+                <label className={L}>Platform name (shown in-app)</label>
+                <input name="platformName" defaultValue={u.platformName ?? ""} placeholder={u.name} className={I} />
               </div>
               <div>
-                <label htmlFor={`bu-${u.id}-shortName`} className={L}>Short name (eyebrow)</label>
-                <input id={`bu-${u.id}-shortName`} name="shortName" defaultValue={u.shortName} required className={I} />
+                <label className={L}>Short name (eyebrow)</label>
+                <input name="shortName" defaultValue={u.shortName} required className={I} />
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -98,14 +98,13 @@ export function BusinessUnitsManager({ units }: { units: ManagedUnit[] }) {
             </div>
 
             <div>
-              <label htmlFor={`bu-${u.id}-logo`} className={L}>Logo (optional, image ≤ 2MB — replaces the wordmark)</label>
+              <label className={L}>Logo (optional, image ≤ 2MB — replaces the wordmark)</label>
               {u.logoUrl ? (
                 <label className="mb-2 flex items-center gap-1.5 text-sm text-muted">
                   <input type="checkbox" name="removeLogo" className="h-4 w-4" /> Remove logo
                 </label>
               ) : null}
               <input
-                id={`bu-${u.id}-logo`}
                 type="file"
                 name="logo"
                 accept="image/*"

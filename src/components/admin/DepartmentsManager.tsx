@@ -82,10 +82,11 @@ export function DepartmentsManager({ departments }: { departments: DeptRow[] }) 
       {/* Add a department */}
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4">
         <div className="flex-1 min-w-[220px]">
-          <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
+          <label htmlFor="dept-new" className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted">
             New department
           </label>
           <input
+            id="dept-new"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => {

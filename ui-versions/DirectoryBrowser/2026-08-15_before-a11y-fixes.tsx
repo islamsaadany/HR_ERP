@@ -212,11 +212,11 @@ function SortableHeader({
   onClick: () => void;
 }) {
   return (
-    // aria-sort belongs on the column header CELL — assistive tech ignores it on a button (audit F4).
-    <th className="px-4 py-3 font-medium" aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}>
+    <th className="px-4 py-3 font-medium">
       <button
         type="button"
         onClick={onClick}
+        aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
         className={
           "-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 uppercase tracking-wide transition hover:text-gold-200 " +
           (active ? "text-gold-300" : "text-white")
