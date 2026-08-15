@@ -295,11 +295,7 @@ export function BenefitsBoard({
         </div>
 
         {/* Right: sticky meter + how it works */}
-        {/* On a phone the two columns stack, and the pool card is the second one — which put the
-            employee's balance BELOW every benefit row, at the far end of the page from where the
-            decision is made (audit F6). `order-first` lifts it above the list on small screens;
-            `lg:order-none` leaves the desktop two-column layout exactly as it was. */}
-        <aside className="order-first space-y-4 lg:order-none lg:sticky lg:top-24">
+        <aside className="space-y-4 lg:sticky lg:top-24">
           {/* The pool is the most important number on the page, so it is the one dark
               object in the rail — it outranks the "How it works" card below it. */}
           <div className="rounded-2xl bg-navy-900 p-5 text-white shadow-[0_6px_20px_rgba(10,26,48,0.18)]">

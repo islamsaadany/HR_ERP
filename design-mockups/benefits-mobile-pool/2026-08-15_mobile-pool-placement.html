@@ -209,13 +209,18 @@
 
     <!-- OPTION A -->
     <div class="phone-col">
-      <p class="cap">Option A — pool first <span class="tag tag-after">After</span></p>
+      <p class="cap">Option A — pool first <span class="tag tag-after">Shipped</span></p>
       <div class="phone">
         <div class="screen">
           <div class="hdr">
             <div class="eye">Benefits</div>
             <h1>Your benefits</h1>
             <p>Full-time · 2–4 years</p>
+          </div>
+          <div class="band-gold">
+            <div class="eye">You choose · claim as you spend</div>
+            <h2>Your flexible benefits</h2>
+            <p>Enter the full price you paid; the company covers a set % of each benefit.</p>
           </div>
           <div class="pool mt">
             <div class="lb">Your pool</div>
@@ -226,11 +231,6 @@
               <div class="ln"><span>Used</span><span>EGP 0</span></div>
               <div class="ln"><span>Per-benefit cap (50%)</span><span>EGP 22,500</span></div>
             </div>
-          </div>
-          <div class="band-gold">
-            <div class="eye">You choose · claim as you spend</div>
-            <h2>Your flexible benefits</h2>
-            <p>Enter the full price you paid; the company covers a set % of each benefit.</p>
           </div>
           <div class="cat">Medical insurance<i></i></div>
           <div class="brow">
@@ -352,8 +352,10 @@
   </div>
 
   <div class="mock-note" style="margin-top: 28px;">
-    <strong>Recommendation: Option A.</strong> It fixes the actual complaint — the number is missing
-    when you arrive — for one line of CSS and no new surface area. Option B is strictly better for
+    <strong>Option A shipped (2026-08-15).</strong> One line — <code>order-first lg:order-none</code>
+    on the summary column. Note the pool card lands <em>under</em> the gold section band rather than
+    above it, because that band sits outside the two-column grid: the order reads section header →
+    your balance → the benefit list, which is the right way round. Desktop is untouched. Option B is strictly better for
     someone deep in a long list, but it permanently spends about an eighth of a phone screen and
     introduces a fixed element that has to coexist with the claim form and the success toast. If you
     want the documented behaviour restored exactly, pick B and I'll handle the collisions; otherwise

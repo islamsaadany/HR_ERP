@@ -186,13 +186,13 @@
     <p class="lede">
       A pass over every employee- and admin-facing surface, looking for defects that are provable from
       the code rather than matters of taste. Each finding carries its file and line.
-      <strong>Eight of the nine are fixed.</strong> Only F6 remains — it changes a layout, so it is waiting on a mockup decision.
+      <strong>All nine are fixed.</strong> The six suggestions further down remain open.
     </p>
     <div class="scope">
       <span class="chip"><b>41</b> routes</span>
       <span class="chip"><b>52</b> components</span>
       <span class="chip"><b>~22,000</b> lines</span>
-      <span class="chip"><b>9</b> findings · <b>8</b> fixed</span>
+      <span class="chip"><b>9</b> findings · <b>all fixed</b></span>
       <span class="chip"><b>3</b> false positives discarded</span>
       <span class="chip">2026-08-15</span>
     </div>
@@ -216,7 +216,7 @@
         <tr><td>F3</td><td>102 of 106 form labels aren't attached to their field</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
         <tr><td>F4</td><td>Table column sorting can't be reached by keyboard</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
         <tr><td>F5</td><td>The medical-commitment modal has no dialog semantics or Escape key</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
-        <tr><td>F6 →</td><td>On a phone, the benefits pool balance sits below every benefit row</td><td><span class="sev med">Medium</span></td><td>Medium</td></tr>
+        <tr><td>F6 →</td><td>On a phone, the benefits pool balance sits below every benefit row</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
         <tr><td>F7</td><td>Expandable incentive report rows are mouse-only</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
         <tr><td>F8</td><td>Finance "Confirm payment" gives no feedback while submitting</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
         <tr><td>F9</td><td>Two small consistency slips (sort caret contrast, one date format)</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
@@ -379,7 +379,7 @@ BenefitsBoard.tsx  (MedicalModal, GuaranteedClaimModal)          ✗  and no Esc
 
   <div class="finding med">
     <div class="fhead">
-      <span class="fid">F6</span>
+      <span class="fid">F6 ✓</span>
       <span class="ftitle">On a phone, the pool balance is buried under every benefit row</span>
       <span class="sev med">Medium</span>
     </div>
@@ -554,16 +554,15 @@ lib/labels.ts:73         formatDate() → { day: "2-digit", … }   ← the shar
   </ul>
 
   <div class="note">
-    <strong>F1–F5 and F7–F9 are fixed and pushed.</strong> Fixing F1 also uncovered a defect this
+    <strong>All nine findings are fixed and pushed.</strong> Fixing F1 also uncovered a defect this
     audit had missed: the flexible-claim amount input formatted its own value and parsed it back with
     <code>/[^0-9]/g</code>, so on an Arabic-locale browser every keystroke stripped the value —
-    1,234 + "5" became <strong>5</strong>, and no claim above 9 EGP could be entered at all. That is
-    fixed too.
+    1,234 + "5" became <strong>5</strong>, and no claim above 9 EGP could be entered at all.
     <br><br>
-    <strong>F6 is the only one left</strong>, because it is the only one that changes a layout. Two
-    options are mocked up for a decision — pool-card-first (one line of CSS) or a restored pinned
-    summary bar (what the docs still promise). Nothing on the benefits page moves until you pick.
-    The six suggestions further down are also still open.
+    F6 was taken as the non-floating option: the pool summary moves above the benefit list on small
+    screens and the desktop layout is untouched. The pinned bottom bar was mocked up and declined —
+    it would have permanently spent about an eighth of a phone screen. The six suggestions below are
+    still open.
 </div>
 
   <footer>
