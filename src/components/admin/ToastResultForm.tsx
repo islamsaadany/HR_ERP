@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
+import { TOAST_DURATION_MS } from "@/lib/toast";
 import { useRouter } from "next/navigation";
 
 /**
@@ -44,7 +45,7 @@ export function ToastResultForm({
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setToast((cur) => (cur && cur.id === id ? null : cur));
-    }, 4000);
+    }, TOAST_DURATION_MS);
   };
 
   const clientAction = async (formData: FormData) => {

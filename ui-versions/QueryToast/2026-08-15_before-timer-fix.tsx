@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { TOAST_DURATION_MS } from "@/lib/toast";
 
 /**
  * Global success toast for navigate-then-confirm saves (spec: unified save feedback).
@@ -18,28 +17,17 @@ function QueryToastInner() {
   const [show, setShow] = useState<string | null>(null);
   const fired = useRef<string | null>(null);
 
-  // Show the message and strip the param from the URL.
   useEffect(() => {
-    if (!msg || fired.current === msg) return;
-    fired.current = msg;
-    setShow(msg);
-    const url = new URL(window.location.href);
-    url.searchParams.delete("toast");
-    router.replace(url.pathname + (url.search ? url.search : ""), { scroll: false });
+    if (msg && fired.current !== msg) {
+      fired.current = msg;
+      setShow(msg);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("toast");
+      router.replace(url.pathname + (url.search ? url.search : ""), { scroll: false });
+      const t = setTimeout(() => setShow(null), 4000);
+      return () => clearTimeout(t);
+    }
   }, [msg, router]);
-
-  // Auto-dismiss, keyed on the VISIBLE toast rather than on the query param.
-  //
-  // These two were previously one effect, which meant the toast never dismissed itself:
-  // `router.replace` above removes `?toast=`, so `msg` changed to null, the effect re-ran,
-  // its cleanup cleared the pending timer — and the re-run set no new one, because `msg`
-  // was gone. The toast then sat there until it was clicked or the page was left.
-  // `show` doesn't change when the URL does, so the timer now survives.
-  useEffect(() => {
-    if (!show) return;
-    const t = setTimeout(() => setShow(null), TOAST_DURATION_MS);
-    return () => clearTimeout(t);
-  }, [show]);
 
   if (!show) return null;
   return (
