@@ -122,19 +122,16 @@ export function AppShell({
         {collapsed ? (
           <>
             <div className="flex flex-col items-center gap-3 border-b border-navy-700 px-2 py-5">
-              {/* The brand mark goes home — the conventional place people click to get back. */}
-              <Link href="/dashboard" aria-label={`${companyName} — go to Home`} title="Home" className="transition hover:opacity-80">
-                {logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logoUrl} alt={companyName} className="h-8 w-8 rounded-md object-contain" />
-                ) : (
-                  // No uploaded logo → the generic People mark (never a bare initial),
-                  // for the default brand and business units alike (spec 024/025).
-                  <div className="grid h-8 w-8 place-items-center rounded-md bg-navy-800">
-                    <PeopleMark className="h-5 w-5" />
-                  </div>
-                )}
-              </Link>
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt={companyName} className="h-8 w-8 rounded-md object-contain" />
+              ) : (
+                // No uploaded logo → the generic People mark (never a bare initial),
+                // for the default brand and business units alike (spec 024/025).
+                <div className="grid h-8 w-8 place-items-center rounded-md bg-navy-800">
+                  <PeopleMark className="h-5 w-5" />
+                </div>
+              )}
               <button
                 type="button"
                 onClick={toggle}
@@ -232,19 +229,17 @@ export function AppShell({
         ) : (
           <>
             <div className="flex items-start justify-between border-b border-navy-700 px-6 py-6">
-              <Link href="/dashboard" aria-label={`${companyName} — go to Home`} title="Home" className="min-w-0 transition hover:opacity-80">
-                {logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logoUrl} alt={companyName} className="h-9 max-w-[150px] object-contain" />
-                ) : (
-                  <div>
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-400">
-                      {shortName}
-                    </div>
-                    <div className="font-serif text-xl uppercase">{companyName}</div>
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt={companyName} className="h-9 max-w-[150px] object-contain" />
+              ) : (
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-400">
+                    {shortName}
                   </div>
-                )}
-              </Link>
+                  <div className="font-serif text-xl uppercase">{companyName}</div>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={toggle}
@@ -398,7 +393,7 @@ export function AppShell({
           </div>
         ) : null}
         <header className="flex items-center justify-between bg-navy-900 px-4 py-3 text-white md:hidden">
-          <Link href="/dashboard" aria-label={`${companyName} — go to Home`} className="font-serif text-lg uppercase transition hover:text-gold-300">{companyName}</Link>
+          <span className="font-serif text-lg uppercase">{companyName}</span>
           <form action={signOutAction}>
             <button type="submit" className="text-xs text-navy-200 underline">
               Sign out

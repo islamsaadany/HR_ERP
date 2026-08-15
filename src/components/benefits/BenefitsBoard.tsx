@@ -6,6 +6,7 @@ import type { ClaimType, ClaimStatus } from "@prisma/client";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS, tracker } from "@/lib/benefits/claims";
 import { coveredAmount } from "@/lib/benefits/coverage";
 import { formatDate, formatEGP as egp, formatNumber } from "@/lib/labels";
+import { TOAST_DURATION_MS } from "@/lib/toast";
 import { createClaim } from "@/app/(app)/benefits/claim-actions";
 import { commitMedical } from "@/app/(app)/benefits/actions";
 
@@ -162,7 +163,7 @@ export function BenefitsBoard({
   const notify = useCallback((text: string) => {
     const id = ++toastId.current;
     setToasts((t) => [...t, { id, text }]);
-    setTimeout(() => dismissToast(id), 4000);
+    setTimeout(() => dismissToast(id), TOAST_DURATION_MS);
   }, [dismissToast]);
   const proratedBadge = proration ? (
     <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-800">
