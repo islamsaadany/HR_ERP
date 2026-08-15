@@ -232,17 +232,11 @@ export function BenefitsBoard({
         </div>
       </section>
 
-      {/* Flexible band — the same header shape as the guaranteed band above, filled gold
-          instead of navy. The palette flip is what signals the switch from "the company
-          gives you this" to "you choose and claim this". */}
-      <div className="mt-8 rounded-2xl border border-gold-300 bg-gold-100 px-6 py-4">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-700">You choose · claim as you spend</div>
-        <h2 className="mt-0.5 font-serif text-xl text-navy-900">Your flexible benefits</h2>
-        <p className="mt-1.5 max-w-[62ch] text-sm text-gold-800">
-          Enter the full price you paid; the company covers a set % of each benefit, and only that covered share
-          draws from your pool.
-        </p>
-      </div>
+      <h2 className="mt-8 font-serif text-2xl text-ink">Your flexible benefits</h2>
+      <p className="mt-1 max-w-[62ch] text-sm text-muted">
+        Claim as you spend — any time this year. Enter the full price you paid; the company covers a set % of each
+        benefit, and only that covered share draws from your pool.
+      </p>
 
       {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
       {automatic.length > 0 ? (
@@ -283,33 +277,28 @@ export function BenefitsBoard({
 
         {/* Right: sticky meter + how it works */}
         <aside className="space-y-4 lg:sticky lg:top-24">
-          {/* The pool is the most important number on the page, so it is the one dark
-              object in the rail — it outranks the "How it works" card below it. */}
-          <div className="rounded-2xl bg-navy-900 p-5 text-white shadow-[0_6px_20px_rgba(10,26,48,0.18)]">
+          <div className="rounded-2xl border border-line bg-surface p-5">
             {proratedBadge ? <div className="mb-2">{proratedBadge}</div> : null}
-            <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-gold-300">Your pool</div>
-            <div className="mt-1.5 font-serif text-[34px] leading-tight text-white tabular-nums">{egp(poolRemaining)}</div>
-            <div className="mt-1 text-sm text-navy-200">
+            <div className="font-serif text-3xl text-ink tabular-nums">{egp(poolRemaining)}</div>
+            <div className="text-sm text-muted">
               left of your {egp(ceiling)} {proration ? "prorated" : "annual"} pool (company share)
             </div>
             {proration ? (
-              <p className="mt-3 rounded-lg bg-white/10 px-3 py-2 text-xs text-navy-100">
+              <p className="mt-2 rounded-lg bg-navy-50 px-3 py-2 text-xs text-navy-700">
                 This benefits cycle runs {proration.months} of 12 {proration.months === 1 ? "month" : "months"}, so
                 your pool is scaled to that period. A full-length cycle carries the full annual amount.
               </p>
             ) : null}
-            <div className="mt-3.5 h-2.5 w-full overflow-hidden rounded-full bg-navy-700">
+            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-navy-50">
               <div className="h-full rounded-full bg-gold-500" style={{ width: `${pct}%` }} />
             </div>
-            <div className="mt-3.5 border-t border-white/15">
-              <div className="flex items-baseline justify-between py-2.5 text-sm">
-                <span className="text-navy-200">Used</span>
-                <span className="font-semibold tabular-nums text-white">{egp(poolUsed)}</span>
-              </div>
-              <div className="flex items-baseline justify-between border-t border-white/10 py-2.5 text-sm">
-                <span className="text-navy-200">Per-benefit cap (50%)</span>
-                <span className="font-semibold tabular-nums text-white">{egp(cap)}</span>
-              </div>
+            <div className="mt-3 flex justify-between text-sm">
+              <span className="text-muted">Used</span>
+              <span className="font-semibold tabular-nums text-ink">{egp(poolUsed)}</span>
+            </div>
+            <div className="mt-1 flex justify-between text-sm">
+              <span className="text-muted">Per-benefit cap (50%)</span>
+              <span className="font-semibold tabular-nums text-ink">{egp(cap)}</span>
             </div>
           </div>
           <div className="rounded-2xl border border-line bg-surface p-5">
