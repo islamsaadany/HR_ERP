@@ -14,7 +14,7 @@ export type PaymentRow = {
   hasProof: boolean; // employee attached a proof-of-payment file
 };
 
-import { formatEGP as egp } from "@/lib/labels";
+const egp = (n: number) => "EGP " + n.toLocaleString("en-US");
 
 /**
  * Finance payments queue — APPROVED claims (awaiting payment, with an inline confirm form) followed

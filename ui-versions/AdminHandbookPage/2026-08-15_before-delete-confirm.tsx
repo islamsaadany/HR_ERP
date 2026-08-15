@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ConfirmSubmitButton } from "@/components/admin/ConfirmSubmitButton";
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/labels";
@@ -43,7 +42,7 @@ export default async function AdminHandbookPage({
             </div>
             <div className="flex shrink-0 items-center gap-3">
               <Link href={`/admin/handbook/${s.id}`} className="text-sm font-medium text-navy-600 hover:text-navy-800">Edit</Link>
-              <form action={deleteSection}><input type="hidden" name="id" value={s.id} /><ConfirmSubmitButton message={`Delete the handbook section “${s.title}”? This can't be undone.`} className="text-sm text-muted hover:text-red-600">Delete</ConfirmSubmitButton></form>
+              <form action={deleteSection}><input type="hidden" name="id" value={s.id} /><button className="text-sm text-muted hover:text-red-600">Delete</button></form>
             </div>
           </li>
         ))}
@@ -71,7 +70,7 @@ export default async function AdminHandbookPage({
         ) : resources.map((r) => (
           <li key={r.id} className="flex items-center justify-between px-4 py-3">
             <div><div className="text-sm font-medium text-ink">{r.title}</div><div className="text-xs text-muted">{r.category} · {formatDate(r.createdAt)}</div></div>
-            <form action={deleteResource}><input type="hidden" name="id" value={r.id} /><ConfirmSubmitButton message={`Delete the resource “${r.title}”? This can't be undone.`} className="text-sm text-muted hover:text-red-600">Delete</ConfirmSubmitButton></form>
+            <form action={deleteResource}><input type="hidden" name="id" value={r.id} /><button className="text-sm text-muted hover:text-red-600">Delete</button></form>
           </li>
         ))}
       </ul>

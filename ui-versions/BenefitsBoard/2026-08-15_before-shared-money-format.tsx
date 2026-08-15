@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import type { ClaimType, ClaimStatus } from "@prisma/client";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS, tracker } from "@/lib/benefits/claims";
 import { coveredAmount } from "@/lib/benefits/coverage";
-import { formatDate, formatEGP as egp, formatNumber } from "@/lib/labels";
+import { formatDate } from "@/lib/labels";
 import { createClaim } from "@/app/(app)/benefits/claim-actions";
 import { commitMedical } from "@/app/(app)/benefits/actions";
+
+const egp = (n: number) => "EGP " + Math.round(n).toLocaleString();
 
 // Lightweight success-toast plumbing: a claim form calls notify(text); toasts
 // float bottom-left and auto-dismiss. Errors stay inline near the form.
@@ -480,7 +482,7 @@ function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; rema
         <input
           name="amount"
           inputMode="numeric"
-          value={fullCost ? formatNumber(fullCost) : ""}
+          value={fullCost ? fullCost.toLocaleString() : ""}
           onChange={(e) => setFullCost(parseInt(e.target.value.replace(/[^0-9]/g, ""), 10) || 0)}
           placeholder="e.g. 10,000"
           required

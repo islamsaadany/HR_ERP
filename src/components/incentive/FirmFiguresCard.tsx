@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatNumber } from "@/lib/labels";
 
 /**
  * Firm P&L figures for a cycle. After the figures are saved the card shows a locked, read-only
@@ -76,7 +77,7 @@ function Figure({ label, value }: { label: string; value: number | null }) {
     <div className="flex items-center justify-between gap-3">
       <div className="text-[11px] uppercase tracking-wide text-muted">{label}</div>
       <div className="w-full max-w-[220px] rounded-lg border border-line bg-paper px-3 py-2 text-right text-sm font-semibold tabular-nums text-ink">
-        {value == null ? "—" : value.toLocaleString()}
+        {value == null ? "—" : formatNumber(value)}
       </div>
     </div>
   );

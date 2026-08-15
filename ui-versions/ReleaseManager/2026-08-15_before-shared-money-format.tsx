@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { formatEGP } from "@/lib/labels";
 import { useRouter } from "next/navigation";
 import { setReleased } from "@/app/(app)/admin/benefits/release-actions";
 
@@ -50,9 +49,7 @@ const csvCell = (v: string | number | null | undefined): string => {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
-// Blank (not "EGP 0") when a band amount isn't set for this employee — the Status column
-// carries the reason. Formatting itself is the shared one.
-const egp = (n: number | null) => (n == null ? "" : formatEGP(n));
+const egp = (n: number | null) => (n == null ? "" : "EGP " + n.toLocaleString());
 // Short employment-type code for the Type column / CSV.
 const typeCode = (label: string) =>
   label === "Full-time" ? "FT" : label === "Part-time" ? "PT" : "";

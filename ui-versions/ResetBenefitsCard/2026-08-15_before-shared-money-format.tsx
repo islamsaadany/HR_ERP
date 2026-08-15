@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { resetBenefits, type ResetBenefitsState } from "@/app/(app)/admin/employees/reset-benefits-actions";
 
-import { formatEGP as egp } from "@/lib/labels";
+const egp = (n: number) => "EGP " + Math.round(n).toLocaleString();
 
 export type BenefitLine = {
   target: string; // "medical" | "guaranteed:<id>" | "catalog:<id>"

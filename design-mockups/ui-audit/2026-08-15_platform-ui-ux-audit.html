@@ -185,14 +185,14 @@
     <h1>UI &amp; UX Audit</h1>
     <p class="lede">
       A pass over every employee- and admin-facing surface, looking for defects that are provable from
-      the code rather than matters of taste. Each finding below carries its file and line; the fixes are
-      proposed, <strong>not applied</strong>.
+      the code rather than matters of taste. Each finding carries its file and line.
+      <strong>F1 and F2 are fixed;</strong> the rest are proposals awaiting your go-ahead.
     </p>
     <div class="scope">
       <span class="chip"><b>41</b> routes</span>
       <span class="chip"><b>52</b> components</span>
       <span class="chip"><b>~22,000</b> lines</span>
-      <span class="chip"><b>9</b> findings</span>
+      <span class="chip"><b>9</b> findings · <b>2</b> fixed</span>
       <span class="chip"><b>3</b> false positives discarded</span>
       <span class="chip">2026-08-15</span>
     </div>
@@ -211,8 +211,8 @@
         <tr><th>ID</th><th>Finding</th><th>Severity</th><th>Effort</th></tr>
       </thead>
       <tbody>
-        <tr><td>F1</td><td>Currency renders differently across screens — including Arabic numerals for Arabic-locale browsers</td><td><span class="sev high">High</span></td><td>Small</td></tr>
-        <tr><td>F2</td><td>Delete buttons fire instantly, no confirmation, across 6 admin surfaces</td><td><span class="sev high">High</span></td><td>Small</td></tr>
+        <tr><td>F1</td><td>Currency renders differently across screens — including Arabic numerals for Arabic-locale browsers</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
+        <tr><td>F2</td><td>Delete buttons fire instantly, no confirmation, across 6 admin surfaces</td><td><span class="sev ok">Fixed</span></td><td>Done</td></tr>
         <tr><td>F3</td><td>102 of 106 form labels aren't attached to their field</td><td><span class="sev med">Medium</span></td><td>Medium</td></tr>
         <tr><td>F4</td><td>Table column sorting can't be reached by keyboard</td><td><span class="sev med">Medium</span></td><td>Small</td></tr>
         <tr><td>F5</td><td>The medical-commitment modal has no dialog semantics or Escape key</td><td><span class="sev med">Medium</span></td><td>Small</td></tr>
@@ -229,7 +229,7 @@
 
   <div class="finding high">
     <div class="fhead">
-      <span class="fid">F1</span>
+      <span class="fid">F1 ✓</span>
       <span class="ftitle">The same amount of money renders differently depending on the browser</span>
       <span class="sev high">High</span>
     </div>
@@ -262,7 +262,7 @@ email/templates.ts:14  "EGP " + n.toLocaleString("en-US")           → no round
 
   <div class="finding high">
     <div class="fhead">
-      <span class="fid">F2</span>
+      <span class="fid">F2 ✓</span>
       <span class="ftitle">Delete buttons destroy authored content on a single click</span>
       <span class="sev high">High</span>
     </div>
@@ -554,11 +554,17 @@ lib/labels.ts:73         formatDate() → { day: "2-digit", … }   ← the shar
   </ul>
 
   <div class="note">
-    <strong>Nothing in this document has been applied.</strong> Every item above is a proposal.
-    F1, F2, F4, F5, F7, F8 and F9 are behavioural or structural and could be fixed without changing
-    how anything looks. F3 is mechanical and invisible. <strong>F6 is the only one that changes a
-    layout</strong>, so it would get a mockup and your approval first — as would any of the six
-    suggestions.
+    <strong>F1 and F2 are fixed and pushed.</strong> Fixing F1 also uncovered a defect this audit had
+    missed: the flexible-claim amount input formatted its own value and parsed it back with
+    <code>/[^0-9]/g</code>, so on an Arabic-locale browser every keystroke stripped the value —
+    1,234 + "5" became <strong>5</strong>, and no claim above 9 EGP could be entered at all. That is
+    fixed too, and every remaining money figure in the app and its server messages is now
+    locale-pinned.
+    <br><br>
+    Everything else remains a proposal. F4, F5, F7, F8 and F9 are behavioural and could be fixed
+    without changing how anything looks. F3 is mechanical and invisible. <strong>F6 is the only one
+    that changes a layout</strong>, so it would get a mockup and your approval first — as would any
+    of the six suggestions.
   </div>
 
   <footer>

@@ -14,7 +14,7 @@ type Benefit = { value: string; label: string; group: "Guaranteed" | "Medical" |
 
 const INP = "w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-sm";
 const LBL = "mb-1 block text-[11px] uppercase tracking-wide text-muted";
-import { formatEGP as egp } from "@/lib/labels";
+const egp = (n: number) => "EGP " + Math.round(n).toLocaleString();
 
 export function ManualReleaseForm({ employees, benefits }: { employees: Emp[]; benefits: Benefit[] }) {
   const [state, formAction, pending] = useActionState<ManualResult | null, FormData>(

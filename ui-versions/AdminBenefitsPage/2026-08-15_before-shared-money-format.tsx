@@ -1,7 +1,11 @@
 import { requireAdmin } from "@/lib/roles";
-import { ConfirmSubmitButton } from "@/components/admin/ConfirmSubmitButton";
 import { prisma } from "@/lib/prisma";
-import { formatDate, EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL, TENURE_BAND_ORDER, formatEGP as egp, formatEGP2, formatNumber } from "@/lib/labels";
+import {
+  formatDate,
+  EMPLOYMENT_TYPE_LABEL,
+  TENURE_BAND_LABEL,
+  TENURE_BAND_ORDER,
+} from "@/lib/labels";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS } from "@/lib/benefits/claims";
 import { BackLink } from "@/components/admin/BackLink";
 import type { EmploymentType, TenureBand } from "@prisma/client";
@@ -26,6 +30,7 @@ import { CatalogueGrid, type CatalogueGridRow } from "@/components/admin/Catalog
 import { AddCatalogItemModal } from "@/components/admin/AddCatalogItemModal";
 
 export const dynamic = "force-dynamic";
+const egp = (n: number) => "EGP " + n.toLocaleString();
 
 export default async function AdminBenefitsPage({
   searchParams,
@@ -206,7 +211,7 @@ export default async function AdminBenefitsPage({
                       const v = g[colFor(t, c)];
                       return (
                         <td key={c.band} className="py-2 pr-4 text-right tabular-nums text-ink">
-                          {v != null ? formatNumber(v) : "—"}
+                          {v != null ? v.toLocaleString() : "—"}
                         </td>
                       );
                     })
@@ -350,7 +355,7 @@ export default async function AdminBenefitsPage({
                           </form>
                           <form action={removeMedicalCommitment}>
                             <input type="hidden" name="id" value={m.id} />
-                            <ConfirmSubmitButton message={`Remove ${m.user.name}’s medical commitment? Their premium stops counting against their pool and they can commit again while the plan year is open.`} className="text-sm font-medium text-muted hover:text-red-600">Remove</ConfirmSubmitButton>
+                            <button className="text-sm font-medium text-muted hover:text-red-600">Remove</button>
                           </form>
                         </div>
                       </td>
@@ -470,8 +475,7 @@ export default async function AdminBenefitsPage({
   );
 
   // Age-banded rate card (spec 023). Admin keeps the operator's exact two-decimal figures.
-  // The rate card keeps the operator's exact figures to the cent (spec 023).
-  const fmt2 = formatEGP2;
+  const fmt2 = (n: unknown) => "EGP " + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const bandLabel = (b: { minAge: number; maxAge: number | null }) => `${b.minAge}–${b.maxAge ?? "+"}`;
 
   const rateCardRead = (

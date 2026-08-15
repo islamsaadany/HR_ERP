@@ -1,4 +1,5 @@
 import type { EmploymentType } from "@prisma/client";
+import { formatEGP } from "@/lib/labels";
 import { coveredAmount } from "@/lib/benefits/coverage";
 
 /**
@@ -73,7 +74,7 @@ export function evaluateClaim(ctx: AllowanceContext, claim: ProposedClaim): Clai
   }
   if (covered > benefitRemaining) {
     errors.push(
-      `${claim.name}: exceeds the 50% cap — only EGP ${benefitRemaining.toLocaleString()} left to claim on this benefit.`
+      `${claim.name}: exceeds the 50% cap — only ${formatEGP(benefitRemaining)} left to claim on this benefit.`
     );
   }
   if (covered > poolRemaining) {

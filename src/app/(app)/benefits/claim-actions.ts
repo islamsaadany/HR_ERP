@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { formatEGP } from "@/lib/labels";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
@@ -112,7 +113,7 @@ async function createClaimImpl(formData: FormData): Promise<void> {
     } else {
       if (!Number.isFinite(amount) || amount <= 0) fail("Enter a valid amount.");
       if (t.remaining != null && amount > t.remaining) {
-        fail(`That exceeds the amount left to claim (EGP ${t.remaining.toLocaleString()}).`);
+        fail(`That exceeds the amount left to claim (${formatEGP(t.remaining)}).`);
       }
       claimAmount = amount;
     }

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { formatEGP } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
 import { getActivePlanYear, getMedicalRateBands, planYearWindow, poolCeilingFor, medicalScopeFor } from "@/lib/benefits/config";
@@ -114,7 +115,7 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
   const warnings: string[] = [];
   if (proratedPremium > proratedCeiling) {
     warnings.push(
-      `Your medical premium of EGP ${proratedPremium.toLocaleString()} exceeds your pool — capped at EGP ${proratedCeiling.toLocaleString()}. Contact HR.`
+      `Your medical premium of ${formatEGP(proratedPremium)} exceeds your pool — capped at ${formatEGP(proratedCeiling)}. Contact HR.`
     );
   }
   if (anyOverTop) {

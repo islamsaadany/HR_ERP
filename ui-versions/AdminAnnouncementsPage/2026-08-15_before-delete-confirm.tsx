@@ -1,5 +1,4 @@
 import { requireAdmin } from "@/lib/roles";
-import { ConfirmSubmitButton } from "@/components/admin/ConfirmSubmitButton";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/labels";
 import { createAnnouncement, deleteAnnouncement } from "./actions";
@@ -42,7 +41,7 @@ export default async function AdminAnnouncementsPage() {
               </div>
               <form action={deleteAnnouncement}>
                 <input type="hidden" name="id" value={a.id} />
-                <ConfirmSubmitButton message={`Delete the announcement “${a.title}”? This can't be undone.`} className="shrink-0 text-sm text-muted hover:text-red-600">Delete</ConfirmSubmitButton>
+                <button className="shrink-0 text-sm text-muted hover:text-red-600">Delete</button>
               </form>
             </div>
           </li>
