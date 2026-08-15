@@ -1,0 +1,638 @@
+<title>Benefits Section Bands</title>
+<style>
+  :root {
+    --navy-50: #eceff5;
+    --navy-100: #d6deea;
+    --navy-200: #aebfd6;
+    --navy-300: #7d97ba;
+    --navy-600: #1f3a63;
+    --navy-700: #163055;
+    --navy-800: #0f2444;
+    --navy-900: #0a1a30;
+    --gold-100: #f6ecca;
+    --gold-200: #ecd894;
+    --gold-300: #e0c05a;
+    --gold-500: #c9a227;
+    --gold-600: #a8821e;
+    --gold-700: #85641b;
+    --gold-800: #6f521c;
+    --paper: #f5f3ee;
+    --surface: #fefdfb;
+    --ink: #16202e;
+    --muted: #5f6472;
+    --line: #e7e3da;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* Mockup chrome — not part of the real screen */
+  .mock-note {
+    margin-bottom: 32px;
+    border: 1px dashed var(--navy-200);
+    border-radius: 12px;
+    background: #fff;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .mock-note strong { color: var(--navy-700); }
+  .mock-note code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    background: var(--navy-50);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--navy-700);
+  }
+  .stage-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 44px 0 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .stage-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .stage-label .tag {
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+  .tag-before { background: #f3e6e6; color: #8d3b3b; }
+  .tag-after { background: var(--gold-100); color: var(--gold-800); }
+
+  /* ---- Shared app pieces (fidelity to the live screen) ---- */
+  .eyebrow-page {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold-600);
+  }
+  h1.page {
+    margin: 4px 0 0;
+    font-family: var(--font-serif);
+    font-size: 30px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+  .page-sub { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+
+  .section {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+  }
+  /* Guaranteed band — UNCHANGED, shown for reference */
+  .band-navy {
+    background: var(--navy-900);
+    color: #fff;
+    padding: 16px 24px;
+  }
+  .band-navy .band-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gold-300);
+  }
+  .band-navy h2 {
+    margin: 2px 0 0;
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 400;
+  }
+  .g-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    background: var(--line);
+  }
+  .g-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--surface);
+    padding: 16px;
+  }
+  .g-name { font-size: 14px; font-weight: 500; color: var(--ink); }
+  .g-note { flex: 1; min-height: 32px; font-size: 12px; color: var(--muted); }
+  .g-amt { font-family: var(--font-serif); font-size: 16px; color: var(--navy-800); }
+  .g-btn {
+    align-self: flex-start;
+    margin-top: 4px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: transparent;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--navy-700);
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* ---- BEFORE: bare flexible heading ---- */
+  .flex-head-before { margin-top: 32px; }
+  .flex-head-before h2 {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+  .flex-head-before p {
+    margin: 4px 0 0;
+    max-width: 62ch;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  /* ---- AFTER: gold band, matched to the navy one ---- */
+  .band-gold {
+    border: 1px solid var(--gold-300);
+    border-radius: 16px;
+    background: var(--gold-100);
+    padding: 16px 24px;
+  }
+  .band-gold .band-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gold-700);
+  }
+  .band-gold h2 {
+    margin: 2px 0 0;
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--navy-900);
+  }
+  .band-gold p {
+    margin: 6px 0 0;
+    max-width: 62ch;
+    font-size: 13px;
+    color: var(--gold-800);
+  }
+
+  /* ---- Two-column body ---- */
+  .cols {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    align-items: start;
+    gap: 24px;
+    margin-top: 16px;
+  }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+
+  .cat-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 0 4px;
+  }
+  .cat-head:first-child { padding-top: 0; }
+  .cat-head span:first-child {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gold-600);
+  }
+  .cat-head .rule { flex: 1; height: 1px; background: var(--line); }
+
+  .row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 16px;
+    margin-top: 8px;
+  }
+  .row-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .pill {
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: var(--navy-50);
+    color: var(--navy-700);
+  }
+  .row-desc { margin-top: 2px; font-size: 12px; color: var(--muted); }
+  .row-right { flex-shrink: 0; text-align: right; font-size: 12px; color: var(--ink); }
+  .row-cta {
+    display: inline-block;
+    margin-top: 6px;
+    border-radius: 8px;
+    background: var(--navy-50);
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--navy-700);
+  }
+
+  /* ---- BEFORE: flat pool card ---- */
+  .pool-before {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+    padding: 20px;
+  }
+  .pool-before .big {
+    font-family: var(--font-serif);
+    font-size: 30px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .pool-before .sub { font-size: 14px; color: var(--muted); }
+  .pool-before .meter {
+    margin-top: 12px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--navy-50);
+    overflow: hidden;
+  }
+  .pool-before .meter i { display: block; height: 100%; width: 0%; background: var(--gold-500); }
+  .pool-before .line {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+    font-size: 14px;
+  }
+  .pool-before .line + .line { margin-top: 4px; }
+  .pool-before .line span:first-child { color: var(--muted); }
+  .pool-before .line span:last-child { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* ---- AFTER: navy pool card ---- */
+  .pool-after {
+    border-radius: 16px;
+    background: var(--navy-900);
+    padding: 20px;
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(10, 26, 48, 0.18), 0 2px 6px rgba(10, 26, 48, 0.12);
+  }
+  .pool-after .label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gold-300);
+  }
+  .pool-after .big {
+    margin-top: 6px;
+    font-family: var(--font-serif);
+    font-size: 34px;
+    line-height: 1.1;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .pool-after .sub { margin-top: 4px; font-size: 13px; color: var(--navy-200); }
+  .pool-after .meter {
+    margin-top: 14px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--navy-700);
+    overflow: hidden;
+  }
+  .pool-after .meter i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--gold-500);
+  }
+  .pool-after .foot { margin-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+  .pool-after .line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 9px 0;
+    font-size: 13px;
+  }
+  .pool-after .line + .line { border-top: 1px solid rgba(255, 255, 255, 0.08); }
+  .pool-after .line span:first-child { color: var(--navy-200); }
+  .pool-after .line span:last-child {
+    font-weight: 600;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .pool-after .note {
+    margin-top: 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--navy-100);
+  }
+  .badge-pro {
+    display: inline-block;
+    border-radius: 999px;
+    background: var(--gold-100);
+    padding: 3px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--gold-800);
+  }
+
+  /* How-it-works card — unchanged, shown to prove the hierarchy */
+  .how {
+    margin-top: 16px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+    padding: 20px;
+  }
+  .how h3 {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+  .how ol { margin: 8px 0 0; padding: 0; list-style: none; }
+  .how li {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid var(--line);
+    padding: 6px 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .how li:first-child { border-top: 0; }
+  .how .num {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: var(--navy-50);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--navy-700);
+  }
+
+  .side-by-side {
+    display: grid;
+    grid-template-columns: 320px 320px;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 760px) { .side-by-side { grid-template-columns: 1fr; } }
+  .mini-cap {
+    margin: 0 0 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+</style>
+
+<div class="wrap">
+  <div class="mock-note">
+    <strong>Mockup — for sign-off before any code changes.</strong> Two changes to
+    <code>BenefitsBoard.tsx</code>: (1) the <strong>Flexible</strong> section gets the same header band as
+    Guaranteed, filled gold instead of navy, so the switch from “given to you” to “you claim” is visible;
+    (2) the <strong>pool value box</strong> becomes a navy filled card — the anchor of the right rail.
+    The Guaranteed band, the benefit rows, the two-column layout, all copy logic and every money rule are
+    <strong>unchanged</strong>.
+  </div>
+
+  <p class="eyebrow-page">Benefits</p>
+  <h1 class="page">Your benefits</h1>
+  <p class="page-sub">Full-time · 2–4 years</p>
+
+  <!-- ================= BEFORE ================= -->
+  <div class="stage-label"><span class="tag tag-before">Before</span> today’s screen</div>
+
+  <section class="section">
+    <div class="band-navy">
+      <div class="band-eyebrow">You receive automatically</div>
+      <h2>Guaranteed benefits</h2>
+    </div>
+    <div class="g-grid">
+      <div class="g-cell">
+        <div class="g-name">Marriage allowance</div>
+        <div class="g-note">One-off gift on marriage.</div>
+        <div class="g-amt">EGP 24,000</div>
+        <button class="g-btn" type="button">Request</button>
+      </div>
+      <div class="g-cell">
+        <div class="g-name">Professional development</div>
+        <div class="g-note">Courses, certifications, conferences.</div>
+        <div class="g-amt">EGP 9,500</div>
+        <button class="g-btn" type="button">Claim · proof</button>
+      </div>
+      <div class="g-cell">
+        <div class="g-name">Summer allowance</div>
+        <div class="g-note">Paid with the July payroll.</div>
+        <div class="g-amt">EGP 3,500</div>
+        <button class="g-btn" type="button">Request</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="flex-head-before">
+    <h2>Your flexible benefits</h2>
+    <p>
+      Claim as you spend — any time this year. Enter the full price you paid; the company covers a set % of
+      each benefit, and only that covered share draws from your pool.
+    </p>
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="cat-head"><span>Medical insurance</span><span class="rule"></span></div>
+      <div class="row">
+        <div>
+          <div class="row-name">Medical insurance <span class="pill" style="background: var(--gold-100); color: var(--gold-800);">50% exempt</span></div>
+          <div class="row-desc">The one benefit you commit up front — you’re always covered.</div>
+        </div>
+        <div class="row-right"><span class="row-cta">Set up cover</span></div>
+      </div>
+
+      <div class="cat-head"><span>Wellbeing</span><span class="rule"></span></div>
+      <div class="row">
+        <div>
+          <div class="row-name">Gym membership <span class="pill">80% covered</span></div>
+          <div class="row-desc">Any gym or studio, annual or monthly.</div>
+        </div>
+        <div class="row-right">
+          Left to claim <b>EGP 22,500</b>
+          <div><span class="row-cta">Claim ▾</span></div>
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="pool-before">
+        <div class="big">EGP 45,000</div>
+        <div class="sub">left of your EGP 45,000 annual pool (company share)</div>
+        <div class="meter"><i></i></div>
+        <div class="line"><span>Used</span><span>EGP 0</span></div>
+        <div class="line"><span>Per-benefit cap (50%)</span><span>EGP 22,500</span></div>
+      </div>
+      <div class="how">
+        <h3>How it works</h3>
+        <ol>
+          <li><span class="num">1</span><span>Claim as you spend — nothing to submit.</span></li>
+          <li><span class="num">2</span><span>No single benefit’s covered share may pass half your pool.</span></li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ================= AFTER ================= -->
+  <div class="stage-label"><span class="tag tag-after">After</span> proposed</div>
+
+  <section class="section">
+    <div class="band-navy">
+      <div class="band-eyebrow">You receive automatically</div>
+      <h2>Guaranteed benefits</h2>
+    </div>
+    <div class="g-grid">
+      <div class="g-cell">
+        <div class="g-name">Marriage allowance</div>
+        <div class="g-note">One-off gift on marriage.</div>
+        <div class="g-amt">EGP 24,000</div>
+        <button class="g-btn" type="button">Request</button>
+      </div>
+      <div class="g-cell">
+        <div class="g-name">Professional development</div>
+        <div class="g-note">Courses, certifications, conferences.</div>
+        <div class="g-amt">EGP 9,500</div>
+        <button class="g-btn" type="button">Claim · proof</button>
+      </div>
+      <div class="g-cell">
+        <div class="g-name">Summer allowance</div>
+        <div class="g-note">Paid with the July payroll.</div>
+        <div class="g-amt">EGP 3,500</div>
+        <button class="g-btn" type="button">Request</button>
+      </div>
+    </div>
+  </section>
+
+  <div style="margin-top: 32px;">
+    <div class="band-gold">
+      <div class="band-eyebrow">You choose · claim as you spend</div>
+      <h2>Your flexible benefits</h2>
+      <p>
+        Enter the full price you paid; the company covers a set % of each benefit, and only that covered
+        share draws from your pool.
+      </p>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="cat-head"><span>Medical insurance</span><span class="rule"></span></div>
+      <div class="row">
+        <div>
+          <div class="row-name">Medical insurance <span class="pill" style="background: var(--gold-100); color: var(--gold-800);">50% exempt</span></div>
+          <div class="row-desc">The one benefit you commit up front — you’re always covered.</div>
+        </div>
+        <div class="row-right"><span class="row-cta">Set up cover</span></div>
+      </div>
+
+      <div class="cat-head"><span>Wellbeing</span><span class="rule"></span></div>
+      <div class="row">
+        <div>
+          <div class="row-name">Gym membership <span class="pill">80% covered</span></div>
+          <div class="row-desc">Any gym or studio, annual or monthly.</div>
+        </div>
+        <div class="row-right">
+          Left to claim <b>EGP 22,500</b>
+          <div><span class="row-cta">Claim ▾</span></div>
+        </div>
+      </div>
+    </div>
+
+    <aside>
+      <div class="pool-after">
+        <div class="label">Your pool</div>
+        <div class="big">EGP 45,000</div>
+        <div class="sub">left of your EGP 45,000 annual pool (company share)</div>
+        <div class="meter"><i style="width: 0%;"></i></div>
+        <div class="foot">
+          <div class="line"><span>Used</span><span>EGP 0</span></div>
+          <div class="line"><span>Per-benefit cap (50%)</span><span>EGP 22,500</span></div>
+        </div>
+      </div>
+      <div class="how">
+        <h3>How it works</h3>
+        <ol>
+          <li><span class="num">1</span><span>Claim as you spend — nothing to submit.</span></li>
+          <li><span class="num">2</span><span>No single benefit’s covered share may pass half your pool.</span></li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============ Pool card states ============ -->
+  <div class="stage-label"><span class="tag tag-after">After</span> pool card — the other states</div>
+
+  <div class="side-by-side">
+    <div>
+      <p class="mini-cap">Part-way through the year</p>
+      <div class="pool-after">
+        <div class="label">Your pool</div>
+        <div class="big">EGP 18,400</div>
+        <div class="sub">left of your EGP 45,000 annual pool (company share)</div>
+        <div class="meter"><i style="width: 59%;"></i></div>
+        <div class="foot">
+          <div class="line"><span>Used</span><span>EGP 26,600</span></div>
+          <div class="line"><span>Per-benefit cap (50%)</span><span>EGP 22,500</span></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <p class="mini-cap">Prorated short cycle</p>
+      <div class="pool-after">
+        <div style="margin-bottom: 8px;"><span class="badge-pro">Prorated · 6 of 12 mo</span></div>
+        <div class="label">Your pool</div>
+        <div class="big">EGP 15,000</div>
+        <div class="sub">left of your EGP 22,500 prorated pool (company share)</div>
+        <div class="note">
+          This benefits cycle runs 6 of 12 months, so your pool is scaled to that period. A full-length
+          cycle carries the full annual amount.
+        </div>
+        <div class="meter"><i style="width: 33%;"></i></div>
+        <div class="foot">
+          <div class="line"><span>Used</span><span>EGP 7,500</span></div>
+          <div class="line"><span>Per-benefit cap (50%)</span><span>EGP 11,250</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
