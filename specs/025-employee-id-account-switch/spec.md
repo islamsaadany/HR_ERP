@@ -24,7 +24,7 @@ Each linked account stays **fully independent** — its own business-unit brand,
 ### Session 2026-08-14
 
 - Q: One shared email or two? → A: **Two distinct emails** (one per company). Email stays the unique per-account login; duplicate emails are NOT allowed and the login-by-email model does not change.
-- Q: Switching without a password, or ask each time? → A: **Ask once per switch** — each switch re-authenticates with the target account's own password. No simultaneous multi-session, no password-less hopping.
+- Q: Switching without a password, or ask each time? → A: **Ask once per switch** — each switch re-authenticates with the target account's own password. No simultaneous multi-session, no password-less hopping. ⚠️ **SUPERSEDED 2026-08-15 by [spec 026](../026-passwordless-account-switch/spec.md)** — the password step on each switch was reversed: a person holding a valid session now moves between their linked accounts with no password, authorised by a server-side re-check of the shared Employee ID. *No simultaneous multi-session* still holds. Everything else in this spec (two distinct emails, non-unique Employee ID, HR link confirmation) is unchanged.
 - Q: Is Employee ID globally unique? → A: **No** — it identifies the person, so a person's two accounts intentionally share it. On saving a duplicate, HR is warned that it links the two accounts and must confirm.
 
 ## User Scenarios & Testing *(mandatory)*
