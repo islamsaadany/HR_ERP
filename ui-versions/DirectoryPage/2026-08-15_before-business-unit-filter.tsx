@@ -7,15 +7,13 @@ import { DirectoryBrowser } from "@/components/DirectoryBrowser";
 export const dynamic = "force-dynamic";
 
 export default async function DirectoryPage() {
-  const me = await requireUser();
+  await requireUser();
   await requireModuleEnabled("directory");
-  const [people, departments, myself] = await Promise.all([
+  const [people, departments] = await Promise.all([
     prisma.user.findMany({
       where: { status: "ACTIVE" },
       orderBy: { name: "asc" },
       // Public fields only — no HR-private data leaves the server (spec 003 · FR-008).
-      // The business unit is a public grouping (it brands the app for its members),
-      // so it joins the projection as a filterable column (spec 024).
       select: {
         id: true,
         name: true,
@@ -24,29 +22,10 @@ export default async function DirectoryPage() {
         email: true,
         phone: true,
         photoUrl: true,
-        businessUnit: { select: { id: true, name: true } },
       },
     }),
     getDepartments(),
-    // The viewer's own unit seeds the default filter — the directory opens on
-    // the colleagues they work alongside. Falls back to "all" when unset.
-    prisma.user.findUnique({
-      where: { id: me.id },
-      select: { businessUnitId: true },
-    }),
   ]);
-
-  const entries = people.map((p) => ({
-    id: p.id,
-    name: p.name,
-    title: p.title,
-    department: p.department,
-    email: p.email,
-    phone: p.phone,
-    photoUrl: p.photoUrl,
-    businessUnitId: p.businessUnit?.id ?? null,
-    businessUnit: p.businessUnit?.name ?? null,
-  }));
 
   return (
     // Full-height flex column (desktop) so the table is the only scroller.
@@ -56,11 +35,7 @@ export default async function DirectoryPage() {
       </p>
       <h1 className="mt-1 font-serif text-3xl text-ink">The team</h1>
       <p className="mt-1 text-muted">Find and reach your colleagues.</p>
-      <DirectoryBrowser
-        people={entries}
-        departments={departments}
-        myBusinessUnitId={myself?.businessUnitId ?? null}
-      />
+      <DirectoryBrowser people={people} departments={departments} />
     </div>
   );
 }
