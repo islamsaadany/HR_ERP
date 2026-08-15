@@ -4,6 +4,7 @@ import { isAdmin, isFinance, canAccessIncentive } from "@/lib/roles";
 import { getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
 import { prisma } from "@/lib/prisma";
+import { isLinked, linkKey } from "@/lib/switch-account";
 import { AppShell } from "@/components/AppShell";
 import { QueryToast } from "@/components/QueryToast";
 
@@ -62,19 +63,34 @@ export default async function AppLayout({
     try {
       const me = await prisma.user.findUnique({
         where: { id: user.id },
-        select: { employeeId: true },
+        select: { id: true, employeeId: true, status: true },
       });
-      if (me?.employeeId) {
+      // Switching is now password-less (spec 026), so the list of accounts on
+      // offer must never be wider than what the server will actually permit.
+      // Candidates are fetched on the indexed Employee ID, then passed through
+      // the SAME `isLinked` predicate the switch authorises with — so the offer
+      // and the permission cannot drift.
+      const key = linkKey(me?.employeeId);
+      if (me && key) {
         const others = await prisma.user.findMany({
           where: { employeeId: me.employeeId, status: "ACTIVE", NOT: { id: user.id } },
-          select: { email: true, name: true, businessUnit: { select: { name: true } } },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            employeeId: true,
+            status: true,
+            businessUnit: { select: { name: true } },
+          },
           orderBy: { name: "asc" },
           take: 10,
         });
-        linkedAccounts = others.map((o) => ({
-          email: o.email,
-          label: o.businessUnit?.name ? `${o.name} · ${o.businessUnit.name}` : o.name,
-        }));
+        linkedAccounts = others
+          .filter((o) => isLinked(me, o))
+          .map((o) => ({
+            email: o.email,
+            label: o.businessUnit?.name ? `${o.name} · ${o.businessUnit.name}` : o.name,
+          }));
       }
     } catch {
       linkedAccounts = [];

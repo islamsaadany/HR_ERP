@@ -3,6 +3,7 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
+import { isLinked, verifyTicket } from "@/lib/switch-account";
 import type { Role } from "@prisma/client";
 
 /**
@@ -92,6 +93,52 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         return null;
+      },
+    }),
+    /**
+     * Linked-account switching without a password (spec 026).
+     *
+     * NOT a login route: it never accepts, compares or bypasses a password. It
+     * re-points someone who is ALREADY signed in at another of their own
+     * accounts. Its callback (`/api/auth/callback/switch-account`) is publicly
+     * POST-able, so it treats its input as hostile and proves the switch from
+     * stored records every time:
+     *
+     *   1. the ticket's HMAC must verify and be unexpired — a verified session
+     *      asked for this;
+     *   2. BOTH employee records are re-read and `isLinked()` re-run NOW — so a
+     *      link revoked since the ticket was minted refuses the switch.
+     *
+     * Step 2 is the authoritative one and is not skippable by anything the
+     * caller sends. Any failure returns null: the switch fails closed.
+     */
+    Credentials({
+      id: "switch-account",
+      name: "Switch account",
+      credentials: { ticket: { label: "Ticket", type: "text" } },
+      async authorize(creds) {
+        try {
+          const claims = verifyTicket(creds?.ticket);
+          if (!claims) return null;
+
+          const [actor, target] = await Promise.all([
+            prisma.user.findUnique({
+              where: { id: claims.actorId },
+              select: { id: true, employeeId: true, status: true },
+            }),
+            prisma.user.findUnique({
+              where: { id: claims.targetId },
+              select: { id: true, email: true, name: true, employeeId: true, status: true },
+            }),
+          ]);
+
+          if (!isLinked(actor, target) || !target) return null;
+          return { id: target.id, email: target.email, name: target.name };
+        } catch {
+          // An unreachable or un-migrated database (no employeeId column) must
+          // refuse the switch, never propagate.
+          return null;
+        }
       },
     }),
     ...(googleAuthEnabled ? [Google] : []),

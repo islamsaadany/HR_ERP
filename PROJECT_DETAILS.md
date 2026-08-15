@@ -182,10 +182,31 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Link confirm:** saving an Employee ID already used by another active record warns "this links the
   accounts as the same person" and requires ticking **Link accounts** on the form (`employeeIdLinkGuard`);
   the inline grid **blocks** a linking duplicate and points to the form (linking is deliberate).
-- **Account switcher:** when the signed-in user's Employee ID is shared with other **active** accounts,
-  the sidebar shows **"Switch account"** listing them (name · business unit). Selecting one signs out and
-  lands on `/signin?email=…` with the email pre-filled; the person enters **that account's own password**
-  once (`switchAccountAction`). No simultaneous multi-session, no password-less hop, never lists an
+- **Account switcher — password-less (spec `026`, 2026-08-15; supersedes the spec-025 password prompt):**
+  when the signed-in user's Employee ID is shared with other **active** accounts, the sidebar shows
+  **"Switch account"** listing them (name · business unit). Selecting one now moves them into that account
+  **immediately, with no password** — the session they already hold is what authorises it. Two-stage and
+  server-authoritative: `switchAccountAction` verifies the live session and the link, then mints a
+  **60-second HMAC-signed ticket** (`src/lib/switch-account.ts`, `AUTH_SECRET`, no new env var); a dedicated
+  **`switch-account` credentials provider** (`src/lib/auth.ts`) verifies that signature **and independently
+  re-reads both employee records**, re-running the shared `isLinked` predicate before issuing a session —
+  because its callback route is publicly POST-able, so nothing it receives is trusted. `isLinked` requires
+  both records **ACTIVE**, the target ≠ the actor, and the **trimmed, non-empty** Employee IDs to match; the
+  sidebar list is filtered through the **same predicate**, so what is offered can never exceed what is
+  permitted (this also closed a latent gap where a **whitespace-only** Employee ID counted as a link).
+  Everything **fails closed** — a bad ticket, an un-migrated DB, or any error refuses the switch.
+  Impersonation is cleared **before** the ticket is minted and the switcher stays hidden while
+  impersonating. The target's role is never inherited (the `jwt` callback re-resolves it from the DB each
+  call) and the target's **forced password change still applies** on arrival. **Session lifetime is
+  unchanged** (NextAuth default 30 days) — reviewed and deliberately kept. **No migration.** Verified by
+  `scripts/verify-switch-account.mts` against a throwaway Postgres (**27/27** — forged ticket, expired
+  ticket, unlinked target, LEFT target, and a link revoked *after* the ticket was minted, all refused).
+  ⚠️ **Accepted residual risk:** the Employee ID is HR-typed and non-unique, so a **mistyped ID links two
+  different people** and now grants password-less access between them; likewise an unlocked device reaches
+  every linked account, and an **elevated-role** linked account is reachable with no password. A role-gated
+  password step was offered and **deliberately declined** (2026-08-15) for the simpler flow — it stays the
+  named mitigation if linked accounts ever grow beyond known individuals. See `specs/026-…/spec.md`
+  *Residual Risks*. No simultaneous multi-session, no password-less hop, never lists an
   unlinked account; suppressed while impersonating. Each linked account stays fully independent (own
   brand/benefits/data). Interim toward spec 022's "one identity, many employments". Verified on a
   throwaway Postgres (migration additive + idempotent; two accounts share an Employee ID; linked-accounts
@@ -239,4 +260,4 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 
 ---
 
-*Last Updated: 2026-08-15 — Team Directory gains a **business-unit column + filter** defaulting to the viewer's own unit, and the Title/Department header-contrast fix. Earlier: platform renamed **Forefront HR → Forefront People** (brand default); added **admin impersonation** ("View as employee", act-as-them) and **multi-brand by business unit** (spec 024, migration 039 — theming-only interim toward spec 022).*
+*Last Updated: 2026-08-15 — **password-less linked-account switching** (spec 026: session-authorised, server re-checked, no migration). Also: Team Directory gains a **business-unit column + filter** defaulting to the viewer's own unit, and the Title/Department header-contrast fix. Earlier: platform renamed **Forefront HR → Forefront People** (brand default); added **admin impersonation** ("View as employee", act-as-them) and **multi-brand by business unit** (spec 024, migration 039 — theming-only interim toward spec 022).*

@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-15
 
-**Status**: Draft — awaiting `/speckit-plan`
+**Status**: **Implemented 2026-08-15** — `npx tsc --noEmit` clean, `npm run build` passes, and `scripts/verify-switch-account.mts` proves the authorisation against a throwaway Postgres 16 (**27/27**), including a forged ticket, a correctly-signed expired ticket, a ticket naming an unlinked or departed account, and — the critical case — a link revoked *after* the ticket was minted. No migration required.
 
 **Input**: User description: "Password-less switching between linked accounts. Today the sidebar 'Switch account' (spec 025) signs the person out and lands them on /signin?email=... so they must re-enter the target account's password on every switch. A person holding two contracts across two group companies (two employee records sharing one HR-managed Employee ID) should hop between their own accounts without re-entering a password, as long as they already hold a valid session. Session lifetime is unchanged (NextAuth default 30 days). The switch must re-verify the link server-side at switch time (both records ACTIVE, same non-empty employeeId, target is not the current user) rather than trusting anything from the client, so the endpoint can never be used as a password bypass. Impersonation must be cleared across the switch and must never combine with it. Product decision: no extra password step for elevated-role targets (HR_ADMIN / SUPER_USER / FINANCE) — the simpler flow was chosen deliberately; record the residual risk that a mistyped shared Employee ID would link two different people and grant password-less access between them."
 
