@@ -756,6 +756,32 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
   - Verified: 22 checks (expected amount, sync idempotency, settling, frozen figures), `048` applied
     twice from the file, and a Chromium pass settling partially and seeing the shortfall land.
 
+- **2026-08-16 — Spec 029 built: profile change requests (migration 049):**
+  - My Profile was read-only in full, so a stale emergency contact travelled through HR's inbox and
+    got retyped. Employees now propose a correction; **HR decides field by field, and approving IS
+    the edit** — one click writes that column, nothing is re-keyed.
+  - **Phone became directly editable** (no request, no review). The decisions log already granted
+    it; it had never been built. Nothing reads it for eligibility or money, so review would add a
+    person to a change nobody depends on.
+  - **The decision lives on the field, not the request** — one request can be part approved and
+    part declined, so HR can accept the emergency contact while querying the date of birth, and the
+    employee never resubmits what was already right. A request is "open" while any field is
+    PENDING; there is no request-level status column to drift out of step.
+  - **The "current" value is read at review time, never stored on the request.** Storing it would
+    let an approval silently revert an edit HR had made while the request sat in the queue.
+  - Values are stored as **text against a field registry** (`src/lib/profile/requestable.ts`), so
+    adding a requestable field later is a registry entry rather than a migration plus three edited
+    screens.
+  - **Dependants deferred** (research R3): an add/remove/edit set rather than a before/after value,
+    and the carrier of the medical-commitment warning (US3/FR-015). The contact and personal fields
+    deliver the feature; dependants are the next slice.
+  - Verified: 40 checks on a throwaway Postgres; `049` applied to a **fresh** DB through the SQL
+    runner with `prisma migrate diff` then reporting no drift; and a Chromium pass through the real
+    auth-guarded actions (submit → approve one → decline one → close out), 0 console errors.
+  - **Flagged, untouched**: the My Documents upload form on the same page logs a pre-existing React
+    warning (`encType` on a form with a function action, from commit `c8ef16f`). Not spec 029's, and
+    not fixed without a say-so.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.

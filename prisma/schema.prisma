@@ -131,6 +131,10 @@ model User {
   medicalRecoveries  MedicalRecovery[]   @relation("RecoverySubject")
   recoveriesSettled  MedicalRecovery[]   @relation("RecoverySettler")
 
+  // Profile change requests (spec 029)
+  profileChangeRequests ProfileChangeRequest[] @relation("ChangeRequester")
+  profileFieldDecisions ProfileChangeField[]   @relation("FieldDecider")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -343,14 +347,14 @@ enum ClaimStatus {
 
 /// A benefits cycle. Employees can save/submit only while OPEN.
 model PlanYear {
-  id                 String              @id @default(cuid())
+  id                 String               @id @default(cuid())
   name               String
-  status             PlanYearStatus      @default(OPEN)
+  status             PlanYearStatus       @default(OPEN)
   /// Proration window (spec 019). Admin-set; nullable for legacy rows / fallback.
   /// When either is null the year is treated as having no window → no proration.
   startDate          DateTime?
   endDate            DateTime?
-  createdAt          DateTime            @default(now())
+  createdAt          DateTime             @default(now())
   medicalCommitments MedicalCommitment[]
   medicalCharges     MedicalCycleCharge[]
   claims             BenefitClaim[]
@@ -534,12 +538,12 @@ model MedicalCommitment {
 /// insurer's schedule, independently of the benefits plan year (Jan–Dec), so a term always
 /// straddles two cycles. Its length is whatever HR sets: nothing may assume twelve months.
 model MedicalPolicyYear {
-  id          String              @id @default(cuid())
+  id          String               @id @default(cuid())
   name        String
   startDate   DateTime
   endDate     DateTime
-  status      PlanYearStatus      @default(OPEN)
-  createdAt   DateTime            @default(now())
+  status      PlanYearStatus       @default(OPEN)
+  createdAt   DateTime             @default(now())
   commitments MedicalCommitment[]
   charges     MedicalCycleCharge[]
   recoveries  MedicalRecovery[]
@@ -549,23 +553,23 @@ model MedicalPolicyYear {
 /// what draws against that cycle's pool — not the full premium. The shares of a commitment sum
 /// to its premium exactly once the covering cycles exist.
 model MedicalCycleCharge {
-  id            String                   @id @default(cuid())
+  id            String              @id @default(cuid())
   commitmentId  String
-  commitment    MedicalCommitment        @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
+  commitment    MedicalCommitment   @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
   planYearId    String
-  planYear      PlanYear                 @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  planYear      PlanYear            @relation(fields: [planYearId], references: [id], onDelete: Cascade)
   policyYearId  String
-  policyYear    MedicalPolicyYear        @relation(fields: [policyYearId], references: [id], onDelete: Cascade)
+  policyYear    MedicalPolicyYear   @relation(fields: [policyYearId], references: [id], onDelete: Cascade)
   /// Whole EGP, already capped at that cycle's pool ceiling.
   amount        Int
   /// Whole months of the term inside this cycle — stored so the charge stays explainable years
   /// later without recomputing it against a policy window that may since have changed.
   overlapMonths Int
-  status        MedicalChargeStatus      @default(SCHEDULED)
+  status        MedicalChargeStatus @default(SCHEDULED)
   /// Set when the status becomes APPLIED.
   appliedAt     DateTime?
-  createdAt     DateTime                 @default(now())
-  updatedAt     DateTime                 @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   @@unique([commitmentId, planYearId])
 }
@@ -595,35 +599,35 @@ enum MedicalRecoveryStatus {
 /// back. The residual is a real cost of the departure — the point is that it becomes a known
 /// number rather than an invisible one.
 model MedicalRecovery {
-  id                 String                @id @default(cuid())
+  id                String                @id @default(cuid())
   /// One recovery per commitment — the unique key is what makes the reconcile pass idempotent.
-  commitmentId       String                @unique
-  commitment         MedicalCommitment     @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
-  userId             String
-  user               User                  @relation("RecoverySubject", fields: [userId], references: [id], onDelete: Cascade)
-  policyYearId       String
-  policyYear         MedicalPolicyYear     @relation(fields: [policyYearId], references: [id], onDelete: Cascade)
+  commitmentId      String                @unique
+  commitment        MedicalCommitment     @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User                  @relation("RecoverySubject", fields: [userId], references: [id], onDelete: Cascade)
+  policyYearId      String
+  policyYear        MedicalPolicyYear     @relation(fields: [policyYearId], references: [id], onDelete: Cascade)
   /// The employee's last day of cover. Null when HR hasn't recorded one — the row then reads
   /// "needs leave date" rather than showing a confidently wrong figure.
-  coverEndedOn       DateTime?
+  coverEndedOn      DateTime?
   /// The premium this expectation was computed from, FROZEN at creation. A later premium edit must
   /// not restate a figure Finance may already have claimed against.
-  premiumAtCreation  Int
-  expectedMonths     Int
-  expectedAmount     Int
-  status             MedicalRecoveryStatus @default(OPEN)
+  premiumAtCreation Int
+  expectedMonths    Int
+  expectedAmount    Int
+  status            MedicalRecoveryStatus @default(OPEN)
   /// What actually came back. Null until settled; 0 on a write-off.
-  recoveredAmount    Int?
-  recoveredOn        DateTime?
+  recoveredAmount   Int?
+  recoveredOn       DateTime?
   /// expected − recovered, never below zero. The number that makes a short-paying insurer visible.
-  shortfall          Int?
+  shortfall         Int?
   /// Why it was written off.
-  reason             String?
-  settledById        String?
-  settledBy          User?                 @relation("RecoverySettler", fields: [settledById], references: [id], onDelete: SetNull)
-  settledAt          DateTime?
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
+  reason            String?
+  settledById       String?
+  settledBy         User?                 @relation("RecoverySettler", fields: [settledById], references: [id], onDelete: SetNull)
+  settledAt         DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
   @@index([status])
 }
@@ -861,4 +865,65 @@ model NotificationSettings {
   financeInbox String?
   fromName     String?
   updatedAt    DateTime @default(now()) @updatedAt
+}
+
+// ─── Profile change requests (spec 029) ─────────────────────────────────
+
+/// The outcome of one requested field. The decision lives on the FIELD, not the request,
+/// because HR decides field by field — one request can be part approved, part declined.
+enum ProfileFieldStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+/// An employee's proposal to correct their own record. It is only an envelope: it groups the
+/// fields submitted together and carries the employee's reason. A request is "open" while any
+/// of its fields is still PENDING — there is no status column to drift out of step with them.
+model ProfileChangeRequest {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("ChangeRequester", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Optional context from the employee ("she remarried and changed her number").
+  reason String?
+
+  fields ProfileChangeField[]
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// One field inside a request: which field, the value proposed for it, and — once HR decides —
+/// the decision, who made it and when.
+///
+/// The value is TEXT for every field (a date is an ISO yyyy-mm-dd, an enum its member name).
+/// Approving parses it and writes the typed column, so adding a requestable field later is a
+/// registry entry rather than a migration. The CURRENT value is deliberately not stored: it is
+/// read at review time (FR-010), so approving can never silently revert an edit HR made while
+/// the request sat in the queue.
+model ProfileChangeField {
+  id        String               @id @default(cuid())
+  requestId String
+  request   ProfileChangeRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  /// Registry key — see src/lib/profile/requestable.ts.
+  field          String
+  /// The proposed value, serialised. Empty string means "clear this field".
+  requestedValue String
+
+  status         ProfileFieldStatus @default(PENDING)
+  /// Why HR declined. Shown to the employee against this field.
+  decisionReason String?
+  decidedById    String?
+  decidedBy      User?              @relation("FieldDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt      DateTime?
+
+  createdAt DateTime @default(now())
+
+  /// A field appears at most once per request, so two rows can never propose different values
+  /// for the same column.
+  @@unique([requestId, field])
+  @@index([status])
 }
