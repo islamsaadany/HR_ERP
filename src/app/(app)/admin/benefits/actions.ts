@@ -95,6 +95,41 @@ export async function editPlanYearWindow(formData: FormData): Promise<void> {
   revalidatePath("/benefits");
 }
 
+/**
+ * Turn the 50%-per-benefit cap on or off for ONE cycle (spec 031).
+ *
+ * The exception exists because the cap is right over twelve months and perverse over five: a
+ * ceiling prorated to a short cycle leaves half of it a trivial amount, and the rule meant to
+ * encourage variety stops the employee using the pool at all.
+ *
+ * Only while the cycle is OPEN — it is a reaction to a cycle that turned out short, and a closed
+ * cycle must keep the rule its claims were judged under. Changing it re-evaluates nothing: a
+ * benefit already past a re-enabled cap simply has zero remaining, never a negative amount and
+ * never a clawback.
+ */
+export async function setFlexCapEnabled(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const id = (formData.get("id") as string | null)?.trim();
+  const enabled = String(formData.get("enabled") ?? "") === "true";
+  if (!id) return;
+
+  const planYear = await prisma.planYear.findUnique({ where: { id }, select: { status: true } });
+  if (!planYear) return;
+  if (planYear.status !== "OPEN") {
+    redirect(
+      "/admin/benefits?error=" +
+        encodeURIComponent("The 50% limit can only be changed while the cycle is open.")
+    );
+  }
+
+  await prisma.planYear.update({
+    where: { id },
+    data: { flexCapEnabled: enabled, flexCapChangedById: admin.id, flexCapChangedAt: new Date() },
+  });
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+}
+
 export async function setPlanYearStatus(formData: FormData): Promise<void> {
   await requireAdmin();
   const id = formData.get("id") as string;

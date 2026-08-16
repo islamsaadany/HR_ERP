@@ -178,6 +178,10 @@ async function createClaimImpl(formData: FormData): Promise<void> {
       medicalPremium: medicalCycleCharge(commitment, planYear.id),
       claimedByBenefit,
       employmentType: user.employmentType,
+      // Spec 031: the 50% cap belongs to the CYCLE. Read from this claim's own plan year, never
+      // from the client and never from a global setting — a closed cycle keeps the rule it was
+      // judged under.
+      flexCapEnabled: planYear.flexCapEnabled,
     };
 
     // A fixed allowance (travel) is an entitlement, not a receipt: the employee requests it and

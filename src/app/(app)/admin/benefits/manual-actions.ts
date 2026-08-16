@@ -198,7 +198,10 @@ async function flatAllocation(
       where: { employmentType_tenureBand: { employmentType: user.employmentType, tenureBand: user.tenureBand } },
     });
     if (!ceilingRow) return { ok: false, error: "No pool ceiling configured for that employee." };
-    allocation = flexCap(ceilingRow.amount);
+    // Spec 031: an HR release is measured against the same per-benefit ceiling the employee's
+    // claims are, including when this cycle has the 50% cap switched off — otherwise a release
+    // could exceed what the cycle's own rule allows.
+    allocation = flexCap(ceilingRow.amount, planYear.flexCapEnabled);
     claimWhere.catalogItemId = id;
   } else {
     return { ok: false, error: "Unknown benefit type." };

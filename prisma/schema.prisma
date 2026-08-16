@@ -135,6 +135,9 @@ model User {
   profileChangeRequests ProfileChangeRequest[] @relation("ChangeRequester")
   profileFieldDecisions ProfileChangeField[]   @relation("FieldDecider")
 
+  // Plan-year cap switch (spec 031)
+  flexCapChanges PlanYear[] @relation("FlexCapChanger")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -354,6 +357,17 @@ model PlanYear {
   /// When either is null the year is treated as having no window → no proration.
   startDate          DateTime?
   endDate            DateTime?
+  /// The 50%-per-benefit cap, per cycle (spec 031). ON is the rule; OFF is a deliberate HR
+  /// exception for a cycle prorated so short that half a small ceiling is a trivial amount.
+  ///
+  /// It lives on the CYCLE, not in global config: a global flag would mean flipping it today
+  /// changes the rules a closed cycle's claims were judged under, and what was allowed when
+  /// would no longer be recoverable. Changing it is never retroactive — no existing claim is
+  /// re-evaluated, reduced or reversed.
+  flexCapEnabled     Boolean              @default(true)
+  flexCapChangedById String?
+  flexCapChangedBy   User?                @relation("FlexCapChanger", fields: [flexCapChangedById], references: [id], onDelete: SetNull)
+  flexCapChangedAt   DateTime?
   createdAt          DateTime             @default(now())
   medicalCommitments MedicalCommitment[]
   medicalCharges     MedicalCycleCharge[]

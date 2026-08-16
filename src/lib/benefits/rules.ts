@@ -24,9 +24,18 @@ export function maxSelect(employmentType: EmploymentType): number {
 // (`sumMedicalPremium`). The old relationship-based `computeMedicalPremium`/`MedicalRate`/`MedicalConfig`
 // were removed with that change.
 
-/** The per-benefit ceiling (50% of the pool) — the only cap on a single flexible benefit. */
-export function flexCap(ceiling: number): number {
-  return Math.floor(ceiling * 0.5);
+/**
+ * The per-benefit ceiling — normally 50% of the pool, the only cap on a single flexible benefit.
+ *
+ * A cycle may switch the cap OFF (spec 031): when a plan year is prorated to a few months, half of
+ * a small ceiling is a trivial amount, and the rule meant to encourage variety instead stops the
+ * employee using the pool at all. With the cap off, a single benefit is bounded by the POOL
+ * CEILING instead — not by nothing. Returning the ceiling rather than `Infinity` is deliberate:
+ * `benefitRemaining` stays a real number, the pool keeps binding, and the benefit-vs-pool tie-break
+ * in `clampCovered` still names the right limiting rule.
+ */
+export function flexCap(ceiling: number, capEnabled: boolean = true): number {
+  return capEnabled ? Math.floor(ceiling * 0.5) : ceiling;
 }
 
 export type AllowanceContext = {
@@ -37,6 +46,12 @@ export type AllowanceContext = {
   claimedByBenefit: Record<string, number>;
   /** Only consulted when COUNT_LIMIT_ENABLED is true. */
   employmentType: EmploymentType;
+  /**
+   * Whether the 50%-per-benefit cap applies to THIS cycle (spec 031). Read from the claim's own
+   * plan year on the server; the client never supplies it. Defaults to true so a caller that
+   * predates the switch keeps the rule.
+   */
+  flexCapEnabled?: boolean;
 };
 
 export type ProposedClaim = {
@@ -101,10 +116,14 @@ export function poolUsed(ctx: AllowanceContext): number {
 
 /** Server-authoritative evaluation of one proposed flexible claim against the allowance rules. */
 export function evaluateClaim(ctx: AllowanceContext, claim: ProposedClaim): ClaimEvaluation {
-  const cap = flexCap(ctx.ceiling);
+  const capEnabled = ctx.flexCapEnabled !== false;
+  const cap = flexCap(ctx.ceiling, capEnabled);
   const isAllowance = claim.allocation != null;
   // A fixed allowance is bounded by the allowance itself; the 50% cap still applies on top so
   // the rule stays universal (it won't bind in practice — a band amount sits well below half a pool).
+  // This `min` is also why lifting the cap doesn't inflate an allowance (spec 031, FR-008): with
+  // `cap` raised to the full ceiling the band amount still wins, so an entitlement never grows
+  // because a different limit was lifted.
   const benefitCeiling = isAllowance ? Math.min(claim.allocation!, cap) : cap;
   const benefitUsed = ctx.claimedByBenefit[claim.key] ?? 0;
   const benefitRemaining = Math.max(0, benefitCeiling - benefitUsed);
@@ -124,7 +143,10 @@ export function evaluateClaim(ctx: AllowanceContext, claim: ProposedClaim): Clai
     errors.push(
       isAllowance
         ? `${claim.name}: you've already claimed your full allowance for this cycle.`
-        : `${claim.name}: you've used the full 50% cap (${formatEGP(cap)}) on this benefit.`
+        : capEnabled
+          ? `${claim.name}: you've used the full 50% cap (${formatEGP(cap)}) on this benefit.`
+          // With the cap off the pool is the only limit, so naming a "50% cap" would be a lie.
+          : `${claim.name}: you've used your full pool (${formatEGP(cap)}) on this benefit.`
     );
   } else if (poolRemaining <= 0) {
     errors.push("Your pool is fully used — contact HR.");
