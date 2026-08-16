@@ -138,3 +138,18 @@ has been counted against a pool that is shut and reconciled against a real insur
 - Re-evaluating eligibility.
 - Extending a cycle's dates as a product feature (spec 031's deferred item); this only reacts
   correctly when dates do change.
+
+## Verified
+
+- `scripts/verify-charge-reconcile.mts` — 14/14 on a throwaway Postgres, importing the shipped
+  `reconcileMedicalCharges` rather than a copy, and set up with the product owner's real
+  configuration (term 15 Jun 2026 – 14 Jun 2027, cycle 1 Jul – 31 Dec 2026, premium 18,352).
+- Proved: the wrong 18,352-on-2026 charge repairs to **10,010**; opening 2027 creates and draws
+  **8,342** with nothing pre-created; the two sum to the premium exactly; a charge applied to a
+  closed cycle survives even its own window being changed underneath it; running the pass twice
+  more changes nothing; a leaver's charges cancel; an undated cycle takes no share; no negative
+  charge is ever written.
+- **A real bug the tests caught:** the first implementation divided the remaining premium by the
+  *whole* term after freezing part of it, so with 6 of 11 months settled the last cycle received
+  5/11 of what was left (3,792) instead of all of it (8,342). The denominator is now the term
+  *minus* the settled months.

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { EmploymentType, TenureBand } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { reconcileMedicalCharges } from "@/lib/benefits/reconcile";
 import { requireAdmin } from "@/lib/roles";
 
 /** Parse a coverage-rate field. Returns a whole percent 1–100, or `undefined` if not provided.
@@ -322,6 +323,8 @@ export async function editPolicyYearWindow(formData: FormData): Promise<PolicyYe
     return { ok: false, error: "The policy term's end date must be after its start date." };
   }
   await prisma.medicalPolicyYear.update({ where: { id }, data: { startDate, endDate } });
+  // Spec 032: the term just moved, so which months fall in which cycle moved with it.
+  await reconcileMedicalCharges();
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
   return { ok: true };

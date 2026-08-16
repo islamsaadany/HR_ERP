@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { splitPremium } from "@/lib/benefits/policy-year";
+import { reconcileMedicalCharges } from "@/lib/benefits/reconcile";
 import { redirect } from "next/navigation";
 import type { ClaimType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -72,6 +73,9 @@ export async function createPlanYear(formData: FormData): Promise<void> {
     data: { status: "CLOSED" },
   });
   const created = await prisma.planYear.create({ data: { name, status: "OPEN", startDate, endDate } });
+  // Spec 032: work out what this new cycle owes BEFORE applying, so a share that could never be
+  // written at commit time (this cycle didn't exist) is created here and then drawn.
+  await reconcileMedicalCharges(created.id);
   await applyScheduledMedicalCharges(created.id);
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
@@ -92,6 +96,8 @@ export async function editPlanYearWindow(formData: FormData): Promise<void> {
     redirect("/admin/benefits?error=" + encodeURIComponent("Plan-year end date must be after the start date."));
   }
   await prisma.planYear.update({ where: { id }, data: { startDate, endDate } });
+  // Spec 032: the months a term spends in this cycle just changed, so its charges did too.
+  await reconcileMedicalCharges();
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
 }
@@ -144,7 +150,10 @@ export async function setPlanYearStatus(formData: FormData): Promise<void> {
   }
   await prisma.planYear.update({ where: { id }, data: { status } });
   // Re-opening a cycle must pick up anything scheduled against it, exactly as creating one does.
-  if (status === "OPEN") await applyScheduledMedicalCharges(id);
+  if (status === "OPEN") {
+    await reconcileMedicalCharges(id);
+    await applyScheduledMedicalCharges(id);
+  }
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
 }
