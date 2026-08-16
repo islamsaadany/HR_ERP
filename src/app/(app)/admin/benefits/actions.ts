@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import type { ClaimType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
-import { getMedicalRateBands } from "@/lib/benefits/config";
+import { getMedicalRateBands, poolCeilingFor } from "@/lib/benefits/config";
+import { deriveTenureBand } from "@/lib/tenure";
 import { sumMedicalPremium, type PricedPerson } from "@/lib/benefits/rates";
 import { getNotificationSettings } from "@/lib/notifications/settings";
 import { sendEmail } from "@/lib/email/client";
@@ -167,6 +168,7 @@ export async function editMedicalCommitment(formData: FormData): Promise<void> {
           dateOfBirth: true,
           employmentType: true,
           tenureBand: true,
+          startDate: true,
           dependants: { select: { id: true, name: true, dateOfBirth: true, kind: true } },
         },
       },
@@ -181,28 +183,33 @@ export async function editMedicalCommitment(formData: FormData): Promise<void> {
   const selectedIds = Array.from(new Set(formData.getAll("dependantIds").map(String)));
   const covered = commitment.user.dependants.filter((d) => selectedIds.includes(d.id));
 
-  const [bands, ceilingRow] = await Promise.all([
+  // The tenure band is DERIVED from the hire date, exactly as the employee's own commit and claim
+  // paths do it — reading the stored `tenureBand` column here made Re-price the one surface that
+  // refused an employee everything else priced happily, because the column is usually null and the
+  // band comes from `startDate`. `poolCeilingFor` also carries the entry-tier fallback for someone
+  // under six months, which the raw lookup skipped.
+  const [bands, ceilingAmount] = await Promise.all([
     getMedicalRateBands(),
-    commitment.user.employmentType && commitment.user.tenureBand
-      ? prisma.poolCeiling.findUnique({
-          where: {
-            employmentType_tenureBand: {
-              employmentType: commitment.user.employmentType,
-              tenureBand: commitment.user.tenureBand,
-            },
-          },
-        })
+    commitment.user.employmentType
+      ? poolCeilingFor(commitment.user.employmentType, deriveTenureBand(commitment.user.startDate).band)
       : Promise.resolve(null),
   ]);
-  if (bands.length === 0 || !ceilingRow) {
-    redirect("/admin/benefits?error=" + encodeURIComponent("Benefits aren't fully configured for that employee."));
+  if (bands.length === 0 || ceilingAmount == null) {
+    redirect(
+      "/admin/benefits?error=" +
+        encodeURIComponent(
+          commitment.user.employmentType
+            ? "Benefits aren't fully configured for that employee — no pool ceiling for their employment type and tenure."
+            : "That employee has no employment type set — set it before pricing medical."
+        )
+    );
   }
 
   // Re-price by age at the edit date; cap at the full pool ceiling (HR override — unchanged behavior).
   const refDate = new Date();
   const people: PricedPerson[] = [{ dob: commitment.user.dateOfBirth }, ...covered.map((d) => ({ dob: d.dateOfBirth }))];
   const { annualEGP, lines } = sumMedicalPremium(people, bands, refDate);
-  const premium = Math.min(annualEGP, ceilingRow.amount);
+  const premium = Math.min(annualEGP, ceilingAmount);
 
   const coveredPeople = [
     { dependantId: null as string | null, label: commitment.user.name ?? "Employee", ageAtCommit: lines[0].ageAtCommit, premiumEGP: lines[0].premiumEGP },
