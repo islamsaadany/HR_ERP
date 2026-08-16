@@ -60,7 +60,10 @@ export default async function AdminBenefitsPage({
               },
               coveredPeople: true,
             },
-            orderBy: { committedAt: "desc" },
+            // Name breaks the tie: several people commit on the same day, and with equal
+            // `committedAt` the row order was the database's to choose — so the list reshuffled
+            // on every re-render and HR couldn't tell what their last action had done.
+            orderBy: [{ committedAt: "desc" }, { user: { name: "asc" } }],
           })
         : Promise.resolve([]),
       active

@@ -8,10 +8,18 @@
 --   running to 14 Jun 2027, that let anyone whose three-month mark fell before then commit
 --   immediately. This lists the commitments that got through, so HR can decide each one.
 --
+--   IT ALSO LISTS EMPLOYEES WITH NO START DATE. The eligibility rules fail SAFE toward paying —
+--   an unknown hire date is treated as fully eligible — so someone with no start date passes both
+--   the three-month medical gate and the six-month basket gate regardless of service. The first
+--   version of this query filtered those rows out and came back empty, which read as "nobody got
+--   through" when it actually meant "nobody could be checked".
+--
 --   It reports; it does not judge. Removing a commitment is a decision about a real person's
 --   insurance cover, so it stays with HR — use the Remove button on Admin → Benefits.
 
 SELECT
+  CASE WHEN u."startDate" IS NULL THEN 'NO START DATE — eligibility never checked'
+       ELSE 'committed early' END                     AS finding,
   u.name                                              AS employee,
   u.email,
   u."startDate"::date                                 AS started,
@@ -22,6 +30,6 @@ SELECT
   mc.premium                                          AS premium_egp
 FROM "MedicalCommitment" mc
 JOIN "User" u ON u.id = mc."userId"
-WHERE u."startDate" IS NOT NULL
-  AND mc."committedAt" < u."startDate" + interval '3 months'
-ORDER BY days_early DESC;
+WHERE u."startDate" IS NULL                                        -- gate could not be applied
+   OR mc."committedAt" < u."startDate" + interval '3 months'       -- gate was applied and missed
+ORDER BY days_early DESC NULLS FIRST;
