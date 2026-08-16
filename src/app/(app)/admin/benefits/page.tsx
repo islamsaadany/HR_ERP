@@ -341,91 +341,13 @@ export default async function AdminBenefitsPage({
   };
 
   // ── Tab 1: Submissions & Claims ─────────────────────────────────────────
-  const submissionsPanel = (
+  /**
+   * Medical commitments — its own tab (HR's call): it carries the year's cost, who is
+   * covered, the per-cycle split and two re-pricing actions, which is more than a section
+   * inside another tab can hold without burying the claims queue beneath it.
+   */
+  const medicalPanel = (
     <div className="space-y-6">
-      {/* Claims to review */}
-      <section className="rounded-xl border border-line bg-surface p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-serif text-lg text-ink">Claims {claimsToReview ? `· ${claimsToReview} to review` : ""}</h2>
-          {/* Recording a past claim is an exception (HR back-filling a claim paid outside the
-              app), so it sits as a compact secondary action here rather than a full card. */}
-          {active ? (
-            <ManualReleaseModal
-              employees={employees}
-              benefits={manualBenefits}
-              triggerLabel="＋ Record entry…"
-              triggerClassName="rounded-lg bg-gold-500 px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-gold-600"
-            />
-          ) : null}
-        </div>
-        {sortedClaims.length === 0 ? (
-          <p className="text-sm text-muted">No claims yet.</p>
-        ) : (
-          <ul className="space-y-3">
-            {sortedClaims.map((c) => (
-              <li key={c.id} className="rounded-lg border border-line p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <span className="font-medium text-ink">{c.user.name}</span>
-                    <span className="ml-2 text-sm text-muted">
-                      {c.guaranteedBenefit?.name ?? c.catalogItem?.name} · <span className="tabular-nums">{egp(c.amount)}</span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={"rounded-full px-2 py-0.5 text-xs font-semibold " + CLAIM_STATUS_CLASS[c.status]}>
-                      {CLAIM_STATUS_LABEL[c.status]}
-                    </span>
-                    <span className="text-xs text-muted">{formatDate(c.createdAt)}</span>
-                  </div>
-                </div>
-                {/* The covered amount is no longer always `receipt × coverage rate` — the
-                    50%-per-benefit cap clamps it. Without the receipt value, a clamped claim
-                    reads as an unexplained number next to a larger proof, so show the working. */}
-                {c.fullCost != null && c.catalogItem ? (
-                  <p className="mt-1 text-xs text-muted">
-                    Receipt <span className="tabular-nums text-ink">{egp(c.fullCost)}</span>
-                    {" · "}covers {c.catalogItem.coverageRate}% ={" "}
-                    <span className="tabular-nums">{egp(Math.round((c.fullCost * c.catalogItem.coverageRate) / 100))}</span>
-                    {Math.round((c.fullCost * c.catalogItem.coverageRate) / 100) !== c.amount ? (
-                      <>
-                        {" · "}
-                        <span className="font-semibold text-gold-700">
-                          capped to {egp(c.amount)} by the 50% benefit cap
-                        </span>
-                      </>
-                    ) : null}
-                  </p>
-                ) : null}
-                {c.note ? <p className="mt-1 text-sm text-ink">“{c.note}”</p> : null}
-                {c.decisionNote ? <p className="mt-1 text-xs text-red-600">Rejected: {c.decisionNote}</p> : null}
-                {c.proofUrl ? (
-                  <a href={`/api/claims/${c.id}/proof`} target="_blank" rel="noopener" className="mt-1 inline-block text-sm text-navy-600 underline">
-                    {c.proofName ?? "View proof"}
-                  </a>
-                ) : null}
-                {c.status === "SUBMITTED" ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <form action={approveClaim}>
-                      <input type="hidden" name="id" value={c.id} />
-                      <button className="rounded-lg bg-navy-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-navy-700">Approve</button>
-                    </form>
-                    <details>
-                      <summary className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">Reject</summary>
-                      <form action={rejectClaim} className="mt-2 flex items-center gap-2">
-                        <input type="hidden" name="id" value={c.id} />
-                        <input name="reason" placeholder="Reason (optional)" className="rounded-lg border border-line px-3 py-1.5 text-sm" />
-                        <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-red-600 hover:border-red-300">Confirm reject</button>
-                      </form>
-                    </details>
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* Submissions */}
       <section className="rounded-xl border border-line bg-surface p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="font-serif text-lg text-ink">Medical commitments {active ? `· ${active.name}` : ""}</h2>
@@ -617,6 +539,93 @@ export default async function AdminBenefitsPage({
           </div>
         )}
       </section>
+    </div>
+  );
+
+  const submissionsPanel = (
+    <div className="space-y-6">
+      {/* Claims to review */}
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-serif text-lg text-ink">Claims {claimsToReview ? `· ${claimsToReview} to review` : ""}</h2>
+          {/* Recording a past claim is an exception (HR back-filling a claim paid outside the
+              app), so it sits as a compact secondary action here rather than a full card. */}
+          {active ? (
+            <ManualReleaseModal
+              employees={employees}
+              benefits={manualBenefits}
+              triggerLabel="＋ Record entry…"
+              triggerClassName="rounded-lg bg-gold-500 px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-gold-600"
+            />
+          ) : null}
+        </div>
+        {sortedClaims.length === 0 ? (
+          <p className="text-sm text-muted">No claims yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {sortedClaims.map((c) => (
+              <li key={c.id} className="rounded-lg border border-line p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="font-medium text-ink">{c.user.name}</span>
+                    <span className="ml-2 text-sm text-muted">
+                      {c.guaranteedBenefit?.name ?? c.catalogItem?.name} · <span className="tabular-nums">{egp(c.amount)}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={"rounded-full px-2 py-0.5 text-xs font-semibold " + CLAIM_STATUS_CLASS[c.status]}>
+                      {CLAIM_STATUS_LABEL[c.status]}
+                    </span>
+                    <span className="text-xs text-muted">{formatDate(c.createdAt)}</span>
+                  </div>
+                </div>
+                {/* The covered amount is no longer always `receipt × coverage rate` — the
+                    50%-per-benefit cap clamps it. Without the receipt value, a clamped claim
+                    reads as an unexplained number next to a larger proof, so show the working. */}
+                {c.fullCost != null && c.catalogItem ? (
+                  <p className="mt-1 text-xs text-muted">
+                    Receipt <span className="tabular-nums text-ink">{egp(c.fullCost)}</span>
+                    {" · "}covers {c.catalogItem.coverageRate}% ={" "}
+                    <span className="tabular-nums">{egp(Math.round((c.fullCost * c.catalogItem.coverageRate) / 100))}</span>
+                    {Math.round((c.fullCost * c.catalogItem.coverageRate) / 100) !== c.amount ? (
+                      <>
+                        {" · "}
+                        <span className="font-semibold text-gold-700">
+                          capped to {egp(c.amount)} by the 50% benefit cap
+                        </span>
+                      </>
+                    ) : null}
+                  </p>
+                ) : null}
+                {c.note ? <p className="mt-1 text-sm text-ink">“{c.note}”</p> : null}
+                {c.decisionNote ? <p className="mt-1 text-xs text-red-600">Rejected: {c.decisionNote}</p> : null}
+                {c.proofUrl ? (
+                  <a href={`/api/claims/${c.id}/proof`} target="_blank" rel="noopener" className="mt-1 inline-block text-sm text-navy-600 underline">
+                    {c.proofName ?? "View proof"}
+                  </a>
+                ) : null}
+                {c.status === "SUBMITTED" ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <form action={approveClaim}>
+                      <input type="hidden" name="id" value={c.id} />
+                      <button className="rounded-lg bg-navy-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-navy-700">Approve</button>
+                    </form>
+                    <details>
+                      <summary className="cursor-pointer rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50">Reject</summary>
+                      <form action={rejectClaim} className="mt-2 flex items-center gap-2">
+                        <input type="hidden" name="id" value={c.id} />
+                        <input name="reason" placeholder="Reason (optional)" className="rounded-lg border border-line px-3 py-1.5 text-sm" />
+                        <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-red-600 hover:border-red-300">Confirm reject</button>
+                      </form>
+                    </details>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
     </div>
   );
 
@@ -867,6 +876,11 @@ export default async function AdminBenefitsPage({
             badge: claimsToReview,
             // Non-table tabs get their own scroll region so the pinned page never scrolls.
             node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{submissionsPanel}</div>,
+          },
+          {
+            id: "medical",
+            label: "Medical",
+            node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{medicalPanel}</div>,
           },
           { id: "catalogue", label: "Benefits Catalogue", node: cataloguePanel },
           { id: "amounts", label: "Amounts", node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{amountsPanel}</div> },
