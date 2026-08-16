@@ -634,10 +634,28 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     is the only new device. Static HTML mockup approved before building
     (`design-mockups/admin-home/2026-08-14_categorized.html`). tsc + build green; UI snapshot saved.
 
+- **2026-08-16 — Reset passwords for a chosen set of employees (mockup-approved):**
+  - The registry's **Passwords ▾** menu gains a third item, **"Reset selected employees…"**,
+    between the existing "Generate for employees without a password" and the Super-User-only
+    "Reset ALL passwords". It opens a picker (`ResetSelectedPasswordsModal`) listing ACTIVE
+    employees with search, select-all-shown, and a **Has password / No password yet** chip per
+    row, so resetting someone who already has a working password is a deliberate act.
+  - Closes the gap between "one employee" (their edit page) and "everyone": HR can now reset an
+    arbitrary set in one pass and download the one-time CSV. Server side it is a new `selected`
+    mode on the existing `generateTeamPasswords` — the result panel, CSV, and
+    `mustChangePassword` behavior are reused unchanged.
+  - **Any admin may run it** (it is N single resets, already open to HR one at a time); the
+    acting admin is excluded and the posted ids are intersected with `status: ACTIVE`
+    server-side, so a tampered list can't widen it. No schema change, no migration.
+  - Static HTML mockup approved before building
+    (`design-mockups/password-reset-selected/2026-08-16_reset-selected-modal.html`).
+    tsc + build green; UI snapshot saved; the server filter and hash round-trip were proven
+    against a throwaway local Postgres (16 checks, all passing).
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-08-13.*
+*Last Updated: 2026-08-16 — added selected-employee password reset to the registry's Passwords menu.*

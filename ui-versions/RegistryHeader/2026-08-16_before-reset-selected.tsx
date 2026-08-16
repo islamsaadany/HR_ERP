@@ -7,10 +7,6 @@ import {
   generateTeamPasswords,
   type GenPasswordsState,
 } from "@/app/(app)/admin/employees/password-actions";
-import {
-  ResetSelectedPasswordsModal,
-  type PickerEmployee,
-} from "@/components/admin/ResetSelectedPasswordsModal";
 
 function csvCell(v: string): string {
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
@@ -18,23 +14,19 @@ function csvCell(v: string): string {
 
 /**
  * Registry page header: title + a compact action bar.
- * The two CSV actions live under one "CSV ▾" dropdown and the three password
+ * The two CSV actions live under one "CSV ▾" dropdown and the two password
  * actions under one smaller "Passwords ▾" dropdown, both where Export/Import
  * used to sit, next to "+ New employee". The one-time password result (list +
- * download + warning) appears on demand, below the header, after generating —
- * shared by all three password actions, including the selected-employees picker.
+ * download + warning) appears on demand, below the header, after generating.
  */
 export function RegistryHeader({
   employeeCount,
   canResetAll,
-  resettableEmployees,
   backHref,
   backLabel,
 }: {
   employeeCount: number;
   canResetAll: boolean;
-  /** Active employees the picker may reset (the acting admin is already excluded). */
-  resettableEmployees: PickerEmployee[];
   backHref: string;
   backLabel: string;
 }) {
@@ -43,7 +35,6 @@ export function RegistryHeader({
     null
   );
   const [openMenu, setOpenMenu] = useState<null | "csv" | "pw">(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
   const done = state && state.ok ? state : null;
 
   function downloadCsv() {
@@ -138,21 +129,6 @@ export function RegistryHeader({
                       <span className="block text-xs text-muted">One-time CSV for people who don’t have one yet.</span>
                     </button>
                   </form>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpenMenu(null);
-                      setPickerOpen(true);
-                    }}
-                    className="block w-full rounded-md px-3 py-2 text-left hover:bg-navy-50"
-                  >
-                    <span className="block text-sm font-medium text-ink">
-                      Reset selected employees…
-                    </span>
-                    <span className="block text-xs text-muted">
-                      Pick the people to reset, then download their new passwords.
-                    </span>
-                  </button>
                   {canResetAll ? (
                     <>
                       <div className="my-1 h-px bg-line" />
@@ -196,14 +172,6 @@ export function RegistryHeader({
         </div>
       </div>
 
-      <ResetSelectedPasswordsModal
-        open={pickerOpen}
-        onClose={() => setPickerOpen(false)}
-        employees={resettableEmployees}
-        formAction={action}
-        pending={pending}
-      />
-
       {/* On-demand results / errors from the password actions */}
       {pending ? (
         <p className="mt-3 rounded-lg bg-navy-50 px-4 py-2 text-sm text-navy-700">Generating…</p>
@@ -218,12 +186,7 @@ export function RegistryHeader({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-medium text-ink">
               {done.rows.length} temporary password{done.rows.length === 1 ? "" : "s"} generated
-              {done.mode === "missing"
-                ? " (employees without one)"
-                : done.mode === "selected"
-                  ? " (selected employees)"
-                  : " (all employees)"}
-              .
+              {done.mode === "missing" ? " (employees without one)" : " (all employees)"}.
             </p>
             <button
               type="button"

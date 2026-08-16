@@ -1,0 +1,329 @@
+<title>Reset Selected Passwords</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-300:#7d97ba;
+    --navy-500:#2f4d78; --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-50:#fbf7ea; --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-500:#c9a227;
+    --gold-600:#a8821e; --gold-700:#85641b;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-50:#fef2f2; --red-600:#dc2626; --red-700:#b91c1c;
+    --shadow-card:0 1px 2px rgba(16,36,68,.04), 0 1px 3px rgba(16,36,68,.06);
+    --shadow-lg:0 10px 15px -3px rgba(16,36,68,.1), 0 4px 6px -4px rgba(16,36,68,.1);
+    --shadow-xl:0 20px 25px -5px rgba(16,36,68,.12), 0 8px 10px -6px rgba(16,36,68,.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+
+  /* The product is deliberately single-theme (light paper/navy/gold), so this
+     mockup commits to that one world and paints every ground explicitly. */
+  body {
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--sans); font-size:15px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:32px 24px 72px; display:flex; flex-direction:column; gap:40px; }
+
+  /* --- mockup scaffolding (not part of the product UI) --- */
+  .doc-head { border-bottom:1px solid var(--line); padding-bottom:20px; }
+  .doc-head h1 { font-family:var(--serif); font-size:30px; margin:6px 0 0; font-weight:600; text-wrap:balance; }
+  .doc-head p { color:var(--muted); margin:8px 0 0; max-width:62ch; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+  .state { display:flex; flex-direction:column; gap:14px; }
+  .state-label { display:flex; align-items:baseline; gap:10px; }
+  .state-label .n {
+    font-family:var(--serif); font-size:13px; font-weight:700; color:var(--navy-800);
+    background:var(--gold-100); border:1px solid var(--gold-300);
+    width:24px; height:24px; border-radius:999px; display:grid; place-items:center; flex:none;
+  }
+  .state-label h2 { font-family:var(--serif); font-size:19px; margin:0; font-weight:600; }
+  .state-label span { color:var(--muted); font-size:13px; }
+  .stage { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:22px; box-shadow:var(--shadow-card); }
+  .note { font-size:13px; color:var(--muted); margin:0; }
+  .note strong { color:var(--ink); font-weight:600; }
+  .note-list { margin:0; padding-left:18px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:5px; }
+  .new-flag {
+    font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--gold-700); background:var(--gold-50); border:1px solid var(--gold-300);
+    border-radius:999px; padding:2px 7px; white-space:nowrap;
+  }
+
+  /* --- product surfaces --- */
+  .back { font-size:13px; color:var(--navy-500); margin:0 0 10px; }
+  .reg-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .reg-head h3 { font-family:var(--serif); font-size:28px; margin:4px 0 0; font-weight:600; }
+  .reg-head .count { color:var(--muted); margin:4px 0 0; font-size:14px; }
+  .actions { display:flex; align-items:center; gap:8px; }
+
+  .btn-menu {
+    border:1px solid var(--line); background:var(--surface); color:var(--navy-700);
+    border-radius:8px; padding:8px 12px; font:inherit; font-size:14px; font-weight:500; cursor:pointer;
+  }
+  .btn-menu:hover { background:var(--navy-50); }
+  .btn-menu.open { background:var(--navy-50); border-color:var(--navy-200); }
+  .btn-primary {
+    background:var(--navy-800); color:#fff; border:0; border-radius:8px;
+    padding:10px 16px; font:inherit; font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .btn-primary:hover { background:var(--navy-700); }
+  .btn-primary[disabled] { opacity:.5; cursor:not-allowed; }
+  .btn-ghost {
+    border:1px solid var(--line); background:var(--surface); color:var(--navy-700);
+    border-radius:8px; padding:9px 16px; font:inherit; font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .btn-ghost:hover { background:var(--navy-50); }
+  .btn-small {
+    border:1px solid var(--line); background:var(--surface); color:var(--navy-700);
+    border-radius:8px; padding:6px 12px; font:inherit; font-size:14px; font-weight:600; cursor:pointer;
+  }
+
+  .menu-anchor { position:relative; }
+  .menu {
+    position:absolute; right:0; top:calc(100% + 4px); width:300px; z-index:5;
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    padding:6px; box-shadow:var(--shadow-lg);
+  }
+  .menu-item {
+    display:block; width:100%; text-align:left; background:none; border:0; font:inherit;
+    border-radius:6px; padding:9px 12px; cursor:pointer;
+  }
+  .menu-item:hover { background:var(--navy-50); }
+  .menu-item.danger:hover { background:var(--red-50); }
+  .menu-item .t { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:500; color:var(--ink); }
+  .menu-item.danger .t { color:var(--red-600); }
+  .menu-item .d { display:block; font-size:12px; color:var(--muted); margin-top:2px; }
+  .menu-sep { height:1px; background:var(--line); margin:5px 0; }
+
+  /* modal */
+  .backdrop {
+    background:rgba(0,0,0,.4); border-radius:12px; padding:28px 20px;
+    display:grid; place-items:center;
+  }
+  .modal {
+    width:100%; max-width:640px; background:var(--surface);
+    border-radius:16px; box-shadow:var(--shadow-xl); padding:24px;
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .modal-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .modal-head h4 { font-family:var(--serif); font-size:19px; margin:0; font-weight:600; }
+  .modal-head p { margin:5px 0 0; font-size:14px; color:var(--muted); max-width:52ch; }
+  .x { border:0; background:none; color:var(--muted); font-size:15px; padding:4px 8px; border-radius:8px; cursor:pointer; }
+  .x:hover { background:var(--paper); color:var(--ink); }
+
+  .search {
+    width:100%; box-sizing:border-box; border:1px solid var(--line); background:var(--surface);
+    border-radius:8px; padding:9px 12px; font:inherit; font-size:14px; color:var(--ink);
+  }
+  .search::placeholder { color:var(--muted); }
+
+  .list-head {
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:0 2px; font-size:13px; color:var(--muted);
+  }
+  .checkline { display:flex; align-items:center; gap:9px; cursor:pointer; }
+  .checkline input { accent-color:var(--navy-800); width:15px; height:15px; margin:0; }
+  .checkline .lbl { font-size:13px; font-weight:600; color:var(--navy-700); }
+
+  .picker { border:1px solid var(--line); border-radius:10px; max-height:296px; overflow-y:auto; background:var(--surface); }
+  .row {
+    display:flex; align-items:center; gap:11px; padding:9px 12px;
+    border-top:1px solid var(--line); cursor:pointer;
+  }
+  .row:first-child { border-top:0; }
+  .row:hover { background:var(--navy-50); }
+  .row.on { background:var(--navy-50); }
+  .row input { accent-color:var(--navy-800); width:15px; height:15px; margin:0; flex:none; }
+  .row .who { min-width:0; flex:1; }
+  .row .nm { font-size:14px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row .em { font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chip {
+    font-size:11px; font-weight:600; border-radius:999px; padding:2px 9px; white-space:nowrap; flex:none;
+    border:1px solid var(--line); background:var(--paper); color:var(--muted);
+  }
+  .chip.none { background:var(--gold-50); border-color:var(--gold-300); color:var(--gold-700); }
+
+  .modal-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid var(--line); padding-top:16px; flex-wrap:wrap; }
+  .selcount { font-size:14px; color:var(--muted); }
+  .selcount strong { color:var(--ink); font-weight:600; }
+  .foot-btns { display:flex; gap:9px; }
+
+  /* result panel */
+  .result { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .result-top { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .result-top p { margin:0; font-size:14px; font-weight:500; color:var(--ink); }
+  .warn { margin:5px 0 0; font-size:12px; color:var(--gold-700); }
+  .tablewrap { margin-top:12px; border:1px solid var(--line); border-radius:10px; overflow:auto; max-height:288px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  thead th {
+    position:sticky; top:0; background:var(--paper); text-align:left; font-size:11px; font-weight:500;
+    letter-spacing:.05em; text-transform:uppercase; color:var(--muted); padding:8px 12px;
+  }
+  tbody td { padding:6px 12px; border-top:1px solid var(--line); }
+  td.nm { color:var(--ink); }
+  td.em { color:var(--muted); }
+  td.pw { font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:var(--navy-800); font-variant-numeric:tabular-nums; }
+
+  :focus-visible { outline:2px solid var(--gold-300); outline-offset:2px; }
+  @media (max-width:640px) {
+    .actions { width:100%; }
+    .menu { width:min(300px, 86vw); }
+  }
+</style>
+
+<div class="wrap">
+  <header class="doc-head">
+    <p class="eyebrow">Design mockup · Admin · Registry</p>
+    <h1>Reset passwords for selected employees</h1>
+    <p>
+      Adds a third option to the existing <strong>Passwords&nbsp;▾</strong> menu so HR can pick specific
+      people instead of resetting everyone or only the blank ones. Nothing else on the registry page
+      changes. Colours, type and component shapes are taken from the live tokens in
+      <code>globals.css</code>; the real page uses Fraunces + Hanken Grotesk, substituted here with the
+      same fallback stack the app declares.
+    </p>
+  </header>
+
+  <!-- 1 -->
+  <section class="state">
+    <div class="state-label">
+      <span class="n">1</span>
+      <h2>The menu gains one item</h2>
+      <span>everything else is untouched</span>
+    </div>
+    <div class="stage">
+      <p class="back">← Admin</p>
+      <div class="reg-head">
+        <div>
+          <p class="eyebrow">Admin · Registry</p>
+          <h3>Employees</h3>
+          <p class="count">48 records</p>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-menu">CSV ▾</button>
+          <div class="menu-anchor">
+            <button type="button" class="btn-menu open">Passwords ▾</button>
+            <div class="menu" role="menu">
+              <button type="button" class="menu-item" role="menuitem">
+                <span class="t">Generate for employees without a password</span>
+                <span class="d">One-time CSV for people who don’t have one yet.</span>
+              </button>
+              <button type="button" class="menu-item" role="menuitem">
+                <span class="t">Reset selected employees… <span class="new-flag">New</span></span>
+                <span class="d">Pick the people to reset, then download their new passwords.</span>
+              </button>
+              <div class="menu-sep"></div>
+              <button type="button" class="menu-item danger" role="menuitem">
+                <span class="t">Reset ALL passwords</span>
+                <span class="d">Everyone gets a new temporary password. Super User only.</span>
+              </button>
+            </div>
+          </div>
+          <button type="button" class="btn-primary">+ New employee</button>
+        </div>
+      </div>
+      <div style="height:96px"></div>
+    </div>
+    <p class="note">
+      The new item sits with the everyday action, above the divider — the destructive
+      <strong>Reset ALL</strong> stays alone below it and stays Super&nbsp;User&nbsp;only.
+    </p>
+  </section>
+
+  <!-- 2 -->
+  <section class="state">
+    <div class="state-label">
+      <span class="n">2</span>
+      <h2>The picker</h2>
+      <span>search, tick, confirm</span>
+    </div>
+    <div class="backdrop">
+      <div class="modal" role="dialog" aria-modal="true" aria-label="Reset passwords for selected employees">
+        <div class="modal-head">
+          <div>
+            <h4>Reset passwords for selected employees</h4>
+            <p>
+              Each person you pick gets a new temporary password and must choose their own the next time
+              they sign in. You’ll get the list to download once.
+            </p>
+          </div>
+          <button type="button" class="x" aria-label="Close">✕</button>
+        </div>
+
+        <input class="search" type="search" placeholder="Search by name or email" value="" aria-label="Search employees" />
+
+        <div class="list-head">
+          <label class="checkline">
+            <input type="checkbox" />
+            <span class="lbl">Select all 47 shown</span>
+          </label>
+          <span>Active employees only</span>
+        </div>
+
+        <div class="picker">
+          <label class="row on"><input type="checkbox" checked /><span class="who"><span class="nm">Amina Rashad</span><span class="em">amina.rashad@forefront.consulting</span></span><span class="chip">Has password</span></label>
+          <label class="row"><input type="checkbox" /><span class="who"><span class="nm">Farid Halim</span><span class="em">farid.halim@forefront.consulting</span></span><span class="chip">Has password</span></label>
+          <label class="row on"><input type="checkbox" checked /><span class="who"><span class="nm">Hana Mostafa</span><span class="em">hana.mostafa@forefront.consulting</span></span><span class="chip none">No password yet</span></label>
+          <label class="row"><input type="checkbox" /><span class="who"><span class="nm">Karim Wasfi</span><span class="em">karim.wasfi@forefront.consulting</span></span><span class="chip">Has password</span></label>
+          <label class="row on"><input type="checkbox" checked /><span class="who"><span class="nm">Layla Sobhi</span><span class="em">layla.sobhi@forefront.consulting</span></span><span class="chip">Has password</span></label>
+          <label class="row"><input type="checkbox" /><span class="who"><span class="nm">Mahmoud Fahmy</span><span class="em">mahmoud.fahmy@forefront.consulting</span></span><span class="chip none">No password yet</span></label>
+          <label class="row"><input type="checkbox" /><span class="who"><span class="nm">Nadia Guirguis</span><span class="em">nadia.guirguis@forefront.consulting</span></span><span class="chip">Has password</span></label>
+          <label class="row"><input type="checkbox" /><span class="who"><span class="nm">Omar Zaki</span><span class="em">omar.zaki@forefront.consulting</span></span><span class="chip">Has password</span></label>
+          <label class="row"><input type="checkbox" /><span class="who"><span class="nm">Rana Abdelmeguid</span><span class="em">rana.abdelmeguid@forefront.consulting</span></span><span class="chip">Has password</span></label>
+          <label class="row"><input type="checkbox" /><span class="who"><span class="nm">Tarek Nour</span><span class="em">tarek.nour@forefront.consulting</span></span><span class="chip none">No password yet</span></label>
+        </div>
+
+        <div class="modal-foot">
+          <span class="selcount"><strong>3</strong> selected</span>
+          <div class="foot-btns">
+            <button type="button" class="btn-ghost">Cancel</button>
+            <button type="button" class="btn-primary">Reset 3 passwords</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="note-list">
+      <li>Your own account never appears in the list, so you can’t lock yourself out.</li>
+      <li>The chip tells you who already has a working password, so a reset is a deliberate choice rather than a surprise.</li>
+      <li><strong>Select all</strong> applies to what the search currently shows, and the count says so.</li>
+      <li>With nothing ticked the confirm button reads <strong>Reset 0 passwords</strong> and is disabled.</li>
+      <li>A confirmation step follows the button, matching the other destructive admin actions.</li>
+    </ul>
+  </section>
+
+  <!-- 3 -->
+  <section class="state">
+    <div class="state-label">
+      <span class="n">3</span>
+      <h2>The result</h2>
+      <span>the panel that already exists, reused as-is</span>
+    </div>
+    <div class="stage">
+      <div class="result">
+        <div class="result-top">
+          <p>3 temporary passwords generated (selected employees).</p>
+          <button type="button" class="btn-small">⬇ Download CSV</button>
+        </div>
+        <p class="warn">
+          Copy or download these now — for security they can’t be shown again. Passwords are stored hashed and
+          <strong>this file can’t be downloaded again</strong>.
+        </p>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Temporary password</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="nm">Amina Rashad</td><td class="em">amina.rashad@forefront.consulting</td><td class="pw">7Qk2rM4bVxA</td></tr>
+              <tr><td class="nm">Hana Mostafa</td><td class="em">hana.mostafa@forefront.consulting</td><td class="pw">pT9wLs3ZnQe</td></tr>
+              <tr><td class="nm">Layla Sobhi</td><td class="em">layla.sobhi@forefront.consulting</td><td class="pw">Xb6vHc8yRdU</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <p class="note">
+      No new result design — this is the existing panel below the registry header, with the summary line
+      naming the selected mode. The CSV keeps the same three columns and
+      <code>temporary-passwords.csv</code> filename.
+    </p>
+  </section>
+</div>
