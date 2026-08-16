@@ -1,0 +1,248 @@
+<title>Admin Attention Signals</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-300:#7d97ba;
+    --navy-400:#4f6d97; --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-50:#fbf7ea; --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-500:#c9a227;
+    --gold-600:#a8821e; --gold-700:#85641b; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-50:#fef2f2; --red-200:#fecaca; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-700:#15803d;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1060px; margin:0 auto; padding:32px 24px 80px; display:flex; flex-direction:column; gap:44px; }
+
+  .doc-head { border-bottom:1px solid var(--line); padding-bottom:20px; }
+  .doc-head h1 { font-family:var(--serif); font-size:30px; margin:6px 0 0; font-weight:600; text-wrap:balance; }
+  .doc-head p { color:var(--muted); margin:8px 0 0; max-width:70ch; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+
+  .block { display:flex; flex-direction:column; gap:14px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .block-head .n { font-family:var(--serif); font-size:13px; font-weight:700; color:var(--navy-800); background:var(--gold-100); border:1px solid var(--gold-300); width:24px; height:24px; border-radius:999px; display:grid; place-items:center; flex:none; }
+  .block-head h2 { font-family:var(--serif); font-size:20px; margin:0; font-weight:600; }
+  .block-head .sub { color:var(--muted); font-size:13px; }
+  .stage { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px; }
+  .note { font-size:13px; color:var(--muted); margin:0; max-width:80ch; }
+  .note strong { color:var(--ink); font-weight:600; }
+  .note-list { margin:0; padding-left:18px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:6px; max-width:82ch; }
+  .note-list strong { color:var(--ink); font-weight:600; }
+
+  /* admin home — cards exactly as they are today, only the order and the pill change */
+  .cat { margin-bottom:26px; }
+  .cat:last-child { margin-bottom:0; }
+  .cat-head { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+  .cat-head .dot { width:7px; height:7px; border-radius:999px; background:var(--gold-500); flex:none; }
+  .cat-head .lbl { font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--navy-700); white-space:nowrap; }
+  .cat-head .rule { height:1px; flex:1; background:var(--line); }
+  .cat-head .ct { font-size:12px; color:var(--muted); white-space:nowrap; }
+  .cards { display:grid; gap:16px; grid-template-columns:1fr; }
+  @media (min-width:680px) { .cards { grid-template-columns:1fr 1fr; } }
+  .card { position:relative; border:1px solid var(--line); background:var(--surface); border-radius:12px; padding:20px; }
+  .card.hot { border-color:var(--gold-300); }
+  .card .t { font-size:19px; font-weight:600; letter-spacing:-0.01em; color:var(--ink); }
+  .card .d { font-size:14px; color:var(--muted); margin-top:4px; }
+  .pill { position:absolute; right:16px; top:16px; display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:4px 10px; font-size:11px; font-weight:700; }
+  .pill.gold { background:var(--gold-100); color:var(--gold-800); }
+  .pill.gold i { width:6px; height:6px; border-radius:999px; background:var(--gold-500); display:block; }
+  .pill.red { background:var(--red-50); color:var(--red-700); border:1px solid var(--red-200); }
+  .pill.red i { width:6px; height:6px; border-radius:999px; background:var(--red-600); display:block; }
+  .breakdown { margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; }
+  .tag { font-size:11.5px; font-weight:600; border-radius:6px; padding:2px 8px; background:var(--paper); border:1px solid var(--line); color:var(--muted); }
+  .tag.warn { background:var(--gold-50); border-color:var(--gold-300); color:var(--gold-800); }
+  .tag.bad { background:var(--red-50); border-color:var(--red-200); color:var(--red-700); }
+
+  /* tabs */
+  .tabs { display:flex; gap:24px; border-bottom:1px solid var(--line); padding-top:4px; }
+  .tab { position:relative; padding:0 2px 12px; font-size:14px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:8px; }
+  .tab.on { color:var(--navy-800); }
+  .tab.on::after { content:""; position:absolute; inset-inline:0; bottom:-1px; height:2px; border-radius:999px; background:var(--gold-500); }
+  .badge { border-radius:999px; padding:2px 7px; font-size:11px; font-weight:700; background:var(--gold-100); color:var(--gold-800); }
+  .badge.red { background:var(--red-50); color:var(--red-700); border:1px solid var(--red-200); }
+
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+  th, td { text-align:left; padding:9px 13px; border-top:1px solid var(--line); }
+  thead th { border-top:0; background:var(--navy-800); color:#fff; font-size:11px; letter-spacing:.05em; text-transform:uppercase; font-weight:700; white-space:nowrap; }
+  td.w { white-space:nowrap; }
+
+  .cols { display:grid; gap:16px; grid-template-columns:1fr; }
+  @media (min-width:820px) { .cols { grid-template-columns:1fr 1fr; } }
+  .compare { border:1px solid var(--line); border-radius:12px; padding:15px; background:var(--surface); }
+  .compare h4 { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin:0 0 9px; color:var(--muted); }
+  .compare ol { margin:0; padding-left:19px; font-size:13.5px; color:var(--muted); display:flex; flex-direction:column; gap:5px; }
+  .compare ol b { color:var(--ink); font-weight:600; }
+  .footnote { border-top:1px solid var(--line); padding-top:18px; font-size:12.5px; color:var(--muted); max-width:82ch; }
+  .footnote b { color:var(--ink); }
+  :focus-visible { outline:2px solid var(--gold-300); outline-offset:2px; }
+</style>
+
+<div class="wrap">
+  <header class="doc-head">
+    <p class="eyebrow">Design mockup · Admin</p>
+    <h1>Admin attention signals</h1>
+    <p>
+      Three changes, no restyling: <strong>Benefits &amp; Time-Off moves to the top</strong> of the admin
+      home, the two cards in it carry a <strong>needs-attention pill</strong> that counts more than claims,
+      and the Benefits page's <strong>tabs carry the same marks</strong> so the signal survives the click.
+      Cards, colours, spacing and hover behaviour are untouched.
+    </p>
+  </header>
+
+  <!-- 1 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">1</span>
+      <h2>Section order</h2>
+      <span class="sub">most-used first</span>
+    </div>
+    <div class="cols">
+      <div class="compare">
+        <h4>Today</h4>
+        <ol>
+          <li><b>People</b> — registry, change requests, departments</li>
+          <li><b>Benefits &amp; Time-Off</b></li>
+          <li><b>Content &amp; Communications</b></li>
+          <li><b>Platform</b> <span style="opacity:.7">(Super User)</span></li>
+        </ol>
+      </div>
+      <div class="compare">
+        <h4>Proposed</h4>
+        <ol>
+          <li><b>Benefits &amp; Time-Off</b> — the daily queue</li>
+          <li><b>People</b> — registry, change requests, departments</li>
+          <li><b>Content &amp; Communications</b></li>
+          <li><b>Platform</b> <span style="opacity:.7">(Super User)</span></li>
+        </ol>
+      </div>
+    </div>
+    <p class="note">
+      Order only — no card moves between sections, and nothing is renamed. People stays second because it is
+      the registry everything else reads from, and Change Requests keeps its own pill there.
+    </p>
+  </section>
+
+  <!-- 2 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">2</span>
+      <h2>The admin home</h2>
+      <span class="sub">as it would look with three things waiting</span>
+    </div>
+    <div class="stage">
+      <div class="cat">
+        <div class="cat-head">
+          <span class="dot"></span><span class="lbl">Benefits &amp; Time-Off</span>
+          <span class="rule"></span><span class="ct">2</span>
+        </div>
+        <div class="cards">
+          <div class="card hot">
+            <span class="pill gold"><i></i>5 need attention</span>
+            <div class="t">Benefits Management</div>
+            <div class="d">Plan-year window and submissions.</div>
+            <div class="breakdown">
+              <span class="tag warn">3 claims to review</span>
+              <span class="tag bad">1 over-charged</span>
+              <span class="tag bad">1 cover ended</span>
+            </div>
+          </div>
+          <div class="card hot">
+            <span class="pill gold"><i></i>2 pending</span>
+            <div class="t">Time-Off</div>
+            <div class="d">View all leave requests; approve or decline as a fallback.</div>
+            <div class="breakdown">
+              <span class="tag warn">2 requests awaiting a decision</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cat">
+        <div class="cat-head">
+          <span class="dot"></span><span class="lbl">People</span>
+          <span class="rule"></span><span class="ct">3</span>
+        </div>
+        <div class="cards">
+          <div class="card">
+            <div class="t">Employee Registry</div>
+            <div class="d">Create and edit employee records, employment, reporting lines, and roles.</div>
+          </div>
+          <div class="card hot">
+            <span class="pill gold"><i></i>1 pending</span>
+            <div class="t">Change Requests</div>
+            <div class="d">Corrections employees have asked for — approve a field and it is written to their record.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="note-list">
+      <li><strong>The pill already exists</strong> — it counts claims awaiting review on the Benefits card and pending change requests. What changes is <em>what</em> it counts on Benefits, and that Time-Off gets one too.</li>
+      <li><strong>The breakdown line is new</strong>, and it is the part that earns its place: "5 need attention" tells you to click, "1 over-charged" tells you what you are walking into. It appears only when something is waiting — a quiet card stays exactly as it is today.</li>
+      <li><strong>A quiet card shows no pill and no breakdown.</strong> Zero states never render a "0".</li>
+    </ul>
+  </section>
+
+  <!-- 3 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">3</span>
+      <h2>What counts as attention</h2>
+      <span class="sub">every signal comes from something already on the screen</span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Card</th><th>Signal</th><th>Where it comes from</th><th class="w">Tone</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Benefits</td><td>Claims to review</td><td>Claims with status Submitted (already counted today)</td><td class="w">Gold</td></tr>
+          <tr><td>Benefits</td><td>Over-charged commitment</td><td>Charges exceeding what the cover costs — the red row in Medical</td><td class="w">Red</td></tr>
+          <tr><td>Benefits</td><td>Cover ended</td><td>A cancelled charge — premium to recover from the insurer</td><td class="w">Red</td></tr>
+          <tr><td>Benefits</td><td>Blocked from committing</td><td>Eligible employees with no date of birth on file</td><td class="w">Gold</td></tr>
+          <tr><td>Time-Off</td><td>Requests awaiting a decision</td><td>Leave requests with status Pending</td><td class="w">Gold</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">
+      Deliberately <strong>not</strong> counted: employees who simply haven't committed yet. That number is
+      large, normal, and never urgent — putting it in the pill would keep the card permanently lit and teach
+      everyone to ignore it. It stays a filter inside the Medical tab.
+    </p>
+  </section>
+
+  <!-- 4 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">4</span>
+      <h2>The mark survives the click</h2>
+      <span class="sub">inside /admin/benefits</span>
+    </div>
+    <div class="stage">
+      <div class="tabs">
+        <span class="tab on">Claims <span class="badge">3</span></span>
+        <span class="tab">Medical <span class="badge red">2</span></span>
+        <span class="tab">Benefits Catalogue</span>
+        <span class="tab">Amounts</span>
+      </div>
+      <p class="note" style="margin-top:16px;">
+        The Claims tab already carries a gold count of claims to review. <strong>Medical gains the same
+        device in red</strong>, counting only the rows its own "Needs attention" chip counts — an
+        over-charge or a cover that ended. Click through and the matching filter chip is already applied, so
+        the badge, the rail tile and the filtered list all agree on the same number.
+      </p>
+      <p class="note" style="margin-top:10px;">
+        Red is reserved for money that is wrong; gold means someone is waiting. That is the same split the
+        two panels already use, so nothing new has to be learned.
+      </p>
+    </div>
+  </section>
+
+  <p class="footnote">
+    Mockup only — no components changed. Cost: the admin home currently runs two count queries; this adds
+    two more (medical exceptions, pending leave). Both are cheap counts on indexed columns, and both are
+    wrapped the way the existing ones are — <b>if the query fails the pill is simply omitted</b>, never a
+    broken admin home.
+  </p>
+</div>
