@@ -85,18 +85,30 @@ const NOT_YET: Eligibility = { status: "NOT_YET", remainingWholeMonths: 0, fract
  *  - window null (no dates set) → FULL
  *  - startDate null (unknown eligibility date) → FULL
  * Otherwise:
+ *  - eligibility date still in the FUTURE → NOT_YET (see below)
  *  - eligibility date ≤ window.start → FULL
  *  - window.start < eligibility date ≤ window.end → PRORATED
  *  - eligibility date > window.end → NOT_YET
+ *
+ * THE "NOT YET, AS OF TODAY" CHECK IS THE ACCESS RULE, and it is deliberately first.
+ * Everything below it answers a *proration* question — "how much of this window do they get?" —
+ * which is not the same question as "may they have it now". Without the today check, an employee
+ * whose threshold falls anywhere inside the window is classified PRORATED and let straight in:
+ * with the medical policy term running to 14 Jun 2027, someone joining in July 2026 passed the
+ * three-month gate on their first day. The wider the window, the earlier the door opened.
  */
 export function classifyEligibility(
   startDate: Date | null | undefined,
   thresholdMonths: number,
-  window: PlanYearWindow
+  window: PlanYearWindow,
+  asOf: Date = new Date()
 ): Eligibility {
   if (!window) return FULL;
   const elig = eligibilityDate(startDate, thresholdMonths);
   if (!elig) return FULL;
+
+  // Not eligible until the threshold has actually been served, whatever the window says.
+  if (elig.getTime() > asOf.getTime()) return NOT_YET;
 
   if (elig.getTime() <= window.start.getTime()) return FULL;
   if (elig.getTime() > window.end.getTime()) return NOT_YET;
