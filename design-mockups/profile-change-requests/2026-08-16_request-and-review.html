@@ -1,0 +1,237 @@
+<title>Profile Change Requests</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6;
+    --navy-500:#2f4d78; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-50:#fbf7ea; --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-600:#a8821e; --gold-700:#85641b; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-50:#fef2f2; --red-300:#fca5a5; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-200:#bbf7d0; --green-700:#15803d;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1000px; margin:0 auto; padding:32px 24px 72px; display:flex; flex-direction:column; gap:38px; }
+  .doc-head { border-bottom:1px solid var(--line); padding-bottom:20px; }
+  .doc-head h1 { font-family:var(--serif); font-size:30px; margin:6px 0 0; font-weight:600; text-wrap:balance; }
+  .doc-head p { color:var(--muted); margin:8px 0 0; max-width:64ch; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+  .block { display:flex; flex-direction:column; gap:14px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .block-head .n { font-family:var(--serif); font-size:13px; font-weight:700; color:var(--navy-800); background:var(--gold-100); border:1px solid var(--gold-300); width:24px; height:24px; border-radius:999px; display:grid; place-items:center; flex:none; }
+  .block-head h2 { font-family:var(--serif); font-size:20px; margin:0; font-weight:600; }
+  .block-head .sub { color:var(--muted); font-size:13px; }
+  .stage { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:22px; }
+  .note { font-size:13px; color:var(--muted); margin:0; }
+  .note strong { color:var(--ink); font-weight:600; }
+  .note-list { margin:0; padding-left:18px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:5px; }
+  .new-flag { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-700); background:var(--gold-50); border:1px solid var(--gold-300); border-radius:999px; padding:2px 7px; }
+
+  .card { border:1px solid var(--line); background:var(--surface); border-radius:14px; padding:18px; }
+  .card + .card { margin-top:14px; }
+  h3.sect { font-family:var(--serif); font-size:18px; margin:0 0 3px; font-weight:600; }
+  p.lede { color:var(--muted); font-size:13px; margin:0 0 14px; max-width:66ch; }
+  .field { display:grid; gap:4px 14px; grid-template-columns:1fr; padding:9px 0; border-top:1px solid var(--line); }
+  .field:first-of-type { border-top:0; }
+  @media (min-width:640px) { .field { grid-template-columns:190px 1fr; align-items:center; } }
+  .flabel { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .fval { font-size:14px; color:var(--ink); }
+  input[type=text], input[type=date], select {
+    width:100%; max-width:320px; box-sizing:border-box; border:1px solid var(--line); border-radius:8px;
+    padding:7px 10px; font:inherit; font-size:14px; background:var(--surface); color:var(--ink);
+  }
+  input.changed { border-color:var(--gold-300); background:var(--gold-50); }
+  .btn { background:var(--navy-800); color:#fff; border:0; border-radius:8px; padding:8px 15px; font:inherit; font-size:14px; font-weight:600; cursor:pointer; }
+  .btn.ghost { background:var(--surface); color:var(--navy-700); border:1px solid var(--line); }
+  .btn.sm { padding:5px 11px; font-size:13px; }
+  .chip { display:inline-block; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; }
+  .chip.pend { background:var(--gold-50); color:var(--gold-800); border:1px solid var(--gold-300); }
+  .chip.ok { background:var(--green-50); color:var(--green-700); border:1px solid var(--green-200); }
+  .chip.no { background:var(--red-50); color:var(--red-700); border:1px solid var(--red-300); }
+  .arrow { color:var(--muted); padding:0 6px; }
+  .was { color:var(--muted); text-decoration:line-through; }
+  .now { font-weight:600; color:var(--ink); }
+  .badge { display:inline-flex; align-items:center; gap:6px; border-radius:999px; background:var(--gold-100); border:1px solid var(--gold-300); color:var(--gold-800); padding:3px 10px; font-size:12px; font-weight:700; }
+  .rowline { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-top:1px solid var(--line); }
+  .rowline:first-of-type { border-top:0; }
+  :focus-visible { outline:2px solid var(--gold-300); outline-offset:2px; }
+</style>
+
+<div class="wrap">
+  <header class="doc-head">
+    <p class="eyebrow">Design mockup · Profile &amp; Admin</p>
+    <h1>Profile change requests</h1>
+    <p>
+      Employees propose corrections to their own record; HR decides field by field, and approving
+      <em>is</em> the edit. Phone is the exception — it&apos;s theirs, so they just change it.
+    </p>
+  </header>
+
+  <!-- 1 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">1</span>
+      <h2>My Profile</h2>
+      <span class="sub">phone edits directly · everything else is requested</span>
+    </div>
+    <div class="stage">
+      <div class="card">
+        <h3 class="sect">Contact</h3>
+        <p class="lede">Your phone is yours to change. Everything else goes to HR for review.</p>
+        <div class="field">
+          <span class="flabel">Phone <span class="new-flag">Editable</span></span>
+          <span><input type="text" value="+20 100 123 4567" /> <button class="btn sm" style="margin-left:6px">Save</button></span>
+        </div>
+        <div class="field">
+          <span class="flabel">Emergency contact</span>
+          <span class="fval">Nadia Rashad · Sister · +20 122 987 6543</span>
+        </div>
+        <div class="field">
+          <span class="flabel">Date of birth</span>
+          <span class="fval">5 May 1990</span>
+        </div>
+        <div class="field">
+          <span class="flabel">Marital status</span>
+          <span class="fval">Married</span>
+        </div>
+        <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+          <button class="btn">Request a change</button>
+          <span class="note">HR reviews it — nothing changes until they approve.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">2</span>
+      <h2>The request form</h2>
+      <span class="sub">pre-filled; only what you change is sent</span>
+    </div>
+    <div class="stage">
+      <div class="card">
+        <h3 class="sect">Request a change</h3>
+        <p class="lede">Edit what&apos;s wrong. Fields you don&apos;t touch aren&apos;t sent.</p>
+        <div class="field">
+          <span class="flabel">Emergency contact name</span>
+          <span><input type="text" class="changed" value="Nadia Rashad-Fouad" /></span>
+        </div>
+        <div class="field">
+          <span class="flabel">Relationship</span>
+          <span><input type="text" value="Sister" /></span>
+        </div>
+        <div class="field">
+          <span class="flabel">Emergency contact phone</span>
+          <span><input type="text" class="changed" value="+20 100 555 0199" /></span>
+        </div>
+        <div class="field">
+          <span class="flabel">Date of birth</span>
+          <span><input type="date" value="1990-05-05" /></span>
+        </div>
+        <div class="field">
+          <span class="flabel">Marital status</span>
+          <span><select><option>Married</option><option>Single</option><option>Divorced</option><option>Widowed</option></select></span>
+        </div>
+        <div class="field">
+          <span class="flabel">Reason (optional)</span>
+          <span><input type="text" value="She remarried and changed her number." /></span>
+        </div>
+        <div style="margin-top:14px; display:flex; gap:8px">
+          <button class="btn">Send 2 changes to HR</button>
+          <button class="btn ghost">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <ul class="note-list">
+      <li>The button counts what actually differs, so it&apos;s obvious what&apos;s being sent.</li>
+      <li>Submitting with nothing changed says so and creates nothing.</li>
+      <li>One open request at a time — reopening takes you back to the pending one rather than racing it.</li>
+    </ul>
+  </section>
+
+  <!-- 3 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">3</span>
+      <h2>Waiting, and the outcome</h2>
+      <span class="sub">on My Profile, per field</span>
+    </div>
+    <div class="stage">
+      <div class="card">
+        <h3 class="sect">Your change request <span class="chip pend">Awaiting HR</span></h3>
+        <div class="rowline">
+          <span><span class="flabel">Emergency contact name</span><br /><span class="was">Nadia Rashad</span><span class="arrow">→</span><span class="now">Nadia Rashad-Fouad</span></span>
+          <span class="chip pend">Pending</span>
+        </div>
+        <div class="rowline">
+          <span><span class="flabel">Emergency contact phone</span><br /><span class="was">+20 122 987 6543</span><span class="arrow">→</span><span class="now">+20 100 555 0199</span></span>
+          <span class="chip pend">Pending</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3 class="sect">Your change request <span class="chip ok">Decided</span></h3>
+        <div class="rowline">
+          <span><span class="flabel">Emergency contact name</span><br /><span class="now">Nadia Rashad-Fouad</span></span>
+          <span class="chip ok">Approved</span>
+        </div>
+        <div class="rowline">
+          <span>
+            <span class="flabel">Date of birth</span><br /><span class="now">3 May 1990</span>
+            <div class="note" style="margin-top:3px">“Passport shows 5 May — send a copy if it&apos;s wrong.”</div>
+          </span>
+          <span class="chip no">Declined</span>
+        </div>
+      </div>
+    </div>
+    <p class="note">
+      <strong>Each field carries its own outcome and reason.</strong> One request can be part approved
+      and part declined — the employee doesn&apos;t resubmit what was already right.
+    </p>
+  </section>
+
+  <!-- 4 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">4</span>
+      <h2>HR&apos;s review</h2>
+      <span class="sub">Admin → Change requests <span class="new-flag">New</span></span>
+    </div>
+    <div class="stage">
+      <p class="note" style="margin-bottom:12px">On the admin home: <span class="badge">Change requests · 3 waiting</span></p>
+      <div class="card">
+        <h3 class="sect">Amina Rashad</h3>
+        <p class="lede">Submitted 14 Aug 2026 · “She remarried and changed her number.”</p>
+        <div class="rowline">
+          <span>
+            <span class="flabel">Emergency contact name</span><br />
+            <span class="was">Nadia Rashad</span><span class="arrow">→</span><span class="now">Nadia Rashad-Fouad</span>
+          </span>
+          <span style="display:flex; gap:7px"><button class="btn sm">Approve</button><button class="btn sm ghost">Decline…</button></span>
+        </div>
+        <div class="rowline">
+          <span>
+            <span class="flabel">Emergency contact phone</span><br />
+            <span class="was">+20 122 987 6543</span><span class="arrow">→</span><span class="now">+20 100 555 0199</span>
+          </span>
+          <span style="display:flex; gap:7px"><button class="btn sm">Approve</button><button class="btn sm ghost">Decline…</button></span>
+        </div>
+        <div class="rowline">
+          <span>
+            <span class="flabel">Date of birth</span><br />
+            <span class="was">5 May 1990</span><span class="arrow">→</span><span class="now">3 May 1990</span>
+          </span>
+          <span class="chip no">Declined · you · 15 Aug</span>
+        </div>
+      </div>
+    </div>
+    <ul class="note-list">
+      <li><strong>Approving is the edit.</strong> One click writes that field to the record — nothing is retyped.</li>
+      <li><strong>The “was” value is read when you open this page</strong>, not when the employee submitted.
+        If you changed the number yourself yesterday, you see <em>your</em> value here — so approving can never
+        silently revert your own edit.</li>
+      <li>A decided field keeps its outcome inline and can&apos;t be decided twice.</li>
+      <li>The request leaves the waiting count only when every field has been decided, so it can&apos;t sit half-finished.</li>
+    </ul>
+  </section>
+</div>
