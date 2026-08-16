@@ -669,6 +669,29 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
   - Verified in a real Chromium against a local Postgres: all three actions produce the panel and
     a correct CSV, and reverting just the fix reproduces the reported console error exactly.
 
+- **2026-08-16 — Benefits: pool total, medical gate, and partial reimbursement (mockup-approved):**
+  - **Pool no longer counts guaranteed benefits.** `benefits/page.tsx` summed *every* non-rejected
+    claim into `poolUsed`, including summer/marriage/loans/professional-development — which have
+    their own budget outside the pool. The employee's "Your pool" figure was understated by
+    whatever they'd claimed there. Display only: the server has always built its allowance context
+    from `catalogItemId` claims alone, so no claim was ever wrongly refused.
+  - **Claims clamp instead of refusing (`clampCovered`).** Reimbursement is now the smallest of the
+    coverage share, the benefit's 50%-cap remainder, and the pool remainder. A 10,000 receipt at 80%
+    with 7,000 left pays 7,000 — an effective 70%, with the **50% cap overriding the coverage rate**.
+    The employee keeps entering the full receipt value (it must match their proof) and the preview
+    states the clamped figure before submitting. Only a fully-used benefit or pool refuses.
+  - **`BenefitClaim.fullCost`** (migration `045`, nullable, no backfill) records the receipt next to
+    the covered amount, and the admin Claims list shows "Receipt X · covers N% = Y · capped to Z" so
+    a clamped payout reconciles against its proof instead of reading as a wrong number.
+  - **Medical shows locked under 3 months** rather than offering a "Set up" button that the server
+    then refuses at commit. **Narrower than first diagnosed:** the benefits page always *derives* the
+    tenure band from the hire date, so a manually-set band can't reach the main board path — the
+    reachable route is a **plan year left OPEN past its end date**, which makes a recent joiner's
+    3-month date fall beyond the window. Verified against exactly that scenario.
+  - Mockup approved before building (`design-mockups/benefits-fixes/2026-08-16_…html`); UI snapshots
+    saved. Verified with 19 rule/DB checks (the operator's own 30k/15k/8k/7k example) plus a real
+    Chromium pass over the Benefits page; `045` applied twice from the file to prove idempotency.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.

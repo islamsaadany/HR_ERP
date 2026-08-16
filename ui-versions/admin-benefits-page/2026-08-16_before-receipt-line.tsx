@@ -63,8 +63,7 @@ export default async function AdminBenefitsPage({
             include: {
               user: { select: { name: true } },
               guaranteedBenefit: { select: { name: true } },
-              // coverageRate is needed to show HR how a clamped claim was worked out.
-              catalogItem: { select: { name: true, coverageRate: true } },
+              catalogItem: { select: { name: true } },
             },
             orderBy: { createdAt: "desc" },
           })
@@ -259,24 +258,6 @@ export default async function AdminBenefitsPage({
                     <span className="text-xs text-muted">{formatDate(c.createdAt)}</span>
                   </div>
                 </div>
-                {/* The covered amount is no longer always `receipt × coverage rate` — the
-                    50%-per-benefit cap clamps it. Without the receipt value, a clamped claim
-                    reads as an unexplained number next to a larger proof, so show the working. */}
-                {c.fullCost != null && c.catalogItem ? (
-                  <p className="mt-1 text-xs text-muted">
-                    Receipt <span className="tabular-nums text-ink">{egp(c.fullCost)}</span>
-                    {" · "}covers {c.catalogItem.coverageRate}% ={" "}
-                    <span className="tabular-nums">{egp(Math.round((c.fullCost * c.catalogItem.coverageRate) / 100))}</span>
-                    {Math.round((c.fullCost * c.catalogItem.coverageRate) / 100) !== c.amount ? (
-                      <>
-                        {" · "}
-                        <span className="font-semibold text-gold-700">
-                          capped to {egp(c.amount)} by the 50% benefit cap
-                        </span>
-                      </>
-                    ) : null}
-                  </p>
-                ) : null}
                 {c.note ? <p className="mt-1 text-sm text-ink">“{c.note}”</p> : null}
                 {c.decisionNote ? <p className="mt-1 text-xs text-red-600">Rejected: {c.decisionNote}</p> : null}
                 {c.proofUrl ? (

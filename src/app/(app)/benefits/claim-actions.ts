@@ -76,6 +76,9 @@ async function createClaimImpl(formData: FormData): Promise<void> {
 
   let claimType: "NONE" | "NOTE" | "PROOF";
   let claimAmount: number; // the COVERED amount stored on the claim
+  // The receipt value as entered, stored alongside the covered amount so HR can reconcile a
+  // clamped claim against its proof. Null for guaranteed benefits (no coverage rate).
+  let receiptCost: number | null = null;
   let benefitName = ""; // for the HR notification email
   const link: { guaranteedBenefitId?: string; catalogItemId?: string } = {};
 
@@ -176,7 +179,12 @@ async function createClaimImpl(formData: FormData): Promise<void> {
       coverageRate: item.coverageRate,
     });
     if (result.errors.length > 0) fail(result.errors[0]);
+    // `covered` is already clamped to what's left on the benefit / in the pool, so a receipt
+    // whose coverage share overshoots is paid down rather than refused (the 50% cap overrides
+    // the coverage rate). Guard against a zero payout — nothing to reimburse is not a claim.
+    if (result.covered <= 0) fail("There's nothing left to claim on this benefit.");
     claimAmount = result.covered;
+    receiptCost = amount;
     link.catalogItemId = item.id;
   } else {
     fail("Unknown benefit type.");
@@ -211,6 +219,7 @@ async function createClaimImpl(formData: FormData): Promise<void> {
       guaranteedBenefitId: link.guaranteedBenefitId ?? null,
       catalogItemId: link.catalogItemId ?? null,
       amount: claimAmount,
+      fullCost: receiptCost,
       note,
       proofUrl,
       proofName,

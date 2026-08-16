@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import type { ClaimType, ClaimStatus } from "@prisma/client";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS, tracker } from "@/lib/benefits/claims";
 import { coveredAmount } from "@/lib/benefits/coverage";
-import { clampCovered } from "@/lib/benefits/rules";
 import { formatDate, formatEGP as egp, formatNumber } from "@/lib/labels";
 import { TOAST_DURATION_MS } from "@/lib/toast";
 import { createClaim } from "@/app/(app)/benefits/claim-actions";
@@ -118,7 +117,6 @@ export function BenefitsBoard({
   proration,
   medicalOnly,
   medicalOffered = true,
-  medicalEligible = true,
   familyMedical = true,
   medicalPremiumFraction = 1,
   medicalProration,
@@ -143,8 +141,6 @@ export function BenefitsBoard({
   medicalOnly?: boolean;
   /** Whether any medical cover is offered to this employee (spec 021). When false, no medical row shows. */
   medicalOffered?: boolean;
-  /** False before the employee reaches 3 months of service — the row shows locked, not set-up-able. */
-  medicalEligible?: boolean;
   /** Whether the employee is eligible for Family medical — unlocks spouse/children pickers (spec 021). */
   familyMedical?: boolean;
   /** Prorates the medical premium PREVIEW to match the server (fraction of the year). */
@@ -280,27 +276,7 @@ export function BenefitsBoard({
                 <span className="h-px flex-1 bg-line" />
               </div>
               <div className="space-y-2">
-                {medicalEligible ? (
-                  <MedicalRow committed={medicalCommitted} familyMedical={familyMedical} onSetup={() => setMedOpen(true)} />
-                ) : (
-                  /* Under 3 months of service. The server already refuses the commit; showing a
-                     locked row instead of a working "Set up" button means the employee never walks
-                     into that dead end, and still learns when it opens. Matches the "Unlocks at 6
-                     months" pill the sub-6-month view uses. */
-                  <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-line bg-paper px-4 py-3">
-                    <div>
-                      <div className="text-sm font-medium text-ink">
-                        {familyMedical ? "Medical insurance" : "Personal medical insurance"}
-                      </div>
-                      <div className="mt-0.5 text-xs text-muted">
-                        Available once you reach 3 months of service
-                      </div>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-800">
-                      Unlocks at 3 months
-                    </span>
-                  </div>
-                )}
+                <MedicalRow committed={medicalCommitted} familyMedical={familyMedical} onSetup={() => setMedOpen(true)} />
               </div>
             </div>
           ) : null}
@@ -312,7 +288,7 @@ export function BenefitsBoard({
               </div>
               <div className="space-y-2">
                 {group.items.map((item) => (
-                  <FlexRow key={item.id} item={item} poolRemaining={poolRemaining} />
+                  <FlexRow key={item.id} item={item} />
                 ))}
               </div>
             </div>
@@ -424,7 +400,7 @@ function ClaimStatusSummary({ claims }: { claims: BoardClaim[] }) {
 }
 
 /** One flexible benefit — collapsed row that expands to a claim form. */
-function FlexRow({ item, poolRemaining }: { item: BoardFlex; poolRemaining: number }) {
+function FlexRow({ item }: { item: BoardFlex }) {
   const t = tracker(item.allocated, item.claims);
   const remaining = t.remaining ?? 0;
   const fullyClaimed = item.allocated != null && remaining <= 0;
@@ -479,7 +455,7 @@ function FlexRow({ item, poolRemaining }: { item: BoardFlex; poolRemaining: numb
         {fullyClaimed ? (
           <p className="rounded-lg border border-line bg-surface px-3 py-3 text-sm text-muted">Fully claimed — nothing left on this benefit.</p>
         ) : (
-          <FlexClaimForm item={item} remaining={remaining} poolRemaining={poolRemaining} onSubmitted={() => setOpen(false)} />
+          <FlexClaimForm item={item} remaining={remaining} onSubmitted={() => setOpen(false)} />
         )}
       </div>
     </details>
@@ -487,17 +463,7 @@ function FlexRow({ item, poolRemaining }: { item: BoardFlex; poolRemaining: numb
 }
 
 /** Full-price claim form for a flexible benefit with a live covered preview. */
-function FlexClaimForm({
-  item,
-  remaining,
-  poolRemaining,
-  onSubmitted,
-}: {
-  item: BoardFlex;
-  remaining: number;
-  poolRemaining: number;
-  onSubmitted: () => void;
-}) {
+function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; remaining: number; onSubmitted: () => void }) {
   const router = useRouter();
   const notify = useContext(ToastContext);
   // One of these renders per flexible benefit, so literal ids would collide across the page
@@ -506,9 +472,8 @@ function FlexClaimForm({
   const [fullCost, setFullCost] = useState(0);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  // Mirror of the server rule (clampCovered) so the figure previewed here is the figure paid.
-  const requested = coveredAmount(fullCost, item.coverageRate);
-  const { covered, clampedBy } = clampCovered(requested, remaining, poolRemaining);
+  const covered = coveredAmount(fullCost, item.coverageRate);
+  const over = covered > remaining;
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -543,30 +508,12 @@ function FlexClaimForm({
           onChange={(e) => setFullCost(parseInt(e.target.value.replace(/[^0-9]/g, ""), 10) || 0)}
           placeholder="e.g. 10,000"
           required
-          className="w-full max-w-[280px] rounded-lg border border-line px-3 py-2 text-sm"
+          className={"w-full max-w-[280px] rounded-lg border px-3 py-2 text-sm " + (over ? "border-red-300" : "border-line")}
         />
         <p className="mt-1 text-xs text-muted">
-          Company covers {item.coverageRate}% → <b className="tabular-nums text-navy-700">{egp(requested)}</b> reimbursed. Up to {egp(remaining)} covered left.
+          Company covers {item.coverageRate}% → <b className="tabular-nums text-navy-700">{egp(covered)}</b> reimbursed. Up to {egp(remaining)} covered left.
         </p>
-        {/* Not an error — the claim is valid, just partially covered. Keep the full price as
-            entered (it must match the proof) and say plainly what will be paid. */}
-        {clampedBy ? (
-          <p className="mt-1.5 rounded-lg border border-gold-300 bg-gold-50 px-2.5 py-1.5 text-xs text-gold-800">
-            {clampedBy === "benefit" ? (
-              <>
-                Only <b className="tabular-nums text-navy-800">{egp(remaining)}</b> is left on this benefit, so
-                you&apos;ll be reimbursed <b className="tabular-nums text-navy-800">{egp(covered)}</b> — not {egp(requested)}.
-                Submitting is fine.
-              </>
-            ) : (
-              <>
-                Only <b className="tabular-nums text-navy-800">{egp(poolRemaining)}</b> is left in your pool, so
-                you&apos;ll be reimbursed <b className="tabular-nums text-navy-800">{egp(covered)}</b> — not {egp(requested)}.
-                Submitting is fine.
-              </>
-            )}
-          </p>
-        ) : null}
+        {over ? <p className="mt-1 text-xs font-medium text-red-600">That covered amount exceeds what&apos;s left ({egp(remaining)}). Lower the price or claim the rest later.</p> : null}
       </div>
       {item.claimType === "PROOF" ? (
         <div className="mt-3">
@@ -578,9 +525,7 @@ function FlexClaimForm({
         <label htmlFor={`${fieldId}-note`} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Note (optional)</label>
         <input id={`${fieldId}-note`} name="note" className="w-full max-w-[280px] rounded-lg border border-line px-3 py-2 text-sm" />
       </div>
-      {/* Overshooting what's left no longer blocks submission — it's paid down to the remainder.
-          Only a zero payout blocks, because there'd be nothing to reimburse. */}
-      <button disabled={pending || fullCost <= 0 || covered <= 0} className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50">
+      <button disabled={pending || fullCost <= 0 || over} className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50">
         {pending ? "Submitting…" : "Submit claim"}
       </button>
       {error ? (

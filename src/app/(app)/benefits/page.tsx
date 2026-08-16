@@ -381,6 +381,10 @@ export default async function BenefitsPage({
         cap={cap}
         proration={isProrated ? { months: cycleMonths } : null}
         medicalOffered={medicalOffered}
+        // Medical unlocks at 3 months. The commit action already refuses before that; this
+        // stops the employee reaching the dead end at all (they'd previously pick who to
+        // cover, commit, and only then be told they aren't eligible yet).
+        medicalEligible={medicalEligibility.status !== "NOT_YET"}
         familyMedical={familyMedical}
         medicalPremiumFraction={medicalEligibility.fraction}
         guaranteed={guaranteedBoard}

@@ -546,7 +546,14 @@ model BenefitClaim {
   guaranteedBenefit   GuaranteedBenefit?  @relation(fields: [guaranteedBenefitId], references: [id], onDelete: Cascade)
   catalogItemId       String?
   catalogItem         BenefitCatalogItem? @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  /// The COVERED (company) amount — what will actually be reimbursed. May be less than
+  /// `fullCost × coverageRate` when the 50%-per-benefit cap or the pool ceiling clamps it.
   amount              Int
+  /// The full price on the employee's receipt, as they entered it. Nullable: claims created
+  /// before this column existed have no receipt value recorded, and guaranteed benefits
+  /// (which have no coverage rate) don't set it. Stored so HR can reconcile a clamped claim
+  /// against its proof — "receipt 10,000 · covered 8,000 · capped to 7,000".
+  fullCost            Int?
   note                String?
   proofUrl            String?
   proofName           String?
