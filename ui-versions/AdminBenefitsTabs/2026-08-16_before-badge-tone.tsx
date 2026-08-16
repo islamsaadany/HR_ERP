@@ -11,8 +11,7 @@ import { useState, type ReactNode } from "react";
 export function AdminBenefitsTabs({
   tabs,
 }: {
-  // `tone` follows the two panels: gold means someone is waiting, red means money is wrong.
-  tabs: { id: string; label: string; badge?: number; badgeTone?: "warn" | "bad"; node: ReactNode }[];
+  tabs: { id: string; label: string; badge?: number; node: ReactNode }[];
 }) {
   const [active, setActive] = useState(tabs[0]?.id);
 
@@ -36,14 +35,7 @@ export function AdminBenefitsTabs({
           >
             {t.label}
             {t.badge ? (
-              <span
-                className={
-                  "ml-2 rounded-full px-1.5 py-0.5 text-[11px] font-bold " +
-                  (t.badgeTone === "bad"
-                    ? "border border-red-200 bg-red-50 text-red-700"
-                    : "bg-gold-100 text-gold-800")
-                }
-              >
+              <span className="ml-2 rounded-full bg-gold-100 px-1.5 py-0.5 text-[11px] font-bold text-gold-800">
                 {t.badge}
               </span>
             ) : null}

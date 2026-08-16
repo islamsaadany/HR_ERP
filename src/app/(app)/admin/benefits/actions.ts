@@ -348,17 +348,20 @@ const benefitNameOf = (c: {
   catalogItem: { name: string } | null;
 }) => c.guaranteedBenefit?.name ?? c.catalogItem?.name ?? "a benefit";
 
-/** HR approves a claim → Approved (awaiting Finance payment); the Finance inbox is emailed. */
-export async function approveClaim(formData: FormData): Promise<void> {
-  const admin = await requireAdmin();
-  const id = formData.get("id") as string;
-  if (!id) return;
+/**
+ * Approve exactly one claim. Extracted so the single-row button and the bulk bar cannot
+ * drift: one implementation means a claim approved from the queue's checkbox is treated
+ * identically to one approved on its own, emails included.
+ *
+ * Silently no-ops on a claim that is no longer SUBMITTED — with two people working the
+ * queue, a claim decided a second ago is a race, not an error.
+ */
+async function approveOne(id: string, adminId: string): Promise<boolean> {
   const claim = await prisma.benefitClaim.findUnique({ where: { id }, include: CLAIM_WITH_PARTIES });
-  // Accept the new SUBMITTED status and the legacy PENDING.
-  if (!claim || claim.status !== "SUBMITTED") return;
+  if (!claim || claim.status !== "SUBMITTED") return false;
   await prisma.benefitClaim.update({
     where: { id },
-    data: { status: "APPROVED", reviewedById: admin.id, decidedAt: new Date() },
+    data: { status: "APPROVED", reviewedById: adminId, decidedAt: new Date() },
   });
   const settings = await getNotificationSettings();
   await sendEmail({
@@ -369,9 +372,51 @@ export async function approveClaim(formData: FormData): Promise<void> {
       coveredAmount: claim.amount,
     }),
   });
+  return true;
+}
+
+/** HR approves a claim → Approved (awaiting Finance payment); the Finance inbox is emailed. */
+export async function approveClaim(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const id = formData.get("id") as string;
+  if (!id) return;
+  await approveOne(id, admin.id);
   revalidatePath("/admin/benefits");
   revalidatePath("/finance");
   revalidatePath("/benefits");
+}
+
+/**
+ * Approve several claims at once from the review queue's selection.
+ *
+ * Every claim goes through `approveOne`, so the bulk bar saves the clicks and never the
+ * checks — each one is re-read, tested for SUBMITTED, and emailed to Finance on its own.
+ * A claim someone else has already decided is skipped rather than failing the batch.
+ */
+export async function approveClaims(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const ids = Array.from(new Set(formData.getAll("ids").map(String).filter(Boolean)));
+  if (ids.length === 0) return;
+
+  let approved = 0;
+  for (const id of ids) {
+    if (await approveOne(id, admin.id)) approved += 1;
+  }
+
+  revalidatePath("/admin/benefits");
+  revalidatePath("/finance");
+  revalidatePath("/benefits");
+
+  // Say so when the batch didn't do what was asked — a silent partial approval leaves HR
+  // believing the queue is clear when part of it isn't.
+  if (approved < ids.length) {
+    redirect(
+      "/admin/benefits?error=" +
+        encodeURIComponent(
+          `Approved ${approved} of ${ids.length}. The rest had already been decided by someone else.`
+        )
+    );
+  }
 }
 
 /** HR rejects a claim → Rejected; the employee is emailed the reason (if given). */
