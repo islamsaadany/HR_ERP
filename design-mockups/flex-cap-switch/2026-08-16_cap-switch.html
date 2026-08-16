@@ -93,6 +93,28 @@
         </p>
 
         <div style="margin-top:14px">
+          <p class="note" style="margin:0 0 6px"><strong>Default — the limit is on</strong></p>
+          <div class="py">
+            <div class="py-top">
+              <div>
+                <span class="py-name">2026 H2</span><span class="pill open">OPEN</span>
+                <div class="sub2">01 Aug 2026 → 31 Dec 2026</div>
+              </div>
+              <div style="display:flex; gap:7px; flex:none">
+                <button class="btn ghost sm">Edit dates</button>
+                <button class="btn ghost sm">Close</button>
+              </div>
+            </div>
+            <div class="caprow on">
+              <div class="lab">
+                <b>50% per-benefit limit — on</b>
+                <div class="why">No single benefit may take more than half the pool.</div>
+              </div>
+              <button class="btn ghost sm">Turn off for this cycle</button>
+            </div>
+          </div>
+
+          <p class="note" style="margin:16px 0 6px"><strong>After turning it off</strong> — same cycle</p>
           <div class="py">
             <div class="py-top">
               <div>
@@ -113,6 +135,7 @@
             </div>
           </div>
 
+          <p class="note" style="margin:16px 0 6px"><strong>A closed cycle</strong> — no button either way</p>
           <div class="py">
             <div class="py-top">
               <div>
@@ -137,6 +160,7 @@
     </div>
     <ul class="note-list">
       <li>One row per cycle, under the dates it belongs to — the limit is a property of that cycle, not a platform setting.</li>
+      <li><strong>The button toggles both ways</strong> on an open cycle: on → <em>Turn off for this cycle</em>, off → <em>Turn back on</em>. The row always states which rule is in force, so the setting is never something you have to infer from the button.</li>
       <li><strong>Only while the cycle is open.</strong> A closed cycle shows its setting and no button; the rule its claims were judged under stays readable afterwards.</li>
       <li>Who turned it off, and when, sits in the row. It is a money rule — the decision needs a name against it.</li>
     </ul>
