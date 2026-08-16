@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { formatDate } from "@/lib/labels";
-import {
-  createPlanYear,
-  setPlanYearStatus,
-  editPlanYearWindow,
-  setFlexCapEnabled,
-} from "@/app/(app)/admin/benefits/actions";
+import { createPlanYear, setPlanYearStatus, editPlanYearWindow } from "@/app/(app)/admin/benefits/actions";
 
 type PlanYear = {
   id: string;
@@ -15,10 +10,6 @@ type PlanYear = {
   status: string;
   startDate: Date | string | null;
   endDate: Date | string | null;
-  /** The 50%-per-benefit cap for this cycle (spec 031). */
-  flexCapEnabled: boolean;
-  flexCapChangedAt: Date | string | null;
-  flexCapChangedByName: string | null;
 };
 
 /** yyyy-mm-dd value for a <input type="date">, or "" when unset. */
@@ -124,53 +115,6 @@ export function PlanYearDialog({ planYears, activeName }: { planYears: PlanYear[
                         </button>
                       </form>
                     </div>
-                  </div>
-
-                  {/*
-                    Spec 031 — the 50% cap belongs to THIS cycle. The row always states which rule
-                    is in force, so the setting is never something you infer from what the button
-                    says. Changeable only while the cycle is open: a closed one keeps the rule its
-                    claims were judged under.
-                  */}
-                  <div
-                    className={
-                      "mt-2.5 flex flex-wrap items-center justify-between gap-2.5 rounded-lg px-3 py-2.5 " +
-                      (p.flexCapEnabled ? "bg-navy-50" : "border border-gold-300 bg-gold-50")
-                    }
-                  >
-                    <div className="text-sm">
-                      <b className="block font-semibold text-ink">
-                        {p.flexCapEnabled
-                          ? "50% per-benefit limit — on"
-                          : "50% per-benefit limit — off for this cycle"}
-                      </b>
-                      <span className="mt-0.5 block text-xs text-muted">
-                        {p.flexCapEnabled
-                          ? "No single benefit may take more than half the pool."
-                          : "The pool ceiling still applies."}
-                        {p.flexCapChangedByName && p.flexCapChangedAt
-                          ? ` Last changed by ${p.flexCapChangedByName} · ${label(p.flexCapChangedAt)}.`
-                          : ""}
-                      </span>
-                    </div>
-                    {p.status === "OPEN" ? (
-                      <form action={setFlexCapEnabled}>
-                        <input type="hidden" name="id" value={p.id} />
-                        <input type="hidden" name="enabled" value={p.flexCapEnabled ? "false" : "true"} />
-                        <button
-                          className={
-                            "rounded-lg px-3 py-1.5 text-xs font-semibold " +
-                            (p.flexCapEnabled
-                              ? "border border-line bg-surface text-navy-700 hover:bg-navy-50"
-                              : "bg-navy-800 text-white hover:bg-navy-700")
-                          }
-                        >
-                          {p.flexCapEnabled ? "Turn off for this cycle" : "Turn back on"}
-                        </button>
-                      </form>
-                    ) : (
-                      <span className="text-xs text-muted">Closed</span>
-                    )}
                   </div>
 
                   {editing === p.id ? (

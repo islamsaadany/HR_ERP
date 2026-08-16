@@ -782,6 +782,29 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     warning (`encType` on a form with a function action, from commit `c8ef16f`). Not spec 029's, and
     not fixed without a say-so.
 
+- **2026-08-16 — Spec 031 built: per-cycle 50% cap switch (migration 050):**
+  - The product owner spotted the compounding: proration shrinks the ceiling, and the 50% cap then
+    takes half of the smaller number. A cycle opening 1 Aug leaves any single benefit at 6,250 of a
+    12,500 pool — a rule meant to encourage variety stops the employee using the pool at all.
+  - **The flag lives on the cycle, not in config.** A global setting would mean flipping it today
+    changes the rules a closed cycle's claims were judged under.
+  - **The rule change is one line**: `flexCap(ceiling, capEnabled)` returns the **full ceiling**
+    when off — deliberately not `Infinity`, so `benefitRemaining` stays finite, the pool keeps
+    binding, and `clampCovered` still names the right limiting rule.
+  - **Nothing retroactive, and the arithmetic says why the round trip is safe**: with the cap off
+    the pool itself is the most one benefit can hold, so an extension that at least doubles the
+    ceiling always lands the claim back under cap. Where it doesn't, a past-cap benefit still has
+    zero remaining, never a negative.
+  - **The mockup caught its own gap**: the first draft only showed a cycle already switched off, so
+    the turn-off button never appeared — a state the sign-off would have missed. Revised to show
+    on, off, and closed.
+  - Verified: 36 checks importing the shipped rule engine; `050` on a fresh DB with no diff drift;
+    and a Chromium round trip claiming 9,000 on one benefit with the cap off, then re-enabling and
+    seeing it stand unchanged.
+  - **Flagged, untouched**: after an over-cap claim the pool card reads "Used 9,000" beside
+    "Per-benefit cap (50%) 6,250", which is accurate but reads oddly. The benefit's own row shows
+    nothing left, so it isn't misleading in practice — say if you'd want the card to explain it.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.

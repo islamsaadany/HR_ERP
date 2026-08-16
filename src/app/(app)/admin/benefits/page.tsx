@@ -37,7 +37,11 @@ export default async function AdminBenefitsPage({
 }) {
   await requireAdmin();
   const { error } = await searchParams;
-  const planYears = await prisma.planYear.findMany({ orderBy: { createdAt: "desc" } });
+  const planYears = await prisma.planYear.findMany({
+    orderBy: { createdAt: "desc" },
+    // Spec 031: who last changed the cycle's 50%-cap setting, named in the dialog row.
+    include: { flexCapChangedBy: { select: { name: true } } },
+  });
   const active = planYears.find((p) => p.status === "OPEN") ?? planYears[0];
 
   const [medicalCommitments, pendingClaims, guaranteedBenefits, catalogItems, poolCeilings, employees] =
@@ -775,7 +779,16 @@ export default async function AdminBenefitsPage({
           >
             Policy page
           </a>
-          <PlanYearDialog planYears={planYears} activeName={active?.name} />
+          <PlanYearDialog
+            planYears={planYears.map((p) => ({
+              id: p.id, name: p.name, status: p.status,
+              startDate: p.startDate, endDate: p.endDate,
+              flexCapEnabled: p.flexCapEnabled,
+              flexCapChangedAt: p.flexCapChangedAt,
+              flexCapChangedByName: p.flexCapChangedBy?.name ?? null,
+            }))}
+            activeName={active?.name}
+          />
           <PolicyYearDialog
             policyYears={policyYears.map((p) => ({
               id: p.id, name: p.name, status: p.status,

@@ -303,7 +303,10 @@ export default async function BenefitsPage({
   }
 
   const proratedCeiling = prorate(ceilingRow.amount, poolFraction);
-  const cap = flexCap(proratedCeiling);
+  // Spec 031: this cycle's own 50%-cap setting. With it off the per-benefit ceiling IS the pool
+  // ceiling, which is what `flexCap` returns — so every figure derived from `cap` below (each
+  // row's "left to claim", the pool card, the client preview) follows the rule actually enforced.
+  const cap = flexCap(proratedCeiling, planYear.flexCapEnabled);
   // What medical costs THIS cycle's pool — not the full committed premium, which may buy cover
   // reaching into the next cycle (spec 027).
   const medicalPremium = medicalCycleCharge(medicalCommitment, planYear.id);
@@ -386,6 +389,7 @@ export default async function BenefitsPage({
         poolUsed={poolUsed}
         poolRemaining={poolRemaining}
         cap={cap}
+        flexCapEnabled={planYear.flexCapEnabled}
         proration={isProrated ? { months: cycleMonths } : null}
         medicalOffered={medicalOffered}
         // Medical unlocks at 3 months. The commit action already refuses before that; this

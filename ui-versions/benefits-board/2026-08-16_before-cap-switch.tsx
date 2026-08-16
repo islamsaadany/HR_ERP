@@ -113,7 +113,6 @@ export function BenefitsBoard({
   poolUsed,
   poolRemaining,
   cap,
-  flexCapEnabled = true,
   guaranteed,
   automatic,
   groups,
@@ -136,12 +135,6 @@ export function BenefitsBoard({
   poolUsed: number;
   poolRemaining: number;
   cap: number;
-  /**
-   * Whether the 50%-per-benefit limit applies to this cycle (spec 031). Mirrors the server for
-   * UX only — the rule is enforced in `evaluateClaim`, never here. Defaults to true so a caller
-   * that predates the switch shows today's behaviour.
-   */
-  flexCapEnabled?: boolean;
   guaranteed: BoardGuaranteed[];
   automatic: string[];
   groups: BoardGroup[];
@@ -373,37 +366,18 @@ export function BenefitsBoard({
                 <span className="text-navy-200">{medicalCarried > 0 ? "Used this cycle" : "Used"}</span>
                 <span className="font-semibold tabular-nums text-white">{egp(poolUsed)}</span>
               </div>
-              {/*
-                Spec 031: the row stays put and changes its answer rather than disappearing, so the
-                employee reads the same line either way and the difference is legible.
-              */}
               <div className="flex items-baseline justify-between border-t border-white/10 py-2.5 text-sm">
-                <span className="text-navy-200">
-                  {flexCapEnabled ? "Per-benefit cap (50%)" : "Per-benefit limit"}
-                </span>
-                <span className="font-semibold tabular-nums text-white">
-                  {flexCapEnabled ? egp(cap) : "None this cycle"}
-                </span>
+                <span className="text-navy-200">Per-benefit cap (50%)</span>
+                <span className="font-semibold tabular-nums text-white">{egp(cap)}</span>
               </div>
             </div>
-            {!flexCapEnabled ? (
-              // Says what changed AND why: an employee who doesn't know the cycle is short reads
-              // "no limit" as a bug.
-              <p className="mt-3 rounded-lg bg-white/10 px-3 py-2 text-xs text-navy-100">
-                This cycle is shorter than a year, so the{" "}
-                <b className="text-white">50% per-benefit limit does not apply</b>. You can put your
-                whole remaining pool into one benefit.
-              </p>
-            ) : null}
           </div>
           <div className="rounded-2xl border border-line bg-surface p-5">
             <h3 className="font-serif text-base text-ink">How it works</h3>
             <ol className="mt-2 space-y-1">
               {[
                 "Claim as you spend — nothing to submit. Enter the full price; the company covers a set % of each benefit.",
-                flexCapEnabled
-                  ? "No single benefit's covered share may pass half your pool. Medical is exempt."
-                  : "No per-benefit limit this cycle — your pool ceiling is the only limit.",
+                "No single benefit's covered share may pass half your pool. Medical is exempt.",
                 "Medical is committed once and locked (HR-managed after).",
                 "Unclaimed amounts don't carry over or pay out as cash.",
               ].map((t, i) => (
