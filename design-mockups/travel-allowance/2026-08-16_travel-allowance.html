@@ -140,8 +140,9 @@
       <li>The amount is the <strong>band figure</strong>, not a ceiling to claim against and not a
         coverage percentage. One request takes the whole allowance.</li>
       <li>On a short benefits cycle it prorates with the pool, so a 6-month cycle pays half.</li>
-      <li>The 50% per-benefit cap never binds here — the band amount is far below half the pool —
-        but it still applies, so the rule holds without a special case.</li>
+      <li>Full- and part-timers get the <strong>same amount</strong> for their band. Their pool
+        ceilings differ, so the same allowance is a larger share of a part-timer's budget — the
+        50% cap won't intervene, since the band amount sits below it either way.</li>
     </ul>
   </section>
 
@@ -176,27 +177,18 @@
       <div class="tablewrap">
         <table>
           <thead>
-            <tr><th>Full-time benefit</th><th>6mo–2y</th><th>2–4y</th><th>4–7y</th><th>7–10y</th></tr>
+            <tr><th>Benefit</th><th>6mo–2y</th><th>2–4y</th><th>4–7y</th><th>7–10y</th></tr>
           </thead>
           <tbody>
             <tr><td>Travel allowance</td><td class="num"><input value="2,500" /></td><td class="num"><input value="3,500" /></td><td class="num"><input value="5,000" /></td><td class="num"><input value="6,000" /></td></tr>
           </tbody>
         </table>
       </div>
-      <div class="tablewrap" style="margin-top:10px">
-        <table>
-          <thead>
-            <tr><th>Part-time benefit</th><th>6mo–2y</th><th>2–4y</th><th>4–7y</th><th>7–10y</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Travel allowance</td><td class="num"><input value="1,250" /></td><td class="num"><input value="1,750" /></td><td class="num"><input value="2,500" /></td><td class="num"><input value="3,000" /></td></tr>
-          </tbody>
-        </table>
-      </div>
       <p class="note" style="margin-top:8px">
-        Same shape as the guaranteed table above — the layout HR already knows, applied to
-        pool-funded fixed allowances. Figures shown are whatever is already in your configuration;
-        the migration copies them across rather than re-entering them.
+        <strong>One amount per tenure band, for full- and part-timers alike</strong> — so there is no
+        second row to keep in step, and no way to update one employment type and forget the other.
+        Figures shown are the full-time amounts already in your configuration; the migration copies
+        them across rather than asking you to re-enter them.
       </p>
     </div>
 
