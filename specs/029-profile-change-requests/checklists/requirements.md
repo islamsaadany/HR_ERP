@@ -45,20 +45,29 @@
    is a lie and approving silently reverts a newer value. FR-010 and the first edge case now
    require the current side to be read at review time.
 
-**Deliberate judgement calls, recorded rather than asked:**
+**Revised 2026-08-16 after product-owner review — three changes:**
 
-- **Unit decisions, not per-field.** Stated in Assumptions with the reasoning and flagged for
-  planning. It affects HR's workflow but not the data model, so it can be revisited cheaply and did
-  not warrant spending a clarification marker.
-- **Phone routed through review** rather than made directly editable. The decisions log calls phone
-  employee-editable, but no such surface exists, so this is not a regression — and one consistent
-  path beats two. Called out in Assumptions because it contradicts a logged decision.
-- **The medical warning informs, it does not act.** Age is snapshotted at commit, so a corrected
-  date of birth cannot retroactively reprice a commitment. FR-016 makes the non-action explicit so
-  nobody implements a silent reprice.
+- **Per-field decisions, not whole-request.** The draft assumed a request was approved or declined
+  as a unit; the product owner chose field-by-field, so HR can accept an emergency contact while
+  querying a date of birth instead of rejecting the lot. This changed the data model (a decision,
+  a decider, and a timestamp now belong to each requested field, not the request) and added the
+  partly-decided edge case: approved fields stay applied while the request keeps its place in the
+  pending count until every field is decided.
+- **Phone is directly editable, not requested.** Confirmed by the product owner — it is the
+  employee's own contact number and nothing reads it for eligibility or money. This finally builds
+  the employee-self-edit right the decisions log has recorded all along.
+- **The date-of-birth warning was dropped.** The product owner's reasoning: dates are verified
+  against legal documents at hire, so a date-of-birth request is a rare transcription fix rather
+  than new information, and warning on it would be noise. The warning is now scoped to
+  **dependants**, where a change genuinely alters who the company is insuring rather than
+  correcting what the record says. FR-016 still forbids a silent reprice.
 
-**Open item carried to `/speckit-plan`:**
+**Deliberate judgement call, recorded rather than asked:**
 
-- Confirm unit-versus-per-field decisions with HR before building the review screen.
+- **The dependant warning informs, it does not act.** Age is snapshotted at commit, so no approval
+  can retroactively reprice a commitment. FR-016 makes that non-action explicit so nobody
+  implements a silent reprice later.
+
+No open items remain for `/speckit-plan`.
 
 No [NEEDS CLARIFICATION] markers remain. Ready for `/speckit-plan`.
