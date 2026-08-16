@@ -164,13 +164,9 @@ body {
   z-index: 1;
   box-shadow: 1px 0 0 var(--color-line), 6px 0 8px -6px rgba(15, 36, 68, 0.16);
 }
-/* Navy, like every other header cell. It has to repaint the background because it is
-   sticky (a transparent sticky cell shows the rows scrolling under it) — but painting it
-   navy-50 left the header's white label on a near-white cell, so the Benefit column read
-   as a white gap in the navy header strip. */
 .ff-catalogue thead tr > :nth-child(2) {
   z-index: 3;
-  background: var(--color-navy-800);
+  background: var(--color-navy-50);
   box-shadow: 1px 0 0 var(--color-line), 6px 0 8px -6px rgba(15, 36, 68, 0.16);
 }
 
