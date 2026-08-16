@@ -76,7 +76,7 @@ Whatever length HR sets the policy term to, that is the length it is priced and 
 ### Edge Cases
 
 - **A cycle split leaves a rounding remainder.** Dividing a premium across months rarely lands on whole currency units. The shares charged across every cycle MUST sum to exactly the committed premium; the reconciling remainder goes to the final cycle rather than being dropped or duplicated.
-- **The employee leaves mid-policy.** A carried charge exists for a cycle the employee will not be present for. The carried amount MUST NOT be silently applied to a departed employee's pool; HR needs it visible for reconciliation with the insurer.
+- **The employee leaves mid-policy.** A carried charge exists for a cycle the employee will not be present for. It MUST NOT be applied to their pool, and MUST NOT be recorded as owed: premium paid in advance for cover after the leave date is recovered from the insurer, so the charge is **cancelled**. HR sees it as not charged, with the recoverable period — which begins at the leave date and so may include part of an already-applied charge.
 - **HR edits or removes a commitment after a split.** Medical commitments are HR-editable after locking. Changing the premium MUST re-split it across cycles, including any charge already applied to an open cycle.
 - **The medical policy window changes after commitments exist.** Existing commitments were split against the old term. The system MUST NOT silently re-split committed money; HR is told which commitments predate the change.
 - **A benefits cycle opens with no preceding cycle.** The first cycle has no carried charges; the feature must be inert rather than erroring.
@@ -94,6 +94,7 @@ Whatever length HR sets the policy term to, that is the length it is priced and 
 - **FR-003**: The system MUST record, for each medical commitment, the full premium the employee is committed to for the whole policy term.
 - **FR-004**: The system MUST charge each benefits cycle only the share of a committed premium whose months fall within that cycle's dates.
 - **FR-005**: The system MUST carry the unabsorbed remainder of a committed premium and apply it to the next benefits cycle's pool when that cycle opens, without HR re-entering it.
+- **FR-005a**: The system MUST cancel — not apply, and not record as owed — a carried charge for an employee who is no longer active, and MUST show HR the period for which premium is recoverable from the insurer.
 - **FR-006**: The system MUST ensure the charges applied across all cycles sum to exactly the committed premium, with any rounding remainder resolved in the final cycle.
 - **FR-007**: The system MUST count a policy term of any length, including terms longer than twelve months, without capping the count at twelve.
 - **FR-008**: The system MUST prorate a mid-term joiner's premium against the remaining months of the policy term.

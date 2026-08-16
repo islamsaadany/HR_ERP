@@ -33,8 +33,10 @@ The portion of one commitment's premium attributed to one benefits cycle. This i
 | `planYearId` | FK → `PlanYear` | The benefits cycle this charge lands in |
 | `amount` | int | Whole EGP, already capped at that cycle's ceiling |
 | `overlapMonths` | int | Whole months of the term inside this cycle — stored so a charge is explainable years later without recomputing |
-| `appliedAt` | datetime? | Null while the charge is calculated but not yet drawing against a pool (a future cycle) |
-| `outstanding` | boolean | True when the charge was due but withheld — currently only for a non-`ACTIVE` employee (research D7) |
+| `status` | enum | `SCHEDULED` (calculated, not yet drawing) → `APPLIED` (drawing against that cycle's pool) or `CANCELLED` (cover ended first — see research D7) |
+| `appliedAt` | datetime? | Set when the status becomes `APPLIED` |
+
+A single status beats the `appliedAt` + `outstanding` pair the first draft used: two booleans admit a meaningless fourth state (applied *and* outstanding), and the three real states are mutually exclusive.
 
 **Invariants**
 - Unique on `(commitmentId, planYearId)` — one charge per commitment per cycle.
@@ -86,7 +88,7 @@ The behavioural core of the change: every place that today treats `commitment.pr
 **Cycle opens** (HR opens a new plan year)
 1. Find charges for that plan year with `appliedAt` null.
 2. For an `ACTIVE` employee, set `appliedAt` — the charge now draws against the new pool.
-3. For a non-`ACTIVE` employee, mark `outstanding` and leave it unapplied (research D7).
+3. For a non-`ACTIVE` employee, set `CANCELLED` and leave it unapplied — the advance premium is recovered from the insurer, so nothing is owed (research D7).
 
 **Commitment edited** (HR changes a premium)
 1. Re-split the new premium across the term's cycles.

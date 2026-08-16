@@ -94,8 +94,10 @@ So the cap is kept where the pool relies on it, made explicit rather than incide
 
 ## D7 — Carried charges for a departed employee
 
-**Decision**: When a cycle opens, a carried charge for an employee whose status is not `ACTIVE` is **not applied**; it is recorded as outstanding and surfaced to HR.
+**Decision**: When a cycle opens, a carried charge for an employee whose status is not `ACTIVE` is **cancelled** — never applied, and not recorded as a liability. HR sees it as *not charged*, with the recoverable period stated.
 
-**Rationale**: The company is still liable to the insurer for the term, so the amount cannot be dropped — but applying it to the pool of someone who has left is meaningless, and would quietly distort the totals HR reconciles against. Making it visible and unapplied keeps the money honest in both directions.
+**Rationale** (corrected 2026-08-16 by the product owner): the earlier draft treated the amount as still owed to the insurer and marked it *outstanding*. That is wrong for how the policy actually works — **premium paid in advance for cover after the leave date is recovered from the insurer**. So there is no liability to carry: the charge is simply cancelled. Calling it outstanding would have overstated the company's commitments on every leaver, in a figure HR reconciles against real invoices.
 
-**Open**: where HR sees it. That is a UI decision and falls under the mockup gate, so it is carried into implementation rather than settled here.
+**Consequence worth surfacing**: the recoverable period starts at the **leave date**, not at the cycle boundary. An employee leaving 30 Nov 2026 under a Jun–May policy has 6 recoverable months (Dec–May), one of which sits inside the *already-applied* 2026 charge. The cancelled carried charge alone therefore understates what comes back. HR is shown the recoverable period so the two are not confused.
+
+**Open**: whether the platform should compute the recoverable **amount**, or only state the period and leave the figure to the insurer's credit note. Carried into implementation.

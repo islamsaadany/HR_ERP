@@ -65,7 +65,7 @@
   .chip { display:inline-block; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; }
   .chip.applied { background:var(--green-50); color:var(--green-700); border:1px solid #bbf7d0; }
   .chip.queued { background:var(--navy-50); color:var(--navy-700); border:1px solid var(--navy-100); }
-  .chip.out { background:var(--red-50); color:var(--red-700); border:1px solid var(--red-300); }
+  .chip.out { background:var(--paper); color:var(--muted); border:1px solid var(--line); }
   .warn { margin-top:10px; border-radius:10px; border:1px solid var(--gold-300); background:var(--gold-50); padding:9px 11px; font-size:12px; color:var(--gold-800); }
   .warn b { color:var(--navy-800); }
   :focus-visible { outline:2px solid var(--gold-300); outline-offset:2px; }
@@ -197,15 +197,16 @@
               </thead>
               <tbody>
                 <tr><td>Jan – Dec 2026</td><td class="num">7</td><td class="num">15,166</td><td><span class="chip applied">Applied</span></td></tr>
-                <tr><td>Jan – Dec 2027</td><td class="num">5</td><td class="num">10,834</td><td><span class="chip out">Outstanding</span></td></tr>
+                <tr><td>Jan – Dec 2027</td><td class="num">5</td><td class="num">10,834</td><td><span class="chip out">Not charged</span></td></tr>
                 <tr class="total"><td>Total</td><td class="num">12</td><td class="num">26,000</td><td></td></tr>
               </tbody>
             </table>
           </div>
           <div class="warn">
-            <b>Not charged to a pool.</b> Tarek left on 30 Nov 2026, so the remaining EGP 10,834 wasn&apos;t
-            applied to the new cycle — but the policy runs to 31 May 2027 and the company is still liable
-            for it. Reconcile with the insurer.
+            <b>Cover ended 30 Nov 2026.</b> The remaining EGP 10,834 was never charged to a pool, and the
+            premium paid in advance for cover after that date is recovered from the insurer — so nothing is
+            owed and nothing is written off. Recoverable period: <b>1 Dec 2026 – 31 May 2027</b>, which
+            includes one month still sitting inside the 2026 charge above.
           </div>
         </div>
       </div>
@@ -215,7 +216,8 @@
         added beneath it, so nothing HR currently reads has moved.</li>
       <li><strong>Applied</strong> means it is drawing against that cycle&apos;s pool now.
         <strong>On cycle open</strong> means it will, automatically, when HR opens that cycle — no action needed.
-        <strong>Outstanding</strong> means it was due and deliberately withheld.</li>
+        <strong>Not charged</strong> means cover ended before that cycle, so the charge was cancelled —
+        the advance premium comes back from the insurer rather than being owed by anyone.</li>
       <li>Totals always reconcile to the committed premium. If a row ever fails to add up, that is a bug,
         and showing the total is how it becomes visible rather than silent.</li>
     </ul>

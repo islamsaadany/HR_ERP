@@ -63,7 +63,7 @@ Then assert:
 
 - Commit a premium spanning two cycles; confirm cycle A's charge is applied and cycle B's is not.
 - Open cycle B; confirm B's charge becomes applied **with no HR action beyond opening the cycle** (FR-005).
-- Repeat with a `LEFT` employee: the charge must be marked outstanding and **not** applied (research D7).
+- Repeat with a `LEFT` employee: the charge must be **cancelled**, not applied, and must never appear anywhere as an amount owed (research D7). Confirm HR sees the recoverable period starting at the leave date, not at the cycle boundary.
 
 ## 5. The pool reflects the cycle charge, and the model settles
 
