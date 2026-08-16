@@ -801,9 +801,15 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
   - Verified: 36 checks importing the shipped rule engine; `050` on a fresh DB with no diff drift;
     and a Chromium round trip claiming 9,000 on one benefit with the cap off, then re-enabling and
     seeing it stand unchanged.
-  - **Flagged, untouched**: after an over-cap claim the pool card reads "Used 9,000" beside
-    "Per-benefit cap (50%) 6,250", which is accurate but reads oddly. The benefit's own row shows
-    nothing left, so it isn't misleading in practice — say if you'd want the card to explain it.
+  - **Follow-up, approved and shipped**: after an over-cap claim the pool card reads "Used 9,000"
+    beside "Per-benefit cap (50%) 6,250" — accurate, but the two numbers together look like a
+    contradiction. A focusable `?` beside the cap label now explains it, naming the benefit and
+    leading with *the claim stands, nothing is taken back* (the employee's actual worry) before the
+    consequence. It renders **only** when a benefit is genuinely over the cap in force, so an
+    ordinary cycle carries no permanent question mark inviting a question nobody has.
+    - Two positioning attempts: anchored to the 15px marker the bubble ran off the card's right
+      edge, because the marker sits two-thirds along the label. It is now sized and placed against
+      the card ROW (the marker is deliberately not `relative`), so it can't overflow at any width.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

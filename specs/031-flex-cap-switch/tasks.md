@@ -44,6 +44,16 @@
   (above the 6,250 cap it would have had), HR turns the limit back on, and the 9,000 stands
   unchanged with the cap row restored. 0 console errors.
 
+### Follow-up shipped
+
+- [x] **Over-cap hint** (mockup approved 2026-08-16). After the limit is switched off, claimed
+  against, and switched back on, the card reads "Used 9,000" beside a 6,250 cap — both right,
+  together contradictory-looking. A focusable `?` beside the cap label explains it, naming the
+  benefit and leading with *the claim stands*. Rendered **only** when a benefit is genuinely over,
+  so an ordinary cycle carries no permanent question mark. Verified: 12 browser checks (hidden by
+  default, revealed on hover **and** on keyboard focus alone, hidden again on mouse-out, absent
+  entirely when nothing is over).
+
 ### Environment note
 
 Gym is a `PROOF` benefit and Vercel Blob has no credentials in a throwaway environment, so the

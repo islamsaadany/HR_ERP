@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useTransition, useRef, useCallback, useContext, useEffect, useId, createContext, type FormEvent } from "react";
+import { useState, useTransition, useRef, useCallback, useContext, useEffect, useId, createContext, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { ClaimType, ClaimStatus } from "@prisma/client";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS, tracker } from "@/lib/benefits/claims";
@@ -103,41 +103,6 @@ export type BoardMedicalCommitted = {
 } | null;
 
 /**
- * Explains a benefit sitting ABOVE the current per-benefit cap (spec 031).
- *
- * Reachable only one way: HR switched the 50% limit off for a short cycle, the employee claimed
- * past half, and HR switched it back on. Both numbers on the card are then correct — "Used 9,000"
- * beside a 6,250 cap — but read together they look like a contradiction.
- *
- * Rendered ONLY when a benefit is genuinely over, so an ordinary cycle carries no permanent
- * question mark inviting a question nobody has. Focusable, and shown on focus as well as hover:
- * a mouse-only tooltip hides the explanation from anyone using a keyboard.
- */
-function OverCapHint({ benefitName }: { benefitName: string }) {
-  return (
-    // The marker is the trigger, but the bubble is sized and placed against the CARD ROW, not the
-    // 15px marker: the marker is deliberately NOT `relative`, so the bubble's `absolute` resolves
-    // against the row above it. Anchored to the marker it ran off the card's right edge, because
-    // the marker sits two-thirds of the way along the label.
-    <span
-      className="group inline-grid h-[15px] w-[15px] cursor-help place-items-center rounded-full bg-white/20 text-[10px] font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-300"
-      tabIndex={0}
-      role="note"
-      aria-label={`Why ${benefitName} is above this cap`}
-    >
-      ?
-      <span className="pointer-events-none invisible absolute left-0 top-full z-20 w-full rounded-[10px] border border-line bg-surface px-3 py-2.5 text-left text-xs font-normal leading-snug text-ink opacity-0 shadow-[0_8px_22px_rgba(10,26,48,0.22)] transition-opacity group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100">
-        {/* The employee's real worry is whether money is about to be taken back, so that answer
-            comes first and the consequence second. */}
-        <b className="font-semibold">{benefitName}</b> was claimed while the 50% limit was switched
-        off for this cycle, so it sits above the cap. That claim stands — nothing is taken back. You
-        just can&apos;t claim more on it.
-      </span>
-    </span>
-  );
-}
-
-/**
  * Employee benefits board (spec 018) — restores the original navy/gold layout: a full-width
  * guaranteed band, then a two-column area with categorized benefit ROWS on the left and a sticky
  * pool meter on the right. Flexible benefits are claimed as-you-go (each row expands to a claim
@@ -211,22 +176,6 @@ export function BenefitsBoard({
   const [medOpen, setMedOpen] = useState(false);
   const [gClaim, setGClaim] = useState<BoardGuaranteed | null>(null);
   const pct = ceiling > 0 ? Math.min(100, (poolUsed / ceiling) * 100) : 0;
-
-  // Spec 031: the one benefit (if any) whose claims sit ABOVE the cap now in force. Only reachable
-  // when the 50% limit was switched off for this cycle, claimed against, then switched back on —
-  // so the card can read "Used 9,000" beside a 6,250 cap and look self-contradictory. Named here so
-  // the hint can finish the sentence; null on an ordinary cycle, where nothing needs explaining.
-  const overCapBenefit = useMemo(() => {
-    if (!flexCapEnabled || cap <= 0) return null;
-    for (const group of groups) {
-      for (const item of group.items) {
-        if (item.isMedical) continue; // medical is exempt from the cap and never "over" it
-        const claimed = item.claims.reduce((sum, c) => sum + c.amount, 0);
-        if (claimed > cap) return item.name;
-      }
-    }
-    return null;
-  }, [flexCapEnabled, cap, groups]);
 
   // Floating success toasts (replaces the old redirect banner). notify() is shared
   // with the claim forms via ToastContext; each toast auto-dismisses.
@@ -428,10 +377,9 @@ export function BenefitsBoard({
                 Spec 031: the row stays put and changes its answer rather than disappearing, so the
                 employee reads the same line either way and the difference is legible.
               */}
-              <div className="relative flex items-center justify-between border-t border-white/10 py-2.5 text-sm">
-                <span className="flex items-center gap-1.5 text-navy-200">
+              <div className="flex items-baseline justify-between border-t border-white/10 py-2.5 text-sm">
+                <span className="text-navy-200">
                   {flexCapEnabled ? "Per-benefit cap (50%)" : "Per-benefit limit"}
-                  {overCapBenefit ? <OverCapHint benefitName={overCapBenefit} /> : null}
                 </span>
                 <span className="font-semibold tabular-nums text-white">
                   {flexCapEnabled ? egp(cap) : "None this cycle"}
