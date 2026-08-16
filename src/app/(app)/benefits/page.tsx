@@ -289,7 +289,12 @@ export default async function BenefitsPage({
       decisionNote: c.decisionNote,
       createdAt: c.createdAt,
     };
-    if (c.status !== "REJECTED") claimsCoveredTotal += c.amount; // every non-rejected claim draws from the pool
+    // Only FLEXIBLE (catalogue) claims draw from the pool. Guaranteed benefits — summer,
+    // marriage, loans, professional development — have their own budget and are enforced
+    // against their own allocation, never the pool (see claim-actions.ts, which has always
+    // filtered to `catalogItemId: { not: null }`). Counting them here understated the pool
+    // the employee had left.
+    if (c.status !== "REJECTED" && c.catalogItemId) claimsCoveredTotal += c.amount;
     const map = c.guaranteedBenefitId ? byG : byC;
     const key = c.guaranteedBenefitId ?? c.catalogItemId ?? "";
     const arr = map.get(key) ?? [];
