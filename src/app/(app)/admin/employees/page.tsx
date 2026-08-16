@@ -29,7 +29,7 @@ function readSavedColumns(uiPrefs: unknown): ColCfg[] | null {
 export default async function EmployeesPage() {
   const actor = await requireAdmin();
   const canSalary = isSuperUser(actor.role);
-  const [employees, managers, managedDepartments, businessUnits, prefRow] = await Promise.all([
+  const [employees, managers, managedDepartments, businessUnits, prefRow, resettable] = await Promise.all([
     prisma.user.findMany({
       orderBy: [{ status: "asc" }, { name: "asc" }],
       select: {
@@ -65,6 +65,15 @@ export default async function EmployeesPage() {
     getDepartments(),
     getBusinessUnits(),
     prisma.user.findUnique({ where: { id: actor.id }, select: { uiPrefs: true } }),
+    // The password picker's list. Queried separately from the grid rows so the
+    // password hash is read in isolation and only ever leaves as a boolean, and
+    // filtered exactly like `generateTeamPasswords` so the list can't offer
+    // someone the server would then refuse to reset.
+    prisma.user.findMany({
+      where: { status: "ACTIVE", id: { not: actor.id } },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true, passwordHash: true },
+    }),
   ]);
 
   const initialColumns = readSavedColumns(prefRow?.uiPrefs);
@@ -110,6 +119,12 @@ export default async function EmployeesPage() {
       <RegistryHeader
         employeeCount={employees.length}
         canResetAll={isSuperUser(actor.role)}
+        resettableEmployees={resettable.map((e) => ({
+          id: e.id,
+          name: e.name,
+          email: e.email,
+          hasPassword: e.passwordHash != null,
+        }))}
         backHref="/admin"
         backLabel="Admin"
       />

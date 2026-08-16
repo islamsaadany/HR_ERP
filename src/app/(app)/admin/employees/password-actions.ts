@@ -37,10 +37,20 @@ export async function setUserPassword(
 
 export type TempPwRow = { name: string; email: string; temp: string };
 
+/** Which population a bulk password run targets. See {@link generateTeamPasswords}. */
+export type GenPasswordsMode = "missing" | "all" | "selected";
+
 export type GenPasswordsState =
-  | { ok: true; mode: "missing" | "all"; rows: TempPwRow[] }
+  | { ok: true; mode: GenPasswordsMode; rows: TempPwRow[] }
   | { ok: false; error: string }
   | null;
+
+/** Read the requested mode off the form, defaulting to the safest one. */
+function readMode(raw: FormDataEntryValue | null): GenPasswordsMode {
+  if (raw === "all") return "all";
+  if (raw === "selected") return "selected";
+  return "missing";
+}
 
 /**
  * Bulk-issue temporary sign-in passwords for active employees and return the
@@ -49,27 +59,43 @@ export type GenPasswordsState =
  * on next sign-in.
  *
  * - `missing` (default): only ACTIVE employees without a password yet.
+ * - `selected`: the ACTIVE employees whose ids are posted as `ids` — HR picks
+ *   them in the registry's password picker. Equivalent to running the
+ *   single-employee reset once per person, so it needs no extra role.
  * - `all` (Super User only): every ACTIVE employee — resets anyone who already
- *   set one. The acting admin is always excluded so they can't lock themselves out.
+ *   set one.
  *
- * Passwords are stored only as scrypt hashes; the plaintext exists only in this
- * response and must never be committed or emailed carelessly.
+ * The acting admin is always excluded, in every mode, so they can't lock
+ * themselves out. Passwords are stored only as scrypt hashes; the plaintext
+ * exists only in this response and must never be committed or emailed carelessly.
  */
 export async function generateTeamPasswords(
   _prev: GenPasswordsState,
   formData: FormData
 ): Promise<GenPasswordsState> {
   const actor = await requireAdmin();
-  const mode = formData.get("mode") === "all" ? "all" : "missing";
+  const mode = readMode(formData.get("mode"));
 
   if (mode === "all" && !isSuperUser(actor.role)) {
     return { ok: false, error: "Only a Super User can reset everyone's password." };
   }
 
+  // The picker posts one `ids` field per ticked employee. Never trust the list:
+  // it is intersected with ACTIVE employees below, and the actor is dropped.
+  let ids: string[] = [];
+  if (mode === "selected") {
+    ids = [...new Set(formData.getAll("ids").map((v) => String(v).trim()).filter(Boolean))];
+    if (ids.length === 0) {
+      return { ok: false, error: "Pick at least one employee to reset." };
+    }
+  }
+
   const users = await prisma.user.findMany({
     where: {
       status: "ACTIVE",
-      id: { not: actor.id }, // never reset the person running this
+      id: mode === "selected"
+        ? { in: ids, not: actor.id } // never reset the person running this
+        : { not: actor.id },
       ...(mode === "missing" ? { passwordHash: null } : {}),
     },
     select: { id: true, name: true, email: true },
@@ -82,7 +108,9 @@ export async function generateTeamPasswords(
       error:
         mode === "missing"
           ? `Everyone active already has a password. Use "Reset ALL passwords" to re-issue.`
-          : "No active employees found.",
+          : mode === "selected"
+            ? "None of the people you picked can be reset — they may have been marked as left since the list loaded."
+            : "No active employees found.",
     };
   }
 

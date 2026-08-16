@@ -100,6 +100,19 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   6mo–2y tier; built now against the **placeholder** rate card with the operator's confirmed prorated premium figures
   a later non-blocking data swap. Realizes the approved "medical available at 3 months" mockup. Money-sensitive defaults
   (whole-month floor, ÷12, nearest-EGP rounding) recorded in the spec's Assumptions.
+- **2026-08-16 — Selected-employee password reset; who may run it (built, no migration).** HR could reset
+  **one** employee (their edit page), **everyone without a password**, or **everyone** (Super User) — but not
+  a chosen set, which is the common case (a team back from leave, a handful of forgotten passwords). Added a
+  `selected` mode to `generateTeamPasswords` plus a picker modal in the registry's Passwords menu.
+  **Decision — any admin may run it, not Super User only:** resetting N ticked people is exactly N single
+  resets, and the single reset is already open to every HR Admin; gating the batch would be theatre. The
+  destructive **Reset ALL** stays Super-User-only. Two invariants hold in **all** modes and are enforced
+  server-side, never in the picker: the **acting admin is excluded** (no self-lockout) and the population is
+  intersected with **`status: ACTIVE`**, so a tampered `ids` post can't widen the blast radius. Considered and
+  rejected: row checkboxes in the main employee grid (bigger blast radius on a 772-line component everyone
+  uses daily) and a spec-kit spec (this is an increment on shipped behaviour, not a new module). Mockup
+  approved before building; proven against a throwaway local Postgres (16 checks — actor spared, LEFT
+  employees spared, unticked rows untouched, issued plaintext verifies against the stored hash).
 - **2026-08-13 — Guaranteed-benefit availability vs. salary fallback (fix, no migration).** Reported issue: a
   **part-time** employee (Mohamed Selim) saw a **Summer allowance of EGP 12,500** on his Benefits page, while the
   bulk-release sheet said "no part-time amount set". Root cause — a guaranteed benefit with a **null per-type band
@@ -145,4 +158,4 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ---
 
-*Last Updated: 2026-08-13.*
+*Last Updated: 2026-08-16.*
