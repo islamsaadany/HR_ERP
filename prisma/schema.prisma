@@ -128,6 +128,8 @@ model User {
   paidClaims         BenefitClaim[]      @relation("ClaimPayer")
   benefitReleases    BenefitRelease[]    @relation("ReleaseSubject")
   releasesGiven      BenefitRelease[]    @relation("ReleaseActor")
+  medicalRecoveries  MedicalRecovery[]   @relation("RecoverySubject")
+  recoveriesSettled  MedicalRecovery[]   @relation("RecoverySettler")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -504,6 +506,8 @@ model MedicalCommitment {
   policyYear      MedicalPolicyYear?     @relation(fields: [policyYearId], references: [id], onDelete: Cascade)
   /// How the premium is spread across the benefits cycles the term overlaps (spec 027).
   cycleCharges    MedicalCycleCharge[]
+  /// Unused premium to reclaim if the employee leaves mid-term (spec 030).
+  recovery        MedicalRecovery?
   /// LEGACY (spec 023): the old relationship-based selection. Nullable, no longer written for new
   /// commits — retained so historical rows keep their record. Superseded by `coveredPeople`.
   spouse          Boolean?
@@ -538,6 +542,7 @@ model MedicalPolicyYear {
   createdAt   DateTime            @default(now())
   commitments MedicalCommitment[]
   charges     MedicalCycleCharge[]
+  recoveries  MedicalRecovery[]
 }
 
 /// The share of one commitment's premium attributed to one benefits cycle (spec 027). THIS is
@@ -573,6 +578,54 @@ enum MedicalChargeStatus {
   SCHEDULED
   APPLIED
   CANCELLED
+}
+
+/// OPEN — owed by the insurer and not yet chased to a conclusion.
+/// RECOVERED — a credit was received; `recoveredAmount` is what actually came back.
+/// WRITTEN_OFF — Finance decided it isn't coming; `reason` says why. The whole expected amount
+///               becomes the shortfall, so a written-off recovery is a recorded loss, not a gap.
+enum MedicalRecoveryStatus {
+  OPEN
+  RECOVERED
+  WRITTEN_OFF
+}
+
+/// Premium the company paid for medical cover an employee never used, because they left before
+/// the policy term ended (spec 030). Finance's to-do: chase the insurer, then record what came
+/// back. The residual is a real cost of the departure — the point is that it becomes a known
+/// number rather than an invisible one.
+model MedicalRecovery {
+  id                 String                @id @default(cuid())
+  /// One recovery per commitment — the unique key is what makes the reconcile pass idempotent.
+  commitmentId       String                @unique
+  commitment         MedicalCommitment     @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User                  @relation("RecoverySubject", fields: [userId], references: [id], onDelete: Cascade)
+  policyYearId       String
+  policyYear         MedicalPolicyYear     @relation(fields: [policyYearId], references: [id], onDelete: Cascade)
+  /// The employee's last day of cover. Null when HR hasn't recorded one — the row then reads
+  /// "needs leave date" rather than showing a confidently wrong figure.
+  coverEndedOn       DateTime?
+  /// The premium this expectation was computed from, FROZEN at creation. A later premium edit must
+  /// not restate a figure Finance may already have claimed against.
+  premiumAtCreation  Int
+  expectedMonths     Int
+  expectedAmount     Int
+  status             MedicalRecoveryStatus @default(OPEN)
+  /// What actually came back. Null until settled; 0 on a write-off.
+  recoveredAmount    Int?
+  recoveredOn        DateTime?
+  /// expected − recovered, never below zero. The number that makes a short-paying insurer visible.
+  shortfall          Int?
+  /// Why it was written off.
+  reason             String?
+  settledById        String?
+  settledBy          User?                 @relation("RecoverySettler", fields: [settledById], references: [id], onDelete: SetNull)
+  settledAt          DateTime?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  @@index([status])
 }
 
 /// Immutable snapshot of one covered person on a medical commitment (spec 023). Captured at commit

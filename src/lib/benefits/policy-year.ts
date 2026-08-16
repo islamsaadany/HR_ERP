@@ -122,3 +122,39 @@ export function recoverablePeriod(policy: DateRange, coverEndedOn: Date): DateRa
 function dayAfter(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
 }
+
+export type ExpectedRecovery = {
+  /** Whole months of unused cover, from the day after cover ended to the term's end. */
+  months: number;
+  /** That share of the committed premium, floored to whole EGP. 0 when nothing is recoverable. */
+  amount: number;
+};
+
+/**
+ * What the company should get back from the insurer when an employee's cover ends mid-term
+ * (spec 030).
+ *
+ * Computed from the LEAVE DATE, not from the cancelled cycle charge. Those differ, and the
+ * difference is not academic: an employee leaving 30 Nov 2026 under a 1 Jun 2026 – 31 May 2027
+ * term with a 26,000 premium has a cancelled charge of 10,834 but 13,000 recoverable — December
+ * falls inside a charge already applied to the 2026 pool. Reading the cancelled figure would
+ * under-claim on every single leaver.
+ *
+ * Returns zero months and zero amount when nothing is recoverable (cover ran to the term's end,
+ * or the leave date is unknown) — the caller shows "needs leave date" rather than a figure.
+ */
+export function expectedRecovery(
+  policy: DateRange,
+  coverEndedOn: Date | null | undefined,
+  premium: number
+): ExpectedRecovery {
+  if (!coverEndedOn) return { months: 0, amount: 0 };
+  const period = recoverablePeriod(policy, coverEndedOn);
+  if (!period) return { months: 0, amount: 0 };
+  const termMonths = wholeMonthsBetween(policy.start, policy.end);
+  if (termMonths <= 0) return { months: 0, amount: 0 };
+  const months = wholeMonthsBetween(period.start, period.end);
+  if (months <= 0) return { months: 0, amount: 0 };
+  const safePremium = Number.isFinite(premium) && premium > 0 ? Math.floor(premium) : 0;
+  return { months, amount: Math.floor((safePremium * months) / termMonths) };
+}

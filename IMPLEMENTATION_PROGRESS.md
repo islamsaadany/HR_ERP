@@ -740,6 +740,22 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     absorbed leaves the charges totalling that larger frozen amount — a shut pool can't be
     un-charged. The platform shows the mismatch in red rather than writing a negative charge.
 
+- **2026-08-16 — Spec 030 built: medical premium recoveries for Finance (migration 048):**
+  - Spec 027 stopped charging a departed employee's pool; nothing followed the money already paid
+    to the insurer for cover after their last day. **/finance** now carries that list.
+  - **The feature exists because the product owner challenged the figure** — *"who are we helping
+    with that data?"* Shown to HR it was trivia; shown to Finance it is an item with an owner and a
+    closing state. The residual after recovery is a real cost of leaving; the point is that it
+    becomes a **known** number rather than an invisible one.
+  - **The trap, written into FR-002**: the recoverable amount is computed from the leave date, not
+    the cancelled charge. 26,000 premium, left 30 Nov → **13,000**, not the 10,834 cancelled —
+    December sits inside a charge already applied to the 2026 pool. Building it the obvious way
+    would have under-claimed on every leaver.
+  - Finance records what actually came back, so the **shortfall** is captured; one partial refund is
+    noise, a column of them is a short-paying insurer. Write-offs keep their reason.
+  - Verified: 22 checks (expected amount, sync idempotency, settling, frozen figures), `048` applied
+    twice from the file, and a Chromium pass settling partially and seeing the shortfall land.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.

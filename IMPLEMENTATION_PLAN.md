@@ -100,6 +100,17 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   6mo–2y tier; built now against the **placeholder** rate card with the operator's confirmed prorated premium figures
   a later non-blocking data swap. Realizes the approved "medical available at 3 months" mockup. Money-sensitive defaults
   (whole-month floor, ÷12, nearest-EGP rounding) recorded in the spec's Assumptions.
+- **2026-08-16 — Recoverable premium belongs to Finance, not HR (built, spec `030`, migration `048`).**
+  Spec 027 showed HR a recoverable figure when someone left mid-policy. The product owner challenged
+  it — *"who are we helping with that data? we already lost the amount"* — and the challenge was
+  right: HR processed the departure and does not reconcile insurer credit notes, so the number was
+  decoration. **Decision:** the same figure goes to **Finance**, where it carries an action and a
+  closing state — chase the insurer, record what came back, or write it off with a reason. The
+  residual is accepted as a cost of leaving; the value is that it becomes a recorded number rather
+  than an invisible one, and that a systematically short-paying insurer shows up in the shortfall
+  column. **The arithmetic that had to be right:** the recoverable amount is computed from the leave
+  date, NOT from the cancelled cycle charge — the latter excludes any month inside an
+  already-applied charge and would under-claim on every leaver (13,000 vs 10,834 on the live case).
 - **2026-08-16 — Summer allowance becomes a pool-funded Travel allowance (built, spec `028`, migration `046`).**
   The product owner first reported that the summer allowance appeared to draw from the pool when it
   shouldn't (a display bug, fixed separately), then decided it *should* — rebadged as a year-round
