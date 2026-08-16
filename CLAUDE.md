@@ -100,6 +100,7 @@ four steering files (same commit).
 - **Edge cases: handle more, not fewer** — nulls, empty states, unexpected input, boundaries.
 - **Aim for "engineered enough"** — not fragile, not over-abstracted. When in doubt, ask.
 - **Explicit over clever** — readable, obvious code over compact/clever solutions.
+- **Never close a menu/modal from a submit button's `onClick`** — React flushes click updates synchronously, so the `<form>` unmounts before the browser dispatches `submit`; the action silently never runs ("Form submission canceled because the form is not connected" is the only clue). Dispatch first, then close — wrap the action: `action={(fd) => { dispatch(fd); setOpen(false); }}`. Cost us a shipped-but-dead bulk password action; found 2026-08-16.
 - **Benefits money & rules are server-authoritative** — every pool ceiling, 50%-per-benefit cap, and medical rule is enforced on the server at claim/commit time, never trusted from the client. (The benefit-count limit is retained but off by default — spec 018.)
 
 ### 4. Git Workflow

@@ -46,21 +46,6 @@ export function RegistryHeader({
   const [pickerOpen, setPickerOpen] = useState(false);
   const done = state && state.ok ? state : null;
 
-  /**
-   * Submit, THEN close the menu/picker.
-   *
-   * Closing in the button's `onClick` looks equivalent but silently breaks the
-   * action: React flushes click updates synchronously, so the <form> is removed
-   * from the DOM before the browser dispatches `submit` — the browser cancels it
-   * ("Form submission canceled because the form is not connected") and the server
-   * action never runs. Dispatching here first means the unmount is harmless.
-   */
-  function runAndClose(formData: FormData) {
-    action(formData);
-    setOpenMenu(null);
-    setPickerOpen(false);
-  }
-
   function downloadCsv() {
     if (!done) return;
     const header = ["Name", "Email", "Temporary Password"];
@@ -139,11 +124,12 @@ export function RegistryHeader({
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
                 <div className="absolute right-0 z-20 mt-1 w-72 rounded-lg border border-line bg-surface p-1.5 shadow-lg">
-                  <form action={runAndClose}>
+                  <form action={action}>
                     <input type="hidden" name="mode" value="missing" />
                     <button
                       type="submit"
                       disabled={pending}
+                      onClick={() => setOpenMenu(null)}
                       className="block w-full rounded-md px-3 py-2 text-left hover:bg-navy-50 disabled:opacity-60"
                     >
                       <span className="block text-sm font-medium text-ink">
@@ -170,7 +156,7 @@ export function RegistryHeader({
                   {canResetAll ? (
                     <>
                       <div className="my-1 h-px bg-line" />
-                      <form action={runAndClose}>
+                      <form action={action}>
                         <input type="hidden" name="mode" value="all" />
                         <button
                           type="submit"
@@ -182,7 +168,9 @@ export function RegistryHeader({
                               )
                             ) {
                               e.preventDefault();
+                              return;
                             }
+                            setOpenMenu(null);
                           }}
                           className="block w-full rounded-md px-3 py-2 text-left hover:bg-red-50 disabled:opacity-60"
                         >
@@ -212,7 +200,7 @@ export function RegistryHeader({
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         employees={resettableEmployees}
-        formAction={runAndClose}
+        formAction={action}
         pending={pending}
       />
 

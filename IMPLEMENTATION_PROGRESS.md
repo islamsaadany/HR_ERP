@@ -652,6 +652,23 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     tsc + build green; UI snapshot saved; the server filter and hash round-trip were proven
     against a throwaway local Postgres (16 checks, all passing).
 
+- **2026-08-16 — Fixed: the Passwords menu actions never ran (pre-existing, found in testing):**
+  - Reported symptom: clicking **"Generate for employees without a password"** (and the new
+    "Reset selected employees") produced **no CSV and no result panel**, with
+    `Form submission canceled because the form is not connected` in the browser console.
+  - Root cause — **not** the new picker. Both existing menu items closed the dropdown from the
+    submit button's `onClick` (`setOpenMenu(null)`). React flushes click updates synchronously,
+    so the `<form>` was removed from the DOM **before** the browser dispatched `submit`; the
+    browser cancelled it and the server action was never called. The new picker inherited the
+    same shape via `onClose()`. So **"Generate for employees without a password" and
+    "Reset ALL passwords" have been dead since the dropdown refactor** — silently, because the
+    failure is console-only.
+  - Fix: a `runAndClose` wrapper on the form's `action` that dispatches **then** closes; the
+    `onClick` handlers now only ever `preventDefault()` to cancel. Behaviour-only, zero visual
+    change. House rule added to `CLAUDE.md` §3b so it can't recur.
+  - Verified in a real Chromium against a local Postgres: all three actions produce the panel and
+    a correct CSV, and reverting just the fix reproduces the reported console error exactly.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
