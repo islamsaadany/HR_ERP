@@ -12,7 +12,6 @@ import {
   updateMedicalRateBand,
   approveClaim,
   rejectClaim,
-  repriceAllCommitments,
 } from "./actions";
 import {
   updatePoolCeilings,
@@ -429,19 +428,6 @@ export default async function AdminBenefitsPage({
       <section className="rounded-xl border border-line bg-surface p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="font-serif text-lg text-ink">Medical commitments {active ? `· ${active.name}` : ""}</h2>
-          {active && medicalCommitments.length > 0 ? (
-            // Re-price all (spec 032). Styled as the existing Export CSV button beside it — a new
-            // control, not a new look. Confirmed because it rewrites every premium in the cycle.
-            <form action={repriceAllCommitments} className="ml-auto mr-2">
-              <input type="hidden" name="planYearId" value={active.id} />
-              <ConfirmSubmitButton
-                message={`Re-price all ${medicalCommitments.length} medical commitments against today's rate card? Cover stays exactly as it is — only the price is recalculated.`}
-                className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
-              >
-                Re-price all
-              </ConfirmSubmitButton>
-            </form>
-          ) : null}
           {active ? (
             <a
               href={`/api/admin/benefits/export?planYearId=${active.id}`}

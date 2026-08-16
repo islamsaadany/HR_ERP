@@ -1,4 +1,4 @@
-import { classifyEligibility } from "../src/lib/benefits/proration";
+import { classifyEligibility, hasKnownStartDate } from "../src/lib/benefits/proration";
 let pass = 0, fail = 0;
 const check = (l: string, c: boolean) => { console.log(`${c ? "  ✓" : "  ✗"} ${l}`); c ? pass++ : fail++; };
 
@@ -34,7 +34,10 @@ check("joined 1 Nov 2025 — already served 6 months — allowed",
 
 console.log("\nUnchanged behaviour");
 check("no window still means FULL", classifyEligibility(new Date(2026,7,1), 3, null, today).status === "FULL");
-check("no start date still means FULL", classifyEligibility(null, 3, term, today).status === "FULL");
+check("no start date now BLOCKS — a missing hire date used to mean fully eligible",
+  classifyEligibility(null, 3, term, today).status === "NOT_YET");
+check("…and the page can tell that apart from 'not yet', to say the right thing",
+  hasKnownStartDate(null) === false && hasKnownStartDate(new Date(2026,0,1)) === true);
 check("eligible only after the window ends is still NOT_YET",
   classifyEligibility(new Date(2027,4,1), 3, cycle, new Date(2027,11,1)).status === "NOT_YET");
 check("someone eligible before the window opened still gets FULL",

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getActivePlanYear, getMedicalRateBands, amountForBand, getMedicalCommitment, planYearWindow, poolCeilingFor, eligibilityWhere, isSalaryDriven, medicalScopeFor, fixedAllowanceFor, isFixedAllowance, medicalCycleCharge, medicalCarriedForward } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { flexCap } from "@/lib/benefits/rules";
-import { classifyEligibility, hasKnownStartDate, prorate, poolCycleFraction, cycleWholeMonths } from "@/lib/benefits/proration";
+import { classifyEligibility, prorate, poolCycleFraction, cycleWholeMonths } from "@/lib/benefits/proration";
 import { annualPremiumForPerson, type Band } from "@/lib/benefits/rates";
 import { deriveTenureBand } from "@/lib/tenure";
 import {
@@ -60,26 +60,6 @@ import { BenefitsOrientation } from "@/components/benefits/BenefitsOrientation";
 import { SetupNotice } from "@/components/SetupNotice";
 
 export const dynamic = "force-dynamic";
-
-
-/**
- * Shown when the employee has no start date on file. Every benefit is gated on length of service,
- * so with no hire date nothing can be worked out — and the honest thing is to say so, and say who
- * fixes it, rather than show a locked module with no reason. Start date is HR-managed, so this
- * points at HR rather than asking them to edit something they cannot.
- */
-function NoStartDateNotice() {
-  return (
-    <div className="mt-8 rounded-xl border border-dashed border-gold-300 bg-gold-50 p-8 text-center">
-      <p className="font-serif text-lg text-ink">We don&apos;t have your start date</p>
-      <p className="mx-auto mt-2 max-w-md text-sm text-muted">
-        Every benefit depends on how long you&apos;ve been here — medical opens at 3 months, the
-        flexible basket at 6 — so we can&apos;t work out what you&apos;re entitled to without it.
-        Ask HR to add your start date to your profile and this page will fill in on its own.
-      </p>
-    </div>
-  );
-}
 
 export default async function BenefitsPage({
   searchParams,
@@ -143,14 +123,6 @@ export default async function BenefitsPage({
           <div className="mt-8 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
             Benefits selection isn&apos;t open right now. Check back when a plan year is open.
           </div>
-        </div>
-      );
-    }
-    if (!hasKnownStartDate(user.startDate)) {
-      return (
-        <div>
-          {medHeader}
-          <NoStartDateNotice />
         </div>
       );
     }

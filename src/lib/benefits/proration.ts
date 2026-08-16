@@ -79,11 +79,25 @@ const FULL: Eligibility = { status: "FULL", remainingWholeMonths: 12, fraction: 
 const NOT_YET: Eligibility = { status: "NOT_YET", remainingWholeMonths: 0, fraction: 0 };
 
 /**
+ * Whether we know when this person started. Distinguishes "not eligible yet" from "we cannot tell",
+ * which need different messages: one is a date to wait for, the other is a missing record only HR
+ * can fix. Both block.
+ */
+export function hasKnownStartDate(startDate: Date | null | undefined): boolean {
+  return !!startDate;
+}
+
+/**
  * Classify an employee for the active plan year against a service threshold.
  *
- * Fail-safe fallbacks (toward paying the full, known-good amount):
- *  - window null (no dates set) → FULL
- *  - startDate null (unknown eligibility date) → FULL
+ * Fail-safe fallback (toward paying the full, known-good amount):
+ *  - window null (no dates set) → FULL — a missing CONFIGURATION shouldn't punish employees
+ *
+ * But an unknown START DATE is not a configuration gap, it is a missing fact about this person,
+ * and it used to return FULL — so anyone with no hire date on file passed both the three-month
+ * medical gate and the six-month basket gate regardless of service. That is a money rule failing
+ * open. It now blocks, and the Benefits page tells them to ask HR for their start date rather
+ * than leaving them staring at a locked module with no reason given.
  * Otherwise:
  *  - eligibility date still in the FUTURE → NOT_YET (see below)
  *  - eligibility date ≤ window.start → FULL
@@ -105,7 +119,7 @@ export function classifyEligibility(
 ): Eligibility {
   if (!window) return FULL;
   const elig = eligibilityDate(startDate, thresholdMonths);
-  if (!elig) return FULL;
+  if (!elig) return NOT_YET;
 
   // Not eligible until the threshold has actually been served, whatever the window says.
   if (elig.getTime() > asOf.getTime()) return NOT_YET;

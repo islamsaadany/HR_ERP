@@ -164,59 +164,66 @@ export async function setPlanYearStatus(formData: FormData): Promise<void> {
  */
 export async function editMedicalCommitment(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
-  const id = formData.get("id") as string;
+  const id = (formData.get("id") as string | null)?.trim();
   if (!id) return;
 
+  // HR ticks which dependants are covered (age-band pricing, spec 023) — one checkbox per dependant.
+  const selectedIds = Array.from(new Set(formData.getAll("dependantIds").map(String)));
+  const result = await repriceCommitment(id, selectedIds, admin.id);
+  if (!result.ok) {
+    redirect("/admin/benefits?error=" + encodeURIComponent(`Couldn't re-price: ${result.reason}.`));
+  }
+  // A changed premium must be re-split, or the charges stop summing to it (FR-014, FR-006).
+  // Spec 032: reconcile rather than resplit — resplit could only adjust rows that already existed,
+  // so a premium reaching into a cycle created later stayed permanently under-charged.
+  await reconcileMedicalCharges();
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+}
+
+/**
+ * Price one commitment from the people it currently covers, and write the snapshot.
+ *
+ * Shared by the per-row Re-price and Re-price all (spec 023/032). Extracted rather than copied:
+ * two implementations of a money calculation drift, and the one that drifts is always the one
+ * nobody is looking at.
+ *
+ * Returns a short reason when it can't price, so the bulk caller can report who was skipped
+ * instead of failing the whole run on one bad record.
+ */
+async function repriceCommitment(
+  commitmentId: string,
+  coveredDependantIds: string[],
+  adminId: string
+): Promise<{ ok: true; premium: number } | { ok: false; reason: string }> {
   const commitment = await prisma.medicalCommitment.findUnique({
-    where: { id },
+    where: { id: commitmentId },
     include: {
       user: {
         select: {
           name: true,
           dateOfBirth: true,
           employmentType: true,
-          tenureBand: true,
           startDate: true,
           dependants: { select: { id: true, name: true, dateOfBirth: true, kind: true } },
         },
       },
     },
   });
-  if (!commitment) redirect("/admin/benefits?error=" + encodeURIComponent("That medical commitment no longer exists."));
-  if (!commitment.user.dateOfBirth) {
-    redirect("/admin/benefits?error=" + encodeURIComponent("That employee has no date of birth on file — set it before pricing medical."));
-  }
+  if (!commitment) return { ok: false, reason: "no longer exists" };
+  if (!commitment.user.dateOfBirth) return { ok: false, reason: "no date of birth" };
+  if (!commitment.user.employmentType) return { ok: false, reason: "no employment type" };
 
-  // HR ticks which dependants are covered (age-band pricing, spec 023) — one checkbox per dependant.
-  const selectedIds = Array.from(new Set(formData.getAll("dependantIds").map(String)));
-  const covered = commitment.user.dependants.filter((d) => selectedIds.includes(d.id));
-
-  // The tenure band is DERIVED from the hire date, exactly as the employee's own commit and claim
-  // paths do it — reading the stored `tenureBand` column here made Re-price the one surface that
-  // refused an employee everything else priced happily, because the column is usually null and the
-  // band comes from `startDate`. `poolCeilingFor` also carries the entry-tier fallback for someone
-  // under six months, which the raw lookup skipped.
+  const covered = commitment.user.dependants.filter((d) => coveredDependantIds.includes(d.id));
   const [bands, ceilingAmount] = await Promise.all([
     getMedicalRateBands(),
-    commitment.user.employmentType
-      ? poolCeilingFor(commitment.user.employmentType, deriveTenureBand(commitment.user.startDate).band)
-      : Promise.resolve(null),
+    poolCeilingFor(commitment.user.employmentType, deriveTenureBand(commitment.user.startDate).band),
   ]);
-  if (bands.length === 0 || ceilingAmount == null) {
-    redirect(
-      "/admin/benefits?error=" +
-        encodeURIComponent(
-          commitment.user.employmentType
-            ? "Benefits aren't fully configured for that employee — no pool ceiling for their employment type and tenure."
-            : "That employee has no employment type set — set it before pricing medical."
-        )
-    );
-  }
+  if (bands.length === 0) return { ok: false, reason: "no medical rate card" };
+  if (ceilingAmount == null) return { ok: false, reason: "no pool ceiling for their type and tenure" };
 
-  // Re-price by age at the edit date; cap at the full pool ceiling (HR override — unchanged behavior).
-  const refDate = new Date();
   const people: PricedPerson[] = [{ dob: commitment.user.dateOfBirth }, ...covered.map((d) => ({ dob: d.dateOfBirth }))];
-  const { annualEGP, lines } = sumMedicalPremium(people, bands, refDate);
+  const { annualEGP, lines } = sumMedicalPremium(people, bands, new Date());
   const premium = Math.min(annualEGP, ceilingAmount);
 
   const coveredPeople = [
@@ -230,18 +237,54 @@ export async function editMedicalCommitment(formData: FormData): Promise<void> {
   ];
 
   await prisma.$transaction([
-    prisma.medicalCoveredPerson.deleteMany({ where: { commitmentId: id } }),
+    prisma.medicalCoveredPerson.deleteMany({ where: { commitmentId } }),
     prisma.medicalCommitment.update({
-      where: { id },
-      data: { premium, committedById: admin.id, coveredPeople: { create: coveredPeople } },
+      where: { id: commitmentId },
+      data: { premium, committedById: adminId, coveredPeople: { create: coveredPeople } },
     }),
   ]);
-  // A changed premium must be re-split, or the charges stop summing to it (FR-014, FR-006).
-  // Spec 032: reconcile rather than resplit — resplit could only adjust rows that already existed,
-  // so a premium reaching into a cycle created later stayed permanently under-charged.
+  return { ok: true, premium };
+}
+
+/**
+ * Re-price every commitment in the open cycle, keeping each person's existing cover (spec 032).
+ *
+ * HR asked for this after correcting the policy term: doing it row by row across a whole company
+ * is the kind of chore that gets half-finished, and a half-repriced list is worse than an
+ * unrepriced one because nothing tells you where you stopped.
+ *
+ * Cover is NOT changed — only the price of the cover already chosen is recalculated, and then the
+ * charges are redistributed across the cycles the term touches.
+ */
+export async function repriceAllCommitments(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const planYearId = (formData.get("planYearId") as string | null)?.trim();
+  if (!planYearId) return;
+
+  const commitments = await prisma.medicalCommitment.findMany({
+    where: { planYearId },
+    select: { id: true, user: { select: { name: true } }, coveredPeople: { select: { dependantId: true } } },
+  });
+
+  const skipped: string[] = [];
+  for (const c of commitments) {
+    const ids = c.coveredPeople.map((p) => p.dependantId).filter((x): x is string => !!x);
+    const result = await repriceCommitment(c.id, ids, admin.id);
+    if (!result.ok) skipped.push(`${c.user.name} (${result.reason})`);
+  }
   await reconcileMedicalCharges();
+
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
+  // Named, not counted: "3 skipped" sends HR hunting through the list for which three.
+  if (skipped.length > 0) {
+    redirect(
+      "/admin/benefits?error=" +
+        encodeURIComponent(
+          `Re-priced ${commitments.length - skipped.length} of ${commitments.length}. Not priced: ${skipped.join("; ")}.`
+        )
+    );
+  }
 }
 
 /** HR override (spec 018): remove an employee's committed medical so they can re-commit. */

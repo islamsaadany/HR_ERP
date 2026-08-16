@@ -87,6 +87,14 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
     MEDICAL_THRESHOLD_MONTHS,
     policyWindow
   );
+  if (!user.startDate) {
+    // Distinct from "not yet": nothing can be worked out at all, and only HR can fix it.
+    return {
+      ok: false,
+      errors: ["We don't have your start date, so we can't work out your eligibility. Ask HR to add it."],
+      warnings: [],
+    };
+  }
   if (medicalEligibility.status === "NOT_YET") {
     return { ok: false, errors: ["Medical insurance becomes available after 3 months of service."], warnings: [] };
   }
