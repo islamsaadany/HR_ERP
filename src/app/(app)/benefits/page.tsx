@@ -1,7 +1,7 @@
 import { requireUser, isAdmin } from "@/lib/roles";
 import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
-import { getActivePlanYear, getMedicalRateBands, amountForBand, getMedicalCommitment, planYearWindow, poolCeilingFor, eligibilityWhere, isSalaryDriven, medicalScopeFor } from "@/lib/benefits/config";
+import { getActivePlanYear, getMedicalRateBands, amountForBand, getMedicalCommitment, planYearWindow, poolCeilingFor, eligibilityWhere, isSalaryDriven, medicalScopeFor, fixedAllowanceFor, isFixedAllowance } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { flexCap } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate, poolCycleFraction, cycleWholeMonths } from "@/lib/benefits/proration";
@@ -354,6 +354,9 @@ export default async function BenefitsPage({
       groupMap.set(cat, []);
       order.push(cat);
     }
+    // A fixed allowance (travel) is capped by its own band amount, prorated to the cycle like
+    // the pool it draws from — not by the 50% cap, which never binds at these figures.
+    const allowance = isFixedAllowance(item) ? fixedAllowanceFor(user.tenureBand!, item) : null;
     groupMap.get(cat)!.push({
       id: item.id,
       key: item.key,
@@ -362,7 +365,8 @@ export default async function BenefitsPage({
       isMedical: false,
       coverageRate: item.coverageRate,
       claimType: item.claimType,
-      allocated: cap,
+      allocated: allowance != null ? Math.min(prorate(allowance, poolFraction), cap) : cap,
+      isAllowance: allowance != null,
       claims: byC.get(item.id) ?? [],
     });
   }

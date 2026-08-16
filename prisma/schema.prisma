@@ -472,6 +472,16 @@ model BenefitCatalogItem {
   /// Company coverage rate, percent 0–100 (spec 012). The covered (company) share = cost × rate/100
   /// draws from the pool; the employee pays the remainder. Medical is 100% (cost = covered).
   coverageRate     Int            @default(100)
+  /// Fixed per-tenure-band allowance (spec 028 — travel allowance). When any of these is set the
+  /// benefit is an ENTITLEMENT rather than a receipt-based claim: the employee requests it and is
+  /// paid the band amount in full, with no price entered and no proof. It still draws from the
+  /// pool and still prorates with the cycle. One amount per band for full- AND part-timers — the
+  /// pool ceiling already differs by employment type, so a second set of figures would only be a
+  /// chance for the two to drift apart. Null on every ordinary coverage-rate benefit.
+  band6mo2y        Int?
+  band2to4y        Int?
+  band4to7y        Int?
+  band7to10y       Int?
   claims           BenefitClaim[]
 }
 

@@ -80,11 +80,6 @@ export type BoardFlex = {
   coverageRate: number;
   claimType: ClaimType;
   allocated: number | null;
-  /**
-   * A fixed per-band entitlement (spec 028 — travel allowance) rather than a receipt-based claim:
-   * `allocated` is the amount itself, requested in full with no price entered and no proof.
-   */
-  isAllowance?: boolean;
   claims: BoardClaim[];
 };
 export type BoardGroup = { category: string; items: BoardFlex[] };
@@ -446,18 +441,14 @@ function FlexRow({ item, poolRemaining }: { item: BoardFlex; poolRemaining: numb
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-[15px] font-medium text-ink">
               {item.name}
-              {item.isAllowance ? (
-                <span className="rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gold-800">No receipt needed</span>
-              ) : (
-                <span className="rounded bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-navy-700">{item.coverageRate}% covered</span>
-              )}
+              <span className="rounded bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-navy-700">{item.coverageRate}% covered</span>
             </div>
             {item.description ? <div className="mt-0.5 text-xs text-muted">{item.description}</div> : null}
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5 text-right">
             <div className="text-xs text-ink">Left to claim <b className="tabular-nums">{egp(remaining)}</b></div>
             <span className="rounded-lg bg-navy-50 px-3 py-1.5 text-xs font-semibold text-navy-700">
-              {fullyClaimed ? "View" : item.isAllowance ? "Request" : "Claim"}
+              {fullyClaimed ? "View" : "Claim"}
               <span className="ml-1 inline-block group-open:rotate-180">▾</span>
             </span>
           </div>
@@ -488,78 +479,10 @@ function FlexRow({ item, poolRemaining }: { item: BoardFlex; poolRemaining: numb
         {fullyClaimed ? (
           <p className="rounded-lg border border-line bg-surface px-3 py-3 text-sm text-muted">Fully claimed — nothing left on this benefit.</p>
         ) : (
-          item.isAllowance ? (
-            <AllowanceRequestForm item={item} remaining={remaining} onSubmitted={() => setOpen(false)} />
-          ) : (
-            <FlexClaimForm item={item} remaining={remaining} poolRemaining={poolRemaining} onSubmitted={() => setOpen(false)} />
-          )
+          <FlexClaimForm item={item} remaining={remaining} poolRemaining={poolRemaining} onSubmitted={() => setOpen(false)} />
         )}
       </div>
     </details>
-  );
-}
-
-/**
- * Request form for a fixed allowance (spec 028 — travel allowance).
- *
- * There is no price to enter and no proof to upload: the band amount IS the payout, so the whole
- * interaction is one button. The server still decides the figure — this only says what it will be.
- */
-function AllowanceRequestForm({
-  item,
-  remaining,
-  onSubmitted,
-}: {
-  item: BoardFlex;
-  remaining: number;
-  onSubmitted: () => void;
-}) {
-  const router = useRouter();
-  const notify = useContext(ToastContext);
-  const fieldId = useId();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const data = new FormData(form);
-    setError(null);
-    startTransition(async () => {
-      const res = await createClaim(data);
-      if (res.ok) {
-        notify("Allowance requested — awaiting HR review.");
-        form.reset();
-        router.refresh();
-        onSubmitted();
-      } else {
-        setError(res.error);
-      }
-    });
-  }
-
-  return (
-    <form onSubmit={onSubmit} className="rounded-lg border border-line bg-surface p-3">
-      <input type="hidden" name="kind" value="catalog" />
-      <input type="hidden" name="benefitId" value={item.id} />
-      <p className="text-sm text-ink">
-        Requesting pays the whole <b className="tabular-nums">{egp(remaining)}</b> and draws it from
-        your pool — your remaining flexible budget falls by the same amount.
-      </p>
-      <div className="mt-3">
-        <label htmlFor={`${fieldId}-note`} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Note (optional)</label>
-        <input id={`${fieldId}-note`} name="note" className="w-full max-w-[280px] rounded-lg border border-line px-3 py-2 text-sm" />
-      </div>
-      <button
-        disabled={pending}
-        className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50"
-      >
-        {pending ? "Requesting…" : `Request ${egp(remaining)}`}
-      </button>
-      {error ? (
-        <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{error}</p>
-      ) : null}
-    </form>
   );
 }
 

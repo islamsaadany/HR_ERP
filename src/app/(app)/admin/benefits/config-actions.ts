@@ -78,6 +78,43 @@ export async function updateGuaranteedAmounts(formData: FormData): Promise<void>
   revalidatePath("/benefits");
 }
 
+/** The four per-tenure-band amount columns on a fixed-allowance catalogue item (spec 028). */
+const FLEX_ALLOWANCE_COLS = ["band6mo2y", "band2to4y", "band4to7y", "band7to10y"] as const;
+
+/**
+ * Save the fixed per-band amounts on flexible allowance benefits (spec 028 — travel allowance).
+ *
+ * Mirrors `updateGuaranteedAmounts`, with one difference that is the point of the feature: there is
+ * a SINGLE set of four amounts, applied to full- and part-timers alike. Their pool ceilings already
+ * differ by employment type, so a second set of figures would add no expressiveness and one more
+ * way for the two to fall out of step.
+ *
+ * Only items that already carry a band amount are updated — setting amounts is how an item BECOMES
+ * an allowance, and that shouldn't happen by accident from a form that lists every benefit.
+ */
+export async function updateFlexAllowanceAmounts(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const items = await prisma.benefitCatalogItem.findMany({
+    where: { OR: FLEX_ALLOWANCE_COLS.map((c) => ({ [c]: { not: null } })) },
+    select: { id: true },
+  });
+  for (const { id } of items) {
+    const data: Record<string, number> = {};
+    for (const key of FLEX_ALLOWANCE_COLS) {
+      const raw = formData.get(`fa_${id}_${key}`);
+      if (raw == null || String(raw).trim() === "") continue;
+      const n = Number(raw);
+      if (!Number.isFinite(n)) continue;
+      data[key] = Math.max(0, Math.round(n));
+    }
+    if (Object.keys(data).length) {
+      await prisma.benefitCatalogItem.update({ where: { id }, data });
+    }
+  }
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+}
+
 /**
  * Set who a benefit is available to (spec 021) — the FT / PT eligibility checkboxes in the unified
  * Benefits Catalogue. Works for both guaranteed benefits and flexible/medical catalog items. A

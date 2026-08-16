@@ -100,6 +100,19 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   6mo–2y tier; built now against the **placeholder** rate card with the operator's confirmed prorated premium figures
   a later non-blocking data swap. Realizes the approved "medical available at 3 months" mockup. Money-sensitive defaults
   (whole-month floor, ÷12, nearest-EGP rounding) recorded in the spec's Assumptions.
+- **2026-08-16 — Summer allowance becomes a pool-funded Travel allowance (built, spec `028`, migration `046`).**
+  The product owner first reported that the summer allowance appeared to draw from the pool when it
+  shouldn't (a display bug, fixed separately), then decided it *should* — rebadged as a year-round
+  **Travel allowance** inside the flexible basket. **Decision:** it keeps its band amounts and is paid
+  in full with no receipt, but now consumes the pool and prorates with the cycle. **Full- and
+  part-timers get the same figures** (reversing an earlier "PT is half of FT"): the pool ceiling
+  already differs by employment type, so a second set of amounts would add no expressiveness and one
+  more way to drift. The cost was named up front and accepted — a part-timer gives up a larger share
+  of a smaller pool for the same cash. Two findings shaped the migration: the **Jul–Sep window never
+  existed in code** (only in handbook text), so "year-round" was a copy change; and the Summer row
+  had to be **retired rather than deleted**, because claims cascade from it and deleting it would
+  erase every historical summer claim. Introduces a general **fixed allowance** shape on the
+  catalogue (four per-band amount columns) that any future entitlement can reuse.
 - **2026-08-16 — Claims pay down to what's left instead of being refused (built, migration `045`).**
   Reported by the product owner: an employee with a 30,000 pool (15,000 per-benefit cap) who had
   claimed 8,000 on an 80%-covered gym benefit could not claim a second 10,000 receipt at all — the

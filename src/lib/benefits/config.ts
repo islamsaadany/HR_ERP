@@ -34,6 +34,46 @@ export function amountForBand(
   }
 }
 
+/** The four per-tenure-band amount columns a fixed-allowance catalogue item carries. */
+export type BandAmounts = {
+  band6mo2y: number | null;
+  band2to4y: number | null;
+  band4to7y: number | null;
+  band7to10y: number | null;
+};
+
+/**
+ * A flexible benefit's fixed allowance for a tenure band, or null when it isn't one
+ * (spec 028 — travel allowance). Unlike `amountForBand`, this takes no employment type:
+ * full- and part-timers get the same amount, and their differing pool ceilings do the
+ * rest of the work.
+ */
+export function fixedAllowanceFor(band: TenureBand, row: BandAmounts): number | null {
+  switch (band) {
+    case "BAND_6MO_2Y":
+      return row.band6mo2y;
+    case "BAND_2_4Y":
+      return row.band2to4y;
+    case "BAND_4_7Y":
+      return row.band4to7y;
+    case "BAND_7_10Y":
+      return row.band7to10y;
+  }
+}
+
+/**
+ * True when a catalogue item is a fixed allowance (an entitlement requested in full) rather
+ * than a receipt-based, coverage-rate claim. Any band amount set makes it one.
+ */
+export function isFixedAllowance(row: BandAmounts): boolean {
+  return (
+    row.band6mo2y != null ||
+    row.band2to4y != null ||
+    row.band4to7y != null ||
+    row.band7to10y != null
+  );
+}
+
 /** Which eligibility flag applies to an employment type (spec 021). */
 export function eligibilityWhere(employmentType: EmploymentType) {
   return employmentType === "FULL_TIME"

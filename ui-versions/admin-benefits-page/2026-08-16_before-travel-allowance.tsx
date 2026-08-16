@@ -15,9 +15,8 @@ import {
 import {
   updatePoolCeilings,
   updateGuaranteedAmounts,
-  updateFlexAllowanceAmounts,
 } from "./config-actions";
-import { isSalaryDriven, isEligibleFor, isFixedAllowance } from "@/lib/benefits/config";
+import { isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
 import { PlanYearDialog } from "@/components/admin/PlanYearDialog";
 import { AdminBenefitsTabs } from "@/components/admin/AdminBenefitsTabs";
 import { EditableSection } from "@/components/admin/EditableSection";
@@ -175,91 +174,6 @@ export default async function AdminBenefitsPage({
       </ToastForm>
     );
   };
-
-  // Flexible fixed allowances (spec 028 — travel allowance): pool-funded entitlements paid at a
-  // flat per-band amount. ONE table, not one per employment type — full- and part-timers share the
-  // same figures, and their differing pool ceilings do the rest.
-  const allowanceItems = catalogItems.filter((c) => isFixedAllowance(c));
-  const FLEX_BAND_COLS = [
-    { col: "band6mo2y", band: "BAND_6MO_2Y" },
-    { col: "band2to4y", band: "BAND_2_4Y" },
-    { col: "band4to7y", band: "BAND_4_7Y" },
-    { col: "band7to10y", band: "BAND_7_10Y" },
-  ] as const;
-
-  const allowanceReadTable = (
-    <div className="mt-2 overflow-x-auto">
-      <table className="text-sm">
-        <thead>
-          <tr className="text-left text-xs uppercase tracking-wide text-muted">
-            <th className="py-2 pr-6 font-medium">Benefit</th>
-            {FLEX_BAND_COLS.map((c) => (
-              <th key={c.band} className="py-2 pr-4 font-medium">{TENURE_BAND_LABEL[c.band]}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {allowanceItems.length === 0 ? (
-            <tr><td colSpan={5} className="py-3 text-xs text-muted">No fixed allowances configured.</td></tr>
-          ) : allowanceItems.map((item) => (
-            <tr key={item.id} className="border-t border-line align-top">
-              <td className="py-2 pr-6 text-ink">{item.name}</td>
-              {FLEX_BAND_COLS.map((c) => (
-                <td key={c.band} className="py-2 pr-4 tabular-nums text-ink">
-                  {item[c.col] != null ? egp(item[c.col]!) : "—"}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-
-  const allowanceEditTable = (
-    <ToastForm action={updateFlexAllowanceAmounts} savedMessage="Allowance amounts saved" className="mt-3">
-      <div className="overflow-x-auto">
-        <table className="text-sm">
-          <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-muted">
-              <th className="py-2 pr-6 font-medium">Benefit</th>
-              {FLEX_BAND_COLS.map((c) => (
-                <th key={c.band} className="py-2 pr-4 font-medium">{TENURE_BAND_LABEL[c.band]}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {allowanceItems.length === 0 ? (
-              <tr><td colSpan={5} className="py-3 text-xs text-muted">No fixed allowances configured.</td></tr>
-            ) : allowanceItems.map((item) => (
-              <tr key={item.id} className="border-t border-line align-top">
-                <td className="py-2 pr-6 text-ink">{item.name}</td>
-                {FLEX_BAND_COLS.map((c) => {
-                  const v = item[c.col] ?? "";
-                  return (
-                    <td key={c.band} className="py-2 pr-4">
-                      <input
-                        key={`${item.id}_${c.col}-${v}`}
-                        type="number"
-                        name={`fa_${item.id}_${c.col}`}
-                        defaultValue={v}
-                        min={0}
-                        step={500}
-                        className="w-24 rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums focus:border-navy-500 focus:outline-none"
-                      />
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <button className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">
-        Save allowance amounts
-      </button>
-    </ToastForm>
-  );
 
   // Read-only guaranteed table.
   const guaranteedReadTable = (t: EmploymentType) => {
@@ -637,12 +551,6 @@ export default async function AdminBenefitsPage({
         description="Fixed entitlements by tenure band, per employment type — just the numbers. Who's eligible and how it's claimed is set on the Catalogue tab. Loans are salary-driven."
         readView={<>{guaranteedReadTable("FULL_TIME")}<div className="mt-4">{guaranteedReadTable("PART_TIME")}</div></>}
         editView={<>{guaranteedEditTable("FULL_TIME")}<div className="mt-6">{guaranteedEditTable("PART_TIME")}</div></>}
-      />
-      <EditableSection
-        title="Flexible fixed allowances"
-        description="Pool-funded entitlements paid at a flat amount for the employee's tenure band — requested in full, no receipt. One set of figures for full- and part-timers alike; their pool ceilings already differ. Amounts prorate with the plan-year cycle."
-        readView={allowanceReadTable}
-        editView={allowanceEditTable}
       />
       <EditableSection
         title="Medical rate card"

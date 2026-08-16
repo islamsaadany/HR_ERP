@@ -692,10 +692,31 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     saved. Verified with 19 rule/DB checks (the operator's own 30k/15k/8k/7k example) plus a real
     Chromium pass over the Benefits page; `045` applied twice from the file to prove idempotency.
 
+- **2026-08-16 — Summer allowance → Travel allowance, pool-funded (spec 028, migration 046, mockup-approved):**
+  - The guaranteed **Summer allowance** (own budget, outside the pool, notionally Jul–Sep) becomes a
+    year-round **Travel allowance** in the flexible basket's Lifestyle category: same band amounts,
+    paid 100% with **no receipt**, requested in one action, and **drawn from the pool**.
+  - Introduces a benefit shape the catalogue lacked: a **fixed allowance**. Four per-band amount
+    columns on `BenefitCatalogItem`; any one set makes the item an entitlement rather than a
+    coverage-rate claim. **One set of figures for both employment types** — the pool ceilings
+    already differ, and a second set would only be a chance for the two to drift apart.
+  - The seasonal Jul–Sep window was **never enforced in code** — it existed only as descriptive
+    text — so "make it year-round" was a copy change, not a rule change.
+  - Migration **copies the amounts off the existing Summer row** rather than hardcoding figures, and
+    **retires** that row via cleared eligibility flags rather than deleting it:
+    `BenefitClaim.guaranteedBenefitId` is `ON DELETE CASCADE`, so a delete would take every
+    historical summer claim with it.
+  - HR edits amounts at Admin → Benefits → **Amounts** → *Flexible fixed allowances*, in the same
+    table shape as the guaranteed amounts above it.
+  - Verified: 26 rule/DB checks with `046` applied twice from the file against a database seeded
+    with a configured Summer row **and** a historical claim (both survived); then a real Chromium
+    pass — request the allowance, pool 30,000 → 25,000, no price field, no proof upload, second
+    request refused, and HR's new Amounts section showing the copied figures.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-08-16 — added selected-employee password reset to the registry's Passwords menu.*
+*Last Updated: 2026-08-16 — travel allowance (spec 028); benefits claim clamp + medical gate; selected-employee password reset.*

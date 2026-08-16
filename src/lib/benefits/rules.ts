@@ -44,6 +44,13 @@ export type ProposedClaim = {
   name: string;
   fullCost: number; // exact receipt value (no rounding)
   coverageRate: number; // 1–100
+  /**
+   * A fixed per-band allowance (spec 028 — travel allowance), already prorated to the cycle.
+   * When set, this benefit is an ENTITLEMENT: there is no receipt and no coverage rate to
+   * apply — the employee requests what remains of the allowance and is paid it in full.
+   * `fullCost` is ignored. Null/undefined for every ordinary receipt-based benefit.
+   */
+  allocation?: number | null;
 };
 
 /** Which limit reduced the payout below the coverage-rate share, if any. */
@@ -95,20 +102,30 @@ export function poolUsed(ctx: AllowanceContext): number {
 /** Server-authoritative evaluation of one proposed flexible claim against the allowance rules. */
 export function evaluateClaim(ctx: AllowanceContext, claim: ProposedClaim): ClaimEvaluation {
   const cap = flexCap(ctx.ceiling);
-  const requested = coveredAmount(claim.fullCost, claim.coverageRate);
+  const isAllowance = claim.allocation != null;
+  // A fixed allowance is bounded by the allowance itself; the 50% cap still applies on top so
+  // the rule stays universal (it won't bind in practice — a band amount sits well below half a pool).
+  const benefitCeiling = isAllowance ? Math.min(claim.allocation!, cap) : cap;
   const benefitUsed = ctx.claimedByBenefit[claim.key] ?? 0;
-  const benefitRemaining = Math.max(0, cap - benefitUsed);
+  const benefitRemaining = Math.max(0, benefitCeiling - benefitUsed);
   const poolRemaining = Math.max(0, ctx.ceiling - poolUsed(ctx));
+  // An allowance is requested in full — what's left of it IS the ask. A receipt-based claim
+  // asks for its coverage share.
+  const requested = isAllowance ? benefitRemaining : coveredAmount(claim.fullCost, claim.coverageRate);
   const { covered, clampedBy } = clampCovered(requested, benefitRemaining, poolRemaining);
 
   const errors: string[] = [];
-  if (!Number.isFinite(claim.fullCost) || claim.fullCost <= 0) {
+  if (!isAllowance && (!Number.isFinite(claim.fullCost) || claim.fullCost <= 0)) {
     errors.push("Enter the amount you paid (the full price on your receipt).");
   }
   // Exceeding a limit is no longer a failure — it's paid down to what's left. Only a limit
   // with NOTHING left is a refusal, because there is no amount to reimburse.
   if (benefitRemaining <= 0) {
-    errors.push(`${claim.name}: you've used the full 50% cap (${formatEGP(cap)}) on this benefit.`);
+    errors.push(
+      isAllowance
+        ? `${claim.name}: you've already claimed your full allowance for this cycle.`
+        : `${claim.name}: you've used the full 50% cap (${formatEGP(cap)}) on this benefit.`
+    );
   } else if (poolRemaining <= 0) {
     errors.push("Your pool is fully used — contact HR.");
   }

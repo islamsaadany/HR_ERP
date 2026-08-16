@@ -5,7 +5,15 @@ import { formatEGP } from "@/lib/labels";
 import { put } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
-import { getActivePlanYear, amountForBand, getMedicalCommitment, planYearWindow, isSalaryDriven } from "@/lib/benefits/config";
+import {
+  getActivePlanYear,
+  amountForBand,
+  getMedicalCommitment,
+  planYearWindow,
+  isSalaryDriven,
+  fixedAllowanceFor,
+  isFixedAllowance,
+} from "@/lib/benefits/config";
 import { tracker } from "@/lib/benefits/claims";
 import { evaluateClaim, type AllowanceContext } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate, poolCycleFraction } from "@/lib/benefits/proration";
@@ -170,13 +178,20 @@ async function createClaimImpl(formData: FormData): Promise<void> {
       employmentType: user.employmentType,
     };
 
-    // The employee enters the FULL price they paid (matches proof); the server computes covered.
-    if (!Number.isFinite(amount) || amount <= 0) fail("Enter the full price you paid.");
+    // A fixed allowance (travel) is an entitlement, not a receipt: the employee requests it and
+    // is paid the band amount for their tenure, prorated to the cycle like the pool itself.
+    // Nothing is entered and nothing is proven, so the amount field is ignored entirely.
+    const allowance = isFixedAllowance(item) ? fixedAllowanceFor(tenureBand, item) : null;
+    if (allowance == null) {
+      // The employee enters the FULL price they paid (matches proof); the server computes covered.
+      if (!Number.isFinite(amount) || amount <= 0) fail("Enter the full price you paid.");
+    }
     const result = evaluateClaim(ctx, {
       key: item.key,
       name: item.name,
       fullCost: amount,
       coverageRate: item.coverageRate,
+      allocation: allowance == null ? null : prorate(allowance, poolFraction),
     });
     if (result.errors.length > 0) fail(result.errors[0]);
     // `covered` is already clamped to what's left on the benefit / in the pool, so a receipt
@@ -184,7 +199,8 @@ async function createClaimImpl(formData: FormData): Promise<void> {
     // the coverage rate). Guard against a zero payout — nothing to reimburse is not a claim.
     if (result.covered <= 0) fail("There's nothing left to claim on this benefit.");
     claimAmount = result.covered;
-    receiptCost = amount;
+    // No receipt exists for an allowance, so there is no receipt value to record.
+    receiptCost = allowance == null ? amount : null;
     link.catalogItemId = item.id;
   } else {
     fail("Unknown benefit type.");
