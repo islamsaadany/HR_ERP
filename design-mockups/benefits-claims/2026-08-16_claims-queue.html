@@ -1,0 +1,444 @@
+<title>Benefits Claims Queue</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-300:#7d97ba;
+    --navy-400:#4f6d97; --navy-500:#2f4d78; --navy-600:#1f3a63; --navy-700:#163055;
+    --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-50:#fbf7ea; --gold-100:#f6ecca; --gold-200:#ecd894; --gold-300:#e0c05a;
+    --gold-500:#c9a227; --gold-600:#a8821e; --gold-700:#85641b; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-50:#fef2f2; --red-200:#fecaca; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-200:#bbf7d0; --green-700:#15803d;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1180px; margin:0 auto; padding:32px 24px 80px; display:flex; flex-direction:column; gap:44px; }
+
+  .doc-head { border-bottom:1px solid var(--line); padding-bottom:20px; }
+  .doc-head h1 { font-family:var(--serif); font-size:30px; margin:6px 0 0; font-weight:600; text-wrap:balance; }
+  .doc-head p { color:var(--muted); margin:8px 0 0; max-width:70ch; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+
+  .block { display:flex; flex-direction:column; gap:14px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .block-head .n { font-family:var(--serif); font-size:13px; font-weight:700; color:var(--navy-800); background:var(--gold-100); border:1px solid var(--gold-300); width:24px; height:24px; border-radius:999px; display:grid; place-items:center; flex:none; }
+  .block-head h2 { font-family:var(--serif); font-size:20px; margin:0; font-weight:600; }
+  .block-head .sub { color:var(--muted); font-size:13px; }
+  .stage { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px; }
+  .note { font-size:13px; color:var(--muted); margin:0; max-width:80ch; }
+  .note strong { color:var(--ink); font-weight:600; }
+  .note-list { margin:0; padding-left:18px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:6px; max-width:82ch; }
+  .note-list strong { color:var(--ink); font-weight:600; }
+
+  /* ── Rail: the workflow, left to right ──────────────────────── */
+  .rail { display:grid; gap:12px; grid-template-columns:repeat(2,1fr); }
+  @media (min-width:860px) { .rail { grid-template-columns:repeat(4,1fr); } }
+  .tile { border:1px solid var(--line); background:var(--surface); border-radius:12px; padding:13px 15px; position:relative; }
+  .tile .k { font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+  .tile .v { font-family:var(--serif); font-size:25px; line-height:1.15; margin-top:5px; color:var(--navy-800); font-variant-numeric:tabular-nums; }
+  .tile .s { font-size:12px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums; }
+  .tile.flag { border-color:var(--gold-300); background:var(--gold-50); }
+  .tile.flag .k, .tile.flag .s { color:var(--gold-800); }
+  .tile.flag .v { color:var(--gold-800); }
+  .tile.lead { background:var(--navy-900); border-color:var(--navy-900); }
+  .tile.lead .k { color:var(--gold-300); }
+  .tile.lead .v { color:#fff; }
+  .tile.lead .s { color:var(--navy-200); }
+
+  .chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .fchip { border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:5px 13px; font-size:12.5px; font-weight:600; color:var(--muted); cursor:default; font-family:inherit; }
+  .fchip .c { font-variant-numeric:tabular-nums; opacity:.75; margin-left:5px; }
+  .fchip[aria-pressed="true"] { background:var(--navy-800); border-color:var(--navy-800); color:#fff; }
+  .search { border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:6px 12px; font-size:13px; color:var(--muted); min-width:210px; }
+
+  /* ── Tables ─────────────────────────────────────────────────── */
+  .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th, td { text-align:left; padding:9px 13px; border-top:1px solid var(--line); white-space:nowrap; vertical-align:middle; }
+  thead th { border-top:0; background:var(--navy-800); color:#fff; font-size:11px; letter-spacing:.05em; text-transform:uppercase; font-weight:700; }
+  thead th.sortable::after { content:"↕"; opacity:.45; margin-left:6px; font-size:10px; }
+  thead th.sorted::after { content:"↓"; opacity:1; color:var(--gold-300); }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  tbody tr:hover { background:var(--navy-50); }
+  tfoot td { border-top:2px solid var(--line); background:var(--paper); font-weight:700; font-variant-numeric:tabular-nums; }
+  .who { font-weight:600; color:var(--ink); }
+  .sub2 { display:block; font-size:11.5px; color:var(--muted); font-weight:400; margin-top:1px; }
+  .muted-cell { color:var(--muted); }
+
+  .box { width:15px; height:15px; border-radius:4px; border:1.5px solid var(--navy-400); display:inline-grid; place-items:center; font-size:10px; color:#fff; vertical-align:-2px; }
+  .box.on { background:var(--navy-700); border-color:var(--navy-700); }
+
+  .chip { display:inline-block; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .chip.sub { background:var(--gold-100); color:var(--gold-800); }
+  .chip.app { background:var(--navy-100); color:var(--navy-800); }
+  .chip.rei { background:var(--green-50); color:var(--green-700); border:1px solid var(--green-200); }
+  .chip.rej { background:var(--red-50); color:var(--red-700); border:1px solid var(--red-200); }
+  .chip.cap { background:var(--gold-50); color:var(--gold-800); border:1px solid var(--gold-300); }
+  .chip.cat { background:var(--navy-50); color:var(--navy-700); font-weight:600; }
+
+  .proof { color:var(--navy-600); text-decoration:underline; text-underline-offset:2px; font-size:12.5px; }
+  .noproof { color:var(--red-700); font-size:12.5px; font-weight:600; }
+
+  .btn { border-radius:8px; padding:5px 12px; font-size:12.5px; font-weight:700; font-family:inherit; border:1px solid var(--line); background:var(--surface); color:var(--navy-700); cursor:default; }
+  .btn.primary { background:var(--navy-800); border-color:var(--navy-800); color:#fff; }
+  .btn.gold { background:var(--gold-500); border-color:var(--gold-500); color:var(--navy-900); }
+  .btn.rej { color:var(--red-700); }
+  .btn.sm { padding:4px 10px; font-size:12px; }
+  .bulkbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--navy-50); border:1px solid var(--navy-100); border-radius:10px; padding:9px 13px; font-size:13px; color:var(--navy-800); font-weight:600; }
+  .bulkbar .amt { font-variant-numeric:tabular-nums; }
+  .bulkbar .sp { margin-left:auto; display:flex; gap:8px; }
+
+  /* pool meter inside a row */
+  .meter { display:flex; align-items:center; gap:8px; }
+  .meter .bar { width:74px; height:7px; border-radius:999px; background:var(--navy-100); overflow:hidden; flex:none; }
+  .meter .bar > i { display:block; height:100%; background:var(--navy-600); border-radius:999px; }
+  .meter .bar.warn > i { background:var(--gold-500); }
+  .meter .bar.full > i { background:var(--red-600); }
+  .meter .t { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
+
+  tr.open td { background:var(--navy-50); }
+  tr.detail > td { background:var(--paper); padding:0 13px 14px; border-top:0; white-space:normal; }
+  .detailbox { border:1px solid var(--line); border-radius:10px; background:var(--surface); padding:14px 15px; margin-top:2px; display:grid; gap:14px; grid-template-columns:1fr; }
+  @media (min-width:800px) { .detailbox { grid-template-columns:1.25fr .75fr; } }
+  .detail-title { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:0 0 7px; }
+  .quote { font-size:13.5px; color:var(--ink); margin:0 0 10px; }
+  .working { font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .working b { color:var(--ink); font-weight:600; }
+  .working .capped { color:var(--gold-800); font-weight:700; }
+  .trail { border-left:2px solid var(--line); padding-left:12px; display:flex; flex-direction:column; gap:9px; }
+  .trail .step { font-size:12.5px; color:var(--muted); position:relative; }
+  .trail .step b { color:var(--ink); font-weight:600; display:block; }
+  .trail .step::before { content:""; position:absolute; left:-17px; top:5px; width:7px; height:7px; border-radius:999px; background:var(--navy-300); }
+  .trail .step.now::before { background:var(--gold-500); }
+  .rejectrow { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:11px; border-top:1px dashed var(--line); padding-top:11px; }
+  .rejectrow input { border:1px solid var(--line); border-radius:8px; padding:6px 11px; font-size:12.5px; min-width:230px; background:var(--surface); font-family:inherit; }
+
+  .cols { display:grid; gap:16px; grid-template-columns:1fr; }
+  @media (min-width:820px) { .cols { grid-template-columns:1fr 1fr; } }
+  .compare { border:1px solid var(--line); border-radius:12px; padding:15px; background:var(--surface); }
+  .compare h4 { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin:0 0 9px; color:var(--muted); }
+  .compare.now h4 { color:var(--red-700); }
+  .compare.next h4 { color:var(--green-700); }
+  .compare ul { margin:0; padding-left:17px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:6px; }
+  .compare ul b { color:var(--ink); font-weight:600; }
+
+  .footnote { border-top:1px solid var(--line); padding-top:18px; font-size:12.5px; color:var(--muted); max-width:82ch; }
+  .footnote b { color:var(--ink); }
+  :focus-visible { outline:2px solid var(--gold-300); outline-offset:2px; }
+</style>
+
+<div class="wrap">
+  <header class="doc-head">
+    <p class="eyebrow">Design mockup · Benefits · Admin</p>
+    <h1>Claims queue</h1>
+    <p>
+      Submissions &amp; Claims is currently one unbroken list of cards holding every claim in the cycle —
+      the four that need a decision sit above two hundred that don't, in the same shape and weight. This
+      splits the surface in two: a <strong>review queue</strong> that only holds decisions, and a
+      <strong>ledger</strong> that holds everything else. Same statuses, same server rules, same wording
+      for the 50% cap.
+    </p>
+  </header>
+
+  <!-- 1 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">1</span>
+      <h2>The rail</h2>
+      <span class="sub">the spec-020 workflow, left to right</span>
+    </div>
+    <div class="stage">
+      <div class="rail">
+        <div class="tile flag">
+          <div class="k">To review</div>
+          <div class="v">4</div>
+          <div class="s">EGP 21,400 requested</div>
+        </div>
+        <div class="tile">
+          <div class="k">With Finance</div>
+          <div class="v">11</div>
+          <div class="s">EGP 46,300 approved, unpaid</div>
+        </div>
+        <div class="tile">
+          <div class="k">Reimbursed</div>
+          <div class="v">63</div>
+          <div class="s">EGP 128,940 paid</div>
+        </div>
+        <div class="tile lead">
+          <div class="k">Committed against pools</div>
+          <div class="v">196,640</div>
+          <div class="s">EGP · everything not rejected</div>
+        </div>
+      </div>
+      <p class="note" style="margin-top:14px;">
+        Counts first, money last. The final tile is the number that matters at cycle close and cannot be
+        read anywhere today: <strong>submitted + approved + reimbursed</strong> — every claim that is
+        holding allowance. Rejected claims release theirs, so they are excluded here and counted in the
+        ledger instead.
+      </p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">2</span>
+      <h2>Review queue</h2>
+      <span class="sub">only what needs a decision · nothing else lives here</span>
+    </div>
+    <div class="stage">
+      <div class="bulkbar" style="margin-bottom:13px;">
+        <span><span class="box on">✓</span> 2 selected · <span class="amt">EGP 9,700</span></span>
+        <span class="sp">
+          <button class="btn gold sm">Approve selected</button>
+          <button class="btn sm">Clear</button>
+        </span>
+      </div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:34px;"><span class="box"></span></th>
+              <th class="sortable sorted">Waiting</th>
+              <th>Employee</th>
+              <th>Benefit</th>
+              <th class="num">Receipt</th>
+              <th class="num sortable">Claim</th>
+              <th>Their pool after this</th>
+              <th>Proof</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="box on">✓</span></td>
+              <td class="muted-cell">6 days</td>
+              <td class="who">Rana Reda<span class="sub2">Full-time · 2–4y</span></td>
+              <td>Annual health check-up <span class="chip cat">Health &amp; protection</span></td>
+              <td class="num muted-cell">4,000</td>
+              <td class="num">3,200</td>
+              <td>
+                <span class="meter"><span class="bar"><i style="width:46%"></i></span><span class="t">10,800 left of 20,000</span></span>
+              </td>
+              <td><a class="proof" href="#">receipt.pdf</a></td>
+              <td class="num"><button class="btn primary sm">Approve</button> <button class="btn rej sm">Reject</button></td>
+            </tr>
+
+            <!-- opened row -->
+            <tr class="open">
+              <td><span class="box on">✓</span></td>
+              <td class="muted-cell">4 days</td>
+              <td class="who">Aley eldeen Mahmoud<span class="sub2">Full-time · 4–7y</span></td>
+              <td>Coaching / therapy <span class="chip cat">Wellbeing</span></td>
+              <td class="num muted-cell">15,000</td>
+              <td class="num">6,500 <span class="chip cap">Capped</span></td>
+              <td>
+                <span class="meter"><span class="bar warn"><i style="width:86%"></i></span><span class="t">3,500 left of 25,000</span></span>
+              </td>
+              <td><a class="proof" href="#">invoice-mar.pdf</a></td>
+              <td class="num"><button class="btn primary sm">Approve</button> <button class="btn rej sm">Reject</button></td>
+            </tr>
+            <tr class="detail">
+              <td colspan="9">
+                <div class="detailbox">
+                  <div>
+                    <p class="detail-title">What he wrote</p>
+                    <p class="quote">“Six sessions with a licensed therapist, Jan–Mar. Invoice attached.”</p>
+                    <p class="detail-title">How the amount was worked out</p>
+                    <p class="working">
+                      Receipt <b>EGP 15,000</b> · covers 50% = <b>7,500</b> ·
+                      <span class="capped">capped to 6,500 by the 50% benefit cap</span> ·
+                      leaves <b>EGP 3,500</b> of his 25,000 pool.
+                    </p>
+                    <div class="rejectrow">
+                      <button class="btn primary sm">Approve</button>
+                      <input placeholder="Reason (optional) — sent to him" />
+                      <button class="btn rej sm">Reject</button>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="detail-title">Trail</p>
+                    <div class="trail">
+                      <div class="step"><b>Submitted</b>12 Aug 2026 · by Aley eldeen</div>
+                      <div class="step now"><b>Waiting for HR</b>4 days</div>
+                      <div class="step" style="opacity:.55;"><b>Then Finance</b>reimbursement</div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td><span class="box"></span></td>
+              <td class="muted-cell">2 days</td>
+              <td class="who">Nour Kamel<span class="sub2">Full-time · 7–10y</span></td>
+              <td>Schooling support <span class="chip cat">Life &amp; family</span></td>
+              <td class="num muted-cell">30,000</td>
+              <td class="num">9,000</td>
+              <td>
+                <span class="meter"><span class="bar full"><i style="width:100%"></i></span><span class="t">0 left of 25,000</span></span>
+              </td>
+              <td><a class="proof" href="#">fees-term1.pdf</a></td>
+              <td class="num"><button class="btn primary sm">Approve</button> <button class="btn rej sm">Reject</button></td>
+            </tr>
+            <tr>
+              <td><span class="box"></span></td>
+              <td class="muted-cell">1 day</td>
+              <td class="who">Hussein Abdullah<span class="sub2">Part-time · 2–4y</span></td>
+              <td>Gym membership <span class="chip cat">Wellbeing</span></td>
+              <td class="num muted-cell">5,600</td>
+              <td class="num">2,700</td>
+              <td>
+                <span class="meter"><span class="bar"><i style="width:31%"></i></span><span class="t">6,900 left of 10,000</span></span>
+              </td>
+              <td><span class="noproof">Missing</span></td>
+              <td class="num"><button class="btn primary sm">Approve</button> <button class="btn rej sm">Reject</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ul class="note-list" style="margin-top:14px;">
+        <li><strong>"Their pool after this" is the missing half of the decision.</strong> Approving is a spend against a ceiling, and today the reviewer cannot see the ceiling — Nour's claim would exhaust her pool, and nothing on the current screen says so.</li>
+        <li><strong>Waiting time, sorted oldest-first</strong>, replaces a submission date. It answers the only scheduling question HR has.</li>
+        <li><strong>The 50%-cap working moves into the opened row</strong> — same sentence, same numbers, shown when someone is actually deciding rather than under every card in the list.</li>
+        <li><strong>Approve stays one click</strong>; reject keeps its optional reason but as a permanent inline field, not a <em>details</em> toggle that has to be opened first.</li>
+        <li><strong>Bulk approve</strong> for the routine ones. Every claim still runs the same server-side rules — the bar only saves the clicks, never the checks.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">3</span>
+      <h2>Ledger</h2>
+      <span class="sub">everything already decided · searchable, filterable, totalled</span>
+    </div>
+    <div class="stage">
+      <div class="chips" style="margin-bottom:13px;">
+        <button class="fchip" aria-pressed="true">All decided<span class="c">77</span></button>
+        <button class="fchip">With Finance<span class="c">11</span></button>
+        <button class="fchip">Reimbursed<span class="c">63</span></button>
+        <button class="fchip">Rejected<span class="c">3</span></button>
+        <button class="fchip">Recorded by HR<span class="c">5</span></button>
+        <span class="search">Search employee or benefit…</span>
+      </div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable sorted">Decided</th>
+              <th>Employee</th>
+              <th>Benefit</th>
+              <th class="num sortable">Claim</th>
+              <th>Status</th>
+              <th>By</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="muted-cell">14 Aug</td>
+              <td class="who">Mariam Fouad</td>
+              <td>Sports expenses <span class="chip cat">Wellbeing</span></td>
+              <td class="num">3,400</td>
+              <td><span class="chip app">Approved</span></td>
+              <td class="muted-cell">Islam S.</td>
+              <td class="num"><button class="btn sm">Open</button></td>
+            </tr>
+            <tr>
+              <td class="muted-cell">11 Aug</td>
+              <td class="who">Ahmed Galal</td>
+              <td>Annual health check-up <span class="chip cat">Health &amp; protection</span></td>
+              <td class="num">2,800</td>
+              <td><span class="chip rei">Reimbursed</span></td>
+              <td class="muted-cell">Finance</td>
+              <td class="num"><button class="btn sm">Open</button></td>
+            </tr>
+            <tr>
+              <td class="muted-cell">9 Aug</td>
+              <td class="who">Karim Adel</td>
+              <td>Gym membership <span class="chip cat">Wellbeing</span></td>
+              <td class="num">2,100</td>
+              <td><span class="chip rej">Rejected</span><span class="sub2">No proof after two asks</span></td>
+              <td class="muted-cell">Islam S.</td>
+              <td class="num"><button class="btn sm">Open</button></td>
+            </tr>
+            <tr>
+              <td class="muted-cell">7 Aug</td>
+              <td class="who">Salma Rashad</td>
+              <td>Professional development <span class="chip cat">Personal growth</span></td>
+              <td class="num">12,000</td>
+              <td><span class="chip rei">Reimbursed</span></td>
+              <td class="muted-cell">Finance</td>
+              <td class="num"><button class="btn sm">Open</button></td>
+            </tr>
+            <tr>
+              <td class="muted-cell">5 Aug</td>
+              <td class="who">Dina Sherif</td>
+              <td>Marriage grant <span class="chip cat">Life &amp; family</span></td>
+              <td class="num">8,500</td>
+              <td><span class="chip rei">Reimbursed</span><span class="sub2">Recorded by HR · paid outside the app</span></td>
+              <td class="muted-cell">Islam S.</td>
+              <td class="num"><button class="btn sm">Open</button></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3">77 claims · filtered total</td>
+              <td class="num">175,240</td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <p class="note" style="margin-top:13px;">
+        The footer total is the point of the ledger: filter to <strong>Reimbursed</strong> and it answers
+        "what has this cycle actually paid out", which today can only be produced by exporting to a
+        spreadsheet. <strong>Record entry</strong> keeps its place as a secondary action, and back-filled
+        claims stay tagged so the ledger never implies an employee submitted something they didn't.
+      </p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">4</span>
+      <h2>What changes, and what doesn't</h2>
+    </div>
+    <div class="cols">
+      <div class="compare now">
+        <h4>Leaves the screen</h4>
+        <ul>
+          <li>One list holding both the queue and the history — <b>decided claims move to the ledger tab</b>.</li>
+          <li>The card layout: amounts that can't be compared down a column, and a status chip that floats to wherever the row wraps.</li>
+          <li><b>Reject</b> hidden behind a <em>details</em> toggle.</li>
+          <li>The cap working printed under every card — it moves into the opened row.</li>
+        </ul>
+      </div>
+      <div class="compare next">
+        <h4>Stays exactly as it is</h4>
+        <ul>
+          <li>Four statuses and the spec-020 flow: submit → HR → Finance → employee. No new state.</li>
+          <li>Every server rule: pool ceiling, 50% cap, eligibility — all still evaluated at decision time.</li>
+          <li>The cap sentence word for word: "covers 50% = 7,500 · capped to 6,500 by the 50% benefit cap".</li>
+          <li>Approve, Reject-with-reason, Record entry, and the proof link.</li>
+          <li>Navy/gold, serif headings, the registry's frozen navy table header.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <p class="footnote">
+    Mockup only — no components changed. Two things here need data the page doesn't load yet: the
+    <b>pool-after-this-claim</b> meter (needs each claimant's ceiling and their claims to date) and the
+    <b>Trail</b> panel (needs the decision timestamps and who decided). Both already exist in the schema;
+    neither is queried by this screen today.
+  </p>
+</div>

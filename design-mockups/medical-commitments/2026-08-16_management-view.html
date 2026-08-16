@@ -33,7 +33,7 @@
 
   /* ── Summary rail ───────────────────────────────────────────── */
   .rail { display:grid; gap:12px; grid-template-columns:repeat(2,1fr); }
-  @media (min-width:860px) { .rail { grid-template-columns:repeat(5,1fr); } }
+  @media (min-width:860px) { .rail { grid-template-columns:repeat(4,1fr); } }
   .tile { border:1px solid var(--line); background:var(--surface); border-radius:12px; padding:13px 15px; }
   .tile .k { font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
   .tile .v { font-family:var(--serif); font-size:25px; line-height:1.15; margin-top:5px; color:var(--navy-800); font-variant-numeric:tabular-nums; }
@@ -157,35 +157,32 @@
     </div>
     <div class="stage">
       <div class="rail">
-        <div class="tile lead">
-          <div class="k">Committed premium</div>
-          <div class="v">312,480</div>
-          <div class="s">24 of 31 eligible</div>
+        <div class="tile">
+          <div class="k">Eligible</div>
+          <div class="v">31</div>
+          <div class="s">active employees this cycle</div>
         </div>
         <div class="tile">
-          <div class="k">From the 2026 pool</div>
-          <div class="v">170,220</div>
-          <div class="s">months inside this cycle</div>
-        </div>
-        <div class="tile">
-          <div class="k">Carries to 2027</div>
-          <div class="v">142,260</div>
-          <div class="s">charged when you open it</div>
-        </div>
-        <div class="tile">
-          <div class="k">Not committed</div>
-          <div class="v">7</div>
-          <div class="s">2 blocked on a missing DOB</div>
+          <div class="k">Committed</div>
+          <div class="v">24</div>
+          <div class="s">7 still to commit</div>
         </div>
         <div class="tile flag">
           <div class="k">Needs attention</div>
           <div class="v">3</div>
           <div class="s">over-charged · cover ended</div>
         </div>
+        <div class="tile lead">
+          <div class="k">Committed premium</div>
+          <div class="v">312,480</div>
+          <div class="s">EGP · everyone committed so far</div>
+        </div>
       </div>
       <p class="note" style="margin-top:14px;">
-        Every tile is also a filter. <strong>Carries to 2027</strong> is the number HR is asked for at
-        budget time and today has to add up by hand, one row at a time.
+        Counts first, money last — the rail reads left to right as "who is covered, what needs doing,
+        what it costs". Every tile is also a filter. The per-cycle split stays where it belongs: as the
+        <strong>From 2026 pool</strong> and <strong>Carries over</strong> columns in the list below, which
+        is also where it can be sorted and totalled.
       </p>
     </div>
   </section>
