@@ -713,6 +713,26 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     pass — request the allowance, pool 30,000 → 25,000, no price field, no proof upload, second
     request refused, and HR's new Amounts section showing the copied figures.
 
+- **2026-08-16 — Spec 027 MVP built: medical policy year with per-cycle charging (migration 047):**
+  - The insurance term (1 Jun – 31 May) no longer shares the benefits cycle's window. A premium is
+    committed once for the whole term but **charged to each cycle by month overlap** — 7/12 to the
+    year it starts in, 5/12 carried to the next, applied automatically when that cycle opens.
+  - **The 2026 transition year is the money**: an employee with a 40,000 premium keeps **21,667** of
+    flexible budget instead of 5,000. From 2027 the model **settles** — each calendar pool carries 5
+    months of the expiring policy plus 7 of the new, exactly twelve months — which is the check that
+    it is right rather than merely different.
+  - A leaver's carried charge is **cancelled, not owed**: the advance premium comes back from the
+    insurer. Recording it as outstanding would have overstated liabilities on every leaver.
+  - **A money bug avoided while fixing an arithmetic one**: `remainingWholeMonths` capped at 12 via a
+    loop bound, and `poolCycleFraction` silently depended on that. Uncapping it — the obvious fix for
+    a long term — would have made a 13-month cycle yield 13/12 and hand everyone 108% of their
+    ceiling. Policy terms get their own uncapped helper; the pool fraction now clamps explicitly.
+  - Verified: 40 pure-function checks, 18 database checks (split, cycle-open, leaver cancellation,
+    steady state, no-policy-year fallback), migration `047` applied twice from the file against a
+    real commitment with its premium unchanged, and a Chromium pass on the pool card. tsc + build
+    green; UI snapshot saved; mockup approved before building.
+  - **Remaining (US2)**: HR's policy-term configuration screen and the per-cycle audit table.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.

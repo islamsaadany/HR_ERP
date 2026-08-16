@@ -140,16 +140,34 @@ export function medicalPolicyWindow(
 }
 
 /**
- * What medical costs THIS employee's pool in THIS benefits cycle (spec 027) — the sum of their
- * applied charges, not the full committed premium. A scheduled charge for a future cycle and a
+ * What a commitment costs THIS employee's pool in THIS benefits cycle (spec 027) — the sum of its
+ * APPLIED charges, not the full committed premium. A charge scheduled for a future cycle and a
  * cancelled one both contribute nothing.
+ *
+ * A commitment with NO charges at all falls back to its full premium: that is a commitment made
+ * before this feature, or made while no policy term was configured. Returning 0 for those would
+ * silently hand every such employee their whole pool back — the pool must never under-report what
+ * has been committed.
  */
-export async function getMedicalCycleCharge(userId: string, planYearId: string): Promise<number> {
-  const rows = await prisma.medicalCycleCharge.findMany({
-    where: { planYearId, status: "APPLIED", commitment: { userId } },
-    select: { amount: true },
-  });
-  return rows.reduce((sum, r) => sum + r.amount, 0);
+export function medicalCycleCharge(
+  commitment: { premium: number; cycleCharges: { planYearId: string; amount: number; status: string }[] } | null,
+  planYearId: string
+): number {
+  if (!commitment) return 0;
+  if (commitment.cycleCharges.length === 0) return commitment.premium;
+  return commitment.cycleCharges
+    .filter((c) => c.planYearId === planYearId && c.status === "APPLIED")
+    .reduce((sum, c) => sum + c.amount, 0);
+}
+
+/** The part of a commitment's premium charged to LATER cycles — drives the pool card's carry note. */
+export function medicalCarriedForward(
+  commitment: { cycleCharges: { amount: number; status: string }[] } | null
+): number {
+  if (!commitment) return 0;
+  return commitment.cycleCharges
+    .filter((c) => c.status === "SCHEDULED")
+    .reduce((sum, c) => sum + c.amount, 0);
 }
 
 export async function getActivePlanYear() {
@@ -240,7 +258,7 @@ export async function getMedicalCommitment(userId: string, planYearId: string) {
       userId,
       OR: [{ cycleCharges: { some: { planYearId } } }, { planYearId }],
     },
-    include: { coveredPeople: true },
+    include: { coveredPeople: true, cycleCharges: true },
     orderBy: { committedAt: "desc" },
   });
 }

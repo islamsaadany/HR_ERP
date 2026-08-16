@@ -13,6 +13,7 @@ import {
   isSalaryDriven,
   fixedAllowanceFor,
   isFixedAllowance,
+  medicalCycleCharge,
 } from "@/lib/benefits/config";
 import { tracker } from "@/lib/benefits/claims";
 import { evaluateClaim, type AllowanceContext } from "@/lib/benefits/rules";
@@ -173,7 +174,8 @@ async function createClaimImpl(formData: FormData): Promise<void> {
     const ctx: AllowanceContext = {
       // Prorated to the plan-year cycle length (spec 019); full ceiling for a full-year cycle.
       ceiling: prorate(ceilingRow.amount, poolFraction),
-      medicalPremium: commitment?.premium ?? 0,
+      // This cycle's medical charge, matching what the pool card shows (spec 027).
+      medicalPremium: medicalCycleCharge(commitment, planYear.id),
       claimedByBenefit,
       employmentType: user.employmentType,
     };

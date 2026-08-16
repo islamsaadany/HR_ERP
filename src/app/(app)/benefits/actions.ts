@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { formatEGP } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
-import { getActivePlanYear, getMedicalRateBands, planYearWindow, poolCeilingFor, medicalScopeFor } from "@/lib/benefits/config";
+import { getActivePlanYear, getActivePolicyYear, getMedicalRateBands, medicalPolicyWindow, planYearWindow, poolCeilingFor, medicalScopeFor } from "@/lib/benefits/config";
 import { classifyEligibility, prorate } from "@/lib/benefits/proration";
+import { splitPremium } from "@/lib/benefits/policy-year";
 import { sumMedicalPremium, proratedPremiumEGP, type PricedPerson } from "@/lib/benefits/rates";
 import { deriveTenureBand } from "@/lib/tenure";
 
@@ -76,11 +77,15 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
   }
 
   // Medical unlocks at 3 months of service (spec 019) — before the 6-month basket — and is
-  // prorated for the remaining whole months of the plan year from that eligibility date.
+  // prorated for the remaining whole months of the POLICY TERM from that eligibility date
+  // (spec 027). The term is what the premium buys, so it is what a mid-term joiner is prorated
+  // against; falls back to the plan-year window when HR hasn't configured a term.
+  const policyYear = await getActivePolicyYear();
+  const policyWindow = medicalPolicyWindow(policyYear, planYear);
   const medicalEligibility = classifyEligibility(
     user.startDate,
     MEDICAL_THRESHOLD_MONTHS,
-    planYearWindow(planYear)
+    policyWindow
   );
   if (medicalEligibility.status === "NOT_YET") {
     return { ok: false, errors: ["Medical insurance becomes available after 3 months of service."], warnings: [] };
@@ -135,12 +140,55 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
     })),
   ];
 
+  // Split the premium across the benefits cycles the policy term overlaps (spec 027): this
+  // cycle's pool absorbs only its months, the rest is charged when the next cycle opens. With no
+  // policy term configured the window IS the plan year, so this yields one charge for the whole
+  // premium — today's behaviour, through the same code path rather than a special case.
+  const cycles = policyWindow
+    ? await prisma.planYear.findMany({
+        where: { startDate: { not: null }, endDate: { not: null } },
+        orderBy: { startDate: "asc" },
+        select: { id: true, startDate: true, endDate: true },
+      })
+    : [];
+  const dated = cycles
+    .filter((c): c is { id: string; startDate: Date; endDate: Date } => !!c.startDate && !!c.endDate)
+    .map((c) => ({ id: c.id, start: c.startDate, end: c.endDate }));
+  const split = policyWindow ? splitPremium(premium, policyWindow, dated) : null;
+
+  // Fall back to a single charge on the active cycle when there is no window to split against —
+  // the money must land somewhere, and the cycle being committed in is the only defensible place.
+  const shares =
+    split && split.shares.length > 0
+      ? split.shares.map((sh) => ({
+          planYearId: sh.cycle.id,
+          amount: sh.amount,
+          overlapMonths: sh.overlapMonths,
+        }))
+      : [{ planYearId: planYear.id, amount: premium, overlapMonths: 0 }];
+
   await prisma.medicalCommitment.create({
     data: {
       userId: me.id,
       planYearId: planYear.id,
+      policyYearId: policyYear?.id ?? null,
       premium,
       coveredPeople: { create: coveredPeople },
+      ...(policyYear
+        ? {
+            cycleCharges: {
+              create: shares.map((sh) => ({
+                planYearId: sh.planYearId,
+                policyYearId: policyYear.id,
+                amount: sh.amount,
+                overlapMonths: sh.overlapMonths,
+                // Only the cycle being committed in draws now; later cycles wait for their open.
+                status: sh.planYearId === planYear.id ? ("APPLIED" as const) : ("SCHEDULED" as const),
+                appliedAt: sh.planYearId === planYear.id ? new Date() : null,
+              })),
+            },
+          }
+        : {}),
     },
   });
 

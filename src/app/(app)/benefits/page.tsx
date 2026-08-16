@@ -1,7 +1,7 @@
 import { requireUser, isAdmin } from "@/lib/roles";
 import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
-import { getActivePlanYear, getMedicalRateBands, amountForBand, getMedicalCommitment, planYearWindow, poolCeilingFor, eligibilityWhere, isSalaryDriven, medicalScopeFor, fixedAllowanceFor, isFixedAllowance } from "@/lib/benefits/config";
+import { getActivePlanYear, getMedicalRateBands, amountForBand, getMedicalCommitment, planYearWindow, poolCeilingFor, eligibilityWhere, isSalaryDriven, medicalScopeFor, fixedAllowanceFor, isFixedAllowance, medicalCycleCharge, medicalCarriedForward } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { flexCap } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate, poolCycleFraction, cycleWholeMonths } from "@/lib/benefits/proration";
@@ -304,7 +304,10 @@ export default async function BenefitsPage({
 
   const proratedCeiling = prorate(ceilingRow.amount, poolFraction);
   const cap = flexCap(proratedCeiling);
-  const medicalPremium = medicalCommitment?.premium ?? 0;
+  // What medical costs THIS cycle's pool — not the full committed premium, which may buy cover
+  // reaching into the next cycle (spec 027).
+  const medicalPremium = medicalCycleCharge(medicalCommitment, planYear.id);
+  const medicalCarried = medicalCarriedForward(medicalCommitment);
   const poolUsed = medicalPremium + claimsCoveredTotal;
   const poolRemaining = Math.max(0, proratedCeiling - poolUsed);
 
@@ -397,6 +400,7 @@ export default async function BenefitsPage({
         medicalPeople={medPeople}
         medicalMissingDob={!user.dateOfBirth}
         medicalCommitted={mapCommitted(medicalCommitment)}
+        medicalCarried={medicalCarried}
         planYearOpen={!!planYear}
         error={claimError}
         claimSuccess={claimOk === "1"}

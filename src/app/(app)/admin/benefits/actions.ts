@@ -19,6 +19,41 @@ function parseDate(raw: FormDataEntryValue | null): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/**
+ * Apply the medical charges scheduled against a benefits cycle when that cycle opens (spec 027).
+ *
+ * A premium committed under a policy term that outlives its cycle leaves a SCHEDULED charge on the
+ * next one; opening that cycle is what makes it draw. Nothing for HR to remember — forgetting would
+ * silently give an employee a pool with no medical in it.
+ *
+ * An employee who is no longer ACTIVE has their charge CANCELLED rather than applied: the premium
+ * paid in advance for cover after their leave date is recovered from the insurer, so nothing is
+ * owed by anyone and charging a pool they no longer hold would be meaningless.
+ */
+async function applyScheduledMedicalCharges(planYearId: string): Promise<void> {
+  const scheduled = await prisma.medicalCycleCharge.findMany({
+    where: { planYearId, status: "SCHEDULED" },
+    select: { id: true, commitment: { select: { user: { select: { status: true } } } } },
+  });
+  if (scheduled.length === 0) return;
+
+  const toApply = scheduled.filter((c) => c.commitment.user.status === "ACTIVE").map((c) => c.id);
+  const toCancel = scheduled.filter((c) => c.commitment.user.status !== "ACTIVE").map((c) => c.id);
+
+  if (toApply.length > 0) {
+    await prisma.medicalCycleCharge.updateMany({
+      where: { id: { in: toApply } },
+      data: { status: "APPLIED", appliedAt: new Date() },
+    });
+  }
+  if (toCancel.length > 0) {
+    await prisma.medicalCycleCharge.updateMany({
+      where: { id: { in: toCancel } },
+      data: { status: "CANCELLED" },
+    });
+  }
+}
+
 export async function createPlanYear(formData: FormData): Promise<void> {
   await requireAdmin();
   const name = (formData.get("name") as string | null)?.trim();
@@ -34,7 +69,8 @@ export async function createPlanYear(formData: FormData): Promise<void> {
     where: { status: "OPEN" },
     data: { status: "CLOSED" },
   });
-  await prisma.planYear.create({ data: { name, status: "OPEN", startDate, endDate } });
+  const created = await prisma.planYear.create({ data: { name, status: "OPEN", startDate, endDate } });
+  await applyScheduledMedicalCharges(created.id);
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
 }
@@ -70,6 +106,8 @@ export async function setPlanYearStatus(formData: FormData): Promise<void> {
     });
   }
   await prisma.planYear.update({ where: { id }, data: { status } });
+  // Re-opening a cycle must pick up anything scheduled against it, exactly as creating one does.
+  if (status === "OPEN") await applyScheduledMedicalCharges(id);
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
 }

@@ -127,7 +127,6 @@ export function BenefitsBoard({
   familyMedical = true,
   medicalPremiumFraction = 1,
   medicalProration,
-  medicalCarried = 0,
   error,
   claimSuccess,
 }: {
@@ -157,11 +156,6 @@ export function BenefitsBoard({
   medicalPremiumFraction?: number;
   /** Badge data for a prorated medical premium. */
   medicalProration?: BoardProration;
-  /**
-   * Premium charged to LATER benefits cycles (spec 027) — a policy term running past this cycle's
-   * end is paid for across both. 0 when the term sits inside one cycle, and then nothing renders.
-   */
-  medicalCarried?: number;
   error?: string;
   /** Shown after a claim is submitted (redirect `?claimOk=1`). */
   claimSuccess?: boolean;
@@ -351,19 +345,12 @@ export function BenefitsBoard({
                 your pool is scaled to that period. A full-length cycle carries the full annual amount.
               </p>
             ) : null}
-            {medicalCarried > 0 ? (
-              <p className="mt-3 rounded-lg bg-white/10 px-3 py-2 text-xs text-navy-100">
-                Your medical cover runs past this benefits cycle. The remaining{" "}
-                <b className="tabular-nums text-white">{egp(medicalCarried)}</b> is charged to your next
-                cycle, not this one.
-              </p>
-            ) : null}
             <div className="mt-3.5 h-2.5 w-full overflow-hidden rounded-full bg-navy-700">
               <div className="h-full rounded-full bg-gold-500" style={{ width: `${pct}%` }} />
             </div>
             <div className="mt-3.5 border-t border-white/15">
               <div className="flex items-baseline justify-between py-2.5 text-sm">
-                <span className="text-navy-200">{medicalCarried > 0 ? "Used this cycle" : "Used"}</span>
+                <span className="text-navy-200">Used</span>
                 <span className="font-semibold tabular-nums text-white">{egp(poolUsed)}</span>
               </div>
               <div className="flex items-baseline justify-between border-t border-white/10 py-2.5 text-sm">

@@ -40,16 +40,16 @@
 
 **Independent test**: Commit a 40,000 premium against the 2026 cycle → pool falls by 23,333, not 40,000; a 16,667 charge sits scheduled against 2027.
 
-- [ ] T010 [US1] Rewrite `commitMedical` in `src/app/(app)/benefits/actions.ts` to resolve the policy year, prorate a mid-term joiner against the **policy term**, split across overlapping cycles, cap each charge at that cycle's ceiling, and write the commitment plus its charges
-- [ ] T011 [US1] Point the pool total in `src/app/(app)/benefits/page.tsx` at the current cycle's charge instead of `commitment.premium`
-- [ ] T012 [US1] Point `AllowanceContext.medicalPremium` in `src/app/(app)/benefits/claim-actions.ts` at the same cycle charge, so claim-time enforcement and the displayed pool agree
-- [ ] T013 [US1] Apply scheduled charges when a plan year opens, in `src/app/(app)/admin/benefits/plan-year-actions.ts` — `APPLIED` for an active employee, `CANCELLED` for anyone who has left (research D7)
-- [ ] T014 [US1] Add the carry note to the pool card in `src/components/benefits/BenefitsBoard.tsx`, per the approved mockup; it must not render when the term sits inside one cycle
-- [ ] T015 [US1] Save a `ui-versions/BenefitsBoard/` snapshot before editing T014, per CLAUDE.md
+- [x] T010 [US1] Rewrite `commitMedical` in `src/app/(app)/benefits/actions.ts` to resolve the policy year, prorate a mid-term joiner against the **policy term**, split across overlapping cycles, cap each charge at that cycle's ceiling, and write the commitment plus its charges
+- [x] T011 [US1] Point the pool total in `src/app/(app)/benefits/page.tsx` at the current cycle's charge instead of `commitment.premium`
+- [x] T012 [US1] Point `AllowanceContext.medicalPremium` in `src/app/(app)/benefits/claim-actions.ts` at the same cycle charge, so claim-time enforcement and the displayed pool agree
+- [x] T013 [US1] Apply scheduled charges when a plan year opens, in `src/app/(app)/admin/benefits/plan-year-actions.ts` — `APPLIED` for an active employee, `CANCELLED` for anyone who has left (research D7)
+- [x] T014 [US1] Add the carry note to the pool card in `src/components/benefits/BenefitsBoard.tsx`, per the approved mockup; it must not render when the term sits inside one cycle
+- [x] T015 [US1] Save a `ui-versions/BenefitsBoard/` snapshot before editing T014, per CLAUDE.md
 - [x] T016 [US1] Verify the exact-sum invariant with `tsx` against the throwaway database, over the spread in `quickstart.md` §1 — uneven division, single-cycle term, zero overlap, one-month and 24-month terms, zero premium
 - [x] T017 [US1] Verify the month-counting guard per `quickstart.md` §2 — a 13-month window counts 13, and `poolCycleFraction` still returns 1 for it
-- [ ] T018 [US1] Verify migration `047` per `quickstart.md` §3, applied from the file against the T002 baseline, twice
-- [ ] T019 [US1] Verify cycle-open behaviour per `quickstart.md` §4, including the leaver whose charge must be cancelled and never shown as owed
+- [x] T018 [US1] Verify migration `047` per `quickstart.md` §3, applied from the file against the T002 baseline, twice
+- [x] T019 [US1] Verify cycle-open behaviour per `quickstart.md` §4, including the leaver whose charge must be cancelled and never shown as owed
 - [x] T020 [US1] Verify the steady state per `quickstart.md` §5 — the 2027 pool absorbs exactly 12 months of premium, matching a naive full-premium charge. This is the check that the model is right rather than merely different
 
 **Checkpoint**: US1 is shippable. Medical charges correctly, the transition year is fixed, and the model settles.
@@ -87,9 +87,9 @@
 
 ## Phase 6: Polish & cross-cutting
 
-- [ ] T030 Verify the no-policy-year fallback per `quickstart.md` §6 — results identical to today, so the change is invisible until HR opts in (FR-002, SC-005)
+- [x] T030 Verify the no-policy-year fallback per `quickstart.md` §6 — results identical to today, so the change is invisible until HR opts in (FR-002, SC-005)
 - [ ] T031 Browser pass per `quickstart.md` §7 — employee pool card and HR commitment list, as both roles, no console errors
-- [ ] T032 Run `npx tsc --noEmit` and `npm run build`; both clean
+- [x] T032 Run `npx tsc --noEmit` and `npm run build`; both clean
 - [ ] T033 [P] Update `PROJECT_DETAILS.md`, `IMPLEMENTATION_PROGRESS.md`, and the `IMPLEMENTATION_PLAN.md` decisions log in the implementing commit (CLAUDE.md)
 - [ ] T034 Tell the user to paste `prisma/sql/047_medical_policy_year.sql` into Neon — **and to run the wrong-database guard query first**, after the 046 incident
 
@@ -121,14 +121,16 @@ Ship US1, verify against the quickstart, then add US2. US3 is verification of wo
 
 ## Progress
 
-**Done**: Setup, all of Foundational (T003–T009), and the pure-function verification (T016/T017/T020,
-40 checks passing — the exact-sum invariant, the month-counting guard, and the steady state).
-Migration `047` verified from the file against a database holding a real commitment: premium
-unchanged, one APPLIED charge equal to it, unique index re-keyed, second run a no-op.
+**Done**: Setup, all of Foundational, and **all of US1** — the MVP. Commit writes per-cycle charges,
+the pool and claim context both read this cycle's charge, opening a cycle applies or cancels what
+was scheduled, and the pool card carries the approved note. Also T030 (no-policy-year fallback) and
+T032 (tsc + build), which fell out of the same verification pass.
 
-**Next**: US1's behaviour — T010 (commit writes charges), T011/T012 (pool and claim context read the
-cycle charge), T013 (cycle open applies/cancels), T014/T015 (the carry note + snapshot), then the
-database and browser verification T018/T019.
+Verification: 40 pure-function checks, 18 database checks, and a Chromium pass on the pool card —
+pool 21,667 not 5,000, "Used this cycle EGP 23,333", carry note naming the 16,667.
+
+**Next**: US2 (T021–T027) — HR configures the policy term and audits the split. US3 (T028/T029) is
+verification of Phase 2 work and is nearly free. Then T031/T033/T034.
 
 **Note for the next session**: re-keying `MedicalCommitment` to the policy year broke four call
 sites that asked `findUnique({ userId_planYearId })`. All four are updated to ask the question the
