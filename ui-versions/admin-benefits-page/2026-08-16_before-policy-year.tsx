@@ -1,4 +1,3 @@
-import React from "react";
 import { requireAdmin } from "@/lib/roles";
 import { ConfirmSubmitButton } from "@/components/admin/ConfirmSubmitButton";
 import { prisma } from "@/lib/prisma";
@@ -20,7 +19,6 @@ import {
 } from "./config-actions";
 import { isSalaryDriven, isEligibleFor, isFixedAllowance } from "@/lib/benefits/config";
 import { PlanYearDialog } from "@/components/admin/PlanYearDialog";
-import { PolicyYearDialog } from "@/components/admin/PolicyYearDialog";
 import { AdminBenefitsTabs } from "@/components/admin/AdminBenefitsTabs";
 import { EditableSection } from "@/components/admin/EditableSection";
 import { ToastForm } from "@/components/admin/ToastForm";
@@ -87,29 +85,6 @@ export default async function AdminBenefitsPage({
     (a, b) => (a.status === "SUBMITTED" ? 0 : 1) - (b.status === "SUBMITTED" ? 0 : 1)
   );
   const rateBands = await prisma.medicalRateBand.findMany({ where: { tier: 1 }, orderBy: { order: "asc" } });
-  // Medical policy terms (spec 027) — the insurance contract's own dates, and the per-cycle
-  // charges that reconcile a committed premium against the pools it draws from.
-  const policyYears = await prisma.medicalPolicyYear.findMany({
-    orderBy: { startDate: "desc" },
-    include: { _count: { select: { commitments: true } } },
-  });
-  const cycleCharges = await prisma.medicalCycleCharge.findMany({
-    where: { commitmentId: { in: medicalCommitments.map((m) => m.id) } },
-    include: { planYear: { select: { name: true } } },
-    orderBy: { planYear: { startDate: "asc" } },
-  });
-  const chargesByCommitment = new Map<string, typeof cycleCharges>();
-  for (const c of cycleCharges) {
-    const list = chargesByCommitment.get(c.commitmentId) ?? [];
-    list.push(c);
-    chargesByCommitment.set(c.commitmentId, list);
-  }
-  const CHARGE_STATUS_LABEL = { APPLIED: "Applied", SCHEDULED: "On cycle open", CANCELLED: "Not charged" } as const;
-  const CHARGE_STATUS_CLASS = {
-    APPLIED: "bg-green-50 text-green-700 border-green-200",
-    SCHEDULED: "bg-navy-50 text-navy-700 border-navy-100",
-    CANCELLED: "bg-paper text-muted border-line",
-  } as const;
 
   const ceilOf = (t: EmploymentType, b: TenureBand) =>
     poolCeilings.find((c) => c.employmentType === t && c.tenureBand === b)?.amount ?? "";
@@ -454,23 +429,11 @@ export default async function AdminBenefitsPage({
                   // Covered people from the commit snapshot (spec 023); the employee is the first line.
                   const others = m.coveredPeople.filter((p) => p.dependantId).map((p) => p.label);
                   const coveredDepIds = new Set(m.coveredPeople.map((p) => p.dependantId).filter(Boolean) as string[]);
-                  const charges = chargesByCommitment.get(m.id) ?? [];
-                  const chargeTotal = charges.reduce((n, c) => n + c.amount, 0);
-                  const term = policyYears.find((p) => p.id === m.policyYearId);
-                  // A term whose dates changed after this was split (FR-015): its charges were
-                  // calculated against the old window, so the months no longer describe the term.
-                  const termMonths = charges.reduce((n, c) => n + c.overlapMonths, 0);
-                  const stale = !!term && charges.length > 0 && termMonths > 0
-                    && Math.round((term.endDate.getTime() - term.startDate.getTime()) / (1000 * 60 * 60 * 24 * 30.4)) !== termMonths;
                   return (
-                    <React.Fragment key={m.id}>
-                    <tr className="border-b border-line align-top last:border-0">
+                    <tr key={m.id} className="border-b border-line align-top last:border-0">
                       <td className="py-2 pr-4 text-ink">{m.user.name}</td>
                       <td className="py-2 pr-4 text-muted">You{others.length ? " + " + others.join(" + ") : ""}</td>
-                      <td className="py-2 pr-4 tabular-nums text-ink">
-                        {egp(m.premium)}
-                        {term ? <div className="text-[11px] text-muted">{formatDate(term.startDate)} – {formatDate(term.endDate)}</div> : null}
-                      </td>
+                      <td className="py-2 pr-4 tabular-nums text-ink">{egp(m.premium)}</td>
                       <td className="py-2 pr-4 text-muted">{formatDate(m.committedAt)}</td>
                       <td className="py-2">
                         <div className="flex flex-wrap items-end justify-end gap-2">
@@ -497,70 +460,6 @@ export default async function AdminBenefitsPage({
                         </div>
                       </td>
                     </tr>
-                    {/* Per-cycle breakdown (spec 027). Sits BENEATH the commitment rather than
-                        replacing anything, so every figure HR reads today stays where it was.
-                        The total is shown deliberately: a split that fails to reconcile to the
-                        committed premium is a bug, and printing it is how that surfaces. */}
-                    {charges.length > 0 ? (
-                      <tr key={`${m.id}-charges`} className="border-b border-line last:border-0">
-                        <td colSpan={5} className="pb-3">
-                          <div className="rounded-lg border border-line bg-paper p-3">
-                            <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted">Charged to</p>
-                            <table className="w-full text-xs">
-                              <thead>
-                                <tr className="text-left uppercase text-muted">
-                                  <th className="py-1 pr-4 font-medium">Benefits cycle</th>
-                                  <th className="py-1 pr-4 text-right font-medium">Months</th>
-                                  <th className="py-1 pr-4 text-right font-medium">Charge</th>
-                                  <th className="py-1 font-medium">Status</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {charges.map((c) => (
-                                  <tr key={c.id} className="border-t border-line">
-                                    <td className="py-1 pr-4 text-ink">{c.planYear.name}</td>
-                                    <td className="py-1 pr-4 text-right tabular-nums text-muted">{c.overlapMonths}</td>
-                                    <td className="py-1 pr-4 text-right tabular-nums text-ink">{egp(c.amount)}</td>
-                                    <td className="py-1">
-                                      <span className={"rounded-full border px-2 py-0.5 text-[10px] font-bold " + CHARGE_STATUS_CLASS[c.status]}>
-                                        {CHARGE_STATUS_LABEL[c.status]}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                                <tr className="border-t border-line font-semibold">
-                                  <td className="py-1 pr-4 text-ink">Total</td>
-                                  <td className="py-1 pr-4 text-right tabular-nums text-muted">
-                                    {charges.reduce((n, c) => n + c.overlapMonths, 0)}
-                                  </td>
-                                  <td className={"py-1 pr-4 text-right tabular-nums " + (chargeTotal === m.premium ? "text-ink" : "text-red-600")}>
-                                    {egp(chargeTotal)}
-                                  </td>
-                                  <td className="py-1 text-[10px] text-muted">
-                                    {chargeTotal === m.premium ? "reconciles" : "does NOT match the premium"}
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                            {charges.some((c) => c.status === "CANCELLED") ? (
-                              <p className="mt-2 rounded-lg border border-gold-300 bg-gold-50 px-2.5 py-1.5 text-[11px] text-gold-800">
-                                <strong className="text-navy-800">Cover ended before that cycle.</strong> The charge was
-                                never applied to a pool, and the premium paid in advance for cover after the leave date is
-                                recovered from the insurer — nothing is owed and nothing is written off.
-                                {term ? ` Recoverable to ${formatDate(term.endDate)}, starting from the leave date — which may sit inside an already-applied charge above.` : ""}
-                              </p>
-                            ) : null}
-                            {stale ? (
-                              <p className="mt-2 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[11px] text-muted">
-                                This was split under an earlier version of the policy term. Its charges were not
-                                recalculated — changing a term never rewrites money already reconciled.
-                              </p>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    ) : null}
-                    </React.Fragment>
                   );
                 })}
               </tbody>
@@ -776,13 +675,6 @@ export default async function AdminBenefitsPage({
             Policy page
           </a>
           <PlanYearDialog planYears={planYears} activeName={active?.name} />
-          <PolicyYearDialog
-            policyYears={policyYears.map((p) => ({
-              id: p.id, name: p.name, status: p.status,
-              startDate: p.startDate, endDate: p.endDate,
-              commitmentCount: p._count.commitments,
-            }))}
-          />
         </div>
       </div>
 

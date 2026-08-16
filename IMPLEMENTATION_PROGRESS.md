@@ -731,7 +731,14 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     steady state, no-policy-year fallback), migration `047` applied twice from the file against a
     real commitment with its premium unchanged, and a Chromium pass on the pool card. tsc + build
     green; UI snapshot saved; mockup approved before building.
-  - **Remaining (US2)**: HR's policy-term configuration screen and the per-cycle audit table.
+  - **US2 built too** — spec 027 is complete. HR manages the term in a **Medical policy** dialog beside
+    Plan year (mirroring it deliberately: adjacent concepts shouldn't look like unrelated features),
+    and each commitment carries a **per-cycle breakdown** — months, charge, status, and a total that
+    says "reconciles" or turns red. Editing a premium re-splits it across cycles still open, never
+    touching a charge already applied to a closed one.
+  - **A case that cannot reconcile, by nature**: dropping a premium below what closed cycles already
+    absorbed leaves the charges totalling that larger frozen amount — a shut pool can't be
+    un-charged. The platform shows the mismatch in red rather than writing a negative charge.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

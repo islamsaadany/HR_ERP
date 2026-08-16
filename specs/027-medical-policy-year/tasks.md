@@ -62,13 +62,13 @@
 
 **Independent test**: Set a Jun–May term, commit an employee, and see the full premium, both cycle charges, and the term on one screen.
 
-- [ ] T021 [P] [US2] Add policy-year create/edit to `src/app/(app)/admin/benefits/config-actions.ts`, rejecting `endDate <= startDate` and a second `OPEN` term
-- [ ] T022 [US2] Add the policy-year control to the admin Benefits page beside the existing Plan year dialog in `src/app/(app)/admin/benefits/page.tsx`
-- [ ] T023 [US2] Add the per-cycle charge table to the commitment list in `src/app/(app)/admin/benefits/page.tsx` per the approved mockup — months, charge, status, and a reconciling total
-- [ ] T024 [US2] Show the recoverable period on a cancelled charge, starting at the **leave date** rather than the cycle boundary (research D7)
-- [ ] T025 [US2] Save a `ui-versions/admin-benefits-page/` snapshot before editing T022–T024
-- [ ] T026 [US2] Re-split on premium edit in `src/app/(app)/admin/benefits/actions.ts`, touching open cycles only and preserving the exact-sum invariant (FR-014)
-- [ ] T027 [US2] Flag commitments that predate a policy-window change rather than silently re-splitting them (FR-015)
+- [x] T021 [P] [US2] Add policy-year create/edit to `src/app/(app)/admin/benefits/config-actions.ts`, rejecting `endDate <= startDate` and a second `OPEN` term
+- [x] T022 [US2] Add the policy-year control to the admin Benefits page beside the existing Plan year dialog in `src/app/(app)/admin/benefits/page.tsx`
+- [x] T023 [US2] Add the per-cycle charge table to the commitment list in `src/app/(app)/admin/benefits/page.tsx` per the approved mockup — months, charge, status, and a reconciling total
+- [x] T024 [US2] Show the recoverable period on a cancelled charge, starting at the **leave date** rather than the cycle boundary (research D7)
+- [x] T025 [US2] Save a `ui-versions/admin-benefits-page/` snapshot before editing T022–T024
+- [x] T026 [US2] Re-split on premium edit in `src/app/(app)/admin/benefits/actions.ts`, touching open cycles only and preserving the exact-sum invariant (FR-014)
+- [x] T027 [US2] Flag commitments that predate a policy-window change rather than silently re-splitting them (FR-015)
 
 **Checkpoint**: HR can configure the term and audit every split against insurer invoices.
 
@@ -80,17 +80,17 @@
 
 **Independent test**: Configure a 13-month and a 6-month term; both count and split by their real length.
 
-- [ ] T028 [US3] Verify a term of other than 12 months splits by its true length, with the sum still exact, per `quickstart.md` §2 and spec US3
-- [ ] T029 [US3] Confirm no pool anywhere can exceed its ceiling under a longer-than-year window — the money bug T004 guards against
+- [x] T028 [US3] Verify a term of other than 12 months splits by its true length, with the sum still exact, per `quickstart.md` §2 and spec US3
+- [x] T029 [US3] Confirm no pool anywhere can exceed its ceiling under a longer-than-year window — the money bug T004 guards against
 
 ---
 
 ## Phase 6: Polish & cross-cutting
 
 - [x] T030 Verify the no-policy-year fallback per `quickstart.md` §6 — results identical to today, so the change is invisible until HR opts in (FR-002, SC-005)
-- [ ] T031 Browser pass per `quickstart.md` §7 — employee pool card and HR commitment list, as both roles, no console errors
+- [x] T031 Browser pass per `quickstart.md` §7 — employee pool card and HR commitment list, as both roles, no console errors
 - [x] T032 Run `npx tsc --noEmit` and `npm run build`; both clean
-- [ ] T033 [P] Update `PROJECT_DETAILS.md`, `IMPLEMENTATION_PROGRESS.md`, and the `IMPLEMENTATION_PLAN.md` decisions log in the implementing commit (CLAUDE.md)
+- [x] T033 [P] Update `PROJECT_DETAILS.md`, `IMPLEMENTATION_PROGRESS.md`, and the `IMPLEMENTATION_PLAN.md` decisions log in the implementing commit (CLAUDE.md)
 - [ ] T034 Tell the user to paste `prisma/sql/047_medical_policy_year.sql` into Neon — **and to run the wrong-database guard query first**, after the 046 incident
 
 ---
@@ -121,16 +121,22 @@ Ship US1, verify against the quickstart, then add US2. US3 is verification of wo
 
 ## Progress
 
-**Done**: Setup, all of Foundational, and **all of US1** — the MVP. Commit writes per-cycle charges,
-the pool and claim context both read this cycle's charge, opening a cycle applies or cancels what
-was scheduled, and the pool card carries the approved note. Also T030 (no-policy-year fallback) and
-T032 (tsc + build), which fell out of the same verification pass.
+**Complete** — every task except T034, which is the handover instruction below.
 
-Verification: 40 pure-function checks, 18 database checks, and a Chromium pass on the pool card —
-pool 21,667 not 5,000, "Used this cycle EGP 23,333", carry note naming the 16,667.
+Verification totals: 40 pure-function checks, 18 database checks on the split/cycle-open/leaver/
+steady-state/fallback, 6 on the re-split, migration `047` applied twice from the file against a real
+commitment, and two Chromium passes (employee pool card; HR commitments + policy dialog).
 
-**Next**: US2 (T021–T027) — HR configures the policy term and audits the split. US3 (T028/T029) is
-verification of Phase 2 work and is nearly free. Then T031/T033/T034.
+**One case that cannot reconcile, by nature rather than by bug**: if HR drops a premium BELOW what
+already-closed cycles absorbed, the charges still total that larger frozen amount — a shut pool
+cannot be un-charged. Rather than write a negative charge, the commitments table compares total
+against premium and shows the mismatch **in red**, so HR settles it with the insurer instead of the
+platform inventing a number.
+
+**Adaptation from the mockup**: the approved HR design was card-based, but the live commitments list
+is a table. The per-cycle breakdown is therefore a sub-row beneath each commitment — which preserves
+the mockup's intent (nothing HR reads today moves; the split is added beneath) in the container that
+actually exists.
 
 **Note for the next session**: re-keying `MedicalCommitment` to the policy year broke four call
 sites that asked `findUnique({ userId_planYearId })`. All four are updated to ask the question the

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { splitPremium } from "@/lib/benefits/policy-year";
 import { redirect } from "next/navigation";
 import type { ClaimType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -185,8 +186,60 @@ export async function editMedicalCommitment(formData: FormData): Promise<void> {
       data: { premium, committedById: admin.id, coveredPeople: { create: coveredPeople } },
     }),
   ]);
+  // A changed premium must be re-split, or the charges stop summing to it (FR-014, FR-006).
+  await resplitCommitmentCharges(id);
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
+}
+
+/**
+ * Re-split a commitment's premium across its policy term's cycles after HR edits it (spec 027).
+ *
+ * Charges already APPLIED to a CLOSED cycle are left exactly as they are: that money has been
+ * counted against a pool that is now shut, and silently restating it would rewrite history HR has
+ * already reconciled against an insurer invoice. The remainder of the premium is spread across the
+ * cycles still open, so the set as a whole sums back to the new premium.
+ *
+ * ONE CASE CANNOT RECONCILE: if HR drops the premium BELOW what closed cycles already absorbed,
+ * the charges necessarily still total that larger frozen amount — you cannot un-charge a shut pool.
+ * We do not fake it by writing a negative charge. The commitments list compares the total against
+ * the premium and shows the mismatch in red, so HR sees the discrepancy and settles it with the
+ * insurer rather than the platform quietly inventing a number.
+ */
+async function resplitCommitmentCharges(commitmentId: string): Promise<void> {
+  const commitment = await prisma.medicalCommitment.findUnique({
+    where: { id: commitmentId },
+    include: { policyYear: true, cycleCharges: { include: { planYear: true } } },
+  });
+  if (!commitment?.policyYear || commitment.cycleCharges.length === 0) return;
+
+  const frozen = commitment.cycleCharges.filter(
+    (c) => c.status === "APPLIED" && c.planYear.status === "CLOSED"
+  );
+  const frozenTotal = frozen.reduce((n, c) => n + c.amount, 0);
+  const reopenable = commitment.cycleCharges.filter((c) => !frozen.includes(c));
+  if (reopenable.length === 0) return;
+
+  const remaining = Math.max(0, commitment.premium - frozenTotal);
+  const cycles = reopenable
+    .filter((c) => c.planYear.startDate && c.planYear.endDate)
+    .map((c) => ({ id: c.planYearId, start: c.planYear.startDate!, end: c.planYear.endDate! }));
+  if (cycles.length === 0) return;
+
+  const term = { start: commitment.policyYear.startDate, end: commitment.policyYear.endDate };
+  const split = splitPremium(remaining, term, cycles);
+  // Spread by overlap where we can; if the split can't attribute it (a term no longer overlapping
+  // these cycles), put the remainder on the first one rather than losing it.
+  const byCycle = new Map(split.shares.map((sh) => [sh.cycle.id, sh.amount]));
+  if (split.unallocated > 0 && cycles.length > 0) {
+    byCycle.set(cycles[0].id, (byCycle.get(cycles[0].id) ?? 0) + split.unallocated);
+  }
+  for (const charge of reopenable) {
+    await prisma.medicalCycleCharge.update({
+      where: { id: charge.id },
+      data: { amount: byCycle.get(charge.planYearId) ?? 0 },
+    });
+  }
 }
 
 /** HR override (spec 018): remove an employee's committed medical so they can re-commit. */
