@@ -18,6 +18,15 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Admin Benefits management views (2026-08-16, built — no migration)
+- [x] Mockups built and **signed off** before any component was touched: `design-mockups/medical-commitments/2026-08-16_management-view.html` and `design-mockups/benefits-claims/2026-08-16_claims-queue.html` (rail revised on review to counts-first: Eligible · Committed · Needs attention · Committed premium last).
+- [x] **Medical commitments** → `components/admin/MedicalCommitmentsPanel.tsx`: rail, filter chips + search + click-to-sort, one row per person, per-cycle split behind the opened row, **Manage** panel with per-person age→band working and a live "was X → Y" delta, and a **Not committed** chase list naming DOB-blocked employees. Every figure/wording/action from the old always-expanded list is kept.
+- [x] **Claims** → `components/admin/ClaimsPanel.tsx`: review queue (waiting time, **pool-after-this-claim** meter, proof, Approve/Reject, **bulk approve**) + searchable, totalled **ledger** of decided claims. New `approveClaims` action shares `approveOne` with the single-claim path, so the bulk bar saves clicks and never checks.
+- [x] Page rewired (`admin/benefits/page.tsx`): new eligibility/not-committed query, per-claimant pool context, `reviewedBy`/`paidBy` for the ledger, dependant DOBs for the Manage preview. Dead imports removed. **UI snapshot** saved to `ui-versions/admin-benefits-page/2026-08-16_before-commitments-and-claims-redesign.tsx`.
+- [x] **Verified**: `npx tsc --noEmit` + `npm run build` green; `scripts/verify-benefits-admin-panels.mts` **22/22** against a throwaway Postgres 16 (eligibility incl. LEFT/new-joiner/no-DOB, premium = summed age bands, carry-over + this-cycle = premium, over-charge quantified, cancelled charge never counted as carried, prorated ceiling on a 6-month cycle, rejected claim releases allowance, cap detection, queue/ledger split, and `approveClaims` refusing without an admin session). Both panels also SSR-rendered with the no-DOB and no-pool-ceiling edge rows — no NaN/undefined.
+- ⚠️ **Not verified from here**: the rendered screen in a browser (the page is admin-gated), so the visual pass is still owed on review.
+- [x] Special events note: **maternity removed** — now "Newborn · compassionate" in `prisma/sql/003_seed_benefits.sql` and `specs/012-benefits-coverage/concept.md`. The live row was changed by the user directly; no migration written.
+
 ## Spec 026 — Password-less linked-account switching (built; no migration)
 - [x] Spec-kit run: `specs/026-passwordless-account-switch/` (spec, plan, research, data-model, contracts, quickstart, tasks — 30/30 tasks done; requirements checklist 16/16).
 - [x] **Supersedes spec 025's password-per-switch decision** — marked in place in `specs/025-…/spec.md` and above, so the two specs never silently disagree.

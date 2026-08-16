@@ -54,7 +54,7 @@ Received automatically by every eligible employee. Values scale with tenure.
 | Professional development *(50% of cost, up to)* | 5,000 | 9,500 | 18,000 | 21,500 |
 | Special events *(per event)* | 6,000 | 8,500 | 12,000 | 18,000 |
 
-*Loans: one month's salary, repaid over 12 months, available from year 1 (all bands). Special events cover maternity, new-born, and compassionate occasions. All figures in EGP.*
+*Loans: one month's salary, repaid over 12 months, available from year 1 (all bands). Special events cover new-born and compassionate occasions (maternity does not qualify — 2026-08-16). All figures in EGP.*
 
 **Part-time**
 
