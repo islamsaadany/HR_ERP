@@ -1,0 +1,525 @@
+<title>Medical Commitments Management View</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-300:#7d97ba;
+    --navy-400:#4f6d97; --navy-500:#2f4d78; --navy-600:#1f3a63; --navy-700:#163055;
+    --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-50:#fbf7ea; --gold-100:#f6ecca; --gold-200:#ecd894; --gold-300:#e0c05a;
+    --gold-500:#c9a227; --gold-600:#a8821e; --gold-700:#85641b; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-50:#fef2f2; --red-200:#fecaca; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-200:#bbf7d0; --green-700:#15803d;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1180px; margin:0 auto; padding:32px 24px 80px; display:flex; flex-direction:column; gap:44px; }
+
+  .doc-head { border-bottom:1px solid var(--line); padding-bottom:20px; }
+  .doc-head h1 { font-family:var(--serif); font-size:30px; margin:6px 0 0; font-weight:600; text-wrap:balance; }
+  .doc-head p { color:var(--muted); margin:8px 0 0; max-width:70ch; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+
+  .block { display:flex; flex-direction:column; gap:14px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .block-head .n { font-family:var(--serif); font-size:13px; font-weight:700; color:var(--navy-800); background:var(--gold-100); border:1px solid var(--gold-300); width:24px; height:24px; border-radius:999px; display:grid; place-items:center; flex:none; }
+  .block-head h2 { font-family:var(--serif); font-size:20px; margin:0; font-weight:600; }
+  .block-head .sub { color:var(--muted); font-size:13px; }
+  .stage { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px; }
+  .note { font-size:13px; color:var(--muted); margin:0; max-width:78ch; }
+  .note strong { color:var(--ink); font-weight:600; }
+  .note-list { margin:0; padding-left:18px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:6px; max-width:80ch; }
+  .note-list strong { color:var(--ink); font-weight:600; }
+
+  /* ── Summary rail ───────────────────────────────────────────── */
+  .rail { display:grid; gap:12px; grid-template-columns:repeat(2,1fr); }
+  @media (min-width:860px) { .rail { grid-template-columns:repeat(5,1fr); } }
+  .tile { border:1px solid var(--line); background:var(--surface); border-radius:12px; padding:13px 15px; }
+  .tile .k { font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+  .tile .v { font-family:var(--serif); font-size:25px; line-height:1.15; margin-top:5px; color:var(--navy-800); font-variant-numeric:tabular-nums; }
+  .tile .s { font-size:12px; color:var(--muted); margin-top:3px; }
+  .tile.lead { background:var(--navy-900); border-color:var(--navy-900); }
+  .tile.lead .k { color:var(--gold-300); }
+  .tile.lead .v { color:#fff; }
+  .tile.lead .s { color:var(--navy-200); }
+  .tile.flag { border-color:var(--gold-300); background:var(--gold-50); }
+  .tile.flag .v { color:var(--gold-800); }
+  .tile.flag .s { color:var(--gold-800); }
+
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .fchip { border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:5px 13px; font-size:12.5px; font-weight:600; color:var(--muted); cursor:default; }
+  .fchip .c { font-variant-numeric:tabular-nums; opacity:.75; margin-left:5px; }
+  .fchip[aria-pressed="true"] { background:var(--navy-800); border-color:var(--navy-800); color:#fff; }
+  .fchip.alert { border-color:var(--gold-300); background:var(--gold-50); color:var(--gold-800); }
+
+  /* ── Grid ───────────────────────────────────────────────────── */
+  .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th, td { text-align:left; padding:9px 13px; border-top:1px solid var(--line); white-space:nowrap; vertical-align:middle; }
+  thead th { border-top:0; background:var(--navy-800); color:#fff; font-size:11px; letter-spacing:.05em; text-transform:uppercase; font-weight:700; }
+  thead th.sortable::after { content:"↕"; opacity:.45; margin-left:6px; font-size:10px; }
+  thead th.sorted::after { content:"↓"; opacity:1; color:var(--gold-300); }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  tbody tr:hover { background:var(--navy-50); }
+  .who { font-weight:600; color:var(--ink); }
+  .cover { color:var(--muted); }
+  .cover b { color:var(--ink); font-weight:600; }
+  .muted-cell { color:var(--muted); }
+  .rowbtn { border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:4px 10px; font-size:12px; font-weight:600; color:var(--navy-700); font-family:inherit; cursor:default; }
+  .caret { color:var(--navy-400); font-size:11px; margin-right:6px; }
+
+  .chip { display:inline-block; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .chip.ok { background:var(--green-50); color:var(--green-700); border:1px solid var(--green-200); }
+  .chip.split { background:var(--navy-50); color:var(--navy-700); border:1px solid var(--navy-100); }
+  .chip.frozen { background:var(--paper); color:var(--muted); border:1px solid var(--line); }
+  .chip.over { background:var(--red-50); color:var(--red-700); border:1px solid var(--red-200); }
+  .chip.ended { background:var(--gold-50); color:var(--gold-800); border:1px solid var(--gold-300); }
+  .chip.blocked { background:var(--red-50); color:var(--red-700); border:1px solid var(--red-200); }
+
+  tr.open td { background:var(--navy-50); }
+  tr.detail > td { background:var(--paper); padding:0 13px 14px; border-top:0; }
+  .detailbox { border:1px solid var(--line); border-radius:10px; background:var(--surface); padding:13px 15px; margin-top:2px; }
+  .detail-title { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:0 0 8px; }
+  table.inner { font-size:12.5px; }
+  table.inner thead th { background:transparent; color:var(--muted); border-bottom:1px solid var(--line); }
+  table.inner th, table.inner td { padding:5px 12px 5px 0; }
+  .warn { margin-top:11px; border-radius:9px; border:1px solid var(--gold-300); background:var(--gold-50); padding:9px 11px; font-size:12px; color:var(--gold-800); }
+  .warn b { color:var(--navy-800); }
+  .bad { margin-top:11px; border-radius:9px; border:1px solid var(--red-200); background:var(--red-50); padding:9px 11px; font-size:12px; color:var(--red-700); }
+  .bad b { color:var(--red-700); }
+  .quiet { margin-top:11px; border-radius:9px; border:1px solid var(--line); background:var(--paper); padding:9px 11px; font-size:12px; color:var(--muted); }
+
+  /* ── Re-price panel ─────────────────────────────────────────── */
+  .panelgrid { display:grid; gap:16px; grid-template-columns:1fr; }
+  @media (min-width:820px) { .panelgrid { grid-template-columns:1.15fr .85fr; align-items:start; } }
+  .panel { border:1px solid var(--line); border-radius:12px; background:var(--surface); overflow:hidden; }
+  .panel-head { background:var(--navy-800); color:#fff; padding:11px 15px; display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .panel-head h3 { font-family:var(--serif); font-size:16px; margin:0; font-weight:600; }
+  .panel-head span { font-size:12px; color:var(--navy-200); }
+  .panel-body { padding:15px; display:flex; flex-direction:column; gap:12px; }
+  .person { display:flex; align-items:center; gap:11px; border:1px solid var(--line); border-radius:9px; padding:9px 11px; }
+  .person.on { border-color:var(--navy-300); background:var(--navy-50); }
+  .person.fixed { background:var(--paper); }
+  .box { width:15px; height:15px; border-radius:4px; border:1.5px solid var(--navy-400); flex:none; display:grid; place-items:center; font-size:10px; color:#fff; }
+  .box.on { background:var(--navy-700); border-color:var(--navy-700); }
+  .box.lock { background:var(--line); border-color:var(--line); color:var(--muted); }
+  .person .nm { font-weight:600; font-size:13.5px; }
+  .person .ag { font-size:12px; color:var(--muted); }
+  .person .pr { margin-left:auto; font-variant-numeric:tabular-nums; font-size:13.5px; color:var(--navy-800); font-weight:600; }
+  .sum { border-top:1px dashed var(--line); padding-top:11px; display:flex; flex-direction:column; gap:6px; font-size:13px; }
+  .sum .r { display:flex; justify-content:space-between; color:var(--muted); }
+  .sum .r b { color:var(--ink); font-variant-numeric:tabular-nums; font-weight:600; }
+  .sum .r.total { color:var(--ink); font-weight:600; padding-top:6px; border-top:1px solid var(--line); }
+  .sum .r.total b { font-family:var(--serif); font-size:19px; color:var(--navy-800); }
+  .actions { display:flex; gap:9px; align-items:center; }
+  .btn { border-radius:9px; padding:7px 15px; font-size:13px; font-weight:700; font-family:inherit; border:1px solid var(--line); background:var(--surface); color:var(--navy-700); cursor:default; }
+  .btn.primary { background:var(--gold-500); border-color:var(--gold-500); color:var(--navy-900); }
+  .btn.danger { border:0; background:transparent; color:var(--muted); font-weight:600; }
+  .delta { font-size:12px; color:var(--muted); }
+  .delta b { color:var(--navy-800); font-variant-numeric:tabular-nums; }
+
+  .side { border:1px solid var(--line); border-radius:12px; background:var(--paper); padding:15px; }
+  .side h4 { font-family:var(--serif); font-size:15px; margin:0 0 8px; font-weight:600; }
+  .side p { font-size:12.5px; color:var(--muted); margin:0 0 8px; }
+  .side p:last-child { margin-bottom:0; }
+
+  .cols { display:grid; gap:16px; grid-template-columns:1fr; }
+  @media (min-width:820px) { .cols { grid-template-columns:1fr 1fr; } }
+  .compare { border:1px solid var(--line); border-radius:12px; padding:15px; background:var(--surface); }
+  .compare h4 { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin:0 0 9px; color:var(--muted); }
+  .compare.now h4 { color:var(--red-700); }
+  .compare.next h4 { color:var(--green-700); }
+  .compare ul { margin:0; padding-left:17px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:6px; }
+
+  .footnote { border-top:1px solid var(--line); padding-top:18px; font-size:12.5px; color:var(--muted); }
+  .footnote b { color:var(--ink); }
+  :focus-visible { outline:2px solid var(--gold-300); outline-offset:2px; }
+</style>
+
+<div class="wrap">
+  <header class="doc-head">
+    <p class="eyebrow">Design mockup · Benefits · Admin</p>
+    <h1>Medical commitments — management view</h1>
+    <p>
+      The same figures HR reads today, re-shaped so a cycle with 30+ commitments can be scanned instead of
+      read. Nothing is removed: the per-cycle charge split, the reconciliation sentences, re-price and remove
+      all survive — they move from "always on every row" to "on the row you opened". Three things are new:
+      a totals rail, an exceptions filter, and the list of people who have <em>not</em> committed yet.
+    </p>
+  </header>
+
+  <!-- 1 ─────────────────────────────────────────────────────── -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">1</span>
+      <h2>The rail</h2>
+      <span class="sub">what the cycle costs, before any single person</span>
+    </div>
+    <div class="stage">
+      <div class="rail">
+        <div class="tile lead">
+          <div class="k">Committed premium</div>
+          <div class="v">312,480</div>
+          <div class="s">24 of 31 eligible</div>
+        </div>
+        <div class="tile">
+          <div class="k">From the 2026 pool</div>
+          <div class="v">170,220</div>
+          <div class="s">months inside this cycle</div>
+        </div>
+        <div class="tile">
+          <div class="k">Carries to 2027</div>
+          <div class="v">142,260</div>
+          <div class="s">charged when you open it</div>
+        </div>
+        <div class="tile">
+          <div class="k">Not committed</div>
+          <div class="v">7</div>
+          <div class="s">2 blocked on a missing DOB</div>
+        </div>
+        <div class="tile flag">
+          <div class="k">Needs attention</div>
+          <div class="v">3</div>
+          <div class="s">over-charged · cover ended</div>
+        </div>
+      </div>
+      <p class="note" style="margin-top:14px;">
+        Every tile is also a filter. <strong>Carries to 2027</strong> is the number HR is asked for at
+        budget time and today has to add up by hand, one row at a time.
+      </p>
+    </div>
+  </section>
+
+  <!-- 2 ─────────────────────────────────────────────────────── -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">2</span>
+      <h2>The list</h2>
+      <span class="sub">one line per person · sorted, filtered, collapsed</span>
+    </div>
+    <div class="stage">
+      <div class="chips" style="margin-bottom:13px;">
+        <button class="fchip" aria-pressed="true">All<span class="c">24</span></button>
+        <button class="fchip alert">Needs attention<span class="c">3</span></button>
+        <button class="fchip">Carrying over<span class="c">24</span></button>
+        <button class="fchip">Closed-cycle charges<span class="c">2</span></button>
+        <button class="fchip">Family cover<span class="c">11</span></button>
+        <button class="fchip">Not committed<span class="c">7</span></button>
+      </div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable sorted">Employee</th>
+              <th>Cover</th>
+              <th class="num sortable">Annual cost</th>
+              <th class="num sortable">From 2026 pool</th>
+              <th class="num sortable">Carries over</th>
+              <th>Charge state</th>
+              <th class="num">Committed</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="who"><span class="caret">▸</span>Rana Reda</td>
+              <td class="cover"><b>You +2</b> · spouse, 1 child</td>
+              <td class="num">18,352</td>
+              <td class="num">10,010</td>
+              <td class="num muted-cell">8,342</td>
+              <td><span class="chip split">Split · 6 of 12 mo</span></td>
+              <td class="num muted-cell">16 Aug</td>
+              <td class="num"><button class="rowbtn">Manage</button></td>
+            </tr>
+            <tr>
+              <td class="who"><span class="caret">▸</span>Ahmed Galal</td>
+              <td class="cover"><b>You</b></td>
+              <td class="num">9,883</td>
+              <td class="num">5,390</td>
+              <td class="num muted-cell">4,493</td>
+              <td><span class="chip split">Split · 6 of 12 mo</span></td>
+              <td class="num muted-cell">15 Jun</td>
+              <td class="num"><button class="rowbtn">Manage</button></td>
+            </tr>
+
+            <!-- opened row -->
+            <tr class="open">
+              <td class="who"><span class="caret">▾</span>Aley eldeen Mahmoud</td>
+              <td class="cover"><b>You +1</b> · 1 child</td>
+              <td class="num">13,873</td>
+              <td class="num">7,567</td>
+              <td class="num muted-cell">6,306</td>
+              <td><span class="chip split">Split · 6 of 12 mo</span></td>
+              <td class="num muted-cell">15 Jun</td>
+              <td class="num"><button class="rowbtn">Manage</button></td>
+            </tr>
+            <tr class="detail">
+              <td colspan="8">
+                <div class="detailbox">
+                  <p class="detail-title">Charged to · policy term 15 Jun 2026 – 14 Jun 2027</p>
+                  <table class="inner">
+                    <thead>
+                      <tr><th>Benefits cycle</th><th class="num">Months</th><th class="num">From that cycle's pool</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>2026</td><td class="num">6</td><td class="num">EGP 7,567</td><td><span class="chip ok">Applied</span></td></tr>
+                      <tr><td>2027</td><td class="num">6</td><td class="num">EGP 6,306</td><td><span class="chip split">On cycle open</span></td></tr>
+                    </tbody>
+                  </table>
+                  <p class="quiet"><b style="color:var(--ink);">EGP 6,306</b> of this cover falls after 2026 ends. It's charged to the next cycle when you open it.</p>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="who"><span class="caret">▸</span>Hussein Abdullah</td>
+              <td class="cover"><b>You</b></td>
+              <td class="num">7,181</td>
+              <td class="num">3,917</td>
+              <td class="num muted-cell">3,264</td>
+              <td><span class="chip split">Split · 6 of 12 mo</span></td>
+              <td class="num muted-cell">15 Jun</td>
+              <td class="num"><button class="rowbtn">Manage</button></td>
+            </tr>
+            <tr>
+              <td class="who"><span class="caret">▸</span>Nour Kamel</td>
+              <td class="cover"><b>You +3</b> · spouse, 2 children</td>
+              <td class="num">24,610</td>
+              <td class="num">24,610</td>
+              <td class="num muted-cell">—</td>
+              <td><span class="chip ok">Fully charged</span></td>
+              <td class="num muted-cell">4 Feb</td>
+              <td class="num"><button class="rowbtn">Manage</button></td>
+            </tr>
+            <tr>
+              <td class="who"><span class="caret">▸</span>Mariam Fouad</td>
+              <td class="cover"><b>You +1</b> · spouse</td>
+              <td class="num">16,204</td>
+              <td class="num">16,930</td>
+              <td class="num muted-cell">—</td>
+              <td><span class="chip over">Over-charged 726</span></td>
+              <td class="num muted-cell">11 Jan</td>
+              <td class="num"><button class="rowbtn">Manage</button></td>
+            </tr>
+            <tr>
+              <td class="who"><span class="caret">▸</span>Karim Adel</td>
+              <td class="cover"><b>You</b></td>
+              <td class="num">8,940</td>
+              <td class="num">4,470</td>
+              <td class="num muted-cell">—</td>
+              <td><span class="chip ended">Cover ended · left 30 Jun</span></td>
+              <td class="num muted-cell">3 Jan</td>
+              <td class="num"><button class="rowbtn">Manage</button></td>
+            </tr>
+            <tr>
+              <td class="who"><span class="caret">▸</span>Salma Rashad</td>
+              <td class="cover"><b>You +2</b> · spouse, 1 child</td>
+              <td class="num">19,470</td>
+              <td class="num">9,735</td>
+              <td class="num muted-cell">9,735</td>
+              <td><span class="chip frozen">Part in a closed cycle</span></td>
+              <td class="num muted-cell">2 Jan</td>
+              <td class="num"><button class="rowbtn">Manage</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ul class="note-list" style="margin-top:14px;">
+        <li><strong>The charge state is the column that earns its place.</strong> Today "Applied · carries over" is a paragraph repeated under all 24 rows; as a chip it's readable in one pass, and the three rows that differ stand out without being hunted for.</li>
+        <li><strong>Cover collapses to a count</strong> ("You +2 · spouse, 1 child"). The names live in the opened row and the re-price panel, where they matter.</li>
+        <li><strong>Sort and filter follow the employee registry</strong> — same frozen navy header, same click-to-sort headers, so this stops being the one admin table that behaves differently.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3 ─────────────────────────────────────────────────────── -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">3</span>
+      <h2>The three exceptions</h2>
+      <span class="sub">the rows the filter chip pulls up</span>
+    </div>
+    <div class="stage">
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Employee</th><th>What happened</th><th class="num">Amount</th><th>What HR does</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="who">Mariam Fouad</td>
+              <td class="muted-cell">Charged more than the cover costs</td>
+              <td class="num">EGP 726</td>
+              <td class="muted-cell">Settle with the insurer — a closed cycle can't be un-charged</td>
+            </tr>
+            <tr>
+              <td class="who">Karim Adel</td>
+              <td class="muted-cell">Left 30 Jun; cover ended mid-term</td>
+              <td class="num">EGP 4,470</td>
+              <td class="muted-cell">Recover the unused premium from the insurer</td>
+            </tr>
+            <tr>
+              <td class="who">Salma Rashad</td>
+              <td class="muted-cell">Part of the premium sits in the closed 2025 cycle</td>
+              <td class="num">EGP 9,735</td>
+              <td class="muted-cell">Nothing — it's frozen by design, and re-pricing won't rewrite it</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:13px;">
+        Same three sentences the current screen already writes — moved out from under 24 healthy rows and
+        given a count on the rail, so an over-charge is noticed the day it happens rather than the next time
+        someone reads the whole list.
+      </p>
+    </div>
+  </section>
+
+  <!-- 4 ─────────────────────────────────────────────────────── -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">4</span>
+      <h2>Manage — re-price on purpose</h2>
+      <span class="sub">replaces the always-live checkboxes in every row</span>
+    </div>
+    <div class="panelgrid">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Rana Reda</h3>
+          <span>Committed 16 Aug 2026 · locked</span>
+        </div>
+        <div class="panel-body">
+          <p class="detail-title" style="margin:0;">Who is covered</p>
+          <div class="person on fixed">
+            <span class="box lock">✓</span>
+            <span><span class="nm">Rana Reda</span> <span class="ag">· 34 · band 30–34</span></span>
+            <span class="pr">7,842</span>
+          </div>
+          <div class="person on">
+            <span class="box on">✓</span>
+            <span><span class="nm">Mo'men elhabashi</span> <span class="ag">· spouse · 37 · band 35–39</span></span>
+            <span class="pr">8,410</span>
+          </div>
+          <div class="person on">
+            <span class="box on">✓</span>
+            <span><span class="nm">Zein</span> <span class="ag">· child · 6 · band 0–9</span></span>
+            <span class="pr">2,100</span>
+          </div>
+
+          <div class="sum">
+            <div class="r"><span>Sum of age bands</span><b>18,352</b></div>
+            <div class="r"><span>Cycle months (15 Jun 2026 – 14 Jun 2027)</span><b>12 of 12</b></div>
+            <div class="r"><span>Her pool ceiling</span><b>20,000</b></div>
+            <div class="r total"><span>Annual insurance cost</span><b>EGP 18,352</b></div>
+          </div>
+
+          <div class="actions">
+            <button class="btn primary">Re-price</button>
+            <span class="delta">was <b>18,352</b> · no change</span>
+            <button class="btn danger" style="margin-left:auto;">Remove commitment</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="side">
+        <h4>Why this moved out of the row</h4>
+        <p>
+          Today every commitment carries live dependant checkboxes one click away from <em>Re-price</em>,
+          in a list HR is scrolling. Medical is the locked, money-bearing benefit — changing who is covered
+          should be a decision, not a stray click.
+        </p>
+        <p>
+          The panel also shows the <b>working</b>: each covered person's age, the band it lands in, and the
+          figure it contributes. Right now the premium is a single number and the only way to check it is
+          to re-derive it from the rate card.
+        </p>
+        <p>
+          <b>Re-price</b> reports what changed before it's applied ("was 18,352 → 16,252"), so an accidental
+          un-tick is visible rather than silent.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 ─────────────────────────────────────────────────────── -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">5</span>
+      <h2>Not committed yet</h2>
+      <span class="sub">the half of the job the current screen can't show</span>
+    </div>
+    <div class="stage">
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Employee</th><th>Contract</th><th class="num">Pool ceiling</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="who">Youssef Nabil</td><td class="muted-cell">Full-time · 2–4y</td><td class="num">20,000</td>
+              <td><span class="chip blocked">Blocked · no date of birth</span></td>
+              <td class="num"><button class="rowbtn">Open his record</button></td>
+            </tr>
+            <tr>
+              <td class="who">Dina Sherif</td><td class="muted-cell">Full-time · 6mo–2y</td><td class="num">15,000</td>
+              <td><span class="chip blocked">Blocked · spouse has no DOB</span></td>
+              <td class="num"><button class="rowbtn">Open her record</button></td>
+            </tr>
+            <tr>
+              <td class="who">Omar Hegazy</td><td class="muted-cell">Full-time · 4–7y</td><td class="num">25,000</td>
+              <td><span class="chip frozen">Eligible · not committed</span></td>
+              <td class="num"><button class="rowbtn">Open his record</button></td>
+            </tr>
+            <tr>
+              <td class="who">Laila Mansour</td><td class="muted-cell">Part-time · 2–4y</td><td class="num">10,000</td>
+              <td><span class="chip frozen">Eligible · not committed</span></td>
+              <td class="num"><button class="rowbtn">Open her record</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:13px;">
+        A missing date of birth blocks the commit outright (spec 023), and today nothing on this screen says
+        so — the person simply never appears. <strong>There is no "send a reminder" button here on purpose:</strong>
+        email stays limited to the claim workflow (spec 020). This is a chase list HR works from, not a
+        notification surface.
+      </p>
+    </div>
+  </section>
+
+  <!-- 6 ─────────────────────────────────────────────────────── -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">6</span>
+      <h2>What changes, and what doesn't</h2>
+    </div>
+    <div class="cols">
+      <div class="compare now">
+        <h4>Leaves the screen</h4>
+        <ul>
+          <li>The permanently-expanded "Charged to" box under every row — it moves behind the row you open.</li>
+          <li>The repeated "EGP N falls after 2026 ends" sentence — it becomes the <b>Carries over</b> column, and stays as prose only for the exceptions.</li>
+          <li>Always-live dependant checkboxes in the list — they move into the Manage panel.</li>
+        </ul>
+      </div>
+      <div class="compare next">
+        <h4>Stays exactly as it is</h4>
+        <ul>
+          <li>Every figure: premium, term dates, per-cycle months and amounts, charge statuses, committed date.</li>
+          <li>All four wordings for over-charge, cover-ended recovery, closed-cycle freeze, and carry-over.</li>
+          <li>Re-price, Re-price all, Remove, Export CSV — same actions, same server rules.</li>
+          <li>Navy/gold, the serif headings, the frozen navy table header from the registry.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <p class="footnote">
+    Mockup only — no components changed. Separate from this: on the live screen every dependant checkbox
+    renders with the same <b>id="adminbenefits-dependantIds"</b> inside the row loop, and its label points at
+    that id, so clicking a label's <em>text</em> toggles the first row's checkbox instead of its own. Worth
+    fixing whether or not this redesign goes ahead.
+  </p>
+</div>
