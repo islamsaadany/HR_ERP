@@ -18,7 +18,6 @@ import {
 } from "@/lib/benefits/config";
 import { classifyEligibility, hasKnownStartDate, poolCycleFraction, prorate } from "@/lib/benefits/proration";
 import { overlapWholeMonths } from "@/lib/benefits/policy-year";
-import { commitmentAttention } from "@/lib/benefits/attention";
 import { deriveTenureBand } from "@/lib/tenure";
 import {
   MedicalCommitmentsPanel,
@@ -173,9 +172,7 @@ export default async function AdminBenefitsPage({
   const medicalRows: MedicalRow[] = medicalCommitments.map((m) => {
     const charges = chargesByCommitment.get(m.id) ?? [];
     const term = policyYears.find((p) => p.id === m.policyYearId);
-    // One definition of "needs attention", shared with the Medical tab badge and the admin
-    // home's pill — three surfaces that must never disagree about the same commitment.
-    const flags = commitmentAttention(m.premium, charges);
+    const chargeTotal = charges.reduce((n, c) => n + c.amount, 0);
     // What this cycle's pool actually absorbs — APPLIED charges only, with the legacy
     // fallback for a commitment that predates per-cycle charges (config.medicalCycleCharge).
     const thisCycle = active
@@ -205,7 +202,7 @@ export default async function AdminBenefitsPage({
       // charged to a later cycle. A cancelled charge is recovered from the insurer, not
       // carried, so it never counts here (spec 030).
       carriesOver: Math.max(0, m.premium - thisCycle - cancelled),
-      overCharged: flags.overCharged,
+      overCharged: Math.max(0, chargeTotal - m.premium),
       committedAt: formatDate(m.committedAt),
       termLabel: term ? `${formatDate(term.startDate)} – ${formatDate(term.endDate)}` : null,
       termEndLabel: term ? formatDate(term.endDate) : null,
@@ -216,8 +213,8 @@ export default async function AdminBenefitsPage({
             { start: term.startDate, end: term.endDate }
           )
         : charges.reduce((n, c) => n + c.overlapMonths, 0),
-      cancelled: flags.coverEnded,
-      frozen: flags.frozen,
+      cancelled: charges.some((c) => c.status === "CANCELLED"),
+      frozen: charges.some((c) => c.status === "APPLIED" && c.planYear.status === "CLOSED"),
       charges: charges.map((c) => ({
         id: c.id,
         cycleName: c.planYear.name,
@@ -572,8 +569,6 @@ export default async function AdminBenefitsPage({
     );
   };
 
-  const medicalNeedingAttention = medicalRows.filter((r) => r.overCharged > 0 || r.cancelled || r.frozen).length;
-
   // ── Tab 1: Medical commitments ──────────────────────────────────────────
   // Management view (mockup signed off 2026-08-16): a counts-first rail, one line per
   // person, and the per-cycle split behind the row you open. Every figure and wording the
@@ -857,7 +852,7 @@ export default async function AdminBenefitsPage({
         tabs={[
           {
             id: "submissions",
-            label: "Claims",
+            label: "Submissions & Claims",
             badge: claimsToReview,
             // Non-table tabs get their own scroll region so the pinned page never scrolls.
             node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{submissionsPanel}</div>,
@@ -865,9 +860,6 @@ export default async function AdminBenefitsPage({
           {
             id: "medical",
             label: "Medical",
-            // Red, not gold: this badge counts money that is wrong, not people waiting.
-            badge: medicalNeedingAttention,
-            badgeTone: "bad",
             node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{medicalPanel}</div>,
           },
           { id: "catalogue", label: "Benefits Catalogue", node: cataloguePanel },

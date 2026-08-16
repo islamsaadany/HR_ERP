@@ -239,6 +239,53 @@ async function main() {
   const stillSubmitted = await prisma.benefitClaim.count({ where: { status: "SUBMITTED" } });
   check("bulk approve does nothing without an authenticated admin", stillSubmitted === 2, stillSubmitted);
 
+  // ── 7. Attention counts — the admin card pill and the Medical tab badge ──
+  // The card, the badge and the row chip must agree, so they all call `commitmentAttention`.
+  const { benefitsAttention, commitmentAttention, pendingLeaveCount } = await import("../src/lib/benefits/attention");
+  console.log("\n7. Attention counts");
+
+  const clean = await benefitsAttention();
+  check("a healthy cycle flags no medical exceptions", clean.medical === 0, clean.medical);
+  check("the two queued claims are counted as to-review", clean.claimsToReview === 2, clean.claimsToReview);
+  check(
+    "the employee with no DOB is counted as blocked, and only them",
+    clean.blocked === 1,
+    clean.blocked
+  );
+  check(
+    "'not committed' is deliberately NOT in the total",
+    clean.total === clean.claimsToReview + clean.medical + clean.blocked && clean.total === 3,
+    clean.total
+  );
+
+  // Break one commitment each way and re-count.
+  await prisma.medicalCommitment.update({ where: { id: commitment.id }, data: { premium: chargeTotal - 500 } });
+  const withOver = await benefitsAttention();
+  check("an over-charged commitment lifts the medical count", withOver.overCharged === 1 && withOver.medical === 1, withOver);
+  await prisma.medicalCommitment.update({ where: { id: commitment.id }, data: { premium: commitment.premium } });
+
+  await prisma.medicalCycleCharge.updateMany({ where: { commitmentId: commitment.id }, data: { status: "CANCELLED" } });
+  const withEnded = await benefitsAttention();
+  check("a cancelled charge counts as cover ended", withEnded.coverEnded === 1 && withEnded.medical === 1, withEnded);
+  await prisma.medicalCycleCharge.updateMany({ where: { commitmentId: commitment.id }, data: { status: "APPLIED" } });
+
+  await prisma.planYear.update({ where: { id: cycle.id }, data: { status: "CLOSED" } });
+  const withFrozen = await benefitsAttention();
+  check("an applied charge on a closed cycle counts as frozen", withFrozen.frozen === 1, withFrozen.frozen);
+  await prisma.planYear.update({ where: { id: cycle.id }, data: { status: "OPEN" } });
+
+  // The row chip and the counts read the same function, so they cannot disagree.
+  const rowFlags = commitmentAttention(commitment.premium, charges as never);
+  check("row chip and pill agree on a healthy commitment", rowFlags.attention === false);
+
+  await prisma.leaveRequest.create({
+    data: { userId: ahmed.id, startDate: D(2026, 9, 1), endDate: D(2026, 9, 3), status: "PENDING", updatedAt: new Date() },
+  });
+  await prisma.leaveRequest.create({
+    data: { userId: ahmed.id, startDate: D(2026, 10, 1), endDate: D(2026, 10, 2), status: "APPROVED", updatedAt: new Date() },
+  });
+  check("only pending leave is counted for the Time-Off pill", (await pendingLeaveCount()) === 1);
+
   console.log(`\n${fail === 0 ? "ALL PASS" : "FAILURES"} — ${pass} passed, ${fail} failed`);
   await prisma.$disconnect();
   process.exit(fail === 0 ? 0 : 1);
