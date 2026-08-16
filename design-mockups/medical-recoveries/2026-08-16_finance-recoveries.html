@@ -1,0 +1,225 @@
+<title>Finance Recoveries</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6;
+    --navy-500:#2f4d78; --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-50:#fbf7ea; --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-600:#a8821e; --gold-700:#85641b; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-50:#fef2f2; --red-300:#fca5a5; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-200:#bbf7d0; --green-700:#15803d;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1040px; margin:0 auto; padding:32px 24px 72px; display:flex; flex-direction:column; gap:36px; }
+  .doc-head { border-bottom:1px solid var(--line); padding-bottom:20px; }
+  .doc-head h1 { font-family:var(--serif); font-size:30px; margin:6px 0 0; font-weight:600; text-wrap:balance; }
+  .doc-head p { color:var(--muted); margin:8px 0 0; max-width:64ch; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+  .block { display:flex; flex-direction:column; gap:14px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .block-head .n { font-family:var(--serif); font-size:13px; font-weight:700; color:var(--navy-800); background:var(--gold-100); border:1px solid var(--gold-300); width:24px; height:24px; border-radius:999px; display:grid; place-items:center; flex:none; }
+  .block-head h2 { font-family:var(--serif); font-size:20px; margin:0; font-weight:600; }
+  .block-head .sub { color:var(--muted); font-size:13px; }
+  .stage { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:22px; }
+  .note { font-size:13px; color:var(--muted); margin:0; }
+  .note strong { color:var(--ink); font-weight:600; }
+  .note-list { margin:0; padding-left:18px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:5px; }
+  .new-flag { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-700); background:var(--gold-50); border:1px solid var(--gold-300); border-radius:999px; padding:2px 7px; }
+
+  h3.sect { font-family:var(--serif); font-size:19px; margin:0 0 4px; font-weight:600; }
+  p.lede { color:var(--muted); font-size:14px; margin:0 0 12px; max-width:70ch; }
+
+  .panel { border:1px solid var(--line); background:var(--surface); border-radius:12px; overflow:hidden; }
+  .tablewrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { padding:10px 12px; text-align:left; vertical-align:top; }
+  thead th { border-bottom:1px solid var(--line); font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600; white-space:nowrap; }
+  tbody tr { border-bottom:1px solid var(--line); }
+  tbody tr:last-child { border-bottom:0; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .who { font-weight:600; color:var(--ink); }
+  .meta { font-size:12px; color:var(--muted); margin-top:2px; }
+  .working { font-size:11px; color:var(--muted); margin-top:2px; }
+  .chip { display:inline-block; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .chip.open { background:var(--gold-50); color:var(--gold-800); border:1px solid var(--gold-300); }
+  .chip.done { background:var(--green-50); color:var(--green-700); border:1px solid var(--green-200); }
+  .chip.off { background:var(--paper); color:var(--muted); border:1px solid var(--line); }
+  .short { color:var(--red-600); font-weight:600; }
+  .zero { color:var(--muted); }
+
+  .settle { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; }
+  .settle label { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:3px; }
+  .settle input { border:1px solid var(--line); border-radius:8px; padding:6px 9px; font:inherit; font-size:13px; background:var(--surface); color:var(--ink); }
+  .settle input.amt { width:110px; text-align:right; font-variant-numeric:tabular-nums; }
+  .btn { background:var(--navy-800); color:#fff; border:0; border-radius:8px; padding:7px 13px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .btn.ghost { background:var(--surface); color:var(--navy-700); border:1px solid var(--line); }
+  .totals { display:flex; flex-wrap:wrap; gap:22px; border-top:1px solid var(--line); background:var(--paper); padding:12px 14px; }
+  .totals div span { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .totals div b { font-family:var(--serif); font-size:19px; font-variant-numeric:tabular-nums; color:var(--navy-800); }
+  .totals div b.short { color:var(--red-600); }
+  .faded { opacity:.6; border:1px dashed var(--line); border-radius:12px; padding:14px; background:var(--surface); }
+  :focus-visible { outline:2px solid var(--gold-300); outline-offset:2px; }
+</style>
+
+<div class="wrap">
+  <header class="doc-head">
+    <p class="eyebrow">Design mockup · Finance</p>
+    <h1>Medical premium recoveries</h1>
+    <p>
+      When someone leaves mid-policy the company has already paid the insurer for cover it won&apos;t
+      use. This is the follow-up: a list Finance works to zero, sitting beneath the payments queue
+      they already open.
+    </p>
+  </header>
+
+  <!-- 1 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">1</span>
+      <h2>Where it sits</h2>
+      <span class="sub">/finance, below the existing payments queue</span>
+    </div>
+    <div class="stage">
+      <div class="faded">
+        <p class="eyebrow">Finance · Payments</p>
+        <h3 class="sect" style="margin-top:4px">Payments</h3>
+        <p class="lede">Approved claims to pay — unchanged.</p>
+      </div>
+      <p class="note" style="margin:14px 0 0">↓ new section, same page</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">2</span>
+      <h2>The recoveries list</h2>
+      <span class="sub">open first, settled below <span class="new-flag">New</span></span>
+    </div>
+    <div class="stage">
+      <h3 class="sect">Medical recoveries</h3>
+      <p class="lede">
+        Premium already paid for cover after someone&apos;s last day. Chase the insurer, then record what
+        came back — or write it off with a reason.
+      </p>
+
+      <div class="panel">
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Cover ended</th>
+                <th class="num">Expected back</th>
+                <th class="num">Recovered</th>
+                <th class="num">Shortfall</th>
+                <th>Settle</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="who">Tarek Nour</div>
+                  <div class="meta">Policy 1 Jun 2026 – 31 May 2027 · premium EGP 26,000</div>
+                </td>
+                <td>
+                  30 Nov 2026
+                  <div class="meta"><span class="chip open">Open</span></div>
+                </td>
+                <td class="num">
+                  <b>EGP 13,000</b>
+                  <div class="working">6 of 12 months</div>
+                </td>
+                <td class="num zero">—</td>
+                <td class="num zero">—</td>
+                <td>
+                  <div class="settle">
+                    <div>
+                      <label for="a1">Recovered</label>
+                      <input id="a1" class="amt" value="11,500" />
+                    </div>
+                    <div>
+                      <label for="d1">On</label>
+                      <input id="d1" type="date" value="2027-01-14" />
+                    </div>
+                    <button class="btn">Record</button>
+                    <button class="btn ghost">Write off…</button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="who">Salma Adel</div>
+                  <div class="meta">Policy 1 Jun 2026 – 31 May 2027 · premium EGP 18,000</div>
+                </td>
+                <td>
+                  —
+                  <div class="meta"><span class="chip open">Needs leave date</span></div>
+                </td>
+                <td class="num zero">
+                  —
+                  <div class="working">can&apos;t be worked out yet</div>
+                </td>
+                <td class="num zero">—</td>
+                <td class="num zero">—</td>
+                <td><span class="meta">Ask HR to record her last day.</span></td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="who">Youssef Kamal</div>
+                  <div class="meta">Policy 1 Jun 2026 – 31 May 2027 · premium EGP 32,000</div>
+                </td>
+                <td>
+                  31 Aug 2026
+                  <div class="meta"><span class="chip done">Recovered</span> 12 Oct 2026 · by Finance</div>
+                </td>
+                <td class="num">EGP 24,000<div class="working">9 of 12 months</div></td>
+                <td class="num">EGP 24,000</td>
+                <td class="num zero">0</td>
+                <td><span class="meta">Settled in full.</span></td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="who">Mona Fathy</div>
+                  <div class="meta">Policy 1 Jun 2026 – 31 May 2027 · premium EGP 14,000</div>
+                </td>
+                <td>
+                  30 Apr 2027
+                  <div class="meta"><span class="chip off">Written off</span> 8 May 2027 · by Finance</div>
+                </td>
+                <td class="num">EGP 1,166<div class="working">1 of 12 months</div></td>
+                <td class="num zero">0</td>
+                <td class="num short">EGP 1,166</td>
+                <td><span class="meta">“Below the insurer&apos;s minimum adjustment.”</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="totals">
+          <div><span>Expected (settled)</span><b>EGP 25,166</b></div>
+          <div><span>Recovered</span><b>EGP 24,000</b></div>
+          <div><span>Shortfall</span><b class="short">EGP 1,166</b></div>
+          <div><span>Still open</span><b>EGP 13,000</b></div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="note-list">
+      <li><strong>The working is shown next to every figure</strong> — “6 of 12 months”. The expected
+        amount is a claim against the insurer, not an authority, so it has to be checkable at a glance
+        against their credit note.</li>
+      <li><strong>Expected is 13,000, not the 10,834 that was cancelled.</strong> December sits inside a
+        charge already applied to the 2026 pool. Reading the cancelled figure would under-claim on every
+        leaver — the single most likely way to build this wrong.</li>
+      <li><strong>A missing last day shows as “Needs leave date”</strong>, not a computed number. A
+        confident wrong figure is worse than an obvious gap.</li>
+      <li>The <strong>shortfall</strong> column is the point of recording actuals: one partial refund is
+        noise, but a column of them says the insurer is systematically short-paying.</li>
+      <li>Write-offs keep their reason, so “we lost it” is always attached to why.</li>
+    </ul>
+  </section>
+</div>

@@ -2,6 +2,8 @@ import { requireFinance } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { formatDate, toDateInput } from "@/lib/labels";
 import { PaymentsQueue, type PaymentRow } from "@/components/finance/PaymentsQueue";
+import { RecoveriesTable, type RecoveryRow } from "@/components/finance/RecoveriesTable";
+import { syncMedicalRecoveries } from "@/lib/benefits/recoveries";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +43,37 @@ export default async function FinancePage({
       hasProof: !!c.proofUrl,
     }));
 
+  // Fill in any recoveries that should exist (spec 030). Idempotent — `commitmentId` is unique —
+  // so it can run on every load. It's done here because a leave date is often recorded well after
+  // the cycle opened, and Finance's page is where the gap actually matters.
+  await syncMedicalRecoveries();
+  const recoveries = await prisma.medicalRecovery.findMany({
+    include: {
+      user: { select: { name: true } },
+      policyYear: { select: { startDate: true, endDate: true } },
+      settledBy: { select: { name: true } },
+    },
+    // Open first — this is a list that must reach zero, not a history.
+    orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+  });
+  const recoveryRows: RecoveryRow[] = recoveries
+    .sort((a, b) => (a.status === "OPEN" ? 0 : 1) - (b.status === "OPEN" ? 0 : 1))
+    .map((r) => ({
+      id: r.id,
+      employee: r.user.name,
+      term: `${formatDate(r.policyYear.startDate)} – ${formatDate(r.policyYear.endDate)}`,
+      premium: r.premiumAtCreation,
+      coverEndedOn: r.coverEndedOn ? formatDate(r.coverEndedOn) : null,
+      expectedMonths: r.expectedMonths,
+      expectedAmount: r.expectedAmount,
+      status: r.status,
+      recoveredAmount: r.recoveredAmount,
+      recoveredOn: r.recoveredOn ? formatDate(r.recoveredOn) : null,
+      shortfall: r.shortfall,
+      reason: r.reason,
+      settledBy: r.settledBy?.name ?? null,
+    }));
+
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Finance · Payments</p>
@@ -65,6 +98,15 @@ export default async function FinancePage({
       ) : null}
 
       <PaymentsQueue rows={rows} />
+
+      <section className="mt-12">
+        <h2 className="font-serif text-2xl text-ink">Medical recoveries</h2>
+        <p className="mt-1 max-w-prose text-muted">
+          Premium already paid for cover after someone&apos;s last day. Chase the insurer, then record
+          what came back — or write it off with a reason.
+        </p>
+        <RecoveriesTable rows={recoveryRows} />
+      </section>
     </div>
   );
 }

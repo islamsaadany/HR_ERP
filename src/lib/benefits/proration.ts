@@ -34,18 +34,22 @@ export function eligibilityDate(
 }
 
 /**
- * Count of COMPLETE calendar months within the window [from, end] (inclusive end).
+ * Count of COMPLETE calendar months within [from, end] (inclusive end), UNCAPPED.
  * A month counts only if its whole span sits inside the window, so a partial first
- * month (from not on the 1st) and a partial last month are both excluded. Capped at
- * 12 for a standard plan year. Examples: 1 Oct → 31 Dec = 3; 15 Oct → 31 Dec = 2.
+ * month (from not on the 1st) and a partial last month are both excluded.
+ * Examples: 1 Oct → 31 Dec = 3; 15 Oct → 31 Dec = 2; 1 Jun 2026 → 31 May 2027 = 12.
+ *
+ * Used for MEDICAL POLICY TERMS (spec 027), whose length is whatever HR configures —
+ * a term of 13 months must count 13, not be silently rounded to a year. Pool proration
+ * uses {@link remainingWholeMonths}, which caps this at 12; see the note there.
  */
-export function remainingWholeMonths(from: Date, end: Date): number {
+export function wholeMonthsBetween(from: Date, end: Date): number {
   if (from.getTime() > end.getTime()) return 0;
   let year = from.getFullYear();
   // A partial first month doesn't count: start at the 1st of the next month.
   let month = from.getDate() > 1 ? from.getMonth() + 1 : from.getMonth();
   let count = 0;
-  while (count < 12) {
+  for (;;) {
     const monthEnd = new Date(year, month + 1, 0); // last day of (year, month)
     if (monthEnd.getTime() > end.getTime()) break; // month not fully inside the window
     count += 1;
@@ -58,28 +62,67 @@ export function remainingWholeMonths(from: Date, end: Date): number {
   return count;
 }
 
+/**
+ * Whole months within [from, end], CAPPED AT 12 — the plan-year view.
+ *
+ * The cap is a business rule, not an implementation detail: a benefits cycle grants at
+ * most one year's entitlement, so a window longer than twelve months must not yield a
+ * proration fraction above 1 (that would hand every employee more than their pool
+ * ceiling). It used to be enforced incidentally, by the counting loop's bound; it is now
+ * explicit here, and `cycleFraction` clamps as well so neither relies on the other.
+ */
+export function remainingWholeMonths(from: Date, end: Date): number {
+  return Math.min(12, wholeMonthsBetween(from, end));
+}
+
 const FULL: Eligibility = { status: "FULL", remainingWholeMonths: 12, fraction: 1 };
 const NOT_YET: Eligibility = { status: "NOT_YET", remainingWholeMonths: 0, fraction: 0 };
 
 /**
+ * Whether we know when this person started. Distinguishes "not eligible yet" from "we cannot tell",
+ * which need different messages: one is a date to wait for, the other is a missing record only HR
+ * can fix. Both block.
+ */
+export function hasKnownStartDate(startDate: Date | null | undefined): boolean {
+  return !!startDate;
+}
+
+/**
  * Classify an employee for the active plan year against a service threshold.
  *
- * Fail-safe fallbacks (toward paying the full, known-good amount):
- *  - window null (no dates set) → FULL
- *  - startDate null (unknown eligibility date) → FULL
+ * Fail-safe fallback (toward paying the full, known-good amount):
+ *  - window null (no dates set) → FULL — a missing CONFIGURATION shouldn't punish employees
+ *
+ * But an unknown START DATE is not a configuration gap, it is a missing fact about this person,
+ * and it used to return FULL — so anyone with no hire date on file passed both the three-month
+ * medical gate and the six-month basket gate regardless of service. That is a money rule failing
+ * open. It now blocks, and the Benefits page tells them to ask HR for their start date rather
+ * than leaving them staring at a locked module with no reason given.
  * Otherwise:
+ *  - eligibility date still in the FUTURE → NOT_YET (see below)
  *  - eligibility date ≤ window.start → FULL
  *  - window.start < eligibility date ≤ window.end → PRORATED
  *  - eligibility date > window.end → NOT_YET
+ *
+ * THE "NOT YET, AS OF TODAY" CHECK IS THE ACCESS RULE, and it is deliberately first.
+ * Everything below it answers a *proration* question — "how much of this window do they get?" —
+ * which is not the same question as "may they have it now". Without the today check, an employee
+ * whose threshold falls anywhere inside the window is classified PRORATED and let straight in:
+ * with the medical policy term running to 14 Jun 2027, someone joining in July 2026 passed the
+ * three-month gate on their first day. The wider the window, the earlier the door opened.
  */
 export function classifyEligibility(
   startDate: Date | null | undefined,
   thresholdMonths: number,
-  window: PlanYearWindow
+  window: PlanYearWindow,
+  asOf: Date = new Date()
 ): Eligibility {
   if (!window) return FULL;
   const elig = eligibilityDate(startDate, thresholdMonths);
-  if (!elig) return FULL;
+  if (!elig) return NOT_YET;
+
+  // Not eligible until the threshold has actually been served, whatever the window says.
+  if (elig.getTime() > asOf.getTime()) return NOT_YET;
 
   if (elig.getTime() <= window.start.getTime()) return FULL;
   if (elig.getTime() > window.end.getTime()) return NOT_YET;
@@ -104,9 +147,13 @@ export function cycleWholeMonths(window: PlanYearWindow): number {
   return remainingWholeMonths(window.start, window.end);
 }
 
-/** cycleWholeMonths ÷ 12 — the fraction of a full year the cycle spans. 1 when no window. */
+/**
+ * cycleWholeMonths ÷ 12 — the fraction of a full year the cycle spans. 1 when no window.
+ * Clamped to 1: a cycle longer than a year still grants at most a full year's pool, and a
+ * fraction above 1 would mean every employee had been handed more than their ceiling.
+ */
 export function cycleFraction(window: PlanYearWindow): number {
-  return cycleWholeMonths(window) / 12;
+  return Math.min(1, cycleWholeMonths(window) / 12);
 }
 
 /**

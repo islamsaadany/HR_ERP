@@ -1,0 +1,110 @@
+<title>Over-Cap Hint</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6;
+    --navy-500:#2f4d78; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-50:#fbf7ea; --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-500:#c9a227; --gold-600:#a8821e; --gold-700:#85641b;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:960px; margin:0 auto; padding:32px 24px 72px; display:flex; flex-direction:column; gap:34px; }
+  .doc-head { border-bottom:1px solid var(--line); padding-bottom:20px; }
+  .doc-head h1 { font-family:var(--serif); font-size:28px; margin:6px 0 0; font-weight:600; }
+  .doc-head p { color:var(--muted); margin:8px 0 0; max-width:64ch; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+  .block { display:flex; flex-direction:column; gap:13px; }
+  .block h2 { font-family:var(--serif); font-size:19px; margin:0; font-weight:600; }
+  .stage { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:22px; }
+  .note { font-size:13px; color:var(--muted); margin:0; }
+  .note strong { color:var(--ink); font-weight:600; }
+  .note-list { margin:0; padding-left:18px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:5px; }
+  .note-list strong { color:var(--ink); font-weight:600; }
+  .cols { display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start; }
+
+  .pool { background:var(--navy-800); color:#fff; border-radius:16px; padding:20px; width:320px; box-sizing:border-box; }
+  .pool h4 { margin:0; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-300); font-weight:700; }
+  .pool .big { font-family:var(--serif); font-size:29px; margin-top:4px; }
+  .pool .sub { font-size:12px; color:var(--navy-200); margin-top:3px; }
+  .bar { margin-top:14px; height:10px; border-radius:999px; background:var(--navy-700); overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--gold-500); border-radius:999px; }
+  .prow { display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:10px 0; border-top:1px solid rgba(255,255,255,.12); }
+  .prow > span:first-child { color:var(--navy-200); display:flex; align-items:center; gap:5px; }
+  .prow b { font-weight:600; font-variant-numeric:tabular-nums; }
+
+  /* the hint marker + its bubble */
+  .hint { position:relative; display:inline-grid; place-items:center; width:15px; height:15px; border-radius:999px;
+          background:rgba(255,255,255,.16); color:#fff; font-size:10px; font-weight:700; cursor:help; }
+  .bubble { position:absolute; left:-6px; top:22px; z-index:5; width:250px; background:var(--surface); color:var(--ink);
+            border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:12px; line-height:1.45;
+            box-shadow:0 8px 22px rgba(10,26,48,.22); opacity:0; visibility:hidden; transition:opacity .12s; }
+  .bubble b { font-weight:600; }
+  .hint:hover .bubble, .hint:focus-visible .bubble, .hint.shown .bubble { opacity:1; visibility:visible; }
+  :focus-visible { outline:2px solid var(--gold-300); outline-offset:2px; }
+  .cap { display:inline-block; margin-top:6px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--gold-700); background:var(--gold-50); border:1px solid var(--gold-300); border-radius:999px; padding:2px 8px; }
+</style>
+
+<div class="wrap">
+  <header class="doc-head">
+    <p class="eyebrow">Design mockup · Benefits · addition to spec 031</p>
+    <h1>Explaining a claim that sits above the cap</h1>
+    <p>
+      Turn the limit off, claim past half, turn it back on: the card then reads "Used 9,000" beside
+      a 6,250 cap. Both numbers are right; together they look like a contradiction. A hover
+      explains it — and only appears when it actually applies.
+    </p>
+  </header>
+
+  <section class="block">
+    <h2>Side by side</h2>
+    <div class="stage">
+      <div class="cols">
+        <div>
+          <p class="note" style="margin-bottom:9px"><strong>Ordinary cycle</strong> — no hint, nothing to explain</p>
+          <div class="pool">
+            <h4>Your pool</h4>
+            <div class="big">EGP 9,500</div>
+            <div class="sub">left of your EGP 12,500 prorated pool</div>
+            <div class="bar"><i style="width:24%"></i></div>
+            <div class="prow"><span>Used</span><b>EGP 3,000</b></div>
+            <div class="prow"><span>Per-benefit cap (50%)</span><b>EGP 6,250</b></div>
+          </div>
+        </div>
+
+        <div>
+          <p class="note" style="margin-bottom:9px"><strong>After the limit was switched back on</strong> <span class="cap">Hint shown</span></p>
+          <div class="pool">
+            <h4>Your pool</h4>
+            <div class="big">EGP 3,500</div>
+            <div class="sub">left of your EGP 12,500 prorated pool</div>
+            <div class="bar"><i style="width:72%"></i></div>
+            <div class="prow"><span>Used</span><b>EGP 9,000</b></div>
+            <div class="prow">
+              <span>
+                Per-benefit cap (50%)
+                <span class="hint shown" tabindex="0" role="note" aria-label="Why one benefit is above this cap">?
+                  <span class="bubble">
+                    <b>Gym membership</b> was claimed while the 50% limit was switched off for this
+                    cycle, so it sits above the cap. That claim stands — nothing is taken back. You
+                    just can’t claim more on it.
+                  </span>
+                </span>
+              </span>
+              <b>EGP 6,250</b>
+            </div>
+          </div>
+          <p class="note" style="margin-top:9px; width:320px">Bubble shown open here; live it appears on hover or keyboard focus.</p>
+        </div>
+      </div>
+    </div>
+
+    <ul class="note-list">
+      <li><strong>It only appears when a benefit is genuinely above the cap.</strong> On an ordinary cycle the marker isn't rendered at all — no permanent question mark inviting a question nobody has.</li>
+      <li><strong>It names the benefit.</strong> "One of your benefits is over" would send the employee hunting; naming it means the sentence is finished.</li>
+      <li><strong>It says the claim stands.</strong> The employee's real worry on seeing this is whether money is about to be taken back. That answer comes first, before the consequence.</li>
+      <li>Hover <em>and</em> keyboard focus, with the marker focusable — a mouse-only tooltip hides the explanation from anyone using a keyboard.</li>
+      <li>Nothing else on the card moves: same rows, same numbers, same order. The marker sits inline after the existing label.</li>
+    </ul>
+  </section>
+</div>

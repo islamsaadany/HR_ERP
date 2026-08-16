@@ -1,0 +1,238 @@
+<title>50% Cap Switch</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-300:#8fa6c6;
+    --navy-500:#2f4d78; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-50:#fbf7ea; --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-500:#c9a227; --gold-600:#a8821e; --gold-700:#85641b; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-50:#fef2f2; --red-300:#fca5a5; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-200:#bbf7d0; --green-700:#15803d;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1000px; margin:0 auto; padding:32px 24px 72px; display:flex; flex-direction:column; gap:38px; }
+  .doc-head { border-bottom:1px solid var(--line); padding-bottom:20px; }
+  .doc-head h1 { font-family:var(--serif); font-size:30px; margin:6px 0 0; font-weight:600; text-wrap:balance; }
+  .doc-head p { color:var(--muted); margin:8px 0 0; max-width:64ch; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+  .block { display:flex; flex-direction:column; gap:14px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .block-head .n { font-family:var(--serif); font-size:13px; font-weight:700; color:var(--navy-800); background:var(--gold-100); border:1px solid var(--gold-300); width:24px; height:24px; border-radius:999px; display:grid; place-items:center; flex:none; }
+  .block-head h2 { font-family:var(--serif); font-size:20px; margin:0; font-weight:600; }
+  .block-head .sub { color:var(--muted); font-size:13px; }
+  .stage { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:22px; }
+  .note { font-size:13px; color:var(--muted); margin:0; }
+  .note strong { color:var(--ink); font-weight:600; }
+  .note-list { margin:0; padding-left:18px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:5px; }
+  .note-list strong { color:var(--ink); font-weight:600; }
+  .new-flag { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-700); background:var(--gold-50); border:1px solid var(--gold-300); border-radius:999px; padding:2px 7px; }
+
+  .modal { max-width:460px; background:var(--surface); border-radius:16px; padding:22px; box-shadow:0 10px 30px rgba(10,26,48,.18); }
+  .modal h3 { font-family:var(--serif); font-size:17px; margin:0; font-weight:600; }
+  .py { border-top:1px solid var(--line); padding:13px 0; }
+  .py:first-of-type { border-top:0; }
+  .py-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .py-name { font-weight:600; }
+  .pill { border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; margin-left:7px; }
+  .pill.open { background:var(--navy-50); color:var(--navy-700); }
+  .pill.closed { background:#f0f0ee; color:var(--muted); }
+  .sub2 { font-size:12px; color:var(--muted); margin-top:2px; }
+  .btn { background:var(--navy-800); color:#fff; border:0; border-radius:8px; padding:7px 14px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .btn.ghost { background:var(--surface); color:var(--navy-700); border:1px solid var(--line); }
+  .btn.sm { padding:5px 11px; font-size:12px; }
+
+  .caprow { margin-top:11px; border-radius:10px; padding:11px 12px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; }
+  .caprow.on { background:var(--navy-50); }
+  .caprow.off { background:var(--gold-50); border:1px solid var(--gold-300); }
+  .caprow .lab { font-size:13px; }
+  .caprow .lab b { display:block; }
+  .caprow .why { font-size:12px; color:var(--muted); margin-top:2px; }
+
+  .pool { background:var(--navy-800); color:#fff; border-radius:16px; padding:20px; max-width:340px; }
+  .pool h4 { margin:0; font-size:13px; color:var(--navy-200); font-weight:600; }
+  .pool .big { font-family:var(--serif); font-size:30px; margin-top:3px; }
+  .bar { margin-top:14px; height:10px; border-radius:999px; background:var(--navy-700); overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--gold-500); border-radius:999px; }
+  .prow { display:flex; justify-content:space-between; align-items:baseline; font-size:13px; padding:9px 0; border-top:1px solid rgba(255,255,255,.12); }
+  .prow span:first-child { color:var(--navy-200); }
+  .prow b { font-weight:600; font-variant-numeric:tabular-nums; }
+  .poolnote { margin-top:12px; background:rgba(255,255,255,.10); border-radius:9px; padding:9px 11px; font-size:12px; color:var(--navy-100); }
+  .poolnote b { color:#fff; }
+  .cols { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; }
+  table { border-collapse:collapse; font-size:13px; width:100%; }
+  th, td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); }
+  th { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:700; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .scroller { overflow-x:auto; }
+  :focus-visible { outline:2px solid var(--gold-300); outline-offset:2px; }
+</style>
+
+<div class="wrap">
+  <header class="doc-head">
+    <p class="eyebrow">Design mockup · Benefits</p>
+    <h1>The 50% cap, switched per cycle</h1>
+    <p>
+      The per-benefit cap is right over twelve months and perverse over five. HR can switch it off
+      for one short cycle — and the employee is told which rule they are actually under.
+    </p>
+  </header>
+
+  <!-- 1 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">1</span>
+      <h2>The control</h2>
+      <span class="sub">Admin → Benefits → Plan year <span class="new-flag">New row</span></span>
+    </div>
+    <div class="stage">
+      <div class="modal">
+        <h3>Plan years</h3>
+        <p class="note" style="margin-top:5px">
+          Only one year is open at a time. Set a start &amp; end date to prorate mid-year starters.
+        </p>
+
+        <div style="margin-top:14px">
+          <p class="note" style="margin:0 0 6px"><strong>Default — the limit is on</strong></p>
+          <div class="py">
+            <div class="py-top">
+              <div>
+                <span class="py-name">2026 H2</span><span class="pill open">OPEN</span>
+                <div class="sub2">01 Aug 2026 → 31 Dec 2026</div>
+              </div>
+              <div style="display:flex; gap:7px; flex:none">
+                <button class="btn ghost sm">Edit dates</button>
+                <button class="btn ghost sm">Close</button>
+              </div>
+            </div>
+            <div class="caprow on">
+              <div class="lab">
+                <b>50% per-benefit limit — on</b>
+                <div class="why">No single benefit may take more than half the pool.</div>
+              </div>
+              <button class="btn ghost sm">Turn off for this cycle</button>
+            </div>
+          </div>
+
+          <p class="note" style="margin:16px 0 6px"><strong>After turning it off</strong> — same cycle</p>
+          <div class="py">
+            <div class="py-top">
+              <div>
+                <span class="py-name">2026 H2</span><span class="pill open">OPEN</span>
+                <div class="sub2">01 Aug 2026 → 31 Dec 2026</div>
+              </div>
+              <div style="display:flex; gap:7px; flex:none">
+                <button class="btn ghost sm">Edit dates</button>
+                <button class="btn ghost sm">Close</button>
+              </div>
+            </div>
+            <div class="caprow off">
+              <div class="lab">
+                <b>50% per-benefit limit — off for this cycle</b>
+                <div class="why">Turned off by Mona Adel · 16 Aug 2026. The pool ceiling still applies.</div>
+              </div>
+              <button class="btn sm">Turn back on</button>
+            </div>
+          </div>
+
+          <p class="note" style="margin:16px 0 6px"><strong>A closed cycle</strong> — no button either way</p>
+          <div class="py">
+            <div class="py-top">
+              <div>
+                <span class="py-name">2026</span><span class="pill closed">CLOSED</span>
+                <div class="sub2">01 Jan 2026 → 31 Dec 2026</div>
+              </div>
+              <div style="display:flex; gap:7px; flex:none">
+                <button class="btn ghost sm">Edit dates</button>
+                <button class="btn ghost sm">Open</button>
+              </div>
+            </div>
+            <div class="caprow on">
+              <div class="lab">
+                <b>50% per-benefit limit — on</b>
+                <div class="why">A closed cycle keeps the rule its claims were judged under.</div>
+              </div>
+              <span class="note" style="font-size:12px">Closed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="note-list">
+      <li>One row per cycle, under the dates it belongs to — the limit is a property of that cycle, not a platform setting.</li>
+      <li><strong>The button toggles both ways</strong> on an open cycle: on → <em>Turn off for this cycle</em>, off → <em>Turn back on</em>. The row always states which rule is in force, so the setting is never something you have to infer from the button.</li>
+      <li><strong>Only while the cycle is open.</strong> A closed cycle shows its setting and no button; the rule its claims were judged under stays readable afterwards.</li>
+      <li>Who turned it off, and when, sits in the row. It is a money rule — the decision needs a name against it.</li>
+    </ul>
+  </section>
+
+  <!-- 2 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">2</span>
+      <h2>What the employee sees</h2>
+      <span class="sub">Benefits · the pool card</span>
+    </div>
+    <div class="stage">
+      <div class="cols">
+        <div>
+          <p class="note" style="margin-bottom:8px"><strong>Today — limit on</strong></p>
+          <div class="pool">
+            <h4>Your pool this cycle</h4>
+            <div class="big">EGP 12,500</div>
+            <div class="bar"><i style="width:24%"></i></div>
+            <div class="prow"><span>Used</span><b>EGP 3,000</b></div>
+            <div class="prow"><span>Per-benefit cap (50%)</span><b>EGP 6,250</b></div>
+          </div>
+        </div>
+        <div>
+          <p class="note" style="margin-bottom:8px"><strong>Limit off for this cycle</strong> <span class="new-flag">Changed</span></p>
+          <div class="pool">
+            <h4>Your pool this cycle</h4>
+            <div class="big">EGP 12,500</div>
+            <div class="bar"><i style="width:24%"></i></div>
+            <div class="prow"><span>Used</span><b>EGP 3,000</b></div>
+            <div class="prow"><span>Per-benefit limit</span><b>None this cycle</b></div>
+            <div class="poolnote">
+              This cycle is shorter than a year, so the <b>50% per-benefit limit does not apply</b>.
+              You can put your whole remaining pool into one benefit.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="note-list">
+      <li>The row stays in place and changes its answer — the employee reads the same line either way, so the difference is legible rather than a missing row.</li>
+      <li>The note says what changed <em>and</em> why, because an employee who doesn't know the cycle is short reads "no limit" as an error.</li>
+      <li><strong>The pool ceiling is untouched.</strong> Nothing here suggests the ceiling lifted — only the per-benefit split.</li>
+    </ul>
+  </section>
+
+  <!-- 3 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">3</span>
+      <h2>Turning it back on</h2>
+      <span class="sub">nothing is clawed back</span>
+    </div>
+    <div class="stage">
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr><th>Moment</th><th>Ceiling</th><th>Per-benefit limit</th><th class="num">Gym claimed</th><th>What the employee can do next</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Cycle opens 1 Aug, limit off</td><td>12,500</td><td>None (pool only)</td><td class="num">—</td><td>Claim up to 12,500 on one benefit</td></tr>
+            <tr><td>They claim gym</td><td>12,500</td><td>None (pool only)</td><td class="num">9,000</td><td>3,500 left in the pool, any benefit</td></tr>
+            <tr><td>HR turns the limit back on</td><td>12,500</td><td>6,250</td><td class="num">9,000</td><td><b>Gym: nothing further.</b> The 9,000 stands — unchanged, not reversed</td></tr>
+            <tr><td>Cycle later extended to a full year</td><td>30,000</td><td>15,000</td><td class="num">9,000</td><td>Gym is back under its limit: 6,000 more available</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <ul class="note-list">
+      <li><strong>Re-enabling never reverses a claim.</strong> The claim reimbursed money already spent against a receipt; a rule change afterwards cannot unspend it. A benefit past the line simply has nothing left — zero, never a negative.</li>
+      <li><strong>The last row is why the switch is safe.</strong> With the limit off, the pool itself is the most one benefit can hold — so an extension that at least doubles the ceiling always lands the claim back under cap. Extending a cycle is a separate piece of work, not part of this.</li>
+    </ul>
+  </section>
+</div>

@@ -1,0 +1,225 @@
+<title>Medical Cycle Charges</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-300:#7d97ba;
+    --navy-500:#2f4d78; --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-50:#fbf7ea; --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-500:#c9a227; --gold-600:#a8821e;
+    --gold-700:#85641b; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-50:#fef2f2; --red-300:#fca5a5; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-700:#15803d;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1000px; margin:0 auto; padding:32px 24px 72px; display:flex; flex-direction:column; gap:40px; }
+  .doc-head { border-bottom:1px solid var(--line); padding-bottom:20px; }
+  .doc-head h1 { font-family:var(--serif); font-size:30px; margin:6px 0 0; font-weight:600; text-wrap:balance; }
+  .doc-head p { color:var(--muted); margin:8px 0 0; max-width:64ch; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+  .block { display:flex; flex-direction:column; gap:14px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .block-head .n { font-family:var(--serif); font-size:13px; font-weight:700; color:var(--navy-800); background:var(--gold-100); border:1px solid var(--gold-300); width:24px; height:24px; border-radius:999px; display:grid; place-items:center; flex:none; }
+  .block-head h2 { font-family:var(--serif); font-size:20px; margin:0; font-weight:600; }
+  .block-head .sub { color:var(--muted); font-size:13px; }
+  .stage { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:22px; }
+  .note { font-size:13px; color:var(--muted); margin:0; }
+  .note strong { color:var(--ink); font-weight:600; }
+  .note-list { margin:0; padding-left:18px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:5px; }
+  .new-flag { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-700); background:var(--gold-50); border:1px solid var(--gold-300); border-radius:999px; padding:2px 7px; }
+
+  /* pool card — mirrors BenefitsBoard's navy rail card */
+  .poolwrap { display:grid; gap:16px; grid-template-columns:1fr; }
+  @media (min-width:760px) { .poolwrap { grid-template-columns:320px 1fr; align-items:start; } }
+  .pool { border-radius:16px; background:var(--navy-900); color:#fff; padding:20px; box-shadow:0 6px 20px rgba(10,26,48,.18); }
+  .pool .lbl { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-300); }
+  .pool .big { font-family:var(--serif); font-size:34px; line-height:1.15; margin-top:6px; font-variant-numeric:tabular-nums; }
+  .pool .sub { font-size:14px; color:var(--navy-200); margin-top:4px; }
+  .pool .bar { margin-top:14px; height:10px; border-radius:999px; background:var(--navy-700); overflow:hidden; }
+  .pool .bar > i { display:block; height:100%; border-radius:999px; background:var(--gold-500); }
+  .pool .rows { margin-top:14px; border-top:1px solid rgba(255,255,255,.15); }
+  .pool .row { display:flex; align-items:baseline; justify-content:space-between; padding:10px 0; font-size:14px; border-top:1px solid rgba(255,255,255,.10); }
+  .pool .row:first-child { border-top:0; }
+  .pool .row span { color:var(--navy-200); }
+  .pool .row b { font-weight:600; font-variant-numeric:tabular-nums; }
+  .pool .carry { margin-top:12px; border-radius:10px; background:rgba(255,255,255,.10); padding:9px 11px; font-size:12px; color:var(--navy-100); }
+  .pool .carry b { color:#fff; font-variant-numeric:tabular-nums; }
+
+  .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:8px 12px; border-top:1px solid var(--line); white-space:nowrap; }
+  thead th { border-top:0; background:var(--navy-800); color:#fff; font-size:11px; letter-spacing:.05em; text-transform:uppercase; font-weight:600; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  tr.total td { font-weight:700; background:var(--paper); }
+
+  .card { border:1px solid var(--line); background:var(--surface); border-radius:12px; padding:14px; }
+  .card + .card { margin-top:10px; }
+  .card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .who { font-size:14px; font-weight:600; color:var(--ink); }
+  .meta { font-size:12px; color:var(--muted); margin-top:2px; }
+  .premium { text-align:right; }
+  .premium .k { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .premium .v { font-family:var(--serif); font-size:22px; color:var(--navy-800); font-variant-numeric:tabular-nums; }
+  .split { margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
+  .split-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:0 0 6px; }
+  .chip { display:inline-block; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; }
+  .chip.applied { background:var(--green-50); color:var(--green-700); border:1px solid #bbf7d0; }
+  .chip.queued { background:var(--navy-50); color:var(--navy-700); border:1px solid var(--navy-100); }
+  .chip.out { background:var(--paper); color:var(--muted); border:1px solid var(--line); }
+  .warn { margin-top:10px; border-radius:10px; border:1px solid var(--gold-300); background:var(--gold-50); padding:9px 11px; font-size:12px; color:var(--gold-800); }
+  .warn b { color:var(--navy-800); }
+  :focus-visible { outline:2px solid var(--gold-300); outline-offset:2px; }
+</style>
+
+<div class="wrap">
+  <header class="doc-head">
+    <p class="eyebrow">Design mockup · Benefits</p>
+    <h1>Medical cycle charges</h1>
+    <p>
+      The medical policy runs 1 Jun 2026 – 31 May 2027 while the benefits cycle runs Jan – Dec.
+      The employee commits to the whole premium once; each cycle's pool absorbs only its months. Two
+      surfaces change — the employee's pool card and HR's commitment list.
+    </p>
+  </header>
+
+  <!-- 1 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">1</span>
+      <h2>The employee's pool</h2>
+      <span class="sub">a 40,000 family premium, 7 of 12 months in this cycle</span>
+    </div>
+    <div class="stage">
+      <div class="poolwrap">
+        <div class="pool">
+          <div class="lbl">Your pool</div>
+          <div class="big">EGP 21,667</div>
+          <div class="sub">left of your EGP 45,000 annual pool (company share)</div>
+          <div class="bar"><i style="width:52%"></i></div>
+          <div class="rows">
+            <div class="row"><span>Medical, this cycle</span><b>EGP 23,333</b></div>
+            <div class="row"><span>Claims</span><b>EGP 0</b></div>
+            <div class="row"><span>Per-benefit cap (50%)</span><b>EGP 22,500</b></div>
+          </div>
+          <div class="carry">
+            Your cover runs to 31 May 2027. The remaining <b>EGP 16,667</b> is charged to your next
+            benefits cycle, not this one.
+          </div>
+        </div>
+        <div>
+          <p class="note" style="margin-bottom:10px">
+            <strong>The only new element is the carry note</strong> and the “this cycle” wording on the
+            medical row. The card, the bar, the ordering and the palette are unchanged.
+          </p>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr><th>What the employee sees</th><th class="num">Today</th><th class="num">Proposed</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Medical charged to this pool</td><td class="num">40,000</td><td class="num">23,333</td></tr>
+                <tr><td>Months of cover it pays for</td><td class="num">12</td><td class="num">7</td></tr>
+                <tr class="total"><td>Pool left for flexible benefits</td><td class="num">5,000</td><td class="num">21,667</td></tr>
+                <tr><td>Charged to the 2027 cycle</td><td class="num">0</td><td class="num">16,667</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note" style="margin-top:10px">
+            Same total company cost. In 2026 the employee keeps a flexible budget instead of losing it
+            to a premium that buys cover into 2027. From 2027 on the two settle to the same figure —
+            each calendar pool carries 5 months of the old policy plus 7 of the new, exactly 12 months.
+          </p>
+        </div>
+      </div>
+    </div>
+    <ul class="note-list">
+      <li>Employees see whole EGP, as everywhere else in the module.</li>
+      <li>When a policy term sits entirely inside one cycle, the carry note doesn&apos;t render — the
+        card looks exactly as it does today.</li>
+    </ul>
+  </section>
+
+  <!-- 2 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">2</span>
+      <h2>HR&apos;s commitment list</h2>
+      <span class="sub">Admin → Benefits → Medical commitments</span>
+    </div>
+    <div class="stage">
+      <div class="card">
+        <div class="card-top">
+          <div>
+            <div class="who">Amina Rashad</div>
+            <div class="meta">Full-time · 4–7 years · committed 12 Jun 2026 · self + spouse + 2 children</div>
+          </div>
+          <div class="premium">
+            <div class="k">Committed premium</div>
+            <div class="v">EGP 40,000</div>
+            <div class="meta">1 Jun 2026 – 31 May 2027 · 12 months</div>
+          </div>
+        </div>
+        <div class="split">
+          <p class="split-title">Charged to <span class="new-flag">New</span></p>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr><th>Benefits cycle</th><th class="num">Months</th><th class="num">Charge</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Jan – Dec 2026</td><td class="num">7</td><td class="num">23,333</td><td><span class="chip applied">Applied</span></td></tr>
+                <tr><td>Jan – Dec 2027</td><td class="num">5</td><td class="num">16,667</td><td><span class="chip queued">On cycle open</span></td></tr>
+                <tr class="total"><td>Total</td><td class="num">12</td><td class="num">40,000</td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <div>
+            <div class="who">Tarek Nour</div>
+            <div class="meta">Full-time · 2–4 years · committed 3 Jun 2026 · left 30 Nov 2026</div>
+          </div>
+          <div class="premium">
+            <div class="k">Committed premium</div>
+            <div class="v">EGP 26,000</div>
+            <div class="meta">1 Jun 2026 – 31 May 2027 · 12 months</div>
+          </div>
+        </div>
+        <div class="split">
+          <p class="split-title">Charged to</p>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr><th>Benefits cycle</th><th class="num">Months</th><th class="num">Charge</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Jan – Dec 2026</td><td class="num">7</td><td class="num">15,166</td><td><span class="chip applied">Applied</span></td></tr>
+                <tr><td>Jan – Dec 2027</td><td class="num">5</td><td class="num">10,834</td><td><span class="chip out">Not charged</span></td></tr>
+                <tr class="total"><td>Total</td><td class="num">12</td><td class="num">26,000</td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="warn">
+            <b>Cover ended 30 Nov 2026.</b> The remaining EGP 10,834 was never charged to a pool, and the
+            premium paid in advance for cover after that date is recovered from the insurer — so nothing is
+            owed and nothing is written off. Recoverable period: <b>1 Dec 2026 – 31 May 2027</b>, which
+            includes one month still sitting inside the 2026 charge above.
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="note-list">
+      <li>The committed premium keeps the position and prominence it has today; the per-cycle table is
+        added beneath it, so nothing HR currently reads has moved.</li>
+      <li><strong>Applied</strong> means it is drawing against that cycle&apos;s pool now.
+        <strong>On cycle open</strong> means it will, automatically, when HR opens that cycle — no action needed.
+        <strong>Not charged</strong> means cover ended before that cycle, so the charge was cancelled —
+        the advance premium comes back from the insurer rather than being owed by anyone.</li>
+      <li>Totals always reconcile to the committed premium. If a row ever fails to add up, that is a bug,
+        and showing the total is how it becomes visible rather than silent.</li>
+    </ul>
+  </section>
+</div>

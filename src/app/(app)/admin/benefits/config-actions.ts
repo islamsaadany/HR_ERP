@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { EmploymentType, TenureBand } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { reconcileMedicalCharges } from "@/lib/benefits/reconcile";
 import { requireAdmin } from "@/lib/roles";
 
 /** Parse a coverage-rate field. Returns a whole percent 1–100, or `undefined` if not provided.
@@ -72,6 +73,43 @@ export async function updateGuaranteedAmounts(formData: FormData): Promise<void>
     }
     if (Object.keys(data).length) {
       await prisma.guaranteedBenefit.update({ where: { id }, data });
+    }
+  }
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+}
+
+/** The four per-tenure-band amount columns on a fixed-allowance catalogue item (spec 028). */
+const FLEX_ALLOWANCE_COLS = ["band6mo2y", "band2to4y", "band4to7y", "band7to10y"] as const;
+
+/**
+ * Save the fixed per-band amounts on flexible allowance benefits (spec 028 — travel allowance).
+ *
+ * Mirrors `updateGuaranteedAmounts`, with one difference that is the point of the feature: there is
+ * a SINGLE set of four amounts, applied to full- and part-timers alike. Their pool ceilings already
+ * differ by employment type, so a second set of figures would add no expressiveness and one more
+ * way for the two to fall out of step.
+ *
+ * Only items that already carry a band amount are updated — setting amounts is how an item BECOMES
+ * an allowance, and that shouldn't happen by accident from a form that lists every benefit.
+ */
+export async function updateFlexAllowanceAmounts(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const items = await prisma.benefitCatalogItem.findMany({
+    where: { OR: FLEX_ALLOWANCE_COLS.map((c) => ({ [c]: { not: null } })) },
+    select: { id: true },
+  });
+  for (const { id } of items) {
+    const data: Record<string, number> = {};
+    for (const key of FLEX_ALLOWANCE_COLS) {
+      const raw = formData.get(`fa_${id}_${key}`);
+      if (raw == null || String(raw).trim() === "") continue;
+      const n = Number(raw);
+      if (!Number.isFinite(n)) continue;
+      data[key] = Math.max(0, Math.round(n));
+    }
+    if (Object.keys(data).length) {
+      await prisma.benefitCatalogItem.update({ where: { id }, data });
     }
   }
   revalidatePath("/admin/benefits");
@@ -232,3 +270,77 @@ export async function createCatalogItem(formData: FormData): Promise<void> {
 
 // The medical rate card is now age-banded (spec 023) — edited band-by-band via
 // `updateMedicalRateBand` in ./actions.ts. The old flat self/spouse/child updater was removed.
+
+// ─── Medical policy year (spec 027) ─────────────────────────────────────────
+
+/** Parse a yyyy-mm-dd form field into a Date, or null when blank/invalid. */
+function parsePolicyDate(v: FormDataEntryValue | null): Date | null {
+  const s = String(v ?? "").trim();
+  if (!s) return null;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export type PolicyYearResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Create the medical insurance term (spec 027) — 1 Jun → 31 May today. Unlike a plan year, BOTH
+ * dates are required: a term with no window can't be split or priced against, so accepting one
+ * would leave every commitment under it silently mis-charged.
+ *
+ * Opening a new term closes any other, since overlapping terms are out of scope.
+ */
+export async function createPolicyYear(formData: FormData): Promise<PolicyYearResult> {
+  await requireAdmin();
+  const name = String(formData.get("name") ?? "").trim();
+  const startDate = parsePolicyDate(formData.get("startDate"));
+  const endDate = parsePolicyDate(formData.get("endDate"));
+  if (!name) return { ok: false, error: "Give the policy term a name." };
+  if (!startDate || !endDate) return { ok: false, error: "A policy term needs both a start and an end date." };
+  if (endDate.getTime() <= startDate.getTime()) {
+    return { ok: false, error: "The policy term's end date must be after its start date." };
+  }
+  await prisma.medicalPolicyYear.updateMany({ where: { status: "OPEN" }, data: { status: "CLOSED" } });
+  await prisma.medicalPolicyYear.create({ data: { name, startDate, endDate, status: "OPEN" } });
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+  return { ok: true };
+}
+
+/**
+ * Adjust an existing term's window. Commitments already split under it are NOT re-split (FR-015) —
+ * their charges were calculated against the term as it stood, and silently restating them would
+ * rewrite money HR has already reconciled. The page flags which commitments predate the change.
+ */
+export async function editPolicyYearWindow(formData: FormData): Promise<PolicyYearResult> {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "").trim();
+  const startDate = parsePolicyDate(formData.get("startDate"));
+  const endDate = parsePolicyDate(formData.get("endDate"));
+  if (!id) return { ok: false, error: "Missing policy term." };
+  if (!startDate || !endDate) return { ok: false, error: "A policy term needs both a start and an end date." };
+  if (endDate.getTime() <= startDate.getTime()) {
+    return { ok: false, error: "The policy term's end date must be after its start date." };
+  }
+  await prisma.medicalPolicyYear.update({ where: { id }, data: { startDate, endDate } });
+  // Spec 032: the term just moved, so which months fall in which cycle moved with it.
+  await reconcileMedicalCharges();
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+  return { ok: true };
+}
+
+/** Open or close a policy term. Opening one closes every other — terms don't overlap. */
+export async function setPolicyYearStatus(formData: FormData): Promise<PolicyYearResult> {
+  await requireAdmin();
+  const id = String(formData.get("id") ?? "").trim();
+  const status = formData.get("status") === "OPEN" ? "OPEN" : "CLOSED";
+  if (!id) return { ok: false, error: "Missing policy term." };
+  if (status === "OPEN") {
+    await prisma.medicalPolicyYear.updateMany({ where: { status: "OPEN", NOT: { id } }, data: { status: "CLOSED" } });
+  }
+  await prisma.medicalPolicyYear.update({ where: { id }, data: { status } });
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+  return { ok: true };
+}

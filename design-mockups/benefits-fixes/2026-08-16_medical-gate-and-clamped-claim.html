@@ -1,0 +1,210 @@
+<title>Medical Gate &amp; Clamped Claims</title>
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-300:#7d97ba;
+    --navy-500:#2f4d78; --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444;
+    --navy-900:#0a1a30; --navy-950:#061021;
+    --gold-50:#fbf7ea; --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-500:#c9a227;
+    --gold-600:#a8821e; --gold-700:#85641b; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --red-50:#fef2f2; --red-300:#fca5a5; --red-600:#dc2626; --red-700:#b91c1c;
+    --green-50:#f0fdf4; --green-700:#15803d;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  }
+  /* Single-theme by design — the product is light navy/gold only. */
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1000px; margin:0 auto; padding:32px 24px 72px; display:flex; flex-direction:column; gap:40px; }
+
+  .doc-head { border-bottom:1px solid var(--line); padding-bottom:20px; }
+  .doc-head h1 { font-family:var(--serif); font-size:30px; margin:6px 0 0; font-weight:600; text-wrap:balance; }
+  .doc-head p { color:var(--muted); margin:8px 0 0; max-width:64ch; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); margin:0; }
+
+  .block { display:flex; flex-direction:column; gap:14px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .block-head .n { font-family:var(--serif); font-size:13px; font-weight:700; color:var(--navy-800); background:var(--gold-100); border:1px solid var(--gold-300); width:24px; height:24px; border-radius:999px; display:grid; place-items:center; flex:none; }
+  .block-head h2 { font-family:var(--serif); font-size:20px; margin:0; font-weight:600; }
+  .block-head .sub { color:var(--muted); font-size:13px; }
+  .stage { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:22px; }
+  .pair { display:grid; gap:16px; grid-template-columns:1fr; }
+  @media (min-width:800px) { .pair { grid-template-columns:1fr 1fr; } }
+  .lane-label { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin:0 0 8px; }
+  .lane-now { color:var(--red-700); }
+  .lane-new { color:var(--green-700); }
+  .rec { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-700); background:var(--gold-50); border:1px solid var(--gold-300); border-radius:999px; padding:2px 8px; }
+  .note { font-size:13px; color:var(--muted); margin:0; }
+  .note strong { color:var(--ink); font-weight:600; }
+  .note-list { margin:0; padding-left:18px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:5px; }
+
+  /* --- product surfaces (mirroring BenefitsBoard) --- */
+  .cat-head { display:flex; align-items:center; gap:12px; padding-bottom:4px; }
+  .cat-head span:first-child { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-600); }
+  .cat-head .rule { height:1px; flex:1; background:var(--line); }
+
+  .row {
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    border:1px solid var(--line); background:var(--surface); border-radius:12px; padding:12px 14px;
+  }
+  .row .nm { font-size:14px; color:var(--ink); font-weight:500; }
+  .row .dsc { font-size:12px; color:var(--muted); margin-top:2px; }
+  .locked { border-style:dashed; background:var(--paper); }
+  .pill {
+    border-radius:999px; padding:4px 10px; font-size:10px; font-weight:700;
+    letter-spacing:.06em; text-transform:uppercase; background:var(--gold-100); color:var(--gold-800); white-space:nowrap;
+  }
+  .btn-navy { background:var(--navy-800); color:#fff; border:0; border-radius:8px; padding:8px 14px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+
+  /* claim form */
+  .claim { border:1px solid var(--line); background:var(--surface); border-radius:10px; padding:12px; }
+  .claim label { display:block; font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+  .claim input.amt { width:100%; max-width:280px; box-sizing:border-box; border:1px solid var(--line); border-radius:8px; padding:8px 12px; font:inherit; font-size:14px; color:var(--ink); background:var(--surface); }
+  .claim input.amt.bad { border-color:var(--red-300); }
+  .hint { font-size:12px; color:var(--muted); margin:5px 0 0; }
+  .hint b { color:var(--navy-700); font-variant-numeric:tabular-nums; }
+  .err { font-size:12px; font-weight:500; color:var(--red-600); margin:5px 0 0; }
+  .adj { font-size:12px; margin:6px 0 0; background:var(--gold-50); border:1px solid var(--gold-300); border-radius:8px; padding:7px 10px; color:var(--gold-800); }
+  .adj b { color:var(--navy-800); font-variant-numeric:tabular-nums; }
+  .claim-actions { margin-top:12px; display:flex; justify-content:flex-end; }
+  .btn-sub { background:var(--navy-800); color:#fff; border:0; border-radius:8px; padding:8px 16px; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .btn-sub[disabled] { opacity:.45; cursor:not-allowed; }
+
+  table.calc { width:100%; border-collapse:collapse; font-size:13px; margin-top:4px; }
+  table.calc th, table.calc td { text-align:left; padding:7px 10px; border-top:1px solid var(--line); }
+  table.calc thead th { border-top:0; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600; }
+  table.calc td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  table.calc tr.total td { font-weight:700; background:var(--paper); }
+  .tablewrap { overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+
+  :focus-visible { outline:2px solid var(--gold-300); outline-offset:2px; }
+</style>
+
+<div class="wrap">
+  <header class="doc-head">
+    <p class="eyebrow">Design mockup · Benefits</p>
+    <h1>Medical gate &amp; clamped claims</h1>
+    <p>
+      Two visible changes for sign-off. Everything else in the two fixes is invisible: the pool
+      figure stops counting guaranteed benefits, which corrects a number without moving a pixel.
+      Colours and component shapes are lifted from the live <code>BenefitsBoard</code>.
+    </p>
+  </header>
+
+  <!-- 1 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">1</span>
+      <h2>Medical before 3 months</h2>
+      <span class="sub">for an employee who already has a tenure band</span>
+    </div>
+    <div class="stage">
+      <div class="pair">
+        <div>
+          <p class="lane-label lane-now">Today — broken</p>
+          <div class="cat-head"><span>Medical insurance</span><span class="rule"></span></div>
+          <div class="row">
+            <div>
+              <div class="nm">Personal medical insurance</div>
+              <div class="dsc">Committed once, then locked</div>
+            </div>
+            <button type="button" class="btn-navy">Set up</button>
+          </div>
+          <p class="err" style="margin-top:8px">
+            → Employee picks who to cover, commits, and only then is told
+            “Medical insurance becomes available after 3 months of service.”
+          </p>
+        </div>
+        <div>
+          <p class="lane-label lane-new">Proposed <span class="rec">Recommended</span></p>
+          <div class="cat-head"><span>Medical insurance</span><span class="rule"></span></div>
+          <div class="row locked">
+            <div>
+              <div class="nm">Personal medical insurance</div>
+              <div class="dsc">Available once you reach 3 months of service</div>
+            </div>
+            <span class="pill">Unlocks at 3 months</span>
+          </div>
+          <p class="note" style="margin-top:8px">
+            → No “Set up” button, so the dead end is unreachable. Mirrors the existing
+            <strong>“Unlocks at 6 months”</strong> pill already used for the basket.
+          </p>
+        </div>
+      </div>
+    </div>
+    <ul class="note-list">
+      <li>The alternative is hiding the section outright. I&apos;d keep the locked row — it answers
+        “where is my medical?” instead of leaving a silent gap, and reuses a pattern the page already has.</li>
+      <li>Employees with no start date on record still see medical. That is the existing deliberate
+        fail-safe (an unknown date is treated as eligible rather than locking someone out) — unchanged.</li>
+    </ul>
+  </section>
+
+  <!-- 2 -->
+  <section class="block">
+    <div class="block-head">
+      <span class="n">2</span>
+      <h2>Claiming more than the benefit has left</h2>
+      <span class="sub">your gym example, to the figure</span>
+    </div>
+
+    <div class="stage">
+      <div class="tablewrap">
+        <table class="calc">
+          <thead>
+            <tr><th>Second gym receipt this year</th><th class="num">EGP</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Full price paid</td><td class="num">10,000</td></tr>
+            <tr><td>Company coverage at 80%</td><td class="num">8,000</td></tr>
+            <tr><td>Already claimed on gym</td><td class="num">8,000</td></tr>
+            <tr><td>Left under the 50% cap (15,000)</td><td class="num">7,000</td></tr>
+            <tr class="total"><td>Reimbursed — proposed</td><td class="num">7,000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:10px">
+        Effective coverage lands at 70% instead of 80%, and the 50% cap holds exactly. Today this
+        claim is refused outright and the employee is reimbursed nothing.
+      </p>
+    </div>
+
+    <div class="stage">
+      <div class="pair">
+        <div>
+          <p class="lane-label lane-now">Today — refused</p>
+          <div class="claim">
+            <label>Full price you paid (EGP)</label>
+            <input class="amt bad" value="10,000" readonly />
+            <p class="hint">Company covers 80% → <b>EGP 8,000</b> reimbursed. Up to EGP 7,000 covered left.</p>
+            <p class="err">That covered amount exceeds what&apos;s left (EGP 7,000). Lower the price or claim the rest later.</p>
+            <div class="claim-actions"><button class="btn-sub" disabled>Submit claim</button></div>
+          </div>
+        </div>
+        <div>
+          <p class="lane-label lane-new">Proposed <span class="rec">Recommended</span></p>
+          <div class="claim">
+            <label>Full price you paid (EGP)</label>
+            <input class="amt" value="10,000" readonly />
+            <p class="hint">Company covers 80% → <b>EGP 8,000</b> reimbursed. Up to EGP 7,000 covered left.</p>
+            <p class="adj">
+              Only <b>EGP 7,000</b> is left on this benefit, so you&apos;ll be reimbursed
+              <b>EGP 7,000</b> — not EGP 8,000. Submitting is fine.
+            </p>
+            <div class="claim-actions"><button class="btn-sub">Submit claim</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="note-list">
+      <li>The gold note replaces the red error and the input stops going red — the claim is valid now,
+        just partially covered, so it shouldn&apos;t read as a mistake.</li>
+      <li>The figure is computed server-side and re-checked on submit; the preview only mirrors it,
+        so a stale page can never talk the server into paying more.</li>
+      <li>When a benefit has <strong>nothing</strong> left, it still refuses — with
+        “You&apos;ve used the full 50% cap on this benefit”, rather than a clamp to zero.</li>
+      <li>The same clamp applies to the pool ceiling: reimbursement is the smallest of the covered
+        share, what&apos;s left on the benefit, and what&apos;s left in the pool.</li>
+    </ul>
+  </section>
+</div>

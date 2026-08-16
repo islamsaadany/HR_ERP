@@ -34,6 +34,46 @@ export function amountForBand(
   }
 }
 
+/** The four per-tenure-band amount columns a fixed-allowance catalogue item carries. */
+export type BandAmounts = {
+  band6mo2y: number | null;
+  band2to4y: number | null;
+  band4to7y: number | null;
+  band7to10y: number | null;
+};
+
+/**
+ * A flexible benefit's fixed allowance for a tenure band, or null when it isn't one
+ * (spec 028 — travel allowance). Unlike `amountForBand`, this takes no employment type:
+ * full- and part-timers get the same amount, and their differing pool ceilings do the
+ * rest of the work.
+ */
+export function fixedAllowanceFor(band: TenureBand, row: BandAmounts): number | null {
+  switch (band) {
+    case "BAND_6MO_2Y":
+      return row.band6mo2y;
+    case "BAND_2_4Y":
+      return row.band2to4y;
+    case "BAND_4_7Y":
+      return row.band4to7y;
+    case "BAND_7_10Y":
+      return row.band7to10y;
+  }
+}
+
+/**
+ * True when a catalogue item is a fixed allowance (an entitlement requested in full) rather
+ * than a receipt-based, coverage-rate claim. Any band amount set makes it one.
+ */
+export function isFixedAllowance(row: BandAmounts): boolean {
+  return (
+    row.band6mo2y != null ||
+    row.band2to4y != null ||
+    row.band4to7y != null ||
+    row.band7to10y != null
+  );
+}
+
 /** Which eligibility flag applies to an employment type (spec 021). */
 export function eligibilityWhere(employmentType: EmploymentType) {
   return employmentType === "FULL_TIME"
@@ -73,6 +113,61 @@ export function isSalaryDriven(row: {
     row.ptBand4to7y == null &&
     row.ptBand7to10y == null
   );
+}
+
+/** The open medical policy term (spec 027), or null when HR hasn't configured one. */
+export async function getActivePolicyYear() {
+  return prisma.medicalPolicyYear.findFirst({
+    where: { status: "OPEN" },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+/**
+ * The window medical is priced and split against: the policy term when configured, otherwise the
+ * plan year's own window (spec 027, research D6).
+ *
+ * The fallback is deliberately the SAME code path, not a parallel one: a term equal to the plan
+ * year overlaps it entirely, so the split yields a single charge for the whole premium and
+ * behaviour is identical to before this feature existed. No special-casing to keep correct.
+ */
+export function medicalPolicyWindow(
+  policyYear: { startDate: Date; endDate: Date } | null | undefined,
+  planYear: { startDate: Date | null; endDate: Date | null } | null | undefined
+): { start: Date; end: Date } | null {
+  if (policyYear) return { start: policyYear.startDate, end: policyYear.endDate };
+  return planYearWindow(planYear);
+}
+
+/**
+ * What a commitment costs THIS employee's pool in THIS benefits cycle (spec 027) — the sum of its
+ * APPLIED charges, not the full committed premium. A charge scheduled for a future cycle and a
+ * cancelled one both contribute nothing.
+ *
+ * A commitment with NO charges at all falls back to its full premium: that is a commitment made
+ * before this feature, or made while no policy term was configured. Returning 0 for those would
+ * silently hand every such employee their whole pool back — the pool must never under-report what
+ * has been committed.
+ */
+export function medicalCycleCharge(
+  commitment: { premium: number; cycleCharges: { planYearId: string; amount: number; status: string }[] } | null,
+  planYearId: string
+): number {
+  if (!commitment) return 0;
+  if (commitment.cycleCharges.length === 0) return commitment.premium;
+  return commitment.cycleCharges
+    .filter((c) => c.planYearId === planYearId && c.status === "APPLIED")
+    .reduce((sum, c) => sum + c.amount, 0);
+}
+
+/** The part of a commitment's premium charged to LATER cycles — drives the pool card's carry note. */
+export function medicalCarriedForward(
+  commitment: { cycleCharges: { amount: number; status: string }[] } | null
+): number {
+  if (!commitment) return 0;
+  return commitment.cycleCharges
+    .filter((c) => c.status === "SCHEDULED")
+    .reduce((sum, c) => sum + c.amount, 0);
 }
 
 export async function getActivePlanYear() {
@@ -148,11 +243,22 @@ export async function medicalScopeFor(
   return { personal, family, offered: personal || family };
 }
 
-/** The employee's committed medical election for a plan year, or null if not yet committed (spec 018).
- *  Includes the per-covered-person snapshot (spec 023) for an explainable premium breakdown. */
+/**
+ * The employee's medical commitment relevant to a benefits cycle, or null if none (spec 018).
+ * Includes the per-covered-person snapshot (spec 023) for an explainable premium breakdown.
+ *
+ * Since spec 027 a commitment belongs to a POLICY TERM that can span two cycles, so "the
+ * commitment for this plan year" means the one CHARGING this cycle — which may have been made in
+ * the previous one. The `planYearId` fallback covers a commitment made before any charge exists
+ * and rows that predate the migration.
+ */
 export async function getMedicalCommitment(userId: string, planYearId: string) {
-  return prisma.medicalCommitment.findUnique({
-    where: { userId_planYearId: { userId, planYearId } },
-    include: { coveredPeople: true },
+  return prisma.medicalCommitment.findFirst({
+    where: {
+      userId,
+      OR: [{ cycleCharges: { some: { planYearId } } }, { planYearId }],
+    },
+    include: { coveredPeople: true, cycleCharges: true },
+    orderBy: { committedAt: "desc" },
   });
 }

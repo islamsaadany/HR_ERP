@@ -10,6 +10,14 @@ import {
 } from "@/lib/labels";
 import { uploadMyDocument, deleteMyDocument } from "./documents-actions";
 import { ChangePasswordCard } from "@/components/ChangePasswordCard";
+import { PhoneEditor } from "@/components/profile/PhoneEditor";
+import { ChangeRequestPanel, type PanelRequest, type RequestRow } from "@/components/profile/ChangeRequestPanel";
+import {
+  openRequestFor,
+  lastDecidedRequestFor,
+  fieldDescriptors,
+} from "@/lib/profile/change-requests";
+import { displayValue, fieldLabel, currentValue } from "@/lib/profile/requestable";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +50,33 @@ export default async function ProfilePage({
     return <p className="text-muted">Profile not found.</p>;
   }
 
+  // Spec 029. The "current" side of every row is read HERE, not stored on the request, so a
+  // record HR edited while the request sat in the queue is never misrepresented (FR-010).
+  const [openReq, decidedReq] = await Promise.all([
+    openRequestFor(me.id),
+    lastDecidedRequestFor(me.id),
+  ]);
+  const toPanel = (
+    req: Awaited<ReturnType<typeof openRequestFor>>
+  ): PanelRequest | null =>
+    req
+      ? {
+          id: req.id,
+          submittedAt: formatDate(req.createdAt) ?? "",
+          reason: req.reason,
+          rows: req.fields.map<RequestRow>((f) => ({
+            id: f.id,
+            label: fieldLabel(f.field),
+            was: displayValue(f.field, currentValue(f.field, me)),
+            now: displayValue(f.field, f.requestedValue),
+            status: f.status,
+            reason: f.decisionReason,
+            decidedBy: f.decidedBy?.name ?? null,
+            decidedAt: f.decidedAt ? formatDate(f.decidedAt) : null,
+          })),
+        }
+      : null;
+
   const age = ageFromDob(me.dateOfBirth);
   const yos = yearsOfService(me.startDate);
 
@@ -60,7 +95,7 @@ export default async function ProfilePage({
       <section className="mt-8 rounded-xl border border-line bg-surface p-6">
         <h2 className="font-serif text-lg text-ink">Contact</h2>
         <Field label="Email" value={me.email} />
-        <Field label="Phone" value={me.phone} />
+        <PhoneEditor phone={me.phone} />
         <Field label="Department" value={me.department} />
         <Field label="Title" value={me.title} />
       </section>
@@ -133,6 +168,13 @@ export default async function ProfilePage({
         <Field label="Relationship" value={me.emergencyContactRelationship} />
         <Field label="Phone" value={me.emergencyContactPhone} />
       </section>
+
+      {/* Change requests (spec 029) — propose a correction; HR decides field by field. */}
+      <ChangeRequestPanel
+        descriptors={fieldDescriptors(me)}
+        open={toPanel(openReq)}
+        decided={openReq ? null : toPanel(decidedReq)}
+      />
 
       {/* My Documents (spec 001 · US6) */}
       <section className="mt-6 rounded-xl border border-line bg-surface p-6">

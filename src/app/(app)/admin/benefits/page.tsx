@@ -1,3 +1,4 @@
+import React from "react";
 import { requireAdmin } from "@/lib/roles";
 import { ConfirmSubmitButton } from "@/components/admin/ConfirmSubmitButton";
 import { prisma } from "@/lib/prisma";
@@ -11,13 +12,16 @@ import {
   updateMedicalRateBand,
   approveClaim,
   rejectClaim,
+  repriceAllCommitments,
 } from "./actions";
 import {
   updatePoolCeilings,
   updateGuaranteedAmounts,
+  updateFlexAllowanceAmounts,
 } from "./config-actions";
-import { isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
+import { isSalaryDriven, isEligibleFor, isFixedAllowance } from "@/lib/benefits/config";
 import { PlanYearDialog } from "@/components/admin/PlanYearDialog";
+import { PolicyYearDialog } from "@/components/admin/PolicyYearDialog";
 import { AdminBenefitsTabs } from "@/components/admin/AdminBenefitsTabs";
 import { EditableSection } from "@/components/admin/EditableSection";
 import { ToastForm } from "@/components/admin/ToastForm";
@@ -34,7 +38,11 @@ export default async function AdminBenefitsPage({
 }) {
   await requireAdmin();
   const { error } = await searchParams;
-  const planYears = await prisma.planYear.findMany({ orderBy: { createdAt: "desc" } });
+  const planYears = await prisma.planYear.findMany({
+    orderBy: { createdAt: "desc" },
+    // Spec 031: who last changed the cycle's 50%-cap setting, named in the dialog row.
+    include: { flexCapChangedBy: { select: { name: true } } },
+  });
   const active = planYears.find((p) => p.status === "OPEN") ?? planYears[0];
 
   const [medicalCommitments, pendingClaims, guaranteedBenefits, catalogItems, poolCeilings, employees] =
@@ -53,7 +61,10 @@ export default async function AdminBenefitsPage({
               },
               coveredPeople: true,
             },
-            orderBy: { committedAt: "desc" },
+            // Name breaks the tie: several people commit on the same day, and with equal
+            // `committedAt` the row order was the database's to choose — so the list reshuffled
+            // on every re-render and HR couldn't tell what their last action had done.
+            orderBy: [{ committedAt: "desc" }, { user: { name: "asc" } }],
           })
         : Promise.resolve([]),
       active
@@ -63,7 +74,8 @@ export default async function AdminBenefitsPage({
             include: {
               user: { select: { name: true } },
               guaranteedBenefit: { select: { name: true } },
-              catalogItem: { select: { name: true } },
+              // coverageRate is needed to show HR how a clamped claim was worked out.
+              catalogItem: { select: { name: true, coverageRate: true } },
             },
             orderBy: { createdAt: "desc" },
           })
@@ -83,6 +95,29 @@ export default async function AdminBenefitsPage({
     (a, b) => (a.status === "SUBMITTED" ? 0 : 1) - (b.status === "SUBMITTED" ? 0 : 1)
   );
   const rateBands = await prisma.medicalRateBand.findMany({ where: { tier: 1 }, orderBy: { order: "asc" } });
+  // Medical policy terms (spec 027) — the insurance contract's own dates, and the per-cycle
+  // charges that reconcile a committed premium against the pools it draws from.
+  const policyYears = await prisma.medicalPolicyYear.findMany({
+    orderBy: { startDate: "desc" },
+    include: { _count: { select: { commitments: true } } },
+  });
+  const cycleCharges = await prisma.medicalCycleCharge.findMany({
+    where: { commitmentId: { in: medicalCommitments.map((m) => m.id) } },
+    include: { planYear: { select: { name: true, status: true } } },
+    orderBy: { planYear: { startDate: "asc" } },
+  });
+  const chargesByCommitment = new Map<string, typeof cycleCharges>();
+  for (const c of cycleCharges) {
+    const list = chargesByCommitment.get(c.commitmentId) ?? [];
+    list.push(c);
+    chargesByCommitment.set(c.commitmentId, list);
+  }
+  const CHARGE_STATUS_LABEL = { APPLIED: "Applied", SCHEDULED: "On cycle open", CANCELLED: "Not charged" } as const;
+  const CHARGE_STATUS_CLASS = {
+    APPLIED: "bg-green-50 text-green-700 border-green-200",
+    SCHEDULED: "bg-navy-50 text-navy-700 border-navy-100",
+    CANCELLED: "bg-paper text-muted border-line",
+  } as const;
 
   const ceilOf = (t: EmploymentType, b: TenureBand) =>
     poolCeilings.find((c) => c.employmentType === t && c.tenureBand === b)?.amount ?? "";
@@ -174,6 +209,91 @@ export default async function AdminBenefitsPage({
     );
   };
 
+  // Flexible fixed allowances (spec 028 — travel allowance): pool-funded entitlements paid at a
+  // flat per-band amount. ONE table, not one per employment type — full- and part-timers share the
+  // same figures, and their differing pool ceilings do the rest.
+  const allowanceItems = catalogItems.filter((c) => isFixedAllowance(c));
+  const FLEX_BAND_COLS = [
+    { col: "band6mo2y", band: "BAND_6MO_2Y" },
+    { col: "band2to4y", band: "BAND_2_4Y" },
+    { col: "band4to7y", band: "BAND_4_7Y" },
+    { col: "band7to10y", band: "BAND_7_10Y" },
+  ] as const;
+
+  const allowanceReadTable = (
+    <div className="mt-2 overflow-x-auto">
+      <table className="text-sm">
+        <thead>
+          <tr className="text-left text-xs uppercase tracking-wide text-muted">
+            <th className="py-2 pr-6 font-medium">Benefit</th>
+            {FLEX_BAND_COLS.map((c) => (
+              <th key={c.band} className="py-2 pr-4 font-medium">{TENURE_BAND_LABEL[c.band]}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {allowanceItems.length === 0 ? (
+            <tr><td colSpan={5} className="py-3 text-xs text-muted">No fixed allowances configured.</td></tr>
+          ) : allowanceItems.map((item) => (
+            <tr key={item.id} className="border-t border-line align-top">
+              <td className="py-2 pr-6 text-ink">{item.name}</td>
+              {FLEX_BAND_COLS.map((c) => (
+                <td key={c.band} className="py-2 pr-4 tabular-nums text-ink">
+                  {item[c.col] != null ? egp(item[c.col]!) : "—"}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const allowanceEditTable = (
+    <ToastForm action={updateFlexAllowanceAmounts} savedMessage="Allowance amounts saved" className="mt-3">
+      <div className="overflow-x-auto">
+        <table className="text-sm">
+          <thead>
+            <tr className="text-left text-xs uppercase tracking-wide text-muted">
+              <th className="py-2 pr-6 font-medium">Benefit</th>
+              {FLEX_BAND_COLS.map((c) => (
+                <th key={c.band} className="py-2 pr-4 font-medium">{TENURE_BAND_LABEL[c.band]}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {allowanceItems.length === 0 ? (
+              <tr><td colSpan={5} className="py-3 text-xs text-muted">No fixed allowances configured.</td></tr>
+            ) : allowanceItems.map((item) => (
+              <tr key={item.id} className="border-t border-line align-top">
+                <td className="py-2 pr-6 text-ink">{item.name}</td>
+                {FLEX_BAND_COLS.map((c) => {
+                  const v = item[c.col] ?? "";
+                  return (
+                    <td key={c.band} className="py-2 pr-4">
+                      <input
+                        key={`${item.id}_${c.col}-${v}`}
+                        type="number"
+                        name={`fa_${item.id}_${c.col}`}
+                        defaultValue={v}
+                        min={0}
+                        step={500}
+                        className="w-24 rounded-lg border border-line bg-surface px-2 py-1 text-sm tabular-nums focus:border-navy-500 focus:outline-none"
+                      />
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <button className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700">
+        Save allowance amounts
+      </button>
+    </ToastForm>
+  );
+
   // Read-only guaranteed table.
   const guaranteedReadTable = (t: EmploymentType) => {
     const rows = guaranteedBenefits.filter((g) => isEligibleFor(t, g));
@@ -221,6 +341,207 @@ export default async function AdminBenefitsPage({
   };
 
   // ── Tab 1: Submissions & Claims ─────────────────────────────────────────
+  /**
+   * Medical commitments — its own tab (HR's call): it carries the year's cost, who is
+   * covered, the per-cycle split and two re-pricing actions, which is more than a section
+   * inside another tab can hold without burying the claims queue beneath it.
+   */
+  const medicalPanel = (
+    <div className="space-y-6">
+      <section className="rounded-xl border border-line bg-surface p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-serif text-lg text-ink">Medical commitments {active ? `· ${active.name}` : ""}</h2>
+          {active && medicalCommitments.length > 0 ? (
+            // Re-price all (spec 032). Styled as the existing Export CSV button beside it — a new
+            // control, not a new look. Confirmed because it rewrites every premium in the cycle.
+            <form action={repriceAllCommitments} className="ml-auto mr-2">
+              <input type="hidden" name="planYearId" value={active.id} />
+              <ConfirmSubmitButton
+                message={`Re-price all ${medicalCommitments.length} medical commitments against today's rate card? Cover stays exactly as it is — only the price is recalculated.`}
+                className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+              >
+                Re-price all
+              </ConfirmSubmitButton>
+            </form>
+          ) : null}
+          {active ? (
+            <a
+              href={`/api/admin/benefits/export?planYearId=${active.id}`}
+              className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+            >
+              Export CSV
+            </a>
+          ) : null}
+        </div>
+        <p className="mb-3 text-xs text-muted">
+          Medical is the one committed benefit — locked to the employee after they commit. Edit dependants
+          (recomputes the premium, capped at their pool) or remove a commitment so they can re-commit.
+          Flexible benefits are claimed directly; review those claims below.
+        </p>
+        {medicalCommitments.length === 0 ? (
+          <p className="text-sm text-muted">No medical commitments yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-line text-left text-xs uppercase text-muted">
+                  <th className="py-2 pr-4 font-medium">Employee</th>
+                  <th className="py-2 pr-4 font-medium">Cover</th>
+                  <th className="py-2 pr-4 font-medium">Annual insurance cost</th>
+                  <th className="py-2 pr-4 font-medium">Committed</th>
+                  <th className="py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {medicalCommitments.map((m) => {
+                  // Covered people from the commit snapshot (spec 023); the employee is the first line.
+                  const others = m.coveredPeople.filter((p) => p.dependantId).map((p) => p.label);
+                  const coveredDepIds = new Set(m.coveredPeople.map((p) => p.dependantId).filter(Boolean) as string[]);
+                  const charges = chargesByCommitment.get(m.id) ?? [];
+                  const chargeTotal = charges.reduce((n, c) => n + c.amount, 0);
+                  const term = policyYears.find((p) => p.id === m.policyYearId);
+                  // Money already drawn from a pool that is now shut. Spec 032 recalculates
+                  // everything else when dates change, so THIS is the only part that can no longer
+                  // follow the term — and it is the only thing worth saying.
+                  //
+                  // The old test compared the charged months against the term's length and called
+                  // any shortfall "stale". Under spec 032 a shortfall is the normal state while
+                  // the term reaches into a cycle that doesn't exist yet, so it fired on every
+                  // correctly-split commitment and said charges hadn't been recalculated when
+                  // they just had.
+                  const frozen = charges.some((c) => c.status === "APPLIED" && c.planYear.status === "CLOSED");
+                  return (
+                    <React.Fragment key={m.id}>
+                    <tr className="border-b border-line align-top last:border-0">
+                      <td className="py-2 pr-4 text-ink">{m.user.name}</td>
+                      <td className="py-2 pr-4 text-muted">You{others.length ? " + " + others.join(" + ") : ""}</td>
+                      <td className="py-2 pr-4 tabular-nums text-ink">
+                        {egp(m.premium)}
+                        {term ? <div className="text-[11px] text-muted">{formatDate(term.startDate)} – {formatDate(term.endDate)}</div> : null}
+                      </td>
+                      <td className="py-2 pr-4 text-muted">{formatDate(m.committedAt)}</td>
+                      <td className="py-2">
+                        <div className="flex flex-wrap items-end justify-end gap-2">
+                          <form action={editMedicalCommitment} className="flex flex-wrap items-end gap-1.5">
+                            <input type="hidden" name="id" value={m.id} />
+                            {m.user.dependants.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {m.user.dependants.map((d) => (
+                                  <label htmlFor={"adminbenefits-dependantIds"} key={d.id} className="flex items-center gap-1 text-xs text-muted">
+                                    <input id={"adminbenefits-dependantIds"} type="checkbox" name="dependantIds" value={d.id} defaultChecked={coveredDepIds.has(d.id)} className="h-4 w-4" />
+                                    {d.kind === "SPOUSE" ? "Spouse" : "Child"}{d.name ? ` · ${d.name}` : ""}
+                                  </label>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted">No dependants on file</span>
+                            )}
+                            <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-navy-700 hover:bg-navy-50">Re-price</button>
+                          </form>
+                          <form action={removeMedicalCommitment}>
+                            <input type="hidden" name="id" value={m.id} />
+                            <ConfirmSubmitButton message={`Remove ${m.user.name}’s medical commitment? Their premium stops counting against their pool and they can commit again while the plan year is open.`} className="text-sm font-medium text-muted hover:text-red-600">Remove</ConfirmSubmitButton>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                    {/* Per-cycle breakdown (spec 027). Sits BENEATH the commitment rather than
+                        replacing anything, so every figure HR reads today stays where it was.
+                        The total is shown deliberately: a split that fails to reconcile to the
+                        committed premium is a bug, and printing it is how that surfaces. */}
+                    {charges.length > 0 ? (
+                      <tr key={`${m.id}-charges`} className="border-b border-line last:border-0">
+                        <td colSpan={5} className="pb-3">
+                          <div className="rounded-lg border border-line bg-paper p-3">
+                            <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted">Charged to</p>
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="text-left uppercase text-muted">
+                                  <th className="py-1 pr-4 font-medium">Benefits cycle</th>
+                                  <th className="py-1 pr-4 text-right font-medium">Months</th>
+                                  <th className="py-1 pr-4 text-right font-medium">From this cycle&apos;s pool</th>
+                                  <th className="py-1 font-medium">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {charges.map((c) => (
+                                  <tr key={c.id} className="border-t border-line">
+                                    <td className="py-1 pr-4 text-ink">{c.planYear.name}</td>
+                                    <td className="py-1 pr-4 text-right tabular-nums text-muted">{c.overlapMonths}</td>
+                                    <td className="py-1 pr-4 text-right tabular-nums text-ink">{egp(c.amount)}</td>
+                                    <td className="py-1">
+                                      <span className={"rounded-full border px-2 py-0.5 text-[10px] font-bold " + CHARGE_STATUS_CLASS[c.status]}>
+                                        {CHARGE_STATUS_LABEL[c.status]}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {/*
+                                  The Total row is only worth its space when there is more than
+                                  one cycle to add up. With a single charge it repeated the row
+                                  above it verbatim — the same months and the same amount, twice.
+                                  The outstanding amount is the part that actually carries
+                                  information, so it moves below the table where it reads as a
+                                  sentence rather than as a fourth column.
+                                */}
+                                {charges.length > 1 ? (
+                                  <tr className="border-t border-line font-semibold">
+                                    <td className="py-1 pr-4 text-ink">Total</td>
+                                    <td className="py-1 pr-4 text-right tabular-nums text-muted">
+                                      {charges.reduce((n, c) => n + c.overlapMonths, 0)}
+                                    </td>
+                                    <td className={"py-1 pr-4 text-right tabular-nums " + (chargeTotal > m.premium ? "text-red-600" : "text-ink")}>
+                                      {egp(chargeTotal)}
+                                    </td>
+                                    <td className="py-1" />
+                                  </tr>
+                                ) : null}
+                              </tbody>
+                            </table>
+                            {chargeTotal > m.premium ? (
+                              <p className="mt-2 text-[11px] font-semibold text-red-600">
+                                Charged {egp(chargeTotal)} — more than the {egp(m.premium)} this cover costs.
+                                Settle it with the insurer; a closed cycle can&apos;t be un-charged.
+                              </p>
+                            ) : chargeTotal < m.premium ? (
+                              <p className="mt-2 text-[11px] text-muted">
+                                <b className="font-semibold text-ink">{egp(m.premium - chargeTotal)}</b> of this
+                                cover falls after {active?.name ?? "this cycle"} ends. It&apos;s charged to the next
+                                cycle when you open it.
+                              </p>
+                            ) : (
+                              <p className="mt-2 text-[11px] text-muted">Fully charged.</p>
+                            )}
+                            {charges.some((c) => c.status === "CANCELLED") ? (
+                              <p className="mt-2 rounded-lg border border-gold-300 bg-gold-50 px-2.5 py-1.5 text-[11px] text-gold-800">
+                                <strong className="text-navy-800">Cover ended before that cycle.</strong> The charge was
+                                never applied to a pool, and the premium paid in advance for cover after the leave date is
+                                recovered from the insurer — nothing is owed and nothing is written off.
+                                {term ? ` Recoverable to ${formatDate(term.endDate)}, starting from the leave date — which may sit inside an already-applied charge above.` : ""}
+                              </p>
+                            ) : null}
+                            {frozen ? (
+                              <p className="mt-2 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[11px] text-muted">
+                                Part of this is charged to a closed cycle. That amount stays as it is — it has
+                                already been drawn from a pool that is now shut, so changing dates or re-pricing
+                                never rewrites it.
+                              </p>
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+
   const submissionsPanel = (
     <div className="space-y-6">
       {/* Claims to review */}
@@ -258,6 +579,24 @@ export default async function AdminBenefitsPage({
                     <span className="text-xs text-muted">{formatDate(c.createdAt)}</span>
                   </div>
                 </div>
+                {/* The covered amount is no longer always `receipt × coverage rate` — the
+                    50%-per-benefit cap clamps it. Without the receipt value, a clamped claim
+                    reads as an unexplained number next to a larger proof, so show the working. */}
+                {c.fullCost != null && c.catalogItem ? (
+                  <p className="mt-1 text-xs text-muted">
+                    Receipt <span className="tabular-nums text-ink">{egp(c.fullCost)}</span>
+                    {" · "}covers {c.catalogItem.coverageRate}% ={" "}
+                    <span className="tabular-nums">{egp(Math.round((c.fullCost * c.catalogItem.coverageRate) / 100))}</span>
+                    {Math.round((c.fullCost * c.catalogItem.coverageRate) / 100) !== c.amount ? (
+                      <>
+                        {" · "}
+                        <span className="font-semibold text-gold-700">
+                          capped to {egp(c.amount)} by the 50% benefit cap
+                        </span>
+                      </>
+                    ) : null}
+                  </p>
+                ) : null}
                 {c.note ? <p className="mt-1 text-sm text-ink">“{c.note}”</p> : null}
                 {c.decisionNote ? <p className="mt-1 text-xs text-red-600">Rejected: {c.decisionNote}</p> : null}
                 {c.proofUrl ? (
@@ -287,81 +626,6 @@ export default async function AdminBenefitsPage({
         )}
       </section>
 
-      {/* Submissions */}
-      <section className="rounded-xl border border-line bg-surface p-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="font-serif text-lg text-ink">Medical commitments {active ? `· ${active.name}` : ""}</h2>
-          {active ? (
-            <a
-              href={`/api/admin/benefits/export?planYearId=${active.id}`}
-              className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
-            >
-              Export CSV
-            </a>
-          ) : null}
-        </div>
-        <p className="mb-3 text-xs text-muted">
-          Medical is the one committed benefit — locked to the employee after they commit. Edit dependants
-          (recomputes the premium, capped at their pool) or remove a commitment so they can re-commit.
-          Flexible benefits are claimed directly; review those claims below.
-        </p>
-        {medicalCommitments.length === 0 ? (
-          <p className="text-sm text-muted">No medical commitments yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-line text-left text-xs uppercase text-muted">
-                  <th className="py-2 pr-4 font-medium">Employee</th>
-                  <th className="py-2 pr-4 font-medium">Cover</th>
-                  <th className="py-2 pr-4 font-medium">Premium</th>
-                  <th className="py-2 pr-4 font-medium">Committed</th>
-                  <th className="py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {medicalCommitments.map((m) => {
-                  // Covered people from the commit snapshot (spec 023); the employee is the first line.
-                  const others = m.coveredPeople.filter((p) => p.dependantId).map((p) => p.label);
-                  const coveredDepIds = new Set(m.coveredPeople.map((p) => p.dependantId).filter(Boolean) as string[]);
-                  return (
-                    <tr key={m.id} className="border-b border-line align-top last:border-0">
-                      <td className="py-2 pr-4 text-ink">{m.user.name}</td>
-                      <td className="py-2 pr-4 text-muted">You{others.length ? " + " + others.join(" + ") : ""}</td>
-                      <td className="py-2 pr-4 tabular-nums text-ink">{egp(m.premium)}</td>
-                      <td className="py-2 pr-4 text-muted">{formatDate(m.committedAt)}</td>
-                      <td className="py-2">
-                        <div className="flex flex-wrap items-end justify-end gap-2">
-                          <form action={editMedicalCommitment} className="flex flex-wrap items-end gap-1.5">
-                            <input type="hidden" name="id" value={m.id} />
-                            {m.user.dependants.length > 0 ? (
-                              <div className="flex flex-wrap gap-2">
-                                {m.user.dependants.map((d) => (
-                                  <label htmlFor={"adminbenefits-dependantIds"} key={d.id} className="flex items-center gap-1 text-xs text-muted">
-                                    <input id={"adminbenefits-dependantIds"} type="checkbox" name="dependantIds" value={d.id} defaultChecked={coveredDepIds.has(d.id)} className="h-4 w-4" />
-                                    {d.kind === "SPOUSE" ? "Spouse" : "Child"}{d.name ? ` · ${d.name}` : ""}
-                                  </label>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted">No dependants on file</span>
-                            )}
-                            <button className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-navy-700 hover:bg-navy-50">Re-price</button>
-                          </form>
-                          <form action={removeMedicalCommitment}>
-                            <input type="hidden" name="id" value={m.id} />
-                            <ConfirmSubmitButton message={`Remove ${m.user.name}’s medical commitment? Their premium stops counting against their pool and they can commit again while the plan year is open.`} className="text-sm font-medium text-muted hover:text-red-600">Remove</ConfirmSubmitButton>
-                          </form>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
     </div>
   );
 
@@ -534,6 +798,12 @@ export default async function AdminBenefitsPage({
         editView={<>{guaranteedEditTable("FULL_TIME")}<div className="mt-6">{guaranteedEditTable("PART_TIME")}</div></>}
       />
       <EditableSection
+        title="Flexible fixed allowances"
+        description="Pool-funded entitlements paid at a flat amount for the employee's tenure band — requested in full, no receipt. One set of figures for full- and part-timers alike; their pool ceilings already differ. Amounts prorate with the plan-year cycle."
+        readView={allowanceReadTable}
+        editView={allowanceEditTable}
+      />
+      <EditableSection
         title="Medical rate card"
         description="Annual premiums (EGP) used to price medical cover. Medical is exempt from the 50% cap but never exceeds the pool ceiling."
         readView={rateCardRead}
@@ -563,7 +833,23 @@ export default async function AdminBenefitsPage({
           >
             Policy page
           </a>
-          <PlanYearDialog planYears={planYears} activeName={active?.name} />
+          <PlanYearDialog
+            planYears={planYears.map((p) => ({
+              id: p.id, name: p.name, status: p.status,
+              startDate: p.startDate, endDate: p.endDate,
+              flexCapEnabled: p.flexCapEnabled,
+              flexCapChangedAt: p.flexCapChangedAt,
+              flexCapChangedByName: p.flexCapChangedBy?.name ?? null,
+            }))}
+            activeName={active?.name}
+          />
+          <PolicyYearDialog
+            policyYears={policyYears.map((p) => ({
+              id: p.id, name: p.name, status: p.status,
+              startDate: p.startDate, endDate: p.endDate,
+              commitmentCount: p._count.commitments,
+            }))}
+          />
         </div>
       </div>
 
@@ -590,6 +876,11 @@ export default async function AdminBenefitsPage({
             badge: claimsToReview,
             // Non-table tabs get their own scroll region so the pinned page never scrolls.
             node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{submissionsPanel}</div>,
+          },
+          {
+            id: "medical",
+            label: "Medical",
+            node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{medicalPanel}</div>,
           },
           { id: "catalogue", label: "Benefits Catalogue", node: cataloguePanel },
           { id: "amounts", label: "Amounts", node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{amountsPanel}</div> },

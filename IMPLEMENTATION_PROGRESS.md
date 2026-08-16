@@ -652,10 +652,169 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     tsc + build green; UI snapshot saved; the server filter and hash round-trip were proven
     against a throwaway local Postgres (16 checks, all passing).
 
+- **2026-08-16 — Fixed: the Passwords menu actions never ran (pre-existing, found in testing):**
+  - Reported symptom: clicking **"Generate for employees without a password"** (and the new
+    "Reset selected employees") produced **no CSV and no result panel**, with
+    `Form submission canceled because the form is not connected` in the browser console.
+  - Root cause — **not** the new picker. Both existing menu items closed the dropdown from the
+    submit button's `onClick` (`setOpenMenu(null)`). React flushes click updates synchronously,
+    so the `<form>` was removed from the DOM **before** the browser dispatched `submit`; the
+    browser cancelled it and the server action was never called. The new picker inherited the
+    same shape via `onClose()`. So **"Generate for employees without a password" and
+    "Reset ALL passwords" have been dead since the dropdown refactor** — silently, because the
+    failure is console-only.
+  - Fix: a `runAndClose` wrapper on the form's `action` that dispatches **then** closes; the
+    `onClick` handlers now only ever `preventDefault()` to cancel. Behaviour-only, zero visual
+    change. House rule added to `CLAUDE.md` §3b so it can't recur.
+  - Verified in a real Chromium against a local Postgres: all three actions produce the panel and
+    a correct CSV, and reverting just the fix reproduces the reported console error exactly.
+
+- **2026-08-16 — Benefits: pool total, medical gate, and partial reimbursement (mockup-approved):**
+  - **Pool no longer counts guaranteed benefits.** `benefits/page.tsx` summed *every* non-rejected
+    claim into `poolUsed`, including summer/marriage/loans/professional-development — which have
+    their own budget outside the pool. The employee's "Your pool" figure was understated by
+    whatever they'd claimed there. Display only: the server has always built its allowance context
+    from `catalogItemId` claims alone, so no claim was ever wrongly refused.
+  - **Claims clamp instead of refusing (`clampCovered`).** Reimbursement is now the smallest of the
+    coverage share, the benefit's 50%-cap remainder, and the pool remainder. A 10,000 receipt at 80%
+    with 7,000 left pays 7,000 — an effective 70%, with the **50% cap overriding the coverage rate**.
+    The employee keeps entering the full receipt value (it must match their proof) and the preview
+    states the clamped figure before submitting. Only a fully-used benefit or pool refuses.
+  - **`BenefitClaim.fullCost`** (migration `045`, nullable, no backfill) records the receipt next to
+    the covered amount, and the admin Claims list shows "Receipt X · covers N% = Y · capped to Z" so
+    a clamped payout reconciles against its proof instead of reading as a wrong number.
+  - **Medical shows locked under 3 months** rather than offering a "Set up" button that the server
+    then refuses at commit. **Narrower than first diagnosed:** the benefits page always *derives* the
+    tenure band from the hire date, so a manually-set band can't reach the main board path — the
+    reachable route is a **plan year left OPEN past its end date**, which makes a recent joiner's
+    3-month date fall beyond the window. Verified against exactly that scenario.
+  - Mockup approved before building (`design-mockups/benefits-fixes/2026-08-16_…html`); UI snapshots
+    saved. Verified with 19 rule/DB checks (the operator's own 30k/15k/8k/7k example) plus a real
+    Chromium pass over the Benefits page; `045` applied twice from the file to prove idempotency.
+
+- **2026-08-16 — Summer allowance → Travel allowance, pool-funded (spec 028, migration 046, mockup-approved):**
+  - The guaranteed **Summer allowance** (own budget, outside the pool, notionally Jul–Sep) becomes a
+    year-round **Travel allowance** in the flexible basket's Lifestyle category: same band amounts,
+    paid 100% with **no receipt**, requested in one action, and **drawn from the pool**.
+  - Introduces a benefit shape the catalogue lacked: a **fixed allowance**. Four per-band amount
+    columns on `BenefitCatalogItem`; any one set makes the item an entitlement rather than a
+    coverage-rate claim. **One set of figures for both employment types** — the pool ceilings
+    already differ, and a second set would only be a chance for the two to drift apart.
+  - The seasonal Jul–Sep window was **never enforced in code** — it existed only as descriptive
+    text — so "make it year-round" was a copy change, not a rule change.
+  - Migration **copies the amounts off the existing Summer row** rather than hardcoding figures, and
+    **retires** that row via cleared eligibility flags rather than deleting it:
+    `BenefitClaim.guaranteedBenefitId` is `ON DELETE CASCADE`, so a delete would take every
+    historical summer claim with it.
+  - HR edits amounts at Admin → Benefits → **Amounts** → *Flexible fixed allowances*, in the same
+    table shape as the guaranteed amounts above it.
+  - Verified: 26 rule/DB checks with `046` applied twice from the file against a database seeded
+    with a configured Summer row **and** a historical claim (both survived); then a real Chromium
+    pass — request the allowance, pool 30,000 → 25,000, no price field, no proof upload, second
+    request refused, and HR's new Amounts section showing the copied figures.
+
+- **2026-08-16 — Spec 027 MVP built: medical policy year with per-cycle charging (migration 047):**
+  - The insurance term (1 Jun – 31 May) no longer shares the benefits cycle's window. A premium is
+    committed once for the whole term but **charged to each cycle by month overlap** — 7/12 to the
+    year it starts in, 5/12 carried to the next, applied automatically when that cycle opens.
+  - **The 2026 transition year is the money**: an employee with a 40,000 premium keeps **21,667** of
+    flexible budget instead of 5,000. From 2027 the model **settles** — each calendar pool carries 5
+    months of the expiring policy plus 7 of the new, exactly twelve months — which is the check that
+    it is right rather than merely different.
+  - A leaver's carried charge is **cancelled, not owed**: the advance premium comes back from the
+    insurer. Recording it as outstanding would have overstated liabilities on every leaver.
+  - **A money bug avoided while fixing an arithmetic one**: `remainingWholeMonths` capped at 12 via a
+    loop bound, and `poolCycleFraction` silently depended on that. Uncapping it — the obvious fix for
+    a long term — would have made a 13-month cycle yield 13/12 and hand everyone 108% of their
+    ceiling. Policy terms get their own uncapped helper; the pool fraction now clamps explicitly.
+  - Verified: 40 pure-function checks, 18 database checks (split, cycle-open, leaver cancellation,
+    steady state, no-policy-year fallback), migration `047` applied twice from the file against a
+    real commitment with its premium unchanged, and a Chromium pass on the pool card. tsc + build
+    green; UI snapshot saved; mockup approved before building.
+  - **US2 built too** — spec 027 is complete. HR manages the term in a **Medical policy** dialog beside
+    Plan year (mirroring it deliberately: adjacent concepts shouldn't look like unrelated features),
+    and each commitment carries a **per-cycle breakdown** — months, charge, status, and a total that
+    says "reconciles" or turns red. Editing a premium re-splits it across cycles still open, never
+    touching a charge already applied to a closed one.
+  - **A case that cannot reconcile, by nature**: dropping a premium below what closed cycles already
+    absorbed leaves the charges totalling that larger frozen amount — a shut pool can't be
+    un-charged. The platform shows the mismatch in red rather than writing a negative charge.
+
+- **2026-08-16 — Spec 030 built: medical premium recoveries for Finance (migration 048):**
+  - Spec 027 stopped charging a departed employee's pool; nothing followed the money already paid
+    to the insurer for cover after their last day. **/finance** now carries that list.
+  - **The feature exists because the product owner challenged the figure** — *"who are we helping
+    with that data?"* Shown to HR it was trivia; shown to Finance it is an item with an owner and a
+    closing state. The residual after recovery is a real cost of leaving; the point is that it
+    becomes a **known** number rather than an invisible one.
+  - **The trap, written into FR-002**: the recoverable amount is computed from the leave date, not
+    the cancelled charge. 26,000 premium, left 30 Nov → **13,000**, not the 10,834 cancelled —
+    December sits inside a charge already applied to the 2026 pool. Building it the obvious way
+    would have under-claimed on every leaver.
+  - Finance records what actually came back, so the **shortfall** is captured; one partial refund is
+    noise, a column of them is a short-paying insurer. Write-offs keep their reason.
+  - Verified: 22 checks (expected amount, sync idempotency, settling, frozen figures), `048` applied
+    twice from the file, and a Chromium pass settling partially and seeing the shortfall land.
+
+- **2026-08-16 — Spec 029 built: profile change requests (migration 049):**
+  - My Profile was read-only in full, so a stale emergency contact travelled through HR's inbox and
+    got retyped. Employees now propose a correction; **HR decides field by field, and approving IS
+    the edit** — one click writes that column, nothing is re-keyed.
+  - **Phone became directly editable** (no request, no review). The decisions log already granted
+    it; it had never been built. Nothing reads it for eligibility or money, so review would add a
+    person to a change nobody depends on.
+  - **The decision lives on the field, not the request** — one request can be part approved and
+    part declined, so HR can accept the emergency contact while querying the date of birth, and the
+    employee never resubmits what was already right. A request is "open" while any field is
+    PENDING; there is no request-level status column to drift out of step.
+  - **The "current" value is read at review time, never stored on the request.** Storing it would
+    let an approval silently revert an edit HR had made while the request sat in the queue.
+  - Values are stored as **text against a field registry** (`src/lib/profile/requestable.ts`), so
+    adding a requestable field later is a registry entry rather than a migration plus three edited
+    screens.
+  - **Dependants deferred** (research R3): an add/remove/edit set rather than a before/after value,
+    and the carrier of the medical-commitment warning (US3/FR-015). The contact and personal fields
+    deliver the feature; dependants are the next slice.
+  - Verified: 40 checks on a throwaway Postgres; `049` applied to a **fresh** DB through the SQL
+    runner with `prisma migrate diff` then reporting no drift; and a Chromium pass through the real
+    auth-guarded actions (submit → approve one → decline one → close out), 0 console errors.
+  - **Flagged, untouched**: the My Documents upload form on the same page logs a pre-existing React
+    warning (`encType` on a form with a function action, from commit `c8ef16f`). Not spec 029's, and
+    not fixed without a say-so.
+
+- **2026-08-16 — Spec 031 built: per-cycle 50% cap switch (migration 050):**
+  - The product owner spotted the compounding: proration shrinks the ceiling, and the 50% cap then
+    takes half of the smaller number. A cycle opening 1 Aug leaves any single benefit at 6,250 of a
+    12,500 pool — a rule meant to encourage variety stops the employee using the pool at all.
+  - **The flag lives on the cycle, not in config.** A global setting would mean flipping it today
+    changes the rules a closed cycle's claims were judged under.
+  - **The rule change is one line**: `flexCap(ceiling, capEnabled)` returns the **full ceiling**
+    when off — deliberately not `Infinity`, so `benefitRemaining` stays finite, the pool keeps
+    binding, and `clampCovered` still names the right limiting rule.
+  - **Nothing retroactive, and the arithmetic says why the round trip is safe**: with the cap off
+    the pool itself is the most one benefit can hold, so an extension that at least doubles the
+    ceiling always lands the claim back under cap. Where it doesn't, a past-cap benefit still has
+    zero remaining, never a negative.
+  - **The mockup caught its own gap**: the first draft only showed a cycle already switched off, so
+    the turn-off button never appeared — a state the sign-off would have missed. Revised to show
+    on, off, and closed.
+  - Verified: 36 checks importing the shipped rule engine; `050` on a fresh DB with no diff drift;
+    and a Chromium round trip claiming 9,000 on one benefit with the cap off, then re-enabling and
+    seeing it stand unchanged.
+  - **Follow-up, approved and shipped**: after an over-cap claim the pool card reads "Used 9,000"
+    beside "Per-benefit cap (50%) 6,250" — accurate, but the two numbers together look like a
+    contradiction. A focusable `?` beside the cap label now explains it, naming the benefit and
+    leading with *the claim stands, nothing is taken back* (the employee's actual worry) before the
+    consequence. It renders **only** when a benefit is genuinely over the cap in force, so an
+    ordinary cycle carries no permanent question mark inviting a question nobody has.
+    - Two positioning attempts: anchored to the 15px marker the bubble ran off the card's right
+      edge, because the marker sits two-thirds along the label. It is now sized and placed against
+      the card ROW (the marker is deliberately not `relative`), so it can't overflow at any width.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-08-16 — added selected-employee password reset to the registry's Passwords menu.*
+*Last Updated: 2026-08-16 — travel allowance (spec 028); benefits claim clamp + medical gate; selected-employee password reset.*

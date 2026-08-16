@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
+import { pendingRequestCount } from "@/lib/profile/change-requests";
 
 type Card = { href: string; title: string; body: string; ready: boolean };
 type Category = { label: string; superOnly?: boolean; cards: Card[] };
@@ -16,6 +17,12 @@ const CATEGORIES: Category[] = [
         href: "/admin/employees",
         title: "Employee Registry",
         body: "Create and edit employee records, employment, reporting lines, and roles.",
+        ready: true,
+      },
+      {
+        href: "/admin/change-requests",
+        title: "Change Requests",
+        body: "Corrections employees have asked for — approve a field and it is written to their record.",
         ready: true,
       },
       {
@@ -80,8 +87,22 @@ async function pendingClaimCount(): Promise<number> {
   });
 }
 
-function AdminCard({ card, pendingClaims }: { card: Card; pendingClaims: number }) {
-  const showPending = card.href === "/admin/benefits" && pendingClaims > 0;
+function AdminCard({
+  card,
+  pendingClaims,
+  pendingChangeRequests,
+}: {
+  card: Card;
+  pendingClaims: number;
+  pendingChangeRequests: number;
+}) {
+  const count =
+    card.href === "/admin/benefits"
+      ? pendingClaims
+      : card.href === "/admin/change-requests"
+        ? pendingChangeRequests
+        : 0;
+  const showPending = count > 0;
   return (
     <Link
       href={card.href}
@@ -93,7 +114,7 @@ function AdminCard({ card, pendingClaims }: { card: Card; pendingClaims: number 
       {showPending ? (
         <span className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-gold-100 px-2.5 py-1 text-[11px] font-bold text-gold-800">
           <span className="h-1.5 w-1.5 rounded-full bg-gold-500" aria-hidden="true" />
-          {pendingClaims} pending
+          {count} pending
         </span>
       ) : null}
       <div className="ff-ad-title text-[19px] font-semibold tracking-[-0.01em] text-ink">{card.title}</div>
@@ -111,6 +132,13 @@ export default async function AdminPage() {
   } catch {
     // Benefits tables not migrated yet — leave the pill off rather than break the page.
     pendingClaims = 0;
+  }
+  let pendingChangeRequests = 0;
+  try {
+    pendingChangeRequests = await pendingRequestCount();
+  } catch {
+    // Migration 049 not applied yet — same reasoning as above.
+    pendingChangeRequests = 0;
   }
 
   const categories = CATEGORIES.filter((cat) => !cat.superOnly || superUser);
@@ -136,7 +164,12 @@ export default async function AdminPage() {
             </div>
             <div className="ff-stagger grid gap-4 sm:grid-cols-2">
               {cat.cards.map((card) => (
-                <AdminCard key={card.title} card={card} pendingClaims={pendingClaims} />
+                <AdminCard
+                  key={card.title}
+                  card={card}
+                  pendingClaims={pendingClaims}
+                  pendingChangeRequests={pendingChangeRequests}
+                />
               ))}
             </div>
           </section>

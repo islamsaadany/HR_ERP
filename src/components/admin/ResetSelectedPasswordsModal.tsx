@@ -26,7 +26,10 @@ export function ResetSelectedPasswordsModal({
   open: boolean;
   onClose: () => void;
   employees: PickerEmployee[];
-  /** The parent's `useActionState` dispatcher for `generateTeamPasswords`. */
+  /**
+   * Submits to `generateTeamPasswords` and closes this picker. It must dispatch
+   * before closing — see `runAndClose` in RegistryHeader.
+   */
   formAction: (formData: FormData) => void;
   pending: boolean;
 }) {
@@ -227,15 +230,16 @@ function PickerDialog({
                   type="submit"
                   disabled={count === 0 || pending}
                   onClick={(e) => {
+                    // Only ever cancel here. Closing the picker in this handler would
+                    // unmount the form before `submit` fires and silently kill the
+                    // action — `formAction` closes it after dispatching instead.
                     if (
                       !window.confirm(
                         `Reset the sign-in password for ${count} employee${count === 1 ? "" : "s"}? Each gets a temporary password and must choose a new one at next sign-in.`
                       )
                     ) {
                       e.preventDefault();
-                      return;
                     }
-                    onClose();
                   }}
                   className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50"
                 >

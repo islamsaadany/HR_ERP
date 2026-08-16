@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition, useRef, useCallback, useContext, useEffect, useId, createContext, type FormEvent } from "react";
+import { useState, useMemo, useTransition, useRef, useCallback, useContext, useEffect, useId, createContext, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { ClaimType, ClaimStatus } from "@prisma/client";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS, tracker } from "@/lib/benefits/claims";
 import { coveredAmount } from "@/lib/benefits/coverage";
+import { clampCovered } from "@/lib/benefits/rules";
 import { formatDate, formatEGP as egp, formatNumber } from "@/lib/labels";
 import { TOAST_DURATION_MS } from "@/lib/toast";
 import { createClaim } from "@/app/(app)/benefits/claim-actions";
@@ -79,6 +80,11 @@ export type BoardFlex = {
   coverageRate: number;
   claimType: ClaimType;
   allocated: number | null;
+  /**
+   * A fixed per-band entitlement (spec 028 — travel allowance) rather than a receipt-based claim:
+   * `allocated` is the amount itself, requested in full with no price entered and no proof.
+   */
+  isAllowance?: boolean;
   claims: BoardClaim[];
 };
 export type BoardGroup = { category: string; items: BoardFlex[] };
@@ -97,6 +103,41 @@ export type BoardMedicalCommitted = {
 } | null;
 
 /**
+ * Explains a benefit sitting ABOVE the current per-benefit cap (spec 031).
+ *
+ * Reachable only one way: HR switched the 50% limit off for a short cycle, the employee claimed
+ * past half, and HR switched it back on. Both numbers on the card are then correct — "Used 9,000"
+ * beside a 6,250 cap — but read together they look like a contradiction.
+ *
+ * Rendered ONLY when a benefit is genuinely over, so an ordinary cycle carries no permanent
+ * question mark inviting a question nobody has. Focusable, and shown on focus as well as hover:
+ * a mouse-only tooltip hides the explanation from anyone using a keyboard.
+ */
+function OverCapHint({ benefitName }: { benefitName: string }) {
+  return (
+    // The marker is the trigger, but the bubble is sized and placed against the CARD ROW, not the
+    // 15px marker: the marker is deliberately NOT `relative`, so the bubble's `absolute` resolves
+    // against the row above it. Anchored to the marker it ran off the card's right edge, because
+    // the marker sits two-thirds of the way along the label.
+    <span
+      className="group inline-grid h-[15px] w-[15px] cursor-help place-items-center rounded-full bg-white/20 text-[10px] font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-300"
+      tabIndex={0}
+      role="note"
+      aria-label={`Why ${benefitName} is above this cap`}
+    >
+      ?
+      <span className="pointer-events-none invisible absolute left-0 top-full z-20 w-full rounded-[10px] border border-line bg-surface px-3 py-2.5 text-left text-xs font-normal leading-snug text-ink opacity-0 shadow-[0_8px_22px_rgba(10,26,48,0.22)] transition-opacity group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100">
+        {/* The employee's real worry is whether money is about to be taken back, so that answer
+            comes first and the consequence second. */}
+        <b className="font-semibold">{benefitName}</b> was claimed while the 50% limit was switched
+        off for this cycle, so it sits above the cap. That claim stands — nothing is taken back. You
+        just can&apos;t claim more on it.
+      </span>
+    </span>
+  );
+}
+
+/**
  * Employee benefits board (spec 018) — restores the original navy/gold layout: a full-width
  * guaranteed band, then a two-column area with categorized benefit ROWS on the left and a sticky
  * pool meter on the right. Flexible benefits are claimed as-you-go (each row expands to a claim
@@ -107,6 +148,7 @@ export function BenefitsBoard({
   poolUsed,
   poolRemaining,
   cap,
+  flexCapEnabled = true,
   guaranteed,
   automatic,
   groups,
@@ -117,9 +159,11 @@ export function BenefitsBoard({
   proration,
   medicalOnly,
   medicalOffered = true,
+  medicalEligible = true,
   familyMedical = true,
   medicalPremiumFraction = 1,
   medicalProration,
+  medicalCarried = 0,
   error,
   claimSuccess,
 }: {
@@ -127,6 +171,12 @@ export function BenefitsBoard({
   poolUsed: number;
   poolRemaining: number;
   cap: number;
+  /**
+   * Whether the 50%-per-benefit limit applies to this cycle (spec 031). Mirrors the server for
+   * UX only — the rule is enforced in `evaluateClaim`, never here. Defaults to true so a caller
+   * that predates the switch shows today's behaviour.
+   */
+  flexCapEnabled?: boolean;
   guaranteed: BoardGuaranteed[];
   automatic: string[];
   groups: BoardGroup[];
@@ -141,12 +191,19 @@ export function BenefitsBoard({
   medicalOnly?: boolean;
   /** Whether any medical cover is offered to this employee (spec 021). When false, no medical row shows. */
   medicalOffered?: boolean;
+  /** False before the employee reaches 3 months of service — the row shows locked, not set-up-able. */
+  medicalEligible?: boolean;
   /** Whether the employee is eligible for Family medical — unlocks spouse/children pickers (spec 021). */
   familyMedical?: boolean;
   /** Prorates the medical premium PREVIEW to match the server (fraction of the year). */
   medicalPremiumFraction?: number;
   /** Badge data for a prorated medical premium. */
   medicalProration?: BoardProration;
+  /**
+   * Premium charged to LATER benefits cycles (spec 027) — a policy term running past this cycle's
+   * end is paid for across both. 0 when the term sits inside one cycle, and then nothing renders.
+   */
+  medicalCarried?: number;
   error?: string;
   /** Shown after a claim is submitted (redirect `?claimOk=1`). */
   claimSuccess?: boolean;
@@ -154,6 +211,22 @@ export function BenefitsBoard({
   const [medOpen, setMedOpen] = useState(false);
   const [gClaim, setGClaim] = useState<BoardGuaranteed | null>(null);
   const pct = ceiling > 0 ? Math.min(100, (poolUsed / ceiling) * 100) : 0;
+
+  // Spec 031: the one benefit (if any) whose claims sit ABOVE the cap now in force. Only reachable
+  // when the 50% limit was switched off for this cycle, claimed against, then switched back on —
+  // so the card can read "Used 9,000" beside a 6,250 cap and look self-contradictory. Named here so
+  // the hint can finish the sentence; null on an ordinary cycle, where nothing needs explaining.
+  const overCapBenefit = useMemo(() => {
+    if (!flexCapEnabled || cap <= 0) return null;
+    for (const group of groups) {
+      for (const item of group.items) {
+        if (item.isMedical) continue; // medical is exempt from the cap and never "over" it
+        const claimed = item.claims.reduce((sum, c) => sum + c.amount, 0);
+        if (claimed > cap) return item.name;
+      }
+    }
+    return null;
+  }, [flexCapEnabled, cap, groups]);
 
   // Floating success toasts (replaces the old redirect banner). notify() is shared
   // with the claim forms via ToastContext; each toast auto-dismisses.
@@ -276,7 +349,27 @@ export function BenefitsBoard({
                 <span className="h-px flex-1 bg-line" />
               </div>
               <div className="space-y-2">
-                <MedicalRow committed={medicalCommitted} familyMedical={familyMedical} onSetup={() => setMedOpen(true)} />
+                {medicalEligible ? (
+                  <MedicalRow committed={medicalCommitted} familyMedical={familyMedical} onSetup={() => setMedOpen(true)} />
+                ) : (
+                  /* Under 3 months of service. The server already refuses the commit; showing a
+                     locked row instead of a working "Set up" button means the employee never walks
+                     into that dead end, and still learns when it opens. Matches the "Unlocks at 6
+                     months" pill the sub-6-month view uses. */
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-line bg-paper px-4 py-3">
+                    <div>
+                      <div className="text-sm font-medium text-ink">
+                        {familyMedical ? "Medical insurance" : "Personal medical insurance"}
+                      </div>
+                      <div className="mt-0.5 text-xs text-muted">
+                        Available once you reach 3 months of service
+                      </div>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-800">
+                      Unlocks at 3 months
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           ) : null}
@@ -288,7 +381,7 @@ export function BenefitsBoard({
               </div>
               <div className="space-y-2">
                 {group.items.map((item) => (
-                  <FlexRow key={item.id} item={item} />
+                  <FlexRow key={item.id} item={item} poolRemaining={poolRemaining} />
                 ))}
               </div>
             </div>
@@ -316,26 +409,53 @@ export function BenefitsBoard({
                 your pool is scaled to that period. A full-length cycle carries the full annual amount.
               </p>
             ) : null}
+            {medicalCarried > 0 ? (
+              <p className="mt-3 rounded-lg bg-white/10 px-3 py-2 text-xs text-navy-100">
+                Your medical cover runs past this benefits cycle. The remaining{" "}
+                <b className="tabular-nums text-white">{egp(medicalCarried)}</b> is charged to your next
+                cycle, not this one.
+              </p>
+            ) : null}
             <div className="mt-3.5 h-2.5 w-full overflow-hidden rounded-full bg-navy-700">
               <div className="h-full rounded-full bg-gold-500" style={{ width: `${pct}%` }} />
             </div>
             <div className="mt-3.5 border-t border-white/15">
               <div className="flex items-baseline justify-between py-2.5 text-sm">
-                <span className="text-navy-200">Used</span>
+                <span className="text-navy-200">{medicalCarried > 0 ? "Used this cycle" : "Used"}</span>
                 <span className="font-semibold tabular-nums text-white">{egp(poolUsed)}</span>
               </div>
-              <div className="flex items-baseline justify-between border-t border-white/10 py-2.5 text-sm">
-                <span className="text-navy-200">Per-benefit cap (50%)</span>
-                <span className="font-semibold tabular-nums text-white">{egp(cap)}</span>
+              {/*
+                Spec 031: the row stays put and changes its answer rather than disappearing, so the
+                employee reads the same line either way and the difference is legible.
+              */}
+              <div className="relative flex items-center justify-between border-t border-white/10 py-2.5 text-sm">
+                <span className="flex items-center gap-1.5 text-navy-200">
+                  {flexCapEnabled ? "Per-benefit cap (50%)" : "Per-benefit limit"}
+                  {overCapBenefit ? <OverCapHint benefitName={overCapBenefit} /> : null}
+                </span>
+                <span className="font-semibold tabular-nums text-white">
+                  {flexCapEnabled ? egp(cap) : "None this cycle"}
+                </span>
               </div>
             </div>
+            {!flexCapEnabled ? (
+              // Says what changed AND why: an employee who doesn't know the cycle is short reads
+              // "no limit" as a bug.
+              <p className="mt-3 rounded-lg bg-white/10 px-3 py-2 text-xs text-navy-100">
+                This cycle is shorter than a year, so the{" "}
+                <b className="text-white">50% per-benefit limit does not apply</b>. You can put your
+                whole remaining pool into one benefit.
+              </p>
+            ) : null}
           </div>
           <div className="rounded-2xl border border-line bg-surface p-5">
             <h3 className="font-serif text-base text-ink">How it works</h3>
             <ol className="mt-2 space-y-1">
               {[
                 "Claim as you spend — nothing to submit. Enter the full price; the company covers a set % of each benefit.",
-                "No single benefit's covered share may pass half your pool. Medical is exempt.",
+                flexCapEnabled
+                  ? "No single benefit's covered share may pass half your pool. Medical is exempt."
+                  : "No per-benefit limit this cycle — your pool ceiling is the only limit.",
                 "Medical is committed once and locked (HR-managed after).",
                 "Unclaimed amounts don't carry over or pay out as cash.",
               ].map((t, i) => (
@@ -400,7 +520,7 @@ function ClaimStatusSummary({ claims }: { claims: BoardClaim[] }) {
 }
 
 /** One flexible benefit — collapsed row that expands to a claim form. */
-function FlexRow({ item }: { item: BoardFlex }) {
+function FlexRow({ item, poolRemaining }: { item: BoardFlex; poolRemaining: number }) {
   const t = tracker(item.allocated, item.claims);
   const remaining = t.remaining ?? 0;
   const fullyClaimed = item.allocated != null && remaining <= 0;
@@ -417,14 +537,18 @@ function FlexRow({ item }: { item: BoardFlex }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-[15px] font-medium text-ink">
               {item.name}
-              <span className="rounded bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-navy-700">{item.coverageRate}% covered</span>
+              {item.isAllowance ? (
+                <span className="rounded bg-gold-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-gold-800">No receipt needed</span>
+              ) : (
+                <span className="rounded bg-navy-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-navy-700">{item.coverageRate}% covered</span>
+              )}
             </div>
             {item.description ? <div className="mt-0.5 text-xs text-muted">{item.description}</div> : null}
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5 text-right">
             <div className="text-xs text-ink">Left to claim <b className="tabular-nums">{egp(remaining)}</b></div>
             <span className="rounded-lg bg-navy-50 px-3 py-1.5 text-xs font-semibold text-navy-700">
-              {fullyClaimed ? "View" : "Claim"}
+              {fullyClaimed ? "View" : item.isAllowance ? "Request" : "Claim"}
               <span className="ml-1 inline-block group-open:rotate-180">▾</span>
             </span>
           </div>
@@ -455,15 +579,93 @@ function FlexRow({ item }: { item: BoardFlex }) {
         {fullyClaimed ? (
           <p className="rounded-lg border border-line bg-surface px-3 py-3 text-sm text-muted">Fully claimed — nothing left on this benefit.</p>
         ) : (
-          <FlexClaimForm item={item} remaining={remaining} onSubmitted={() => setOpen(false)} />
+          item.isAllowance ? (
+            <AllowanceRequestForm item={item} remaining={remaining} onSubmitted={() => setOpen(false)} />
+          ) : (
+            <FlexClaimForm item={item} remaining={remaining} poolRemaining={poolRemaining} onSubmitted={() => setOpen(false)} />
+          )
         )}
       </div>
     </details>
   );
 }
 
+/**
+ * Request form for a fixed allowance (spec 028 — travel allowance).
+ *
+ * There is no price to enter and no proof to upload: the band amount IS the payout, so the whole
+ * interaction is one button. The server still decides the figure — this only says what it will be.
+ */
+function AllowanceRequestForm({
+  item,
+  remaining,
+  onSubmitted,
+}: {
+  item: BoardFlex;
+  remaining: number;
+  onSubmitted: () => void;
+}) {
+  const router = useRouter();
+  const notify = useContext(ToastContext);
+  const fieldId = useId();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    setError(null);
+    startTransition(async () => {
+      const res = await createClaim(data);
+      if (res.ok) {
+        notify("Allowance requested — awaiting HR review.");
+        form.reset();
+        router.refresh();
+        onSubmitted();
+      } else {
+        setError(res.error);
+      }
+    });
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="rounded-lg border border-line bg-surface p-3">
+      <input type="hidden" name="kind" value="catalog" />
+      <input type="hidden" name="benefitId" value={item.id} />
+      <p className="text-sm text-ink">
+        Requesting pays the whole <b className="tabular-nums">{egp(remaining)}</b> and draws it from
+        your pool — your remaining flexible budget falls by the same amount.
+      </p>
+      <div className="mt-3">
+        <label htmlFor={`${fieldId}-note`} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Note (optional)</label>
+        <input id={`${fieldId}-note`} name="note" className="w-full max-w-[280px] rounded-lg border border-line px-3 py-2 text-sm" />
+      </div>
+      <button
+        disabled={pending}
+        className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50"
+      >
+        {pending ? "Requesting…" : `Request ${egp(remaining)}`}
+      </button>
+      {error ? (
+        <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{error}</p>
+      ) : null}
+    </form>
+  );
+}
+
 /** Full-price claim form for a flexible benefit with a live covered preview. */
-function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; remaining: number; onSubmitted: () => void }) {
+function FlexClaimForm({
+  item,
+  remaining,
+  poolRemaining,
+  onSubmitted,
+}: {
+  item: BoardFlex;
+  remaining: number;
+  poolRemaining: number;
+  onSubmitted: () => void;
+}) {
   const router = useRouter();
   const notify = useContext(ToastContext);
   // One of these renders per flexible benefit, so literal ids would collide across the page
@@ -472,8 +674,9 @@ function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; rema
   const [fullCost, setFullCost] = useState(0);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const covered = coveredAmount(fullCost, item.coverageRate);
-  const over = covered > remaining;
+  // Mirror of the server rule (clampCovered) so the figure previewed here is the figure paid.
+  const requested = coveredAmount(fullCost, item.coverageRate);
+  const { covered, clampedBy } = clampCovered(requested, remaining, poolRemaining);
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -508,12 +711,30 @@ function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; rema
           onChange={(e) => setFullCost(parseInt(e.target.value.replace(/[^0-9]/g, ""), 10) || 0)}
           placeholder="e.g. 10,000"
           required
-          className={"w-full max-w-[280px] rounded-lg border px-3 py-2 text-sm " + (over ? "border-red-300" : "border-line")}
+          className="w-full max-w-[280px] rounded-lg border border-line px-3 py-2 text-sm"
         />
         <p className="mt-1 text-xs text-muted">
-          Company covers {item.coverageRate}% → <b className="tabular-nums text-navy-700">{egp(covered)}</b> reimbursed. Up to {egp(remaining)} covered left.
+          Company covers {item.coverageRate}% → <b className="tabular-nums text-navy-700">{egp(requested)}</b> reimbursed. Up to {egp(remaining)} covered left.
         </p>
-        {over ? <p className="mt-1 text-xs font-medium text-red-600">That covered amount exceeds what&apos;s left ({egp(remaining)}). Lower the price or claim the rest later.</p> : null}
+        {/* Not an error — the claim is valid, just partially covered. Keep the full price as
+            entered (it must match the proof) and say plainly what will be paid. */}
+        {clampedBy ? (
+          <p className="mt-1.5 rounded-lg border border-gold-300 bg-gold-50 px-2.5 py-1.5 text-xs text-gold-800">
+            {clampedBy === "benefit" ? (
+              <>
+                Only <b className="tabular-nums text-navy-800">{egp(remaining)}</b> is left on this benefit, so
+                you&apos;ll be reimbursed <b className="tabular-nums text-navy-800">{egp(covered)}</b> — not {egp(requested)}.
+                Submitting is fine.
+              </>
+            ) : (
+              <>
+                Only <b className="tabular-nums text-navy-800">{egp(poolRemaining)}</b> is left in your pool, so
+                you&apos;ll be reimbursed <b className="tabular-nums text-navy-800">{egp(covered)}</b> — not {egp(requested)}.
+                Submitting is fine.
+              </>
+            )}
+          </p>
+        ) : null}
       </div>
       {item.claimType === "PROOF" ? (
         <div className="mt-3">
@@ -525,7 +746,9 @@ function FlexClaimForm({ item, remaining, onSubmitted }: { item: BoardFlex; rema
         <label htmlFor={`${fieldId}-note`} className="mb-1 block text-[11px] uppercase tracking-wide text-muted">Note (optional)</label>
         <input id={`${fieldId}-note`} name="note" className="w-full max-w-[280px] rounded-lg border border-line px-3 py-2 text-sm" />
       </div>
-      <button disabled={pending || fullCost <= 0 || over} className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50">
+      {/* Overshooting what's left no longer blocks submission — it's paid down to the remainder.
+          Only a zero payout blocks, because there'd be nothing to reimburse. */}
+      <button disabled={pending || fullCost <= 0 || covered <= 0} className="mt-3 rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-50">
         {pending ? "Submitting…" : "Submit claim"}
       </button>
       {error ? (
@@ -552,7 +775,7 @@ function MedicalRow({ committed, familyMedical = true, onSetup }: { committed: B
         </div>
         <div className="shrink-0 text-right">
           <div className="font-serif text-lg text-navy-800 tabular-nums">{egp(committed.premium)}</div>
-          <div className="text-[11px] text-muted">annual premium</div>
+          <div className="text-[11px] text-muted">annual insurance cost</div>
         </div>
       </div>
     );

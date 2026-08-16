@@ -100,6 +100,45 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   6mo–2y tier; built now against the **placeholder** rate card with the operator's confirmed prorated premium figures
   a later non-blocking data swap. Realizes the approved "medical available at 3 months" mockup. Money-sensitive defaults
   (whole-month floor, ÷12, nearest-EGP rounding) recorded in the spec's Assumptions.
+- **2026-08-16 — Recoverable premium belongs to Finance, not HR (built, spec `030`, migration `048`).**
+  Spec 027 showed HR a recoverable figure when someone left mid-policy. The product owner challenged
+  it — *"who are we helping with that data? we already lost the amount"* — and the challenge was
+  right: HR processed the departure and does not reconcile insurer credit notes, so the number was
+  decoration. **Decision:** the same figure goes to **Finance**, where it carries an action and a
+  closing state — chase the insurer, record what came back, or write it off with a reason. The
+  residual is accepted as a cost of leaving; the value is that it becomes a recorded number rather
+  than an invisible one, and that a systematically short-paying insurer shows up in the shortfall
+  column. **The arithmetic that had to be right:** the recoverable amount is computed from the leave
+  date, NOT from the cancelled cycle charge — the latter excludes any month inside an
+  already-applied charge and would under-claim on every leaver (13,000 vs 10,834 on the live case).
+- **2026-08-16 — Summer allowance becomes a pool-funded Travel allowance (built, spec `028`, migration `046`).**
+  The product owner first reported that the summer allowance appeared to draw from the pool when it
+  shouldn't (a display bug, fixed separately), then decided it *should* — rebadged as a year-round
+  **Travel allowance** inside the flexible basket. **Decision:** it keeps its band amounts and is paid
+  in full with no receipt, but now consumes the pool and prorates with the cycle. **Full- and
+  part-timers get the same figures** (reversing an earlier "PT is half of FT"): the pool ceiling
+  already differs by employment type, so a second set of amounts would add no expressiveness and one
+  more way to drift. The cost was named up front and accepted — a part-timer gives up a larger share
+  of a smaller pool for the same cash. Two findings shaped the migration: the **Jul–Sep window never
+  existed in code** (only in handbook text), so "year-round" was a copy change; and the Summer row
+  had to be **retired rather than deleted**, because claims cascade from it and deleting it would
+  erase every historical summer claim. Introduces a general **fixed allowance** shape on the
+  catalogue (four per-band amount columns) that any future entitlement can reuse.
+- **2026-08-16 — Claims pay down to what's left instead of being refused (built, migration `045`).**
+  Reported by the product owner: an employee with a 30,000 pool (15,000 per-benefit cap) who had
+  claimed 8,000 on an 80%-covered gym benefit could not claim a second 10,000 receipt at all — the
+  8,000 coverage share exceeded the 7,000 remaining, so `evaluateClaim` refused the whole thing and
+  reimbursed nothing. The employee's only workaround was to **understate the receipt** to make it
+  fit, which defeats the proof of payment the claim is built around. **Decision:** the covered
+  amount is clamped to the remainder rather than refused — the **50% cap overrides the coverage
+  rate**, so that claim pays 7,000 at an effective 70%. The employee still enters the full receipt
+  value, and the preview names the clamped figure before submitting (mockup-approved) so the payout
+  is never a surprise. Only a *fully used* benefit or pool refuses. Consequence handled in the same
+  change: covered is no longer derivable from the receipt, so **`BenefitClaim.fullCost`** now stores
+  the receipt and the admin Claims list shows the working — without it a clamped claim reads as an
+  unexplained number beside a larger proof. Also bundled: the pool figure stopped counting
+  guaranteed benefits (display-only bug), and medical renders locked before 3 months instead of
+  offering a commit the server refuses.
 - **2026-08-16 — Selected-employee password reset; who may run it (built, no migration).** HR could reset
   **one** employee (their edit page), **everyone without a password**, or **everyone** (Super User) — but not
   a chosen set, which is the common case (a team back from leave, a handful of forgotten passwords). Added a
