@@ -12,9 +12,9 @@
 
 Today the platform has **one** cycle. A single benefits plan year carries admin-set start and end dates, and those same dates drive the flexible pool, the guaranteed benefits, *and* the medical premium's proration. The medical commitment is stored against that plan year and locked once made.
 
-The company's actual medical insurance does not follow the benefits cycle. It is a contract with an insurer that renews on its own schedule — currently **1 June 2026 → 30 June 2027**. Two problems follow:
+The company's actual medical insurance does not follow the benefits cycle. It is a contract with an insurer that renews on its own schedule — **1 June → 31 May**, currently 1 Jun 2026 → 31 May 2027. The benefits plan year is always the full calendar year, Jan–Dec (confirmed 2026-08-16), so **every policy term straddles exactly two cycles**: 7 months (Jun–Dec) in one, 5 months (Jan–May) in the next. Two problems follow:
 
-1. **A premium sized to one window is charged against a pool sized to another.** The pool ceiling is scaled to the benefits cycle's length. If that cycle is six months, the ceiling halves — but the insurance premium still covers its full policy term. Medical then consumes most or all of a halved pool and the employee has nothing left for flexible benefits, even though the premium is buying cover that extends well past the cycle.
+1. **A premium is charged to a cycle it only partly covers.** A premium committed in June buys cover to the following May, but the whole of it lands on the current calendar-year pool. In 2026 that means an employee's entire annual pool absorbs twelve months of premium for seven months of cover, leaving them little or no flexible budget — and it misstates a departing employee's consumption, and lands a mid-term rate change entirely in one calendar year.
 
 2. **Nothing marks the insurance renewal.** Because the commitment is keyed to the benefits plan year, a policy that renews mid-cycle produces no re-commitment event, and a benefits cycle that turns over mid-policy has no record of what the employee is already committed to.
 
@@ -24,15 +24,15 @@ The resolution agreed with the product owner: **committing to a premium and cons
 
 ### User Story 1 - The pool absorbs only this cycle's share of the premium (Priority: P1)
 
-An employee commits to medical cover during a benefits cycle that is shorter than, or offset from, the insurance policy term. They are committed to the full annual premium, and HR owes the insurer that full amount — but the employee's flexible pool for the current cycle is only reduced by the portion of cover that falls inside that cycle. The rest is carried and charged to the next cycle's pool when it opens.
+An employee commits to medical cover under a policy term offset from the benefits cycle. They are committed to the full annual premium, and HR owes the insurer that full amount — but the employee's flexible pool for the current cycle is only reduced by the portion of cover that falls inside that cycle. The rest is carried and charged to the next cycle's pool when it opens.
 
-**Why this priority**: This is the whole feature. Without it, a short or offset benefits cycle lets a full-term premium exhaust a partial pool, wiping out the employee's flexible benefits for reasons that have nothing to do with what they chose.
+**Why this priority**: This is the whole feature. Without it, an offset policy term lets a full-term premium land on a pool that only covers part of it, taking flexible budget the employee should still have.
 
-**Independent Test**: Open a benefits cycle shorter than the medical policy term, commit an employee to medical, and confirm the pool falls by the overlap share while the recorded commitment shows the full premium.
+**Independent Test**: With the Jan–Dec cycle and the Jun–May policy term, commit an employee to medical and confirm the pool falls by the 7-month share while the recorded commitment shows the full premium.
 
 **Acceptance Scenarios**:
 
-1. **Given** a medical policy running 1 Jun 2026 → 30 Jun 2027 (13 months) with a committed premium of EGP 26,000, and a benefits cycle running 1 Jun 2026 → 31 Dec 2026 (7 months), **When** the employee commits, **Then** the commitment records the full EGP 26,000, the current cycle's pool is reduced by the 7-month share (EGP 14,000), and EGP 12,000 is carried as a charge against the next cycle.
+1. **Given** a medical policy running 1 Jun 2026 → 31 May 2027 with a committed premium of EGP 40,000, and the Jan–Dec 2026 benefits cycle, **When** the employee commits, **Then** the commitment records the full EGP 40,000, the 2026 pool is reduced by the 7-month share (EGP 23,333), and EGP 16,667 is carried as a charge against the 2027 cycle.
 2. **Given** the same commitment, **When** the employee views their pool, **Then** the amount shown as used for medical is the amount charged to the cycle they are looking at — not the full premium.
 3. **Given** a benefits cycle whose dates match the medical policy term exactly, **When** an employee commits, **Then** the entire premium is charged to that one cycle and nothing is carried, matching today's behaviour.
 4. **Given** a carried medical charge from a previous cycle, **When** HR opens the next benefits cycle, **Then** that charge is applied to the employee's new pool automatically, without HR re-entering anything.
@@ -56,19 +56,20 @@ HR configures the insurance policy's own start and end dates, independently of t
 
 ---
 
-### User Story 3 - Policy terms longer than a year are priced correctly (Priority: P2)
+### User Story 3 - The term's real length is what prices it (Priority: P2)
 
-A medical policy term longer than twelve months prices and prorates correctly rather than being silently treated as a year.
+Whatever length HR sets the policy term to, that is the length it is priced and split by — never silently rounded to twelve months.
 
-**Why this priority**: The current live policy term is thirteen months, and the existing month-counting helper stops at twelve. The thirteenth month is currently unaccounted for — a real arithmetic error against a real policy, not a hypothetical.
+**Why this priority**: The window is HR-set from date to date, so nothing stops a term of other than twelve months being entered — a transition period, or simply a typo. The existing month-counting helper stops at twelve, so such a term would be silently mis-split with no error and no visible symptom. This is a **guard against a bad configuration**, not a fix for a live error: the real term is 12 months (corrected 2026-08-16, having originally been described as 1 Jun 2026 → 30 Jun 2027).
 
-**Independent Test**: Configure a 13-month policy term and confirm the month count, per-month premium share, and cycle split all reflect 13 months rather than 12.
+**Independent Test**: Configure a term of other than twelve months and confirm the month count, per-month share, and cycle split all reflect its true length.
 
 **Acceptance Scenarios**:
 
-1. **Given** a medical policy running 1 Jun 2026 → 30 Jun 2027, **When** the system counts the policy's months, **Then** it counts 13, not 12.
-2. **Given** a 13-month policy and a premium of EGP 26,000, **When** the premium is divided across the term, **Then** each month's share is based on 13 months and the shares charged across all cycles sum back to exactly EGP 26,000 with no month unaccounted for and no rounding drift.
-3. **Given** a mid-term joiner under a 13-month policy, **When** their premium is prorated, **Then** the proration is against the remaining months of the *policy term*, not against the benefits cycle.
+1. **Given** a medical policy running 1 Jun 2026 → 31 May 2027, **When** the system counts the policy's months, **Then** it counts 12.
+2. **Given** a term of any other length (e.g. 13 months, or 6), **When** the system counts its months, **Then** it counts that length rather than capping at 12.
+3. **Given** a premium that does not divide evenly by the term's month count, **When** it is split, **Then** the charges across all cycles sum back to exactly the premium, with no month unaccounted for and no rounding drift.
+4. **Given** a mid-term joiner, **When** their premium is prorated, **Then** the proration is against the remaining months of the *policy term*, not against the benefits cycle.
 
 ---
 
@@ -81,6 +82,7 @@ A medical policy term longer than twelve months prices and prorates correctly ra
 - **A benefits cycle opens with no preceding cycle.** The first cycle has no carried charges; the feature must be inert rather than erroring.
 - **The medical window and the benefits cycle do not overlap at all.** A premium with zero months inside the current cycle charges nothing now and carries in full.
 - **A benefits cycle is left open past its end date.** Overlap must be computed from the cycle's configured dates, not from today, so a stale open cycle does not silently absorb more of the premium than its dates cover.
+- **Steady state must not drift.** From the second year on, each Jan–Dec pool absorbs 5 months of the expiring policy plus 7 of the new one — exactly 12 months of premium per calendar year. A model that did not settle to 12 would be over- or under-charging every employee, every year.
 - **The premium is capped at the pool ceiling.** Capping currently happens against a single ceiling; with a split, it MUST be clear whether the cap applies to the full premium or the per-cycle charge (see Assumptions).
 
 ## Requirements *(mandatory)*
@@ -117,7 +119,8 @@ A medical policy term longer than twelve months prices and prorates correctly ra
 - **SC-001**: An employee committing to medical during a benefits cycle shorter than the policy term retains flexible pool capacity proportional to the part of the premium not charged to that cycle — where previously they could be left with none.
 - **SC-002**: For every committed premium, the sum of the amounts charged across all benefits cycles equals the committed premium exactly, to the currency unit, with no month of cover unaccounted for.
 - **SC-003**: HR can state, for any employee and without manual calculation, both the total premium committed and the amount charged to the current cycle.
-- **SC-004**: A policy term of 13 months is counted, priced, and split as 13 months in every calculation that touches it.
+- **SC-004**: A policy term is counted, priced, and split by its true length in every calculation that touches it, whatever that length is.
+- **SC-007**: From the second year onward, each calendar-year pool absorbs exactly twelve months of medical premium — the split settles rather than drifting.
 - **SC-005**: An installation with no medical policy window configured produces results identical to today's behaviour, so the change is invisible until HR opts into it.
 - **SC-006**: Carried charges are applied to a newly opened benefits cycle with no manual HR step and no opportunity to forget one.
 
@@ -126,6 +129,7 @@ A medical policy term longer than twelve months prices and prorates correctly ra
 - **Whole-month attribution.** Overlap between a policy term and a benefits cycle is measured in whole calendar months, consistent with the existing proration rules. A partial month at either boundary is handled by the same whole-month convention already used for mid-year starters, so the two systems agree.
 - **The pool-ceiling cap applies to the per-cycle charge, not the full premium.** The existing rule caps a premium at the pool ceiling. Since the ceiling is itself scaled to the cycle, capping the per-cycle charge against the cycle's ceiling is the consistent reading — capping the full premium against one cycle's ceiling would reintroduce the very problem this feature exists to solve. Flagged for confirmation at planning.
 - **One medical policy window is active at a time.** Overlapping or nested policy terms are out of scope; the insurer contract renews as a single succession of terms.
+- **The benefits plan year is the full calendar year** (confirmed 2026-08-16), so a cycle is always 12 months and the pool ceiling is never scaled for cycle length. Cycle-length proration stays in the code for mid-year joiners but is inert for cycle length itself.
 - **Carried charges apply to the next cycle that opens**, whatever its dates, rather than to a specific pre-named future cycle.
 - **Medical remains a single commitment per policy term** — this feature changes how a premium is *charged*, not how it is *elected*.
 - **Existing commitments are not retrospectively re-split.** Commitments made before this feature ships keep their current single-cycle charge; the split applies to commitments made under a configured medical policy window.

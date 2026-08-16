@@ -6,7 +6,7 @@
 
 ## Summary
 
-The medical insurance term (1 Jun 2026 → 30 Jun 2027) does not follow the benefits plan year, so a premium sized to the policy is charged against a pool sized to the cycle. Give the policy its **own window and its own commitment**, and split each committed premium **across the benefits cycles it overlaps** — each cycle's pool absorbs only its months, the remainder is charged when the next cycle opens, and the charges sum back to the committed premium exactly.
+The medical insurance term (1 Jun → 31 May) does not follow the benefits plan year (always Jan–Dec), so a premium sized to the policy is charged against a pool sized to the cycle. Give the policy its **own window and its own commitment**, and split each committed premium **across the benefits cycles it overlaps** — each cycle's pool absorbs only its months, the remainder is charged when the next cycle opens, and the charges sum back to the committed premium exactly.
 
 Three pieces of work, in dependency order: a policy-year record the commitment hangs off; an overlap-and-charge calculation that is pure and testable; and the surfaces that read a *cycle charge* where they currently read a *premium*.
 
@@ -28,7 +28,7 @@ Three pieces of work, in dependency order: a policy-year record the commitment h
 
 **Constraints**: Money rules server-authoritative. Charges across cycles must sum to the committed premium exactly (no rounding drift). Behaviour with no policy window configured must be byte-identical to today.
 
-**Scale/Scope**: ~50–200 employees, one active policy term, one open plan year.
+**Scale/Scope**: ~50–200 employees, one active policy term, one open plan year. A Jun–May term against a Jan–Dec cycle always splits across exactly two cycles, 7 months and 5.
 
 ## Constitution Check
 
@@ -85,7 +85,7 @@ prisma/
 Complete. See [research.md](./research.md). Seven decisions, the two load-bearing ones being:
 
 - **D2 — the commitment moves to the policy year.** Committing "once per plan year" is what makes a mid-cycle renewal invisible. `MedicalCommitment` is keyed to the policy term instead, and cycle charges hang off it.
-- **D4 — uncapping month counts is dangerous and must be surgical.** `remainingWholeMonths` stops at 12 today, and `poolCycleFraction` silently relies on that to avoid handing out a >100% pool. Uncapping it globally would inflate every pool on a 13-month cycle. A separate uncapped helper is added for policy terms and the pool fraction is clamped explicitly.
+- **D4 — uncapping month counts is dangerous and must be surgical.** `remainingWholeMonths` stops at 12 today, and `poolCycleFraction` silently relies on that to avoid handing out a >100% pool. A separate uncapped helper is added for policy terms and the pool fraction is clamped explicitly. Since the real term is 12 months, this is a **guard against a misconfigured window** rather than a fix for a live error.
 
 ## Phase 1 — Design
 

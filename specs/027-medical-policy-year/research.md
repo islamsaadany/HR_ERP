@@ -42,13 +42,15 @@ final cycle's charge  = premium − (sum of every other cycle's charge)
 
 **Rationale**: Whole-month attribution matches the convention the codebase already uses for mid-year starters (`remainingWholeMonths`), so the two systems agree rather than disagreeing by a day. Floor-plus-remainder makes the exact-sum invariant (FR-006) true by construction instead of by luck — the reconciling remainder lands in the final cycle rather than being distributed and rounded away.
 
-**Worked example** — the live figures: policy 1 Jun 2026 → 30 Jun 2027 (13 months), premium 26,000; cycle A 1 Jun–31 Dec 2026 (7 months of overlap), cycle B 1 Jan–31 Dec 2027 (6 months of overlap):
+**Worked example** — the live figures: policy 1 Jun 2026 → 31 May 2027 (12 months), premium 40,000; benefits cycles Jan–Dec:
 
 | | Overlap | Charge |
 |---|---|---|
-| Cycle A | 7 / 13 | floor(26,000 × 7 ÷ 13) = 14,000 |
-| Cycle B | 6 / 13 | 26,000 − 14,000 = 12,000 |
-| **Sum** | 13 / 13 | **26,000** ✓ |
+| 2026 cycle (Jun–Dec) | 7 / 12 | floor(40,000 × 7 ÷ 12) = 23,333 |
+| 2027 cycle (Jan–May) | 5 / 12 | 40,000 − 23,333 = 16,667 |
+| **Sum** | 12 / 12 | **40,000** ✓ |
+
+**Why the model settles.** From the second year on, each calendar pool carries 5 months of the expiring policy plus 7 of the new one — exactly 12 months of premium per year. So the split is not a permanent redistribution; it corrects the transition year (2026, which would otherwise absorb 12 months of premium for 7 months of cover) and then agrees with a naive full-premium charge forever after. That agreement is the check that the model is right rather than merely different.
 
 **Alternatives considered**:
 - *Day-based proration* — rejected. More precise, but it disagrees with every other proration in the product and buys nothing: insurance is billed monthly.
@@ -60,13 +62,15 @@ final cycle's charge  = premium − (sum of every other cycle's charge)
 
 **Decision**: Add an **uncapped** `wholeMonthsBetween(from, to)` for policy terms. Leave `remainingWholeMonths` capped at 12, and clamp `poolCycleFraction` to a maximum of 1 **explicitly**.
 
-**Rationale**: This is the trap in the existing code. `remainingWholeMonths` stops counting at 12 because of its loop bound (`while (count < 12)`), and `cycleWholeMonths` → `poolCycleFraction` silently depends on that cap to avoid ever returning a fraction above 1. Uncapping the shared helper — the obvious fix for the 13-month problem — would make a 13-month benefits cycle yield `13/12`, handing every employee **108% of their pool ceiling**. A money bug introduced while fixing an arithmetic one.
+**Rationale**: This is the trap in the existing code. `remainingWholeMonths` stops counting at 12 because of its loop bound (`while (count < 12)`), and `cycleWholeMonths` → `poolCycleFraction` silently depends on that cap to avoid ever returning a fraction above 1. Uncapping the shared helper would make a 13-month benefits cycle yield `13/12`, handing every employee **108% of their pool ceiling** — a money bug introduced while tidying an arithmetic one.
+
+**Status revised 2026-08-16**: the real policy term is **12 months** (1 Jun → 31 May), so this is a **guard against a misconfigured window**, not a fix for a live error — the earlier claim that production was miscounting a 13th month was based on the term as first described and was wrong. The guard is still worth having: the window is HR-set from date to date, and a term of any other length would otherwise be silently mis-split, with no error raised and no visible symptom.
 
 So the cap is kept where the pool relies on it, made explicit rather than incidental (a reader should not have to infer a business rule from a loop bound), and policy terms get their own uncapped helper.
 
 **Alternatives considered**:
 - *Uncap `remainingWholeMonths` and fix callers* — rejected as the riskier shape: it makes every current caller unsafe by default and correct only if each remembers to clamp.
-- *Cap policy terms at 12 months* — rejected. It is the actual bug: the 13th month of a real policy would stay unaccounted for.
+- *Cap policy terms at 12 months* — rejected. It makes the system silently wrong for any term HR configures at another length, and the window is free-form dates.
 
 ---
 

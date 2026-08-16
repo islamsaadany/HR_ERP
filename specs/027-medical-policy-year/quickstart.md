@@ -26,8 +26,8 @@ npx prisma db push --skip-generate
 
 The central claim: **charges across all cycles equal the committed premium, exactly.** Everything else is detail. Assert it over a spread of awkward inputs, not one happy path:
 
-- The live case: 13-month term, 26,000 premium, cycles of 7 and 6 months → 14,000 + 12,000.
-- A premium that does not divide evenly by the month count (e.g. 10,000 over 13 months) — the remainder must land in the final cycle and the sum must still be exact.
+- The live case: 12-month term (1 Jun 2026 – 31 May 2027), 40,000 premium, Jan–Dec cycles → 23,333 (7 mo) + 16,667 (5 mo).
+- A premium that does not divide evenly by the month count (e.g. 10,000 over 12 months) — the remainder must land in the final cycle and the sum must still be exact.
 - A term contained entirely within one cycle → a single charge for the whole premium.
 - A term with **zero** overlap with the current cycle → nothing charged now, everything carried.
 - A one-month term, and a 24-month term.
@@ -39,8 +39,9 @@ For each: `sum(charges) === premium`, and no charge is negative.
 
 Guard the bug that fixing this feature could introduce (research D4):
 
-- `wholeMonthsBetween('2026-06-01', '2027-06-30')` → **13**, not 12.
-- `poolCycleFraction` for that same 13-month window → **1**, never 13/12. A fraction above 1 means every employee has been handed more than their ceiling.
+- `wholeMonthsBetween('2026-06-01', '2027-05-31')` → **12**.
+- `wholeMonthsBetween('2026-06-01', '2027-06-30')` → **13**, not 12 — the misconfiguration guard.
+- `poolCycleFraction` for a 13-month window → **1**, never 13/12. A fraction above 1 means every employee has been handed more than their ceiling.
 - `remainingWholeMonths` still returns 12 for a 13-month range, since the pool logic depends on it.
 
 ## 3. Migration `047`
@@ -64,15 +65,18 @@ Then assert:
 - Open cycle B; confirm B's charge becomes applied **with no HR action beyond opening the cycle** (FR-005).
 - Repeat with a `LEFT` employee: the charge must be marked outstanding and **not** applied (research D7).
 
-## 5. The pool actually reflects the cycle charge
+## 5. The pool reflects the cycle charge, and the model settles
 
-The failure this feature exists to prevent, end to end:
+The transition year, end to end:
 
-1. Seed a 6-month benefits cycle and a 12-month policy term.
-2. Commit a premium large enough that, charged in full, it would exhaust the halved pool.
-3. Confirm the employee's pool falls by the **overlap share**, not the full premium — and that they can still claim a flexible benefit afterwards.
+1. Seed the Jan–Dec 2026 cycle and the 1 Jun 2026 – 31 May 2027 policy term.
+2. Commit a 40,000 premium.
+3. Confirm the 2026 pool falls by **23,333**, not 40,000 — the employee keeps 21,667 of flexible budget where charging in full would leave them 5,000.
 
-Before this feature that employee had nothing left. That contrast is the acceptance test.
+Then prove it **settles**, which is what shows the model is right rather than merely different:
+
+4. Open the 2027 cycle and commit the next policy term.
+5. Confirm the 2027 pool absorbs 16,667 (carried) + the new term's 7-month share — **exactly 12 months of premium**, the same as a naive full-premium charge would give.
 
 ## 6. No policy year configured
 
