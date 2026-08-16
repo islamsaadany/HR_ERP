@@ -31,7 +31,7 @@
 - [x] T013 Database checks: creation on cancellation, sync idempotency, settle/write-off, shortfall floor, no re-settle
 - [x] T014 Chromium pass over `/finance` as a Finance user
 - [x] T015 `tsc` + `build`; UI snapshot; docs (`PROJECT_DETAILS`, progress tracker, decisions log)
-- [ ] T016 Tell the user to paste `048` — with the wrong-database guard query first
+- [x] T016 Tell the user to paste `048` — with the wrong-database guard query first
 
 ## Progress
 

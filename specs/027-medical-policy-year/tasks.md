@@ -91,7 +91,7 @@
 - [x] T031 Browser pass per `quickstart.md` §7 — employee pool card and HR commitment list, as both roles, no console errors
 - [x] T032 Run `npx tsc --noEmit` and `npm run build`; both clean
 - [x] T033 [P] Update `PROJECT_DETAILS.md`, `IMPLEMENTATION_PROGRESS.md`, and the `IMPLEMENTATION_PLAN.md` decisions log in the implementing commit (CLAUDE.md)
-- [ ] T034 Tell the user to paste `prisma/sql/047_medical_policy_year.sql` into Neon — **and to run the wrong-database guard query first**, after the 046 incident
+- [x] T034 Tell the user to paste `prisma/sql/047_medical_policy_year.sql` into Neon — **and to run the wrong-database guard query first**, after the 046 incident
 
 ---
 
