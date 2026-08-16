@@ -13,8 +13,8 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Start a throwaway Postgres and apply the current schema per the Prerequisites section of `specs/027-medical-policy-year/quickstart.md`
-- [ ] T002 Seed the live shape into it — Jan–Dec 2026 plan year, pool ceilings, medical rate bands, and one employee with a committed medical premium — as the baseline the migration must not disturb
+- [x] T001 Start a throwaway Postgres and apply the current schema per the Prerequisites section of `specs/027-medical-policy-year/quickstart.md`
+- [x] T002 Seed the live shape into it — Jan–Dec 2026 plan year, pool ceilings, medical rate bands, and one employee with a committed medical premium — as the baseline the migration must not disturb
 
 ---
 
@@ -22,13 +22,13 @@
 
 **Purpose**: The pure calculation and the schema everything else reads. Nothing below this line can proceed without it.
 
-- [ ] T003 Add `wholeMonthsBetween(from, to)` — uncapped — to `src/lib/benefits/proration.ts`, leaving `remainingWholeMonths` capped at 12 (research D4)
-- [ ] T004 Clamp `poolCycleFraction` to a maximum of 1 explicitly in `src/lib/benefits/proration.ts`, so the pool no longer depends on a loop bound to stay under 100% (research D4)
-- [ ] T005 [P] Create `src/lib/benefits/policy-year.ts` with `overlapWholeMonths(policy, cycle)` — pure, no I/O
-- [ ] T006 Add `splitPremium(premium, policy, cycles)` to `src/lib/benefits/policy-year.ts`: `floor(premium × overlap ÷ policyMonths)` per cycle, remainder to the final cycle (research D3)
-- [ ] T007 Add `MedicalPolicyYear` and `MedicalCycleCharge` models plus `MedicalCommitment.policyYearId` to `prisma/schema.prisma`, changing commitment uniqueness to `(userId, policyYearId)` per `data-model.md`
-- [ ] T008 Write `prisma/sql/047_medical_policy_year.sql`: create both tables, add the column, backfill a policy year from the open plan year, attach existing commitments, and give each a single charge equal to its premium against its original plan year. Idempotent, non-destructive, no premium recomputed (research D2)
-- [ ] T009 Add `getActivePolicyYear()` and `getCycleCharge(commitmentId, planYearId)` to `src/lib/benefits/config.ts`, falling back to the active plan year's window when no policy year exists (research D6)
+- [x] T003 Add `wholeMonthsBetween(from, to)` — uncapped — to `src/lib/benefits/proration.ts`, leaving `remainingWholeMonths` capped at 12 (research D4)
+- [x] T004 Clamp `poolCycleFraction` to a maximum of 1 explicitly in `src/lib/benefits/proration.ts`, so the pool no longer depends on a loop bound to stay under 100% (research D4)
+- [x] T005 [P] Create `src/lib/benefits/policy-year.ts` with `overlapWholeMonths(policy, cycle)` — pure, no I/O
+- [x] T006 Add `splitPremium(premium, policy, cycles)` to `src/lib/benefits/policy-year.ts`: `floor(premium × overlap ÷ policyMonths)` per cycle, remainder to the final cycle (research D3)
+- [x] T007 Add `MedicalPolicyYear` and `MedicalCycleCharge` models plus `MedicalCommitment.policyYearId` to `prisma/schema.prisma`, changing commitment uniqueness to `(userId, policyYearId)` per `data-model.md`
+- [x] T008 Write `prisma/sql/047_medical_policy_year.sql`: create both tables, add the column, backfill a policy year from the open plan year, attach existing commitments, and give each a single charge equal to its premium against its original plan year. Idempotent, non-destructive, no premium recomputed (research D2)
+- [x] T009 Add `getActivePolicyYear()` and `getCycleCharge(commitmentId, planYearId)` to `src/lib/benefits/config.ts`, falling back to the active plan year's window when no policy year exists (research D6)
 
 **Checkpoint**: `npx tsc --noEmit` clean; `047` applies twice from the file with no change on the second run; every existing commitment's premium is untouched.
 
@@ -46,11 +46,11 @@
 - [ ] T013 [US1] Apply scheduled charges when a plan year opens, in `src/app/(app)/admin/benefits/plan-year-actions.ts` — `APPLIED` for an active employee, `CANCELLED` for anyone who has left (research D7)
 - [ ] T014 [US1] Add the carry note to the pool card in `src/components/benefits/BenefitsBoard.tsx`, per the approved mockup; it must not render when the term sits inside one cycle
 - [ ] T015 [US1] Save a `ui-versions/BenefitsBoard/` snapshot before editing T014, per CLAUDE.md
-- [ ] T016 [US1] Verify the exact-sum invariant with `tsx` against the throwaway database, over the spread in `quickstart.md` §1 — uneven division, single-cycle term, zero overlap, one-month and 24-month terms, zero premium
-- [ ] T017 [US1] Verify the month-counting guard per `quickstart.md` §2 — a 13-month window counts 13, and `poolCycleFraction` still returns 1 for it
+- [x] T016 [US1] Verify the exact-sum invariant with `tsx` against the throwaway database, over the spread in `quickstart.md` §1 — uneven division, single-cycle term, zero overlap, one-month and 24-month terms, zero premium
+- [x] T017 [US1] Verify the month-counting guard per `quickstart.md` §2 — a 13-month window counts 13, and `poolCycleFraction` still returns 1 for it
 - [ ] T018 [US1] Verify migration `047` per `quickstart.md` §3, applied from the file against the T002 baseline, twice
 - [ ] T019 [US1] Verify cycle-open behaviour per `quickstart.md` §4, including the leaver whose charge must be cancelled and never shown as owed
-- [ ] T020 [US1] Verify the steady state per `quickstart.md` §5 — the 2027 pool absorbs exactly 12 months of premium, matching a naive full-premium charge. This is the check that the model is right rather than merely different
+- [x] T020 [US1] Verify the steady state per `quickstart.md` §5 — the 2027 pool absorbs exactly 12 months of premium, matching a naive full-premium charge. This is the check that the model is right rather than merely different
 
 **Checkpoint**: US1 is shippable. Medical charges correctly, the transition year is fixed, and the model settles.
 
@@ -118,6 +118,23 @@
 Ship US1, verify against the quickstart, then add US2. US3 is verification of work already done in Phase 2 and costs almost nothing once the helpers exist.
 
 **Do not** start T014 or T022–T024 without re-reading the approved mockup — the design is signed off, and drifting from it silently is the failure `ui-versions/` exists to catch.
+
+## Progress
+
+**Done**: Setup, all of Foundational (T003–T009), and the pure-function verification (T016/T017/T020,
+40 checks passing — the exact-sum invariant, the month-counting guard, and the steady state).
+Migration `047` verified from the file against a database holding a real commitment: premium
+unchanged, one APPLIED charge equal to it, unique index re-keyed, second run a no-op.
+
+**Next**: US1's behaviour — T010 (commit writes charges), T011/T012 (pool and claim context read the
+cycle charge), T013 (cycle open applies/cancels), T014/T015 (the carry note + snapshot), then the
+database and browser verification T018/T019.
+
+**Note for the next session**: re-keying `MedicalCommitment` to the policy year broke four call
+sites that asked `findUnique({ userId_planYearId })`. All four are updated to ask the question the
+feature actually poses — *the commitment CHARGING this cycle*, which may have been made in the
+previous one — with a `planYearId` fallback for rows predating the migration. That pattern repeats
+in four files; if a fifth appears, extract it.
 
 ## Open questions (carried, not blocking)
 

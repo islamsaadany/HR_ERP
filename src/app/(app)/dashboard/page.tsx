@@ -47,8 +47,9 @@ export default async function DashboardPage() {
       prisma.leaveRequest.count({ where: { userId: me.id, status: "PENDING" } }),
       prisma.leaveRequest.count({ where: { approverId: me.id, status: "PENDING" } }),
       planYear
-        ? prisma.medicalCommitment.findUnique({
-            where: { userId_planYearId: { userId: me.id, planYearId: planYear.id } },
+        ? prisma.medicalCommitment.findFirst({
+            // Committed for THIS cycle — including a term committed last cycle that still charges it.
+            where: { userId: me.id, OR: [{ cycleCharges: { some: { planYearId: planYear.id } } }, { planYearId: planYear.id }] },
             select: { id: true },
           })
         : Promise.resolve(null),

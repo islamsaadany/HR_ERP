@@ -91,8 +91,10 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
     // 6mo–2y fallback inside poolCeilingFor when a sub-6-month employee has no band).
     poolCeilingFor(user.employmentType, deriveTenureBand(user.startDate).band),
     getMedicalRateBands(),
-    prisma.medicalCommitment.findUnique({
-      where: { userId_planYearId: { userId: me.id, planYearId: planYear.id } },
+    // "Already committed?" is now a question about the POLICY TERM, not the cycle — a renewal
+    // is a new commitment, and a term spanning two cycles must not read as two commitments.
+    prisma.medicalCommitment.findFirst({
+      where: { userId: me.id, OR: [{ cycleCharges: { some: { planYearId: planYear.id } } }, { planYearId: planYear.id }] },
     }),
   ]);
   if (ceilingAmount == null || bands.length === 0) {

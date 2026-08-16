@@ -115,6 +115,43 @@ export function isSalaryDriven(row: {
   );
 }
 
+/** The open medical policy term (spec 027), or null when HR hasn't configured one. */
+export async function getActivePolicyYear() {
+  return prisma.medicalPolicyYear.findFirst({
+    where: { status: "OPEN" },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+/**
+ * The window medical is priced and split against: the policy term when configured, otherwise the
+ * plan year's own window (spec 027, research D6).
+ *
+ * The fallback is deliberately the SAME code path, not a parallel one: a term equal to the plan
+ * year overlaps it entirely, so the split yields a single charge for the whole premium and
+ * behaviour is identical to before this feature existed. No special-casing to keep correct.
+ */
+export function medicalPolicyWindow(
+  policyYear: { startDate: Date; endDate: Date } | null | undefined,
+  planYear: { startDate: Date | null; endDate: Date | null } | null | undefined
+): { start: Date; end: Date } | null {
+  if (policyYear) return { start: policyYear.startDate, end: policyYear.endDate };
+  return planYearWindow(planYear);
+}
+
+/**
+ * What medical costs THIS employee's pool in THIS benefits cycle (spec 027) — the sum of their
+ * applied charges, not the full committed premium. A scheduled charge for a future cycle and a
+ * cancelled one both contribute nothing.
+ */
+export async function getMedicalCycleCharge(userId: string, planYearId: string): Promise<number> {
+  const rows = await prisma.medicalCycleCharge.findMany({
+    where: { planYearId, status: "APPLIED", commitment: { userId } },
+    select: { amount: true },
+  });
+  return rows.reduce((sum, r) => sum + r.amount, 0);
+}
+
 export async function getActivePlanYear() {
   return prisma.planYear.findFirst({
     where: { status: "OPEN" },
@@ -188,11 +225,22 @@ export async function medicalScopeFor(
   return { personal, family, offered: personal || family };
 }
 
-/** The employee's committed medical election for a plan year, or null if not yet committed (spec 018).
- *  Includes the per-covered-person snapshot (spec 023) for an explainable premium breakdown. */
+/**
+ * The employee's medical commitment relevant to a benefits cycle, or null if none (spec 018).
+ * Includes the per-covered-person snapshot (spec 023) for an explainable premium breakdown.
+ *
+ * Since spec 027 a commitment belongs to a POLICY TERM that can span two cycles, so "the
+ * commitment for this plan year" means the one CHARGING this cycle — which may have been made in
+ * the previous one. The `planYearId` fallback covers a commitment made before any charge exists
+ * and rows that predate the migration.
+ */
 export async function getMedicalCommitment(userId: string, planYearId: string) {
-  return prisma.medicalCommitment.findUnique({
-    where: { userId_planYearId: { userId, planYearId } },
+  return prisma.medicalCommitment.findFirst({
+    where: {
+      userId,
+      OR: [{ cycleCharges: { some: { planYearId } } }, { planYearId }],
+    },
     include: { coveredPeople: true },
+    orderBy: { committedAt: "desc" },
   });
 }

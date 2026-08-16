@@ -350,6 +350,7 @@ model PlanYear {
   endDate            DateTime?
   createdAt          DateTime            @default(now())
   medicalCommitments MedicalCommitment[]
+  medicalCharges     MedicalCycleCharge[]
   claims             BenefitClaim[]
   releases           BenefitRelease[]
 }
@@ -493,14 +494,23 @@ model MedicalCommitment {
   id              String                 @id @default(cuid())
   userId          String
   user            User                   @relation("MedicalOwner", fields: [userId], references: [id], onDelete: Cascade)
+  /// The benefits cycle the commitment was MADE IN. Retained for history; no longer the key —
+  /// a commitment belongs to the policy term it buys, which can outlive this cycle (spec 027).
   planYearId      String
   planYear        PlanYear               @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  /// The insurance term this commitment buys (spec 027). Nullable only so the migration can
+  /// backfill; every new commitment sets it.
+  policyYearId    String?
+  policyYear      MedicalPolicyYear?     @relation(fields: [policyYearId], references: [id], onDelete: Cascade)
+  /// How the premium is spread across the benefits cycles the term overlaps (spec 027).
+  cycleCharges    MedicalCycleCharge[]
   /// LEGACY (spec 023): the old relationship-based selection. Nullable, no longer written for new
   /// commits — retained so historical rows keep their record. Superseded by `coveredPeople`.
   spouse          Boolean?
   childrenUnder18 Int?
   children18Plus  Int?
-  /// Covered premium (100%, whole EGP) drawn from the pool; capped at the ceiling at commit time.
+  /// The FULL covered premium (100%, whole EGP) for the whole policy term. Since spec 027 this
+  /// is no longer what a single pool absorbs — see `cycleCharges` for the per-cycle amounts.
   premium         Int
   /// Per-covered-person snapshot at commit (spec 023) — age-band pricing, locked.
   coveredPeople   MedicalCoveredPerson[]
@@ -511,7 +521,58 @@ model MedicalCommitment {
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
 
-  @@unique([userId, planYearId])
+  /// Commit once per POLICY TERM (spec 027), not per benefits cycle — keying it to the cycle is
+  /// what made a mid-cycle insurance renewal invisible to the system.
+  @@unique([userId, policyYearId])
+}
+
+/// The medical insurance contract's own term (spec 027) — 1 Jun → 31 May today. Runs on the
+/// insurer's schedule, independently of the benefits plan year (Jan–Dec), so a term always
+/// straddles two cycles. Its length is whatever HR sets: nothing may assume twelve months.
+model MedicalPolicyYear {
+  id          String              @id @default(cuid())
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  status      PlanYearStatus      @default(OPEN)
+  createdAt   DateTime            @default(now())
+  commitments MedicalCommitment[]
+  charges     MedicalCycleCharge[]
+}
+
+/// The share of one commitment's premium attributed to one benefits cycle (spec 027). THIS is
+/// what draws against that cycle's pool — not the full premium. The shares of a commitment sum
+/// to its premium exactly once the covering cycles exist.
+model MedicalCycleCharge {
+  id            String                   @id @default(cuid())
+  commitmentId  String
+  commitment    MedicalCommitment        @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
+  planYearId    String
+  planYear      PlanYear                 @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  policyYearId  String
+  policyYear    MedicalPolicyYear        @relation(fields: [policyYearId], references: [id], onDelete: Cascade)
+  /// Whole EGP, already capped at that cycle's pool ceiling.
+  amount        Int
+  /// Whole months of the term inside this cycle — stored so the charge stays explainable years
+  /// later without recomputing it against a policy window that may since have changed.
+  overlapMonths Int
+  status        MedicalChargeStatus      @default(SCHEDULED)
+  /// Set when the status becomes APPLIED.
+  appliedAt     DateTime?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  @@unique([commitmentId, planYearId])
+}
+
+/// SCHEDULED — calculated, not yet drawing against a pool (a future cycle).
+/// APPLIED    — drawing against that cycle's pool now.
+/// CANCELLED  — cover ended before the cycle began. NOT a liability: premium paid in advance for
+///              cover after the leave date is recovered from the insurer, so nothing is owed.
+enum MedicalChargeStatus {
+  SCHEDULED
+  APPLIED
+  CANCELLED
 }
 
 /// Immutable snapshot of one covered person on a medical commitment (spec 023). Captured at commit

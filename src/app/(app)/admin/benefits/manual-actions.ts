@@ -237,8 +237,11 @@ export async function suggestAmount(args: {
   if (args.benefit === "medical") {
     const ctx = await loadMedicalContext(args.userId);
     if (!ctx.ok) return { ok: false, error: ctx.error };
-    const existing = await prisma.medicalCommitment.findUnique({
-      where: { userId_planYearId: { userId: args.userId, planYearId: ctx.planYear.id } },
+    const existing = await prisma.medicalCommitment.findFirst({
+      where: {
+        userId: args.userId,
+        OR: [{ cycleCharges: { some: { planYearId: ctx.planYear.id } } }, { planYearId: ctx.planYear.id }],
+      },
       select: { id: true },
     });
     if (existing) return { ok: false, error: "This employee already has a medical commitment for the open plan year." };
@@ -346,8 +349,8 @@ async function recordMedicalBackfill(
   const ctx = await loadMedicalContext(userId);
   if (!ctx.ok) return { ok: false, error: ctx.error };
 
-  const existing = await prisma.medicalCommitment.findUnique({
-    where: { userId_planYearId: { userId, planYearId: ctx.planYear.id } },
+  const existing = await prisma.medicalCommitment.findFirst({
+    where: { userId, OR: [{ cycleCharges: { some: { planYearId: ctx.planYear.id } } }, { planYearId: ctx.planYear.id }] },
     select: { id: true },
   });
   if (existing) {

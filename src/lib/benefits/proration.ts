@@ -34,18 +34,22 @@ export function eligibilityDate(
 }
 
 /**
- * Count of COMPLETE calendar months within the window [from, end] (inclusive end).
+ * Count of COMPLETE calendar months within [from, end] (inclusive end), UNCAPPED.
  * A month counts only if its whole span sits inside the window, so a partial first
- * month (from not on the 1st) and a partial last month are both excluded. Capped at
- * 12 for a standard plan year. Examples: 1 Oct → 31 Dec = 3; 15 Oct → 31 Dec = 2.
+ * month (from not on the 1st) and a partial last month are both excluded.
+ * Examples: 1 Oct → 31 Dec = 3; 15 Oct → 31 Dec = 2; 1 Jun 2026 → 31 May 2027 = 12.
+ *
+ * Used for MEDICAL POLICY TERMS (spec 027), whose length is whatever HR configures —
+ * a term of 13 months must count 13, not be silently rounded to a year. Pool proration
+ * uses {@link remainingWholeMonths}, which caps this at 12; see the note there.
  */
-export function remainingWholeMonths(from: Date, end: Date): number {
+export function wholeMonthsBetween(from: Date, end: Date): number {
   if (from.getTime() > end.getTime()) return 0;
   let year = from.getFullYear();
   // A partial first month doesn't count: start at the 1st of the next month.
   let month = from.getDate() > 1 ? from.getMonth() + 1 : from.getMonth();
   let count = 0;
-  while (count < 12) {
+  for (;;) {
     const monthEnd = new Date(year, month + 1, 0); // last day of (year, month)
     if (monthEnd.getTime() > end.getTime()) break; // month not fully inside the window
     count += 1;
@@ -56,6 +60,19 @@ export function remainingWholeMonths(from: Date, end: Date): number {
     }
   }
   return count;
+}
+
+/**
+ * Whole months within [from, end], CAPPED AT 12 — the plan-year view.
+ *
+ * The cap is a business rule, not an implementation detail: a benefits cycle grants at
+ * most one year's entitlement, so a window longer than twelve months must not yield a
+ * proration fraction above 1 (that would hand every employee more than their pool
+ * ceiling). It used to be enforced incidentally, by the counting loop's bound; it is now
+ * explicit here, and `cycleFraction` clamps as well so neither relies on the other.
+ */
+export function remainingWholeMonths(from: Date, end: Date): number {
+  return Math.min(12, wholeMonthsBetween(from, end));
 }
 
 const FULL: Eligibility = { status: "FULL", remainingWholeMonths: 12, fraction: 1 };
@@ -104,9 +121,13 @@ export function cycleWholeMonths(window: PlanYearWindow): number {
   return remainingWholeMonths(window.start, window.end);
 }
 
-/** cycleWholeMonths ÷ 12 — the fraction of a full year the cycle spans. 1 when no window. */
+/**
+ * cycleWholeMonths ÷ 12 — the fraction of a full year the cycle spans. 1 when no window.
+ * Clamped to 1: a cycle longer than a year still grants at most a full year's pool, and a
+ * fraction above 1 would mean every employee had been handed more than their ceiling.
+ */
 export function cycleFraction(window: PlanYearWindow): number {
-  return cycleWholeMonths(window) / 12;
+  return Math.min(1, cycleWholeMonths(window) / 12);
 }
 
 /**
