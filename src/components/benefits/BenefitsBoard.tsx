@@ -775,7 +775,7 @@ function MedicalRow({ committed, familyMedical = true, onSetup }: { committed: B
         </div>
         <div className="shrink-0 text-right">
           <div className="font-serif text-lg text-navy-800 tabular-nums">{egp(committed.premium)}</div>
-          <div className="text-[11px] text-muted">annual premium</div>
+          <div className="text-[11px] text-muted">annual insurance cost</div>
         </div>
       </div>
     );

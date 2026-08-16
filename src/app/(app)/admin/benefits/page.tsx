@@ -103,7 +103,7 @@ export default async function AdminBenefitsPage({
   });
   const cycleCharges = await prisma.medicalCycleCharge.findMany({
     where: { commitmentId: { in: medicalCommitments.map((m) => m.id) } },
-    include: { planYear: { select: { name: true } } },
+    include: { planYear: { select: { name: true, status: true } } },
     orderBy: { planYear: { startDate: "asc" } },
   });
   const chargesByCommitment = new Map<string, typeof cycleCharges>();
@@ -465,7 +465,7 @@ export default async function AdminBenefitsPage({
                 <tr className="border-b border-line text-left text-xs uppercase text-muted">
                   <th className="py-2 pr-4 font-medium">Employee</th>
                   <th className="py-2 pr-4 font-medium">Cover</th>
-                  <th className="py-2 pr-4 font-medium">Premium</th>
+                  <th className="py-2 pr-4 font-medium">Annual insurance cost</th>
                   <th className="py-2 pr-4 font-medium">Committed</th>
                   <th className="py-2" />
                 </tr>
@@ -478,11 +478,16 @@ export default async function AdminBenefitsPage({
                   const charges = chargesByCommitment.get(m.id) ?? [];
                   const chargeTotal = charges.reduce((n, c) => n + c.amount, 0);
                   const term = policyYears.find((p) => p.id === m.policyYearId);
-                  // A term whose dates changed after this was split (FR-015): its charges were
-                  // calculated against the old window, so the months no longer describe the term.
-                  const termMonths = charges.reduce((n, c) => n + c.overlapMonths, 0);
-                  const stale = !!term && charges.length > 0 && termMonths > 0
-                    && Math.round((term.endDate.getTime() - term.startDate.getTime()) / (1000 * 60 * 60 * 24 * 30.4)) !== termMonths;
+                  // Money already drawn from a pool that is now shut. Spec 032 recalculates
+                  // everything else when dates change, so THIS is the only part that can no longer
+                  // follow the term — and it is the only thing worth saying.
+                  //
+                  // The old test compared the charged months against the term's length and called
+                  // any shortfall "stale". Under spec 032 a shortfall is the normal state while
+                  // the term reaches into a cycle that doesn't exist yet, so it fired on every
+                  // correctly-split commitment and said charges hadn't been recalculated when
+                  // they just had.
+                  const frozen = charges.some((c) => c.status === "APPLIED" && c.planYear.status === "CLOSED");
                   return (
                     <React.Fragment key={m.id}>
                     <tr className="border-b border-line align-top last:border-0">
@@ -532,7 +537,7 @@ export default async function AdminBenefitsPage({
                                 <tr className="text-left uppercase text-muted">
                                   <th className="py-1 pr-4 font-medium">Benefits cycle</th>
                                   <th className="py-1 pr-4 text-right font-medium">Months</th>
-                                  <th className="py-1 pr-4 text-right font-medium">Charge</th>
+                                  <th className="py-1 pr-4 text-right font-medium">From this cycle&apos;s pool</th>
                                   <th className="py-1 font-medium">Status</th>
                                 </tr>
                               </thead>
@@ -554,11 +559,22 @@ export default async function AdminBenefitsPage({
                                   <td className="py-1 pr-4 text-right tabular-nums text-muted">
                                     {charges.reduce((n, c) => n + c.overlapMonths, 0)}
                                   </td>
-                                  <td className={"py-1 pr-4 text-right tabular-nums " + (chargeTotal === m.premium ? "text-ink" : "text-red-600")}>
+                                  {/*
+                                    A total BELOW the year's cost is the normal, correct state
+                                    while the term reaches into a cycle that doesn't exist yet
+                                    (spec 032) — the rest is charged when that cycle opens. Only a
+                                    total ABOVE it is a real problem: charges frozen on closed
+                                    cycles that now exceed the cost, which a pool cannot un-charge.
+                                  */}
+                                  <td className={"py-1 pr-4 text-right tabular-nums " + (chargeTotal > m.premium ? "text-red-600" : "text-ink")}>
                                     {egp(chargeTotal)}
                                   </td>
-                                  <td className="py-1 text-[10px] text-muted">
-                                    {chargeTotal === m.premium ? "reconciles" : "does NOT match the premium"}
+                                  <td className={"py-1 text-[10px] " + (chargeTotal > m.premium ? "text-red-600" : "text-muted")}>
+                                    {chargeTotal === m.premium
+                                      ? "fully charged"
+                                      : chargeTotal > m.premium
+                                        ? "MORE than the year's cost — settle with the insurer"
+                                        : `${egp(m.premium - chargeTotal)} waits for the next cycle`}
                                   </td>
                                 </tr>
                               </tbody>
@@ -571,10 +587,11 @@ export default async function AdminBenefitsPage({
                                 {term ? ` Recoverable to ${formatDate(term.endDate)}, starting from the leave date — which may sit inside an already-applied charge above.` : ""}
                               </p>
                             ) : null}
-                            {stale ? (
+                            {frozen ? (
                               <p className="mt-2 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[11px] text-muted">
-                                This was split under an earlier version of the policy term. Its charges were not
-                                recalculated — changing a term never rewrites money already reconciled.
+                                Part of this is charged to a closed cycle. That amount stays as it is — it has
+                                already been drawn from a pool that is now shut, so changing dates or re-pricing
+                                never rewrites it.
                               </p>
                             ) : null}
                           </div>
