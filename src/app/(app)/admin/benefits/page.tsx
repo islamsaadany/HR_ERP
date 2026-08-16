@@ -554,31 +554,42 @@ export default async function AdminBenefitsPage({
                                     </td>
                                   </tr>
                                 ))}
-                                <tr className="border-t border-line font-semibold">
-                                  <td className="py-1 pr-4 text-ink">Total</td>
-                                  <td className="py-1 pr-4 text-right tabular-nums text-muted">
-                                    {charges.reduce((n, c) => n + c.overlapMonths, 0)}
-                                  </td>
-                                  {/*
-                                    A total BELOW the year's cost is the normal, correct state
-                                    while the term reaches into a cycle that doesn't exist yet
-                                    (spec 032) — the rest is charged when that cycle opens. Only a
-                                    total ABOVE it is a real problem: charges frozen on closed
-                                    cycles that now exceed the cost, which a pool cannot un-charge.
-                                  */}
-                                  <td className={"py-1 pr-4 text-right tabular-nums " + (chargeTotal > m.premium ? "text-red-600" : "text-ink")}>
-                                    {egp(chargeTotal)}
-                                  </td>
-                                  <td className={"py-1 text-[10px] " + (chargeTotal > m.premium ? "text-red-600" : "text-muted")}>
-                                    {chargeTotal === m.premium
-                                      ? "fully charged"
-                                      : chargeTotal > m.premium
-                                        ? "MORE than the year's cost — settle with the insurer"
-                                        : `${egp(m.premium - chargeTotal)} waits for the next cycle`}
-                                  </td>
-                                </tr>
+                                {/*
+                                  The Total row is only worth its space when there is more than
+                                  one cycle to add up. With a single charge it repeated the row
+                                  above it verbatim — the same months and the same amount, twice.
+                                  The outstanding amount is the part that actually carries
+                                  information, so it moves below the table where it reads as a
+                                  sentence rather than as a fourth column.
+                                */}
+                                {charges.length > 1 ? (
+                                  <tr className="border-t border-line font-semibold">
+                                    <td className="py-1 pr-4 text-ink">Total</td>
+                                    <td className="py-1 pr-4 text-right tabular-nums text-muted">
+                                      {charges.reduce((n, c) => n + c.overlapMonths, 0)}
+                                    </td>
+                                    <td className={"py-1 pr-4 text-right tabular-nums " + (chargeTotal > m.premium ? "text-red-600" : "text-ink")}>
+                                      {egp(chargeTotal)}
+                                    </td>
+                                    <td className="py-1" />
+                                  </tr>
+                                ) : null}
                               </tbody>
                             </table>
+                            {chargeTotal > m.premium ? (
+                              <p className="mt-2 text-[11px] font-semibold text-red-600">
+                                Charged {egp(chargeTotal)} — more than the {egp(m.premium)} this cover costs.
+                                Settle it with the insurer; a closed cycle can&apos;t be un-charged.
+                              </p>
+                            ) : chargeTotal < m.premium ? (
+                              <p className="mt-2 text-[11px] text-muted">
+                                <b className="font-semibold text-ink">{egp(m.premium - chargeTotal)}</b> of this
+                                cover falls after {active?.name ?? "this cycle"} ends. It&apos;s charged to the next
+                                cycle when you open it.
+                              </p>
+                            ) : (
+                              <p className="mt-2 text-[11px] text-muted">Fully charged.</p>
+                            )}
                             {charges.some((c) => c.status === "CANCELLED") ? (
                               <p className="mt-2 rounded-lg border border-gold-300 bg-gold-50 px-2.5 py-1.5 text-[11px] text-gold-800">
                                 <strong className="text-navy-800">Cover ended before that cycle.</strong> The charge was
