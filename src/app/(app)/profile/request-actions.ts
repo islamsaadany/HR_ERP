@@ -99,14 +99,15 @@ export async function cancelProfileChangeRequest(formData: FormData): Promise<vo
   revalidatePath("/admin/change-requests");
 }
 
-export type PhoneState = { ok?: true; error?: string } | null;
+/** Result shape shared by the direct self-edit actions (phone, legal name). */
+export type SelfEditState = { ok?: true; error?: string } | null;
 
 /**
  * The employee's own phone number, edited directly — no request, no review, no pending count
  * (FR-002a/FR-019). It is their contact number; nothing reads it for eligibility or money, so
  * routing it through HR would add a person to a change nobody else depends on.
  */
-export async function updateOwnPhone(_prev: PhoneState, formData: FormData): Promise<PhoneState> {
+export async function updateOwnPhone(_prev: SelfEditState, formData: FormData): Promise<SelfEditState> {
   const me = await requireUser();
   const raw = String(formData.get("phone") ?? "").trim();
   if (raw.length > 40) return { error: "That phone number is too long." };
@@ -123,6 +124,28 @@ export async function updateOwnPhone(_prev: PhoneState, formData: FormData): Pro
 
   revalidatePath("/profile");
   revalidatePath("/directory");
+  return { ok: true };
+}
+
+/**
+ * The employee's own legal name — full official name as on the national ID — edited directly
+ * for the same reason as phone: it is their identity fact, nothing reads it for eligibility or
+ * money, and HR can always correct it on the admin record. Never shown in the Directory.
+ */
+export async function updateOwnLegalName(
+  _prev: SelfEditState,
+  formData: FormData
+): Promise<SelfEditState> {
+  const me = await requireUser();
+  const raw = String(formData.get("legalName") ?? "").trim();
+  if (raw.length > 120) return { error: "That name is too long (max 120 characters)." };
+
+  await prisma.user.update({
+    where: { id: me.id },
+    data: { legalName: raw === "" ? null : raw },
+  });
+
+  revalidatePath("/profile");
   return { ok: true };
 }
 

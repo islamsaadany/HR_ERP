@@ -52,6 +52,11 @@ model User {
   name     String
   photoUrl String?
 
+  // Full official name as on the national ID (spec 029 extension, 2026-08-17).
+  // Self-edited by the employee (like phone); HR can correct it on the admin form.
+  // Private: shown on My Profile and the HR record only, never the Directory.
+  legalName String?
+
   // Public directory fields
   phone      String?
   department String?

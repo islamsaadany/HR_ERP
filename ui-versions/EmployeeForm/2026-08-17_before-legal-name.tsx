@@ -10,7 +10,6 @@ type Dep = { name: string | null; dateOfBirth: string; kind: "CHILD" | "SPOUSE" 
 export type EmployeeFormValues = {
   name: string;
   email: string;
-  legalName: string | null;
   phone: string | null;
   department: string | null;
   title: string | null;
@@ -122,13 +121,6 @@ export function EmployeeForm({
                 double-check it&apos;s correct.
               </p>
             ) : null}
-          </div>
-          <div>
-            <label htmlFor={"emp-legalName"} className={L}>Legal name</label>
-            <input id={"emp-legalName"} name="legalName" defaultValue={values.legalName ?? ""} className={I} />
-            <p className="mt-1 text-xs text-muted">
-              As on the national ID. The employee can also edit this on their own profile.
-            </p>
           </div>
           <div>
             <label htmlFor={"emp-phone"} className={L}>Phone</label>

@@ -99,6 +99,7 @@ export default async function EditEmployeePage({
         values={{
           name: employee.name,
           email: employee.email,
+          legalName: employee.legalName,
           phone: employee.phone,
           department: employee.department,
           title: employee.title,

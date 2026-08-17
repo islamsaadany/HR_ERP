@@ -821,10 +821,32 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
       edge, because the marker sits two-thirds along the label. It is now sized and placed against
       the card ROW (the marker is deliberately not `relative`), so it can't overflow at any width.
 
+- **2026-08-17 — Unified profile attributes + legal name (spec 029 amendment, migration 051, mockup-approved):**
+  - My Profile spoke three ownership dialects at once — grey "Managed by HR" text on Employment, a
+    navy pill on Emergency contact, nothing on Personal — and the request form lived in a panel at
+    the bottom, far from the data it corrects. Now one language: HR-only cards (Contact, Employment)
+    carry the same navy pill; self-edit fields carry a gold "You edit" tag; and the Personal and
+    Emergency-contact cards carry their own scoped "Request a change" button — the button IS the
+    tag (a request path already says "not self-edit"), so those cards drop the pill.
+  - **Legal name** (`User.legalName`, migration `051`) — the full official name as on the national
+    ID — is the second direct self-edit field after phone (FR-002b): typed by the employee on the
+    Contact card, correctable by HR on the admin employee form, never in the Team Directory.
+    `SelfEditField` replaced `PhoneEditor` (one component for both, per the DRY rule).
+  - The bottom panel is now the **receipt only** (pending rows, withdraw, HR's per-field
+    decisions); while a request is open the card buttons give way to an "Awaiting HR" chip — one
+    open request at a time is unchanged. The scoped form sends only its card's fields, which the
+    server action already honoured (absent fields are not proposals).
+  - **Dependants render as one row each** (name · spouse/child tag · DOB · derived age) instead of
+    a comma-joined line. Display-only — dependant *changes* stay deferred (research R3, they feed
+    medical pricing).
+  - Verified: `npx tsc --noEmit` + `npm run build` clean; `051` applied to a throwaway Postgres 16
+    holding the pre-051 schema, a row inserted and read back through `legalName`, and
+    `prisma migrate diff` then reporting **no drift** against the new schema.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-08-16 — travel allowance (spec 028); benefits claim clamp + medical gate; selected-employee password reset.*
+*Last Updated: 2026-08-17 — unified profile attributes + legal name (spec 029 amendment, migration 051).*

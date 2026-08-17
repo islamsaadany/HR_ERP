@@ -124,6 +124,7 @@ export async function createEmployee(
     data: {
       name: data.name,
       email: data.email,
+      legalName: data.legalName ?? null,
       phone: data.phone ?? null,
       department: data.department ?? null,
       title: data.title ?? null,
@@ -207,6 +208,7 @@ export async function updateEmployee(
       data: {
         name: data.name,
         email: data.email,
+        legalName: data.legalName ?? null,
         phone: data.phone ?? null,
         department: data.department ?? null,
         title: data.title ?? null,

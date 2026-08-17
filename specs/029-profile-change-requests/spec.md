@@ -102,6 +102,7 @@ When a request adds or removes a dependant for an employee who already has a com
 - **FR-001**: Employees MUST be able to submit a change request for their own record from My Profile, pre-filled with their current values.
 - **FR-002**: The system MUST restrict requestable fields to: emergency contact name, relationship, and phone; date of birth; marital status; and dependants.
 - **FR-002a**: Employees MUST be able to edit their own phone number directly on My Profile, without a request or review.
+- **FR-002b** *(2026-08-17)*: Employees MUST be able to edit their own legal name (full official name as written on the national ID) directly on My Profile, without a request or review. It is visible to the employee and HR only — never the Team Directory.
 - **FR-003**: The system MUST record only the fields whose requested value differs from the current value.
 - **FR-004**: The system MUST reject a submission containing no actual change.
 - **FR-005**: Submitting a request MUST NOT alter the employee record.
@@ -163,3 +164,11 @@ When a request adds or removes a dependant for an employee who already has a com
 - Any repricing or adjustment of an existing medical commitment; the warning informs HR, who acts separately.
 - Email or push notification of any kind.
 - Employees requesting changes to anyone else's record.
+
+## Amendments
+
+### 2026-08-17 — Unified attributes on My Profile (mockup-approved)
+- **The request entry point moved onto the cards.** The Personal and Emergency contact cards each carry a "Request a change" button that opens the same form scoped to that card's fields; the bottom "Change requests" panel no longer hosts the form — it is the receipt (pending state, withdraw, HR's per-field decisions). While a request is awaiting HR the card buttons give way to an "Awaiting HR" chip (one open request at a time, FR-006, unchanged).
+- **One ownership language.** HR-only cards (Contact, Employment) carry the same navy "Managed by HR" pill; the request button itself marks the requestable cards (no pill — a request path already says "not self-edit"); direct self-edit fields carry a gold "You edit" tag.
+- **Legal name** (FR-002b) joined phone as the second direct self-edit field, on the Contact card. Stored as `User.legalName` (migration `051`); HR can view and correct it on the admin employee form.
+- **Dependants render as one row each** (name · spouse/child · date of birth · derived age) instead of a comma-joined line. Display only — dependant changes remain deferred (see Out of Scope / research R3).

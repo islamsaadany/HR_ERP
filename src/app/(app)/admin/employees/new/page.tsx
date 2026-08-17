@@ -39,6 +39,7 @@ export default async function NewEmployeePage() {
         values={{
           name: "",
           email: "",
+          legalName: null,
           phone: null,
           department: null,
           title: null,
