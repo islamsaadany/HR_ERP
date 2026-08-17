@@ -23,8 +23,11 @@ export const dependantSchema = z.object({
 export const employeeSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   email: z.string().trim().toLowerCase().email("Valid email required"),
-  // Full official name as on the national ID — employee-editable on My Profile too.
+  // Full official name as on the national ID (English + Arabic) and the national ID number —
+  // all three employee-editable on My Profile too.
   legalName: strOrNull,
+  legalNameAr: strOrNull,
+  nationalId: strOrNull,
   phone: strOrNull,
   department: strOrNull,
   title: strOrNull,

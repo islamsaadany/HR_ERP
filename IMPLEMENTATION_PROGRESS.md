@@ -860,6 +860,18 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
       (with the exact requested DOB) appeared on the profile — the SQL showed the `Dependant` rows
       replaced correctly. A fully-decided request leaves the queue (scenario 6), employee panel
       shows Approved with decider and date. Zero unexpected console errors.
+  - **Third round, same day (mockup-approved): Arabic legal name + national ID (migration 052).**
+    - Legal name split into **English** (`legalName` — existing data stays here) and **Arabic**
+      (`legalNameAr` — the input and resting display are `dir="rtl" lang="ar"`); `SelfEditField`
+      grew `dir`/`lang` props. **National ID** (`nationalId`, free text max 30) sits on the
+      **My Documents card above the upload section**. All three: gold Edit→navy Save self-edit,
+      no HR review, HR-correctable on the admin form (Arabic input RTL there too), never in the
+      Directory. One shared server helper backs the three actions.
+    - Verified: tsc + build clean; `052` applied to a throwaway Postgres holding the pre-052
+      schema with an Arabic value round-tripped intact and `prisma migrate diff` reporting no
+      drift; Chromium pass saved the Arabic name through the toggle (input confirmed RTL), saved
+      a national ID above the upload section, and both survived reload. Zero unexpected console
+      errors.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
@@ -867,4 +879,4 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 
 ---
 
-*Last Updated: 2026-08-17 — unified profile attributes + legal name (spec 029 amendment, migration 051).*
+*Last Updated: 2026-08-17 — unified profile attributes; legal names (EN/AR) + national ID; requestable dependants (spec 029 amendments, migrations 051–052).*

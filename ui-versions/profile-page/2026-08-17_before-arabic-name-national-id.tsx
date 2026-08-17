@@ -9,12 +9,7 @@ import {
   formatDate,
 } from "@/lib/labels";
 import { uploadMyDocument, deleteMyDocument } from "./documents-actions";
-import {
-  updateOwnPhone,
-  updateOwnLegalName,
-  updateOwnLegalNameAr,
-  updateOwnNationalId,
-} from "./request-actions";
+import { updateOwnPhone, updateOwnLegalName } from "./request-actions";
 import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 import { SelfEditField } from "@/components/profile/SelfEditField";
 import { RequestableSection } from "@/components/profile/RequestableSection";
@@ -123,22 +118,12 @@ export default async function ProfilePage({
           action={updateOwnPhone}
         />
         <SelfEditField
-          label="Legal name (English)"
+          label="Legal name"
           name="legalName"
           value={me.legalName}
           placeholder="e.g. Omar Ahmed Mahmoud Hassan"
-          hint="Your full official name in English, as on your passport or ID. Visible to you and HR only."
+          hint="Your full official name exactly as written on your national ID. Visible to you and HR only."
           action={updateOwnLegalName}
-        />
-        <SelfEditField
-          label="Legal name (Arabic)"
-          name="legalNameAr"
-          value={me.legalNameAr}
-          placeholder="مثال: عمر أحمد محمود حسن"
-          hint="Your full official name in Arabic, exactly as written on your national ID. Visible to you and HR only."
-          dir="rtl"
-          lang="ar"
-          action={updateOwnLegalNameAr}
         />
         <Field label="Department" value={me.department} />
         <Field label="Title" value={me.title} />
@@ -244,18 +229,6 @@ export default async function ProfilePage({
         <p className="mt-1 text-sm text-muted">
           Your personal documents (ID, certificates, contract). Only you and HR can see these.
         </p>
-
-        {/* National ID number — self-edited like the legal names (2026-08-17). */}
-        <div className="mt-2">
-          <SelfEditField
-            label="National ID"
-            name="nationalId"
-            value={me.nationalId}
-            placeholder="e.g. 29105141234567"
-            hint="Your national ID number. Visible to you and HR only."
-            action={updateOwnNationalId}
-          />
-        </div>
 
         {docError ? (
           <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">

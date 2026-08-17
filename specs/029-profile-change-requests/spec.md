@@ -178,3 +178,8 @@ When a request adds or removes a dependant for an employee who already has a com
 - **The request form's Cancel is solid red**, so it reads as an active control beside the navy Send.
 - **Dependant changes are now requestable** — the R3 deferral is closed. The Personal card's form carries a dependants editor (correct a name or date of birth, add, remove; newly added rows highlighted); the whole list travels as ONE `dependants` field stored as canonical JSON text against the same registry, so HR approves or declines the set in a single decision. Approval replaces the dependant list (mirroring the admin form's write); `MedicalCoveredPerson` snapshots survive removal (the link just nulls). Rules match the HR form: every dependant needs a real, non-future date of birth; one spouse max.
 - **US3 / FR-015 is built**: when a request proposes a dependant change and the employee has a committed medical premium, HR's review card leads with a warning naming the covered people and stating the premium is not recalculated automatically.
+
+### 2026-08-17 (third round) — Arabic legal name + national ID (mockup-approved)
+- **Legal name is two fields**: `legalName` (English, as on the passport/ID) and `legalNameAr` (Arabic, exactly as on the national ID; the input and display are right-to-left, `lang="ar"`). Anything saved before the split stays as the English one.
+- **National ID** (`nationalId`, free text max 30 — formats vary and a rejected real ID is worse) sits on the **My Documents card above the upload section**, with the documents it belongs to.
+- All three follow FR-002b's pattern exactly: direct self-edit via the gold Edit → navy Save toggle, HR-correctable on the admin employee form, never in the Team Directory. Migration `052`.

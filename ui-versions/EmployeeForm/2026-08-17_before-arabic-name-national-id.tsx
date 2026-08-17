@@ -11,8 +11,6 @@ export type EmployeeFormValues = {
   name: string;
   email: string;
   legalName: string | null;
-  legalNameAr: string | null;
-  nationalId: string | null;
   phone: string | null;
   department: string | null;
   title: string | null;
@@ -126,24 +124,10 @@ export function EmployeeForm({
             ) : null}
           </div>
           <div>
-            <label htmlFor={"emp-legalName"} className={L}>Legal name (English)</label>
+            <label htmlFor={"emp-legalName"} className={L}>Legal name</label>
             <input id={"emp-legalName"} name="legalName" defaultValue={values.legalName ?? ""} className={I} />
             <p className="mt-1 text-xs text-muted">
-              As on the passport/ID. The employee can also edit this on their own profile.
-            </p>
-          </div>
-          <div>
-            <label htmlFor={"emp-legalNameAr"} className={L}>Legal name (Arabic)</label>
-            <input id={"emp-legalNameAr"} name="legalNameAr" defaultValue={values.legalNameAr ?? ""} dir="rtl" lang="ar" className={I} />
-            <p className="mt-1 text-xs text-muted">
-              As on the national ID. Also employee-editable.
-            </p>
-          </div>
-          <div>
-            <label htmlFor={"emp-nationalId"} className={L}>National ID</label>
-            <input id={"emp-nationalId"} name="nationalId" defaultValue={values.nationalId ?? ""} className={I} />
-            <p className="mt-1 text-xs text-muted">
-              ID number. Also employee-editable (My Documents card).
+              As on the national ID. The employee can also edit this on their own profile.
             </p>
           </div>
           <div>

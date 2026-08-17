@@ -18,8 +18,6 @@ export function SelfEditField({
   value,
   placeholder,
   hint,
-  dir,
-  lang,
   action,
 }: {
   label: string;
@@ -30,10 +28,6 @@ export function SelfEditField({
   placeholder?: string;
   /** Optional helper line under the input (e.g. what "legal name" means). */
   hint?: string;
-  /** "rtl" for right-to-left values (the Arabic legal name); applies to input and display. */
-  dir?: "ltr" | "rtl";
-  /** BCP-47 language of the value (e.g. "ar"), for correct font/shaping. */
-  lang?: string;
   action: (prev: SelfEditState, formData: FormData) => Promise<SelfEditState>;
 }) {
   const initial = value ?? "";
@@ -60,8 +54,6 @@ export function SelfEditField({
             placeholder={placeholder ?? "—"}
             aria-label={label}
             autoFocus
-            dir={dir}
-            lang={lang}
             className="w-full max-w-[260px] rounded-lg border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:border-navy-500 focus:outline-none"
           />
           {changed ? (
@@ -85,11 +77,7 @@ export function SelfEditField({
         </form>
       ) : (
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
-          <span
-            dir={current.trim() === "" ? undefined : dir}
-            lang={current.trim() === "" ? undefined : lang}
-            className={current.trim() === "" ? "text-muted" : "text-ink"}
-          >
+          <span className={current.trim() === "" ? "text-muted" : "text-ink"}>
             {current.trim() === "" ? "—" : current}
           </span>
           <button

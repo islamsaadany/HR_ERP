@@ -100,6 +100,8 @@ export default async function EditEmployeePage({
           name: employee.name,
           email: employee.email,
           legalName: employee.legalName,
+          legalNameAr: employee.legalNameAr,
+          nationalId: employee.nationalId,
           phone: employee.phone,
           department: employee.department,
           title: employee.title,

@@ -86,12 +86,20 @@
         </div>
       </div>
       <div class="field">
-        <div class="k">Legal name</div>
+        <div class="k">Legal name (English)</div>
         <div class="editrow">
-          <input class="inp" type="text" value="Omar Ahmed Mahmoud Hassan" aria-label="Legal name" />
+          <input class="inp" type="text" value="Omar Ahmed Mahmoud Hassan" aria-label="Legal name (English)" />
           <button class="btn-navy" type="button">Save</button>
         </div>
-        <p class="hint" style="margin:6px 0 0">Your full official name exactly as written on your national ID. Visible to you and HR only.</p>
+        <p class="hint" style="margin:6px 0 0">Your full official name in English, as on your passport or ID. Visible to you and HR only.</p>
+      </div>
+      <div class="field">
+        <div class="k">Legal name (Arabic)</div>
+        <div class="editrow" style="justify-content:space-between">
+          <span class="v" style="margin-top:0" dir="rtl" lang="ar">عمر أحمد محمود حسن</span>
+          <button class="btn-edit" type="button">Edit</button>
+        </div>
+        <p class="hint" style="margin:6px 0 0">Your full official name in Arabic, exactly as written on your national ID. The input types right-to-left. Visible to you and HR only.</p>
       </div>
       <div class="field">
         <div class="k">Department</div>
@@ -219,9 +227,28 @@
     </div>
   </section>
 
-  <!-- 6: status panel -->
+  <!-- 6: national ID in My Documents -->
   <section class="proposal">
-    <h2><span class="num">6</span> Request status — unchanged, at the bottom</h2>
+    <h2><span class="num">6</span> My Documents — National ID number above the upload</h2>
+    <p class="sub">The national ID number lives with the documents it belongs to, above the file-upload section — same gold Edit ↔ navy Save behaviour as the legal names, English/numeric only.</p>
+    <div class="card">
+      <div class="cardhead"><h3>My Documents</h3></div>
+      <p class="hint" style="margin:0 0 8px">Your personal documents (ID, certificates, contract). Only you and HR can see these.</p>
+      <div class="field">
+        <div class="k">National ID</div>
+        <div class="editrow" style="justify-content:space-between">
+          <span class="v" style="margin-top:0">29105141234567</span>
+          <button class="btn-edit" type="button">Edit</button>
+        </div>
+        <p class="hint" style="margin:6px 0 0">Your national ID number. Visible to you and HR only.</p>
+      </div>
+      <div class="field"><div class="k">Title (optional) · file upload · Upload</div><div class="v" style="color:var(--muted);font-size:13.5px">— unchanged, below the ID field —</div></div>
+    </div>
+  </section>
+
+  <!-- 7: status panel -->
+  <section class="proposal">
+    <h2><span class="num">7</span> Request status — unchanged, at the bottom</h2>
     <p class="sub">Both card buttons open the same request form you have today, pre-scoped to their card. A submitted request’s status (pending / approved / rejected, with HR’s reason) keeps showing in the existing panel at the bottom of the page — nothing changes there, except its own “Request a change” entry point moves up onto the cards.</p>
   </section>
 
@@ -229,8 +256,8 @@
   <div class="decision">
     <b>Defaults baked into this proposal — veto anything here:</b>
     <ul>
-      <li><strong>Legal name</strong> is a new field: free text, max 120 characters, optional. Saved directly by the employee (like Phone), no HR review.</li>
-      <li>HR sees and can correct Legal name on the admin employee record. It never appears in the Team Directory.</li>
+      <li><strong>Legal name is TWO fields</strong> — English and Arabic — each free text, max 120 characters, optional, saved directly by the employee (like Phone), no HR review. The Arabic input types right-to-left. The existing saved legal names stay as the English one.</li>
+      <li>HR sees and can correct both legal names on the admin employee record. Neither appears in the Team Directory.</li>
       <li><strong>Dependants are requestable as one set</strong>: the employee edits the list (correct, add, remove) and it goes to HR as a single “Dependants” change — HR approves or declines the whole list in one decision, alongside any other requested fields.</li>
       <li>On HR’s review screen, a <strong>warning appears when the employee has a committed medical premium</strong>, naming the covered people — a dependant change alters who the company insures.</li>
       <li>Every dependant needs a date of birth; one spouse max — same rules as the HR form.</li>

@@ -52,10 +52,14 @@ model User {
   name     String
   photoUrl String?
 
-  // Full official name as on the national ID (spec 029 extension, 2026-08-17).
-  // Self-edited by the employee (like phone); HR can correct it on the admin form.
+  // Full official name as on the national ID (spec 029 extension, 2026-08-17) — English and
+  // Arabic. Self-edited by the employee (like phone); HR can correct them on the admin form.
   // Private: shown on My Profile and the HR record only, never the Directory.
-  legalName String?
+  legalName   String?
+  legalNameAr String?
+  // National ID number (same extension) — self-edited on My Profile (My Documents card),
+  // HR-correctable, private. Free text: formats vary and a rejected real ID is worse.
+  nationalId  String?
 
   // Public directory fields
   phone      String?

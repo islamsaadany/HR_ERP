@@ -132,25 +132,50 @@ export async function updateOwnPhone(_prev: SelfEditState, formData: FormData): 
 }
 
 /**
- * The employee's own legal name — full official name as on the national ID — edited directly
- * for the same reason as phone: it is their identity fact, nothing reads it for eligibility or
- * money, and HR can always correct it on the admin record. Never shown in the Directory.
+ * The employee's own identity facts — legal names (English/Arabic) and national ID — edited
+ * directly for the same reason as phone: nothing reads them for eligibility or money, and HR
+ * can always correct them on the admin record. Never shown in the Directory.
+ *
+ * One helper, three exported actions: only exports of a "use server" file become endpoints.
  */
-export async function updateOwnLegalName(
-  _prev: SelfEditState,
-  formData: FormData
+async function saveOwnText(
+  column: "legalName" | "legalNameAr" | "nationalId",
+  formData: FormData,
+  max: number,
+  tooLong: string
 ): Promise<SelfEditState> {
   const me = await requireUser();
-  const raw = String(formData.get("legalName") ?? "").trim();
-  if (raw.length > 120) return { error: "That name is too long (max 120 characters)." };
+  const raw = String(formData.get(column) ?? "").trim();
+  if (raw.length > max) return { error: tooLong };
 
   await prisma.user.update({
     where: { id: me.id },
-    data: { legalName: raw === "" ? null : raw },
+    data: { [column]: raw === "" ? null : raw },
   });
 
   revalidatePath("/profile");
   return { ok: true };
+}
+
+export async function updateOwnLegalName(
+  _prev: SelfEditState,
+  formData: FormData
+): Promise<SelfEditState> {
+  return saveOwnText("legalName", formData, 120, "That name is too long (max 120 characters).");
+}
+
+export async function updateOwnLegalNameAr(
+  _prev: SelfEditState,
+  formData: FormData
+): Promise<SelfEditState> {
+  return saveOwnText("legalNameAr", formData, 120, "That name is too long (max 120 characters).");
+}
+
+export async function updateOwnNationalId(
+  _prev: SelfEditState,
+  formData: FormData
+): Promise<SelfEditState> {
+  return saveOwnText("nationalId", formData, 30, "That ID number is too long (max 30 characters).");
 }
 
 /** Round-trip a parsed value back to the text stored on the request. */
