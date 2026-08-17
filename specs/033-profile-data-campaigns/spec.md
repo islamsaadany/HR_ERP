@@ -144,3 +144,8 @@ Finance requests national IDs while HR separately requests emergency contacts. A
 - **A confirmed field keeps its Edit button** — confirming a legacy value today's rules reject (e.g. an 11-digit national ID) errors, and the employee can now switch straight to editing it.
 - **Campaign outcome CSV**: the tracker carries a Download CSV button (`/api/admin/data-requests/[id]/export`, same access gate) — one row per targeted employee, a value + outcome column pair per field, status incl. "Left the company".
 - **Registry grid columns**: Legal name (EN), Legal name (AR), and National ID are grid columns (hidden by default, in the Columns menu, inline-editable under the same strict validation).
+
+### 2026-08-17 — Per-field save (second live-testing round)
+- **Every action is per field.** Each field is its own form: ✓ Confirm saves it on the spot, Edit opens the input, Save — or pressing **Enter** in the input — saves that one field and nothing else. Errors render on the failing row and leave its Confirm/Edit in place.
+- **Answers stay on screen.** The popup freezes its field list at open; answered rows keep showing their value with a ✓ Saved / ✓ Confirmed chip instead of vanishing — including after the last answer, until the employee closes it.
+- **The bottom only closes**: Finish (primary) and Later — no global save button.

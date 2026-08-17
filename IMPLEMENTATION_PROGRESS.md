@@ -924,6 +924,12 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     **Legal name (EN) / (AR) / National ID** columns (hidden by default, in the Columns menu,
     inline-editable under the strict rules). All 17 Chromium checks green, including the exact
     reported repro (invalid legacy ID confirm → error → Edit → correct → save).
+  - **Second live-testing round, same day: per-field save.** Each popup field is now its own
+    form — ✓ Confirm saves immediately, Save/Enter saves that one field, errors stay on their
+    row with Confirm/Edit intact. The field list freezes at open so answered rows KEEP showing
+    their value with a ✓ Saved/✓ Confirmed chip (the layer stays mounted through the final
+    save); the bottom buttons only close (Finish + Later). Chromium-verified end to end,
+    including Enter-to-save isolation and the invalid-legacy-ID repro.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

@@ -129,7 +129,9 @@ export default async function AppLayout({
       }
     >
       {children}
-      {dataRequests ? <DataRequestLayer groups={dataRequests.groups} /> : null}
+      {/* Always mounted: the popup freezes its field list at open, so it must survive the
+          re-render after the LAST answer (summary null) until the employee presses Finish. */}
+      <DataRequestLayer groups={dataRequests?.groups ?? []} />
       <QueryToast />
     </AppShell>
   );
