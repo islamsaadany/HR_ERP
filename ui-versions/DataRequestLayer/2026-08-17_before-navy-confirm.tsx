@@ -252,12 +252,10 @@ function FieldForm({ d }: { d: CampaignFieldDescriptor }) {
           </span>
           {/* Confirm = submit this field with its current value. */}
           <input type="hidden" name={d.key} value={d.current} />
-          {/* Action = navy, state = green: the ✓ Confirmed chip is the only green thing,
-              so "done" can never be confused with "to do" (feedback 2026-08-17). */}
           <button
             type="submit"
             disabled={pending}
-            className="rounded-lg bg-navy-800 px-3 py-1.5 text-xs font-bold text-white hover:bg-navy-700 disabled:opacity-40"
+            className="rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700 hover:bg-green-100 disabled:opacity-40"
           >
             {pending ? "Confirming…" : "✓ Confirm"}
           </button>

@@ -11,16 +11,9 @@ function csvCell(v: string | number | null | undefined): string {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-const OUTCOME: Record<string, string> = {
-  PENDING: "Pending",
-  FILLED: "Filled",
-  CONFIRMED: "Confirmed",
-  CORRECTED: "Corrected",
-};
-
 /**
- * The campaign outcome as a CSV (spec 033 follow-up, 2026-08-17): one row per targeted
- * employee, one value + outcome column pair per requested field. Downloaded from the
+ * The campaign outcome as a CSV (spec 033): one row per targeted employee, one value column
+ * per requested field — just the submitted data (feedback 2026-08-17). Downloaded from the
  * tracker by whoever can read it (HR Admin / Finance / Super User).
  */
 export async function GET(
@@ -32,11 +25,14 @@ export async function GET(
   const campaign = await campaignTracker(id);
   if (!campaign) return new NextResponse("Not found", { status: 404 });
 
+  // Just the submitted data (feedback 2026-08-17): one value column per field, no per-field
+  // outcome columns. The single Status column stays so a pending row's empty cells are never
+  // mistaken for cleared values; outcomes remain visible on the tracker.
   const header = [
     "Name",
     "Email",
     "Status",
-    ...campaign.fields.flatMap((key) => [campaignFieldLabel(key), `${campaignFieldLabel(key)} — outcome`]),
+    ...campaign.fields.map((key) => campaignFieldLabel(key)),
   ];
 
   const lines = [header.map(csvCell).join(",")];
@@ -47,14 +43,10 @@ export async function GET(
       t.user.name,
       t.user.email,
       left ? "Left the company" : done ? "Complete" : "Pending",
-      ...campaign.fields.flatMap((key) => {
+      ...campaign.fields.map((key) => {
         const f = t.fields.find((x) => x.field === key);
-        if (!f) return ["", ""];
-        const value =
-          f.value != null && f.status !== "PENDING"
-            ? campaignField(key)?.display(f.value) ?? f.value
-            : "";
-        return [value, OUTCOME[f.status] ?? f.status];
+        if (!f || f.value == null || f.status === "PENDING") return "";
+        return campaignField(key)?.display(f.value) ?? f.value;
       }),
     ];
     lines.push(row.map(csvCell).join(","));
