@@ -13,6 +13,7 @@
  */
 
 import { MARITAL_STATUS_LABEL } from "@/lib/labels";
+import { isValidStoredPhone, nationalNumberError, splitStoredPhone } from "@/lib/phone";
 import type { DependantKind, MaritalStatus, User } from "@prisma/client";
 
 /** One dependant as it travels through a request: dates as `yyyy-mm-dd` text. */
@@ -46,7 +47,7 @@ export type RequestableField = {
   label: string;
   /** Which card the field sits under on My Profile — used to group the form. */
   group: "Emergency contact" | "Personal";
-  input: "text" | "tel" | "date" | "select" | "dependants";
+  input: "text" | "tel" | "date" | "select" | "dependants" | "phone";
   /** Options for `select`, in display order. */
   options?: { value: string; label: string }[];
   /**
@@ -90,7 +91,32 @@ function textField(
 export const REQUESTABLE_FIELDS: RequestableField[] = [
   textField("emergencyContactName", "Emergency contact name", "Emergency contact"),
   textField("emergencyContactRelationship", "Relationship", "Emergency contact"),
-  textField("emergencyContactPhone", "Emergency contact phone", "Emergency contact", "tel"),
+  {
+    // Same strict format as the employee's own phone (2026-08-17 round 5): country dropdown,
+    // digits only, per-country length, stored as one "+<dial><digits>" sequence.
+    key: "emergencyContactPhone",
+    label: "Emergency contact phone",
+    group: "Emergency contact",
+    input: "phone",
+    serialise: (user) => user.emergencyContactPhone ?? "",
+    display: (raw) => (raw.trim() === "" ? "—" : raw.trim()),
+    parse: (raw) => {
+      const trimmed = raw.trim();
+      if (trimmed === "") return { ok: true, value: null };
+      if (!isValidStoredPhone(trimmed)) {
+        const split = splitStoredPhone(trimmed);
+        return {
+          ok: false,
+          error:
+            split
+              ? nationalNumberError(split.country, split.digits) ??
+                "The emergency contact phone isn't valid for its country code."
+              : "The emergency contact phone needs a country code and digits only (no spaces).",
+        };
+      }
+      return { ok: true, value: trimmed };
+    },
+  },
   {
     key: "dateOfBirth",
     label: "Date of birth",

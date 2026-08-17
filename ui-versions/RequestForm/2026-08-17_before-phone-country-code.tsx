@@ -7,7 +7,6 @@ import {
 } from "@/app/(app)/profile/request-actions";
 import type { FieldDescriptor } from "@/lib/profile/change-requests";
 import { serialiseDependants, type DependantValue } from "@/lib/profile/requestable";
-import { PhoneInput } from "@/components/PhoneInput";
 
 /** A dependant row while it is being edited — `isNew` drives the gold highlight only. */
 type DepRow = { name: string; dateOfBirth: string; kind: "CHILD" | "SPOUSE"; isNew: boolean };
@@ -109,21 +108,6 @@ export function RequestForm({
           {fields.map((d) => {
             const changed = changedKeys.includes(d.key);
             const cls = `${input} ${changed ? "border-gold-300 bg-gold-50" : "border-line"}`;
-            if (d.input === "phone") {
-              return (
-                <div key={d.key} className="mt-3">
-                  <span className="mb-1 block text-xs uppercase tracking-wide text-muted">
-                    {d.label}
-                  </span>
-                  <PhoneInput
-                    name={d.key}
-                    value={values[d.key] ?? ""}
-                    ariaLabel={d.label}
-                    onValueChange={(v) => setValues((prev) => ({ ...prev, [d.key]: v }))}
-                  />
-                </div>
-              );
-            }
             if (d.input === "dependants") {
               return (
                 <div key={d.key} className="mt-3">

@@ -4,7 +4,6 @@ import { useActionState, useState } from "react";
 import type { ActionState } from "@/app/(app)/admin/employees/actions";
 import { statusFromEndDate, formatYearsOfService } from "@/lib/tenure";
 import { tenureBandDisplay, STATUS_LABEL } from "@/lib/labels";
-import { PhoneInput } from "@/components/PhoneInput";
 
 type Dep = { name: string | null; dateOfBirth: string; kind: "CHILD" | "SPOUSE" };
 
@@ -142,17 +141,14 @@ export function EmployeeForm({
           </div>
           <div>
             <label htmlFor={"emp-nationalId"} className={L}>National ID</label>
-            <input id={"emp-nationalId"} name="nationalId" defaultValue={values.nationalId ?? ""} inputMode="numeric" maxLength={14} className={I} />
+            <input id={"emp-nationalId"} name="nationalId" defaultValue={values.nationalId ?? ""} className={I} />
             <p className="mt-1 text-xs text-muted">
-              Exactly 14 digits, no spaces. Also employee-editable (My Documents card).
+              ID number. Also employee-editable (My Documents card).
             </p>
           </div>
           <div>
-            <span className={L}>Phone</span>
-            <PhoneInput name="phone" value={values.phone ?? ""} ariaLabel="Phone" />
-            <p className="mt-1 text-xs text-muted">
-              Country code + digits only, no spaces (length checked per country).
-            </p>
+            <label htmlFor={"emp-phone"} className={L}>Phone</label>
+            <input id={"emp-phone"} name="phone" defaultValue={values.phone ?? ""} className={I} />
           </div>
           <div>
             <label htmlFor={"emp-department"} className={L}>Department</label>
@@ -400,12 +396,8 @@ export function EmployeeForm({
             <input id={"emp-emergencyContactRelationship"} name="emergencyContactRelationship" defaultValue={values.emergencyContactRelationship ?? ""} className={I} />
           </div>
           <div className="sm:col-span-2">
-            <span className={L}>Contact phone</span>
-            <PhoneInput
-              name="emergencyContactPhone"
-              value={values.emergencyContactPhone ?? ""}
-              ariaLabel="Emergency contact phone"
-            />
+            <label htmlFor={"emp-emergencyContactPhone"} className={L}>Contact phone</label>
+            <input id={"emp-emergencyContactPhone"} name="emergencyContactPhone" defaultValue={values.emergencyContactPhone ?? ""} className={I} />
           </div>
         </div>
       </section>

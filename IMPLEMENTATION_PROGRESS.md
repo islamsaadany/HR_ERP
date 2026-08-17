@@ -872,6 +872,18 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
       drift; Chromium pass saved the Arabic name through the toggle (input confirmed RTL), saved
       a national ID above the upload section, and both survived reload. Zero unexpected console
       errors.
+  - **Round 5, same day (mockup-approved): strict phone + national ID, CSV completeness
+    (migration 053).** Phone = country dropdown (full list, Egypt default, `src/lib/phone.ts`)
+    + digits-only input, stored as one `+<dial><digits>` sequence, length per country — on the
+    employee's phone, the emergency contact phone (request form + HR form), the admin form,
+    grid inline edits, and the importer (strict everywhere, server-enforced). National ID:
+    exactly 14 digits. `053` normalizes legacy stored phones that confidently parse (verified:
+    all four shapes → `+201001234567`, `ext. 4412` untouched, idempotent). CSV export gains
+    Legal Name (EN/AR) + National ID and the importer reads them back — a sheet WITHOUT those
+    columns leaves stored values untouched, so old sheets can't wipe employee-typed data.
+    Chromium-verified: 10-digit Egypt rule rejected client- and server-side, Saudi 9-digit
+    saved, non-digits can't be typed, 13-digit ID rejected/14 accepted, emergency phone submits
+    as one sequence through the request flow, and the export carries the new columns + values.
   - **Fourth round, same day: cancel while editing.** Every self-edit field's open editor now
     carries a red **Cancel** beside Save, and **Escape** does the same — either discards the
     typed text and restores the saved value (re-opening starts from the saved value). Verified in
@@ -884,4 +896,4 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 
 ---
 
-*Last Updated: 2026-08-17 — unified profile attributes; legal names (EN/AR) + national ID; requestable dependants (spec 029 amendments, migrations 051–052).*
+*Last Updated: 2026-08-17 — unified profile attributes; legal names (EN/AR) + national ID; requestable dependants; strict phone/ID formats + CSV completeness (spec 029 amendments, migrations 051–053).*

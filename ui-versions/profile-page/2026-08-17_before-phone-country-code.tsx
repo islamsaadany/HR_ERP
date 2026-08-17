@@ -10,13 +10,13 @@ import {
 } from "@/lib/labels";
 import { uploadMyDocument, deleteMyDocument } from "./documents-actions";
 import {
+  updateOwnPhone,
   updateOwnLegalName,
   updateOwnLegalNameAr,
   updateOwnNationalId,
 } from "./request-actions";
 import { ChangePasswordCard } from "@/components/ChangePasswordCard";
 import { SelfEditField } from "@/components/profile/SelfEditField";
-import { SelfEditPhone } from "@/components/profile/SelfEditPhone";
 import { RequestableSection } from "@/components/profile/RequestableSection";
 import { ChangeRequestPanel, type PanelRequest, type RequestRow } from "@/components/profile/ChangeRequestPanel";
 import {
@@ -115,7 +115,13 @@ export default async function ProfilePage({
           <ManagedByHr />
         </div>
         <Field label="Email" value={me.email} />
-        <SelfEditPhone value={me.phone} />
+        <SelfEditField
+          label="Phone"
+          name="phone"
+          type="tel"
+          value={me.phone}
+          action={updateOwnPhone}
+        />
         <SelfEditField
           label="Legal name (English)"
           name="legalName"
@@ -245,8 +251,8 @@ export default async function ProfilePage({
             label="National ID"
             name="nationalId"
             value={me.nationalId}
-            placeholder="14 digits, e.g. 29105141234567"
-            hint="Your national ID number — exactly 14 digits, no spaces. Visible to you and HR only."
+            placeholder="e.g. 29105141234567"
+            hint="Your national ID number. Visible to you and HR only."
             action={updateOwnNationalId}
           />
         </div>

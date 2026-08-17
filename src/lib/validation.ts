@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidNationalId, isValidStoredPhone } from "@/lib/phone";
 
 const emptyToNull = (v: unknown) =>
   typeof v === "string" && v.trim() === "" ? null : v;
@@ -24,11 +25,17 @@ export const employeeSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   email: z.string().trim().toLowerCase().email("Valid email required"),
   // Full official name as on the national ID (English + Arabic) and the national ID number —
-  // all three employee-editable on My Profile too.
+  // all three employee-editable on My Profile too. National ID: exactly 14 digits (strict
+  // everywhere, 2026-08-17 round 5).
   legalName: strOrNull,
   legalNameAr: strOrNull,
-  nationalId: strOrNull,
-  phone: strOrNull,
+  nationalId: strOrNull.refine((v) => v == null || isValidNationalId(v), {
+    message: "National ID must be exactly 14 digits, no spaces.",
+  }),
+  // Stored as one "+<dial><digits>" sequence, length validated per country (strict everywhere).
+  phone: strOrNull.refine((v) => v == null || isValidStoredPhone(v), {
+    message: "Phone must be a country code plus digits only (e.g. +201001234567).",
+  }),
   department: strOrNull,
   title: strOrNull,
   // Optional: the Role control is disabled (and so not submitted) for non-super
@@ -74,7 +81,10 @@ export const employeeSchema = z.object({
   // never blocked from saving other edits on a record that lacks them; filled when known.
   emergencyContactName: strOrNull,
   emergencyContactRelationship: strOrNull,
-  emergencyContactPhone: strOrNull,
+  // Same strict phone rule as the employee's own number (2026-08-17 round 5).
+  emergencyContactPhone: strOrNull.refine((v) => v == null || isValidStoredPhone(v), {
+    message: "Emergency contact phone must be a country code plus digits only (e.g. +201001234567).",
+  }),
   dependants: z.array(dependantSchema).default([]),
 });
 

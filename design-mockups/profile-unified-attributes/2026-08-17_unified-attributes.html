@@ -80,10 +80,18 @@
       </div>
       <div class="field">
         <div class="k">Phone</div>
-        <div class="editrow" style="justify-content:space-between">
-          <span class="v" style="margin-top:0">+20 100 123 4567</span>
-          <button class="btn-edit" type="button">Edit</button>
+        <div class="editrow">
+          <select class="inp" aria-label="Country code" style="max-width:150px">
+            <option selected>🇪🇬 Egypt +20</option>
+            <option>🇸🇦 Saudi Arabia +966</option>
+            <option>🇦🇪 UAE +971</option>
+            <option>… full country list …</option>
+          </select>
+          <input class="inp" inputmode="numeric" value="1001234567" aria-label="Phone number" style="max-width:170px" />
+          <button class="btn-navy" type="button">Save</button>
+          <button class="btn-cancel" type="button" style="font-size:12px;padding:6px 14px">Cancel</button>
         </div>
+        <p class="hint" style="margin:6px 0 0">Digits only, no spaces — the length must match the chosen country (Egypt: 10). Stored as one sequence: <code>+201001234567</code>. At rest the row shows the value + the gold Edit button, like Legal name below.</p>
       </div>
       <div class="field">
         <div class="k">Legal name (English)</div>
@@ -257,6 +265,7 @@
   <div class="decision">
     <b>Defaults baked into this proposal — veto anything here:</b>
     <ul>
+      <li><strong>Phone format (2026-08-17 round 5):</strong> country-code dropdown (full list, Egypt default) + digits-only input, length per country, stored as one sequence (<code>+201001234567</code>). Applies to the employee's phone AND the emergency contact phone (in the request form and HR's form alike). National ID: exactly 14 digits. Strict everywhere — admin form and CSV import enforce the same rules. Existing numbers are auto-normalized where they cleanly parse (migration 053); the rest stay until edited. CSV export + importer gain Legal Name (EN/AR) + National ID columns.</li>
       <li><strong>Legal name is TWO fields</strong> — English and Arabic — each free text, max 120 characters, optional, saved directly by the employee (like Phone), no HR review. The Arabic input types right-to-left. The existing saved legal names stay as the English one.</li>
       <li>HR sees and can correct both legal names on the admin employee record. Neither appears in the Team Directory.</li>
       <li><strong>Dependants are requestable as one set</strong>: the employee edits the list (correct, add, remove) and it goes to HR as a single “Dependants” change — HR approves or declines the whole list in one decision, alongside any other requested fields.</li>

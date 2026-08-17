@@ -5,6 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
 import { REQUESTABLE_FIELDS } from "@/lib/profile/requestable";
 import { openRequestFor } from "@/lib/profile/change-requests";
+import {
+  isValidStoredPhone,
+  isValidNationalId,
+  nationalNumberError,
+  splitStoredPhone,
+} from "@/lib/phone";
 
 export type RequestState = { ok?: true; error?: string } | null;
 
@@ -114,11 +120,16 @@ export type SelfEditState = { ok?: true; error?: string } | null;
 export async function updateOwnPhone(_prev: SelfEditState, formData: FormData): Promise<SelfEditState> {
   const me = await requireUser();
   const raw = String(formData.get("phone") ?? "").trim();
-  if (raw.length > 40) return { error: "That phone number is too long." };
-  // Permissive on purpose: international formats, extensions and spacing vary, and a rejected
-  // valid number is worse than a loosely formatted one in a directory field.
-  if (raw !== "" && !/^[0-9+()\-.\s]{4,}$/.test(raw)) {
-    return { error: "Use digits, spaces and + ( ) - only." };
+  // Strict format (2026-08-17 round 5): one sequence "+<dial><digits>", digits-only, length
+  // validated per country (Egypt 10). The client dropdown builds this; the server re-checks.
+  if (raw !== "" && !isValidStoredPhone(raw)) {
+    const split = splitStoredPhone(raw);
+    return {
+      error: split
+        ? nationalNumberError(split.country, split.digits) ??
+          "That phone number isn't valid for the chosen country."
+        : "Pick a country code and enter the number in digits only.",
+    };
   }
 
   await prisma.user.update({
@@ -175,7 +186,20 @@ export async function updateOwnNationalId(
   _prev: SelfEditState,
   formData: FormData
 ): Promise<SelfEditState> {
-  return saveOwnText("nationalId", formData, 30, "That ID number is too long (max 30 characters).");
+  const me = await requireUser();
+  const raw = String(formData.get("nationalId") ?? "").trim();
+  // Exactly 14 digits, no spaces (2026-08-17 round 5). Empty clears the field.
+  if (raw !== "" && !isValidNationalId(raw)) {
+    return { error: "The national ID must be exactly 14 digits, with no spaces." };
+  }
+
+  await prisma.user.update({
+    where: { id: me.id },
+    data: { nationalId: raw === "" ? null : raw },
+  });
+
+  revalidatePath("/profile");
+  return { ok: true };
 }
 
 /** Round-trip a parsed value back to the text stored on the request. */

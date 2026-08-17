@@ -16,6 +16,7 @@ import type {
 } from "@prisma/client";
 import { parseDelimited } from "./csv";
 import { deriveTenureBand } from "@/lib/tenure";
+import { isValidNationalId, isValidStoredPhone, normalizeLoosePhone } from "@/lib/phone";
 
 // ─── Dates ──────────────────────────────────────────────────────────────
 
@@ -186,6 +187,9 @@ export function normalizeMaritalStatus(raw: string): MaritalStatus | null {
 
 type FieldKey =
   | "name"
+  | "legalName"
+  | "legalNameAr"
+  | "nationalId"
   | "employeeId"
   | "department"
   | "businessUnit"
@@ -206,6 +210,10 @@ type FieldKey =
 
 const HEADER_ALIASES: Record<FieldKey, string[]> = {
   name: ["name", "full name", "employee name"],
+  // normHeader() strips parentheses, so "Legal Name (English)" arrives as "legal name english".
+  legalName: ["legal name english", "legal name", "legal name en"],
+  legalNameAr: ["legal name arabic", "legal name ar", "arabic legal name"],
+  nationalId: ["national id", "national id number", "nid"],
   employeeId: ["employee id", "employeeid", "emp id", "staff id", "employee number"],
   department: ["department", "dept"],
   businessUnit: ["business unit", "businessunit", "bu"],
@@ -293,6 +301,12 @@ export interface ParsedRow {
   email: string;
   emailIsExternal: boolean;
   phone: string | null;
+  // The three self-entered identity fields: `undefined` means the sheet has NO such column —
+  // the import then leaves the stored value untouched, so a pre-round-5 sheet re-uploaded
+  // can never wipe what employees typed. `null` means the column exists and the cell is empty.
+  legalName: string | null | undefined;
+  legalNameAr: string | null | undefined;
+  nationalId: string | null | undefined;
   employeeId: string | null; // person identifier (spec 025); a duplicate links accounts
   department: string | null;
   businessUnitName: string | null; // raw name; resolved to a BU id in the import action
@@ -465,6 +479,42 @@ export function parseEmployeesCsv(
       );
     }
 
+    // Phones — strict everywhere (2026-08-17 round 5): legacy formats are auto-normalized
+    // ("+20 100 123 4567" → "+201001234567"); anything that doesn't confidently parse is a
+    // row ERROR with a clear message, so a half-imported wrong number never lands silently.
+    const readPhone = (key: "phone" | "emergencyContactPhone", label: string): string | null => {
+      const rawValue = cell(raw, key);
+      if (!rawValue || BLANKS.has(rawValue.toLowerCase())) return null;
+      if (isValidStoredPhone(rawValue)) return rawValue;
+      const normalized = normalizeLoosePhone(rawValue);
+      if (normalized) {
+        if (normalized !== rawValue)
+          warnings.push(`${label} "${rawValue}" normalized to ${normalized}`);
+        return normalized;
+      }
+      errors.push(
+        `${label} "${rawValue}" isn't a valid number — use a country code + digits, no spaces (e.g. +201001234567)`
+      );
+      return null;
+    };
+    const phoneValue = readPhone("phone", "phone");
+    const emergencyPhoneValue = readPhone("emergencyContactPhone", "emergency contact phone");
+
+    // National ID — exactly 14 digits (separators stripped first, so "291-05…" still reads).
+    let nationalIdValue: string | null | undefined =
+      fields.nationalId === undefined ? undefined : null;
+    const nationalIdRaw = cell(raw, "nationalId");
+    if (nationalIdRaw && !BLANKS.has(nationalIdRaw.toLowerCase())) {
+      const digits = nationalIdRaw.replace(/[\s.\-]/g, "");
+      if (isValidNationalId(digits)) {
+        nationalIdValue = digits;
+        if (digits !== nationalIdRaw)
+          warnings.push(`national ID "${nationalIdRaw}" normalized to ${digits}`);
+      } else {
+        errors.push(`national ID "${nationalIdRaw}" must be exactly 14 digits`);
+      }
+    }
+
     const managerEmailRaw = cell(raw, "managerEmail").toLowerCase();
     const managerEmail =
       managerEmailRaw && EMAIL_RE.test(managerEmailRaw) ? managerEmailRaw : null;
@@ -489,7 +539,10 @@ export function parseEmployeesCsv(
       name,
       email,
       emailIsExternal,
-      phone: cell(raw, "phone") || null,
+      phone: phoneValue,
+      legalName: fields.legalName === undefined ? undefined : cell(raw, "legalName") || null,
+      legalNameAr: fields.legalNameAr === undefined ? undefined : cell(raw, "legalNameAr") || null,
+      nationalId: nationalIdValue,
       employeeId: cell(raw, "employeeId") || null,
       department: departmentValue,
       businessUnitName: cell(raw, "businessUnit") || null,
@@ -503,7 +556,7 @@ export function parseEmployeesCsv(
       dependants,
       emergencyContactName: cell(raw, "emergencyContactName") || null,
       emergencyContactRelationship: cell(raw, "emergencyContactRelationship") || null,
-      emergencyContactPhone: cell(raw, "emergencyContactPhone") || null,
+      emergencyContactPhone: emergencyPhoneValue,
       warnings,
       errors,
     });
