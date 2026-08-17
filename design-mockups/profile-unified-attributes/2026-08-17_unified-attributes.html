@@ -1,0 +1,182 @@
+<title>Unified Profile Attributes</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-500:#2f4d78;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:900px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:64ch}
+  .proposal{margin-top:36px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 14px 36px;max-width:64ch}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;max-width:640px}
+  .cardhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
+  .cardhead h3{font-family:Georgia,serif;font-size:18px;margin:0;color:var(--ink)}
+  .field{padding:12px 0;border-bottom:1px solid var(--line)}
+  .field:last-child{border-bottom:0}
+  .k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .v{font-size:15px;color:var(--ink);margin-top:2px}
+  .badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:999px;background:var(--navy-50);color:var(--navy-700);flex:none}
+  .tag-you{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:999px;background:var(--gold-100);color:var(--gold-800)}
+  .btn-request{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer;flex:none}
+  .btn-request:hover{background:var(--navy-50)}
+  .btn-request:focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+  .inp{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:7px 11px;font-size:14px;color:var(--ink);width:100%;max-width:260px}
+  .btn-save{border:0;background:var(--navy-800);color:#fff;font-size:12px;font-weight:600;padding:7px 13px;border-radius:9px;cursor:pointer}
+  .btn-save[disabled]{opacity:.4;cursor:default}
+  .editrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px}
+  .hint{font-size:12px;color:var(--muted)}
+  .dep{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line)}
+  .dep:last-child{border-bottom:0}
+  .dep .name{font-size:14.5px;color:var(--ink);font-weight:600}
+  .dep .meta{font-size:13px;color:var(--muted)}
+  .kind{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:999px;background:var(--navy-50);color:var(--navy-700)}
+  .legend{margin-top:20px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 22px;display:grid;gap:10px;max-width:640px}
+  .legend .row{display:flex;align-items:center;gap:12px;font-size:13.5px}
+  .legend .row .what{color:var(--muted)}
+  .decision{margin-top:28px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;max-width:640px}
+  .decision b{display:block;margin-bottom:4px}
+  .decision ul{margin:6px 0 0;padding-left:18px}
+  .decision li{margin:3px 0}
+  footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">My Profile · design review</p>
+  <h1>Unified attributes on My Profile</h1>
+  <p class="lede">One consistent language for who owns each piece of data: a navy pill where HR alone manages a card, a gold mark on the fields you edit yourself, and a “Request a change” button on cards where you propose and HR decides. Plus a new self-edited <strong>Legal name</strong> field, and dependants broken out into readable rows. Static mockup, matched to the live profile styles.</p>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="row"><span class="badge">Managed by HR</span><span class="what">HR alone edits this card. No request path from here.</span></div>
+    <div class="row"><span class="tag-you">You edit</span><span class="what">Yours to change directly — no HR review.</span></div>
+    <div class="row"><button class="btn-request" type="button">Request a change</button><span class="what">HR manages this card, but you can propose a correction — the button replaces the pill (it already implies “not self-edit”).</span></div>
+  </div>
+
+  <!-- 1: Contact -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Contact — card pill, field overrides, new Legal name</h2>
+    <p class="sub">The card is HR-managed overall (email, department, title), so it carries the navy pill. The two exceptions — Phone and the new Legal name — carry the gold “You edit” mark and save in place.</p>
+    <div class="card">
+      <div class="cardhead">
+        <h3>Contact</h3>
+        <span class="badge">Managed by HR</span>
+      </div>
+      <div class="field">
+        <div class="k">Email</div>
+        <div class="v">omar.hassan@forefront.consulting</div>
+      </div>
+      <div class="field">
+        <div class="k">Phone <span class="tag-you">You edit</span></div>
+        <div class="editrow">
+          <input class="inp" type="tel" value="+20 100 123 4567" aria-label="Phone" />
+          <button class="btn-save" disabled>Save</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="k">Legal name <span class="tag-you">You edit</span></div>
+        <div class="editrow">
+          <input class="inp" type="text" placeholder="e.g. Omar Ahmed Mahmoud Hassan" aria-label="Legal name" />
+          <button class="btn-save" disabled>Save</button>
+        </div>
+        <p class="hint" style="margin:6px 0 0">Your full official name exactly as written on your national ID. Visible to you and HR only.</p>
+      </div>
+      <div class="field">
+        <div class="k">Department</div>
+        <div class="v">Consulting</div>
+      </div>
+      <div class="field">
+        <div class="k">Title</div>
+        <div class="v">Senior Consultant</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2: Employment -->
+  <section class="proposal">
+    <h2><span class="num">2</span> Employment — same pill, no more grey text</h2>
+    <p class="sub">Content unchanged. The plain grey “Managed by HR” text becomes the same navy pill as everywhere else. No request button — correcting employment data stays a conversation with HR.</p>
+    <div class="card">
+      <div class="cardhead">
+        <h3>Employment</h3>
+        <span class="badge">Managed by HR</span>
+      </div>
+      <div class="field"><div class="k">Employment type</div><div class="v">Full-time</div></div>
+      <div class="field"><div class="k">Tenure band</div><div class="v">3–5 years</div></div>
+      <div class="field"><div class="k">Start date</div><div class="v">1 September 2022</div></div>
+      <div class="field"><div class="k">Reports to</div><div class="v">Nadia El-Sayed</div></div>
+    </div>
+  </section>
+
+  <!-- 3: Personal -->
+  <section class="proposal">
+    <h2><span class="num">3</span> Personal — request button on the card, dependants as rows</h2>
+    <p class="sub">The “Request a change” button sits on the card itself and opens the existing request form scoped to this card’s fields (date of birth, marital status). Dependants break out of the comma line into one row each — name, date of birth, age — but stay HR-edited for now (they feed medical pricing).</p>
+    <div class="card">
+      <div class="cardhead">
+        <h3>Personal</h3>
+        <button class="btn-request" type="button">Request a change</button>
+      </div>
+      <div class="field"><div class="k">Date of birth</div><div class="v">14 May 1991 · 35 yrs</div></div>
+      <div class="field"><div class="k">Marital status</div><div class="v">Married</div></div>
+      <div class="field">
+        <div class="k">Dependants</div>
+        <div style="margin-top:4px">
+          <div class="dep">
+            <span class="name">Sara Ali</span><span class="kind">Spouse</span>
+            <span class="meta">12 March 1993 · 33 yrs</span>
+          </div>
+          <div class="dep">
+            <span class="name">Youssef Omar</span><span class="kind">Child</span>
+            <span class="meta">2 June 2019 · 7 yrs</span>
+          </div>
+          <div class="dep">
+            <span class="name">Laila Omar</span><span class="kind">Child</span>
+            <span class="meta">30 October 2022 · 3 yrs</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4: Emergency contact -->
+  <section class="proposal">
+    <h2><span class="num">4</span> Emergency contact — button replaces the pill</h2>
+    <p class="sub">Same card, same fields. The navy pill goes away; the “Request a change” button (scoped to name, relationship, phone) takes its place in the header.</p>
+    <div class="card">
+      <div class="cardhead">
+        <h3>Emergency contact</h3>
+        <button class="btn-request" type="button">Request a change</button>
+      </div>
+      <div class="field"><div class="k">Name</div><div class="v">Sara Ali</div></div>
+      <div class="field"><div class="k">Relationship</div><div class="v">Spouse</div></div>
+      <div class="field"><div class="k">Phone</div><div class="v">+20 100 123 4567</div></div>
+    </div>
+  </section>
+
+  <!-- 5: status panel -->
+  <section class="proposal">
+    <h2><span class="num">5</span> Request status — unchanged, at the bottom</h2>
+    <p class="sub">Both card buttons open the same request form you have today, pre-scoped to their card. A submitted request’s status (pending / approved / rejected, with HR’s reason) keeps showing in the existing panel at the bottom of the page — nothing changes there, except its own “Request a change” entry point moves up onto the cards.</p>
+  </section>
+
+  <!-- Decisions -->
+  <div class="decision">
+    <b>Defaults baked into this proposal — veto anything here:</b>
+    <ul>
+      <li><strong>Legal name</strong> is a new field: free text, max 120 characters, optional. Saved directly by the employee (like Phone), no HR review.</li>
+      <li>HR sees and can correct Legal name on the admin employee record. It never appears in the Team Directory.</li>
+      <li>Dependant rows are display-only — adding or correcting a dependant remains an HR action.</li>
+      <li>The approval flow, HR queue, and all server rules are untouched.</li>
+    </ul>
+  </div>
+
+  <footer>HR_ERP · My Profile unified attributes · mockup for sign-off · 17 August 2026 · buttons in this mockup are inert.</footer>
+</div>
