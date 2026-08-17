@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-17
 
-**Status**: Draft
+**Status**: Built 2026-08-17 (migration 054)
 
 **Input**: User description: "HR or Finance request profile data from the team; a popup appears on login / opening the platform showing the exact fields — empty ones to fill or prefilled ones to verify — and stays in the sidebar as a notification until filled. Everyone fills according to the field requirements, saves, and it lands on the user profile, the employee registry, and the CSV download."
 

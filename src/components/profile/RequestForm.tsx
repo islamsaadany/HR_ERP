@@ -6,36 +6,8 @@ import {
   type RequestState,
 } from "@/app/(app)/profile/request-actions";
 import type { FieldDescriptor } from "@/lib/profile/change-requests";
-import { serialiseDependants, type DependantValue } from "@/lib/profile/requestable";
 import { PhoneInput } from "@/components/PhoneInput";
-
-/** A dependant row while it is being edited — `isNew` drives the gold highlight only. */
-type DepRow = { name: string; dateOfBirth: string; kind: "CHILD" | "SPOUSE"; isNew: boolean };
-
-function rowsFromCurrent(current: string): DepRow[] {
-  try {
-    const data = JSON.parse(current);
-    if (!Array.isArray(data)) return [];
-    return data.map((d) => ({
-      name: typeof d?.name === "string" ? d.name : "",
-      dateOfBirth: typeof d?.dateOfBirth === "string" ? d.dateOfBirth : "",
-      kind: d?.kind === "SPOUSE" ? "SPOUSE" : "CHILD",
-      isNew: false,
-    }));
-  } catch {
-    return [];
-  }
-}
-
-function serialiseRows(rows: DepRow[]): string {
-  return serialiseDependants(
-    rows.map<DependantValue>((r) => ({
-      name: r.name.trim() === "" ? null : r.name.trim(),
-      dateOfBirth: r.dateOfBirth,
-      kind: r.kind,
-    }))
-  );
-}
+import { DependantsListEditor } from "@/components/profile/DependantsListEditor";
 
 /**
  * The propose-a-correction form (spec 029, US1), scoped to whatever descriptors it is given —
@@ -59,17 +31,6 @@ export function RequestForm({
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(descriptors.map((d) => [d.key, d.current]))
   );
-  // The dependants editor's working rows (only present when the card carries that field).
-  const depDescriptor = descriptors.find((d) => d.input === "dependants");
-  const [depRows, setDepRows] = useState<DepRow[]>(() =>
-    depDescriptor ? rowsFromCurrent(depDescriptor.current) : []
-  );
-  const updateDepRows = (rows: DepRow[]) => {
-    setDepRows(rows);
-    if (depDescriptor) {
-      setValues((v) => ({ ...v, [depDescriptor.key]: serialiseRows(rows) }));
-    }
-  };
 
   const changedKeys = useMemo(
     () => descriptors.filter((d) => (values[d.key] ?? "").trim() !== d.current.trim()).map((d) => d.key),
@@ -88,10 +49,6 @@ export function RequestForm({
 
   const input =
     "w-full max-w-[320px] rounded-lg border bg-surface px-3 py-2 text-sm text-ink focus:border-navy-500 focus:outline-none";
-  // No width here — dependant rows size each control themselves (a second max-w on the same
-  // element would fight the one in `input`, and which wins depends on CSS order, not class order).
-  const depInput =
-    "rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-navy-500 focus:outline-none";
 
   // No success branch here on purpose: a recorded request re-renders the page with an open
   // request, so the host swaps this form for the pending state. "Awaiting HR" IS the receipt.
@@ -131,77 +88,11 @@ export function RequestForm({
                     {d.label}
                   </span>
                   <input type="hidden" name={d.key} value={values[d.key] ?? ""} />
-                  <div className="grid gap-2">
-                    {depRows.length === 0 ? (
-                      <p className="text-sm text-muted">None listed.</p>
-                    ) : (
-                      depRows.map((row, i) => (
-                        <div
-                          key={i}
-                          className={`flex flex-wrap items-center gap-2 ${
-                            row.isNew
-                              ? "rounded-lg border border-dashed border-gold-500 bg-gold-100 p-1.5"
-                              : ""
-                          }`}
-                        >
-                          <input
-                            value={row.name}
-                            onChange={(e) =>
-                              updateDepRows(depRows.map((r, j) => (j === i ? { ...r, name: e.target.value } : r)))
-                            }
-                            placeholder="Name"
-                            aria-label="Dependant name"
-                            className={`${depInput} min-w-[140px] flex-1`}
-                          />
-                          <select
-                            value={row.kind}
-                            onChange={(e) =>
-                              updateDepRows(
-                                depRows.map((r, j) =>
-                                  j === i ? { ...r, kind: e.target.value as DepRow["kind"] } : r
-                                )
-                              )
-                            }
-                            aria-label="Dependant kind"
-                            className={`${depInput} w-28 shrink-0`}
-                          >
-                            <option value="CHILD">Child</option>
-                            <option value="SPOUSE">Spouse</option>
-                          </select>
-                          <input
-                            type="date"
-                            value={row.dateOfBirth}
-                            onChange={(e) =>
-                              updateDepRows(
-                                depRows.map((r, j) => (j === i ? { ...r, dateOfBirth: e.target.value } : r))
-                              )
-                            }
-                            aria-label="Dependant date of birth"
-                            className={`${depInput} w-40 shrink-0`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => updateDepRows(depRows.filter((_, j) => j !== i))}
-                            className="shrink-0 rounded-lg border border-line px-2.5 py-2 text-xs text-muted hover:border-red-300 hover:text-red-600"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateDepRows([...depRows, { name: "", dateOfBirth: "", kind: "CHILD", isNew: true }])
-                    }
-                    className="mt-2 rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-xs font-semibold text-navy-700 hover:bg-navy-50"
-                  >
-                    + Add dependant
-                  </button>
-                  <p className="mt-1.5 text-xs text-muted">
-                    A dependant needs a date of birth. Changes to this list go to HR as one proposal.
-                  </p>
+                  <DependantsListEditor
+                    initial={d.current}
+                    onChange={(v) => setValues((prev) => ({ ...prev, [d.key]: v }))}
+                  />
+                  <p className="mt-1 text-xs text-muted">Changes to this list go to HR as one proposal.</p>
                 </div>
               );
             }

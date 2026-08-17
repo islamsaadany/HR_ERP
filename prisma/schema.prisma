@@ -147,6 +147,10 @@ model User {
   // Plan-year cap switch (spec 031)
   flexCapChanges PlanYear[] @relation("FlexCapChanger")
 
+  // Profile data request campaigns (spec 033)
+  campaignsCreated DataRequestCampaign[] @relation("CampaignCreator")
+  campaignTargets  DataRequestTarget[]   @relation("CampaignTarget")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -155,6 +159,64 @@ model User {
   @@index([reportsToId])
   @@index([businessUnitId])
   @@index([employeeId])
+}
+
+// ─── Profile data request campaigns (spec 033) ─────────────────────────
+// HR/Finance ask targeted employees to fill or verify specific registry fields via a popup.
+// Answers write DIRECTLY to the User record (the aligned decision — HR asked for the data);
+// these tables only record who was asked, for what, and what happened, for the tracker.
+
+enum DataRequestFieldStatus {
+  PENDING // not answered yet
+  FILLED // was empty, employee provided a value
+  CONFIRMED // was prefilled, employee confirmed it unchanged
+  CORRECTED // was prefilled, employee replaced it
+}
+
+model DataRequestCampaign {
+  id          String    @id @default(cuid())
+  title       String // shown to employees in the popup
+  /// Requested field keys from the campaign field registry, in registry order.
+  fields      String[]
+  /// Human-readable audience descriptor frozen at launch (e.g. "All active employees").
+  audience    String
+  createdById String?
+  createdBy   User?     @relation("CampaignCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  /// Set when HR/Finance closes it: popups/badges vanish, tracker stays readable (FR-010).
+  closedAt    DateTime?
+
+  targets DataRequestTarget[]
+
+  @@index([closedAt])
+}
+
+/// One targeted employee in one campaign — resolved at launch (FR-002), never auto-grown.
+model DataRequestTarget {
+  id         String              @id @default(cuid())
+  campaignId String
+  campaign   DataRequestCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User                @relation("CampaignTarget", fields: [userId], references: [id], onDelete: Cascade)
+
+  fields DataRequestFieldState[]
+
+  @@unique([campaignId, userId])
+  @@index([userId])
+}
+
+/// Per-field outcome for one target. `value` is the display snapshot the tracker shows;
+/// the live User record stays the single source of truth for registry/CSV.
+model DataRequestFieldState {
+  id         String                 @id @default(cuid())
+  targetId   String
+  target     DataRequestTarget      @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  field      String
+  status     DataRequestFieldStatus @default(PENDING)
+  value      String?
+  answeredAt DateTime?
+
+  @@unique([targetId, field])
 }
 
 /// A dependant of an employee — name + DOB, and a kind (CHILD or SPOUSE). Age is derived, never stored.

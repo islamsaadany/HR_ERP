@@ -97,6 +97,16 @@ export async function requireSuperUser() {
   return user;
 }
 
+/** Data request campaigns (spec 033): HR Admin, Finance, or Super User may compose and track. */
+export const canManageDataRequests = (role?: Role) => isAdmin(role) || isFinance(role);
+
+/** Require campaign-manager access (HR Admin / Finance / Super User); redirect home otherwise. */
+export async function requireDataRequestManager() {
+  const user = await requireUser();
+  if (!canManageDataRequests(user.role)) redirect("/dashboard");
+  return user;
+}
+
 /** Require Finance (or Super User); redirect home otherwise. Gates the payments queue (spec 020). */
 export async function requireFinance() {
   const user = await requireUser();

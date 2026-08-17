@@ -890,10 +890,36 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     Chromium: cancel via button, cancel via Escape, re-open holds the saved value, and a normal
     save still persists after cancel round-trips. Zero unexpected console errors.
 
+- **2026-08-17 — Spec 033 built: profile data request campaigns (migration 054, mockup-approved):**
+  - HR had no way to ASK sixty people to fill the registry fields that now exist. HR Admins,
+    Finance, and Super Users compose a campaign (title + registry fields + audience: everyone /
+    departments / picked people, frozen at launch); every targeted active employee meets a
+    dismissible popup on their next page load — empty fields to fill, prefilled ones with
+    ✓ Confirm / Edit — and a gold sidebar notice keeps the pending count until they finish.
+  - **Answers write directly to the employee record** (aligned decision: HR asked for the data),
+    so My Profile, the registry, and the CSV export reflect them instantly. The campaign tables
+    (`DataRequestCampaign`/`Target`/`FieldState`) only record who was asked and what happened —
+    per field: FILLED / CONFIRMED / CORRECTED, derived **server-side** from what the record held
+    (the client can never claim "confirmed" for a changed value). Partial saves are natural: a
+    field participates only once engaged; one answer settles the same field across ALL open
+    campaigns; an employee can only ever answer fields requested from them.
+  - **One field registry** (`campaign-fields.ts`) composes the four self-edit fields with the
+    change-request registry, so campaigns reuse every existing rule and editor (per-country
+    phone input, RTL Arabic, 14-digit ID, dependants list editor — now extracted to a shared
+    `DependantsListEditor`). Tracker per campaign: per person per field, chips + entered values;
+    leavers drop out of the denominator; Close ends the asking without touching written answers.
+  - Verified: tsc + build clean; `054` applied twice to a pre-054 throwaway Postgres with
+    `prisma migrate diff` reporting no drift; Chromium end-to-end — HR composed and launched to
+    all actives, employee met the popup (1 to fill · 1 to verify), Later kept the sidebar count,
+    the notice re-opened it, a 5-digit ID was rejected server-side, fill + confirm completed the
+    request (popup and badge gone), the tracker showed Filled/Confirmed with values, the CSV
+    carried the campaign-filled ID, and closing removed a still-pending admin's own popup while
+    the tracker stayed readable. Zero unexpected console errors.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-08-17 — unified profile attributes; legal names (EN/AR) + national ID; requestable dependants; strict phone/ID formats + CSV completeness (spec 029 amendments, migrations 051–053).*
+*Last Updated: 2026-08-17 — unified profile attributes; legal names (EN/AR) + national ID; requestable dependants; strict phone/ID formats + CSV completeness (spec 029, migrations 051–053); profile data request campaigns (spec 033, migration 054).*
