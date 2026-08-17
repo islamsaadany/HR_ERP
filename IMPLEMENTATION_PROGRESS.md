@@ -821,10 +821,135 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
       edge, because the marker sits two-thirds along the label. It is now sized and placed against
       the card ROW (the marker is deliberately not `relative`), so it can't overflow at any width.
 
+- **2026-08-17 — Unified profile attributes + legal name (spec 029 amendment, migration 051, mockup-approved):**
+  - My Profile spoke three ownership dialects at once — grey "Managed by HR" text on Employment, a
+    navy pill on Emergency contact, nothing on Personal — and the request form lived in a panel at
+    the bottom, far from the data it corrects. Now one language: HR-only cards (Contact, Employment)
+    carry the same navy pill; self-edit fields carry a gold "You edit" tag; and the Personal and
+    Emergency-contact cards carry their own scoped "Request a change" button — the button IS the
+    tag (a request path already says "not self-edit"), so those cards drop the pill.
+  - **Legal name** (`User.legalName`, migration `051`) — the full official name as on the national
+    ID — is the second direct self-edit field after phone (FR-002b): typed by the employee on the
+    Contact card, correctable by HR on the admin employee form, never in the Team Directory.
+    `SelfEditField` replaced `PhoneEditor` (one component for both, per the DRY rule).
+  - The bottom panel is now the **receipt only** (pending rows, withdraw, HR's per-field
+    decisions); while a request is open the card buttons give way to an "Awaiting HR" chip — one
+    open request at a time is unchanged. The scoped form sends only its card's fields, which the
+    server action already honoured (absent fields are not proposals).
+  - **Dependants render as one row each** (name · spouse/child tag · DOB · derived age) instead of
+    a comma-joined line.
+  - Verified: `npx tsc --noEmit` + `npm run build` clean; `051` applied to a throwaway Postgres 16
+    holding the pre-051 schema, a row inserted and read back through `legalName`, and
+    `prisma migrate diff` then reporting **no drift** against the new schema.
+  - **Follow-up, same day (mockup-approved):** after the user tried it live —
+    - Self-edit fields now **rest closed**: a light-gold **Edit** button opens the input and turns
+      into a navy **Save**; saving (or pressing Save unchanged, which skips the server) locks the
+      field again. The "You edit" tag is retired — the button is the tag. Request-form **Cancel is
+      solid red**.
+    - **Dependant changes became requestable**, closing the R3 deferral. The Personal card's form
+      carries a dependants editor (fix a name/DOB, add, remove — new rows highlighted gold); the
+      list travels as ONE `dependants` registry field in canonical JSON text (no schema change),
+      HR decides the set in one click, and approval **replaces** the list exactly as the admin
+      form writes it. `MedicalCoveredPerson` snapshots survive a removal (link nulls). Same rules
+      as the HR form: real non-future DOB, one spouse max.
+    - **US3/FR-015 built**: a dependant request from an employee with a committed medical premium
+      shows HR a gold warning naming the covered people before any decision.
+    - Verified end to end in Chromium: employee saved a legal name through the toggle, proposed a
+      dependant addition (send button counted one change), HR saw the medical warning naming
+      "Omar Hassan (self), Sara Ali (spouse)", approved in one click, and the third dependant row
+      (with the exact requested DOB) appeared on the profile — the SQL showed the `Dependant` rows
+      replaced correctly. A fully-decided request leaves the queue (scenario 6), employee panel
+      shows Approved with decider and date. Zero unexpected console errors.
+  - **Third round, same day (mockup-approved): Arabic legal name + national ID (migration 052).**
+    - Legal name split into **English** (`legalName` — existing data stays here) and **Arabic**
+      (`legalNameAr` — the input and resting display are `dir="rtl" lang="ar"`); `SelfEditField`
+      grew `dir`/`lang` props. **National ID** (`nationalId`, free text max 30) sits on the
+      **My Documents card above the upload section**. All three: gold Edit→navy Save self-edit,
+      no HR review, HR-correctable on the admin form (Arabic input RTL there too), never in the
+      Directory. One shared server helper backs the three actions.
+    - Verified: tsc + build clean; `052` applied to a throwaway Postgres holding the pre-052
+      schema with an Arabic value round-tripped intact and `prisma migrate diff` reporting no
+      drift; Chromium pass saved the Arabic name through the toggle (input confirmed RTL), saved
+      a national ID above the upload section, and both survived reload. Zero unexpected console
+      errors.
+  - **Round 5, same day (mockup-approved): strict phone + national ID, CSV completeness
+    (migration 053).** Phone = country dropdown (full list, Egypt default, `src/lib/phone.ts`)
+    + digits-only input, stored as one `+<dial><digits>` sequence, length per country — on the
+    employee's phone, the emergency contact phone (request form + HR form), the admin form,
+    grid inline edits, and the importer (strict everywhere, server-enforced). National ID:
+    exactly 14 digits. `053` normalizes legacy stored phones that confidently parse (verified:
+    all four shapes → `+201001234567`, `ext. 4412` untouched, idempotent). CSV export gains
+    Legal Name (EN/AR) + National ID and the importer reads them back — a sheet WITHOUT those
+    columns leaves stored values untouched, so old sheets can't wipe employee-typed data.
+    Chromium-verified: 10-digit Egypt rule rejected client- and server-side, Saudi 9-digit
+    saved, non-digits can't be typed, 13-digit ID rejected/14 accepted, emergency phone submits
+    as one sequence through the request flow, and the export carries the new columns + values.
+  - **Fourth round, same day: cancel while editing.** Every self-edit field's open editor now
+    carries a red **Cancel** beside Save, and **Escape** does the same — either discards the
+    typed text and restores the saved value (re-opening starts from the saved value). Verified in
+    Chromium: cancel via button, cancel via Escape, re-open holds the saved value, and a normal
+    save still persists after cancel round-trips. Zero unexpected console errors.
+
+- **2026-08-17 — Spec 033 built: profile data request campaigns (migration 054, mockup-approved):**
+  - HR had no way to ASK sixty people to fill the registry fields that now exist. HR Admins,
+    Finance, and Super Users compose a campaign (title + registry fields + audience: everyone /
+    departments / picked people, frozen at launch); every targeted active employee meets a
+    dismissible popup on their next page load — empty fields to fill, prefilled ones with
+    ✓ Confirm / Edit — and a gold sidebar notice keeps the pending count until they finish.
+  - **Answers write directly to the employee record** (aligned decision: HR asked for the data),
+    so My Profile, the registry, and the CSV export reflect them instantly. The campaign tables
+    (`DataRequestCampaign`/`Target`/`FieldState`) only record who was asked and what happened —
+    per field: FILLED / CONFIRMED / CORRECTED, derived **server-side** from what the record held
+    (the client can never claim "confirmed" for a changed value). Partial saves are natural: a
+    field participates only once engaged; one answer settles the same field across ALL open
+    campaigns; an employee can only ever answer fields requested from them.
+  - **One field registry** (`campaign-fields.ts`) composes the four self-edit fields with the
+    change-request registry, so campaigns reuse every existing rule and editor (per-country
+    phone input, RTL Arabic, 14-digit ID, dependants list editor — now extracted to a shared
+    `DependantsListEditor`). Tracker per campaign: per person per field, chips + entered values;
+    leavers drop out of the denominator; Close ends the asking without touching written answers.
+  - Verified: tsc + build clean; `054` applied twice to a pre-054 throwaway Postgres with
+    `prisma migrate diff` reporting no drift; Chromium end-to-end — HR composed and launched to
+    all actives, employee met the popup (1 to fill · 1 to verify), Later kept the sidebar count,
+    the notice re-opened it, a 5-digit ID was rejected server-side, fill + confirm completed the
+    request (popup and badge gone), the tracker showed Filled/Confirmed with values, the CSV
+    carried the campaign-filled ID, and closing removed a still-pending admin's own popup while
+    the tracker stayed readable. Zero unexpected console errors.
+  - **Live-testing follow-up, same day:** a partial save now KEEPS the popup open ("Saved — N
+    fields left"; close button becomes **Finish**; only Finish or completing everything closes
+    it), the save-count only counts fields still on screen, and a ✓ Confirmed field keeps an
+    Edit button — confirming a legacy value the rules now reject (11-digit ID) errors and the
+    employee can switch straight to editing. Plus: **campaign outcome CSV** (Download CSV on the
+    tracker — value + outcome pair per field, per person) and the registry grid gained
+    **Legal name (EN) / (AR) / National ID** columns (hidden by default, in the Columns menu,
+    inline-editable under the strict rules). All 17 Chromium checks green, including the exact
+    reported repro (invalid legacy ID confirm → error → Edit → correct → save).
+  - **Second live-testing round, same day: per-field save.** Each popup field is now its own
+    form — ✓ Confirm saves immediately, Save/Enter saves that one field, errors stay on their
+    row with Confirm/Edit intact. The field list freezes at open so answered rows KEEP showing
+    their value with a ✓ Saved/✓ Confirmed chip (the layer stays mounted through the final
+    save); the bottom buttons only close (Finish + Later). Chromium-verified end to end,
+    including Enter-to-save isolation and the invalid-legacy-ID repro.
+  - **Third live-testing round, same day: idempotent answers + sitting store + delete.** Root
+    cause of the reported dead-ends: a refresh could land mid-save and settle a field while the
+    UI still showed it actionable — every later action on it then errored. The server now
+    accepts an answer for ANY requested field (latest wins), and a per-tab sitting store keeps
+    the popup's rows and chips immune to remounts. HR/Finance can also DELETE a campaign (list
+    + tracker, confirmed) — tracker history goes, profile writes stay. Verified against a
+    PRODUCTION build this time: 20 scenario checks including both reported repros and a forced
+    externally-settled field. Zero unexpected console errors.
+  - **Fourth live-testing round, same day: the dead badge.** Layouts do not re-render on
+    client-side navigation, so a campaign launched mid-session never reached the popup (badge
+    server-rendered, click dead). The layer now polls its own API (mount + tab focus + 30s),
+    merges new asks (auto-open), and broadcasts the live count to the badge, which also clears
+    live on completion. Answered rows carry an Edit button for mistaken confirmations (latest
+    answer wins; tracker shows Corrected; Cancel restores the chip). 14/14 production checks
+    including the exact reported scenario.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-08-16 — travel allowance (spec 028); benefits claim clamp + medical gate; selected-employee password reset.*
+*Last Updated: 2026-08-17 — unified profile attributes; legal names (EN/AR) + national ID; requestable dependants; strict phone/ID formats + CSV completeness (spec 029, migrations 051–053); profile data request campaigns (spec 033, migration 054).*

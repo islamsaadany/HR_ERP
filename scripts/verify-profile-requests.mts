@@ -36,6 +36,11 @@ const SELECT = {
   emergencyContactPhone: true,
   dateOfBirth: true,
   maritalStatus: true,
+  // Dependants joined the registry (2026-08-17): serialise() now reads them.
+  dependants: {
+    select: { name: true, dateOfBirth: true, kind: true },
+    orderBy: { dateOfBirth: "asc" },
+  },
 } as const;
 
 function serialiseParsed(value: string | Date | null | undefined): string {

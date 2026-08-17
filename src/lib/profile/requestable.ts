@@ -13,7 +13,15 @@
  */
 
 import { MARITAL_STATUS_LABEL } from "@/lib/labels";
-import type { MaritalStatus, User } from "@prisma/client";
+import { isValidStoredPhone, nationalNumberError, splitStoredPhone } from "@/lib/phone";
+import type { DependantKind, MaritalStatus, User } from "@prisma/client";
+
+/** One dependant as it travels through a request: dates as `yyyy-mm-dd` text. */
+export type DependantValue = {
+  name: string | null;
+  dateOfBirth: string;
+  kind: DependantKind;
+};
 
 /** The subset of the employee record this feature can propose changes to. */
 export type RequestableUser = Pick<
@@ -23,7 +31,10 @@ export type RequestableUser = Pick<
   | "emergencyContactPhone"
   | "dateOfBirth"
   | "maritalStatus"
->;
+> & {
+  /** The dependant list travels as ONE value — see the `dependants` registry entry. */
+  dependants: { name: string | null; dateOfBirth: Date; kind: DependantKind }[];
+};
 
 export type RequestableKey = keyof RequestableUser;
 
@@ -36,7 +47,7 @@ export type RequestableField = {
   label: string;
   /** Which card the field sits under on My Profile — used to group the form. */
   group: "Emergency contact" | "Personal";
-  input: "text" | "tel" | "date" | "select";
+  input: "text" | "tel" | "date" | "select" | "dependants" | "phone";
   /** Options for `select`, in display order. */
   options?: { value: string; label: string }[];
   /**
@@ -80,7 +91,32 @@ function textField(
 export const REQUESTABLE_FIELDS: RequestableField[] = [
   textField("emergencyContactName", "Emergency contact name", "Emergency contact"),
   textField("emergencyContactRelationship", "Relationship", "Emergency contact"),
-  textField("emergencyContactPhone", "Emergency contact phone", "Emergency contact", "tel"),
+  {
+    // Same strict format as the employee's own phone (2026-08-17 round 5): country dropdown,
+    // digits only, per-country length, stored as one "+<dial><digits>" sequence.
+    key: "emergencyContactPhone",
+    label: "Emergency contact phone",
+    group: "Emergency contact",
+    input: "phone",
+    serialise: (user) => user.emergencyContactPhone ?? "",
+    display: (raw) => (raw.trim() === "" ? "—" : raw.trim()),
+    parse: (raw) => {
+      const trimmed = raw.trim();
+      if (trimmed === "") return { ok: true, value: null };
+      if (!isValidStoredPhone(trimmed)) {
+        const split = splitStoredPhone(trimmed);
+        return {
+          ok: false,
+          error:
+            split
+              ? nationalNumberError(split.country, split.digits) ??
+                "The emergency contact phone isn't valid for its country code."
+              : "The emergency contact phone needs a country code and digits only (no spaces).",
+        };
+      }
+      return { ok: true, value: trimmed };
+    },
+  },
   {
     key: "dateOfBirth",
     label: "Date of birth",
@@ -126,7 +162,124 @@ export const REQUESTABLE_FIELDS: RequestableField[] = [
       return { ok: true, value: trimmed as MaritalStatus };
     },
   },
+  {
+    // The dependant list travels as ONE value (2026-08-17 amendment): the employee edits the
+    // whole list (correct, add, remove) and HR approves or declines it in one decision.
+    // Stored as canonical JSON text, so it fits the same text-against-a-registry model as
+    // every other field — no schema change. Approval replaces the set (see the special case
+    // in approveProfileField), mirroring how the admin form already writes dependants.
+    key: "dependants",
+    label: "Dependants",
+    group: "Personal",
+    input: "dependants",
+    serialise: (user) =>
+      serialiseDependants(
+        user.dependants.map((d) => ({
+          name: d.name,
+          dateOfBirth: d.dateOfBirth.toISOString().slice(0, 10),
+          kind: d.kind,
+        }))
+      ),
+    display: (raw) => {
+      const parsed = parseDependantsList(raw);
+      if (!parsed.ok) return raw.trim() === "" ? "—" : raw;
+      if (parsed.list.length === 0) return "None";
+      return parsed.list
+        .map((d) => {
+          const who = d.name ?? (d.kind === "SPOUSE" ? "Spouse" : "Child");
+          const kind = d.kind === "SPOUSE" ? "Spouse" : "Child";
+          return `${who} (${kind}, ${displayIsoDate(d.dateOfBirth)})`;
+        })
+        .join("; ");
+    },
+    parse: (raw) => {
+      const parsed = parseDependantsList(raw);
+      if (!parsed.ok) return { ok: false, error: parsed.error };
+      // Value is the canonical serialisation, so "did it change?" and the stored text agree.
+      return { ok: true, value: serialiseDependants(parsed.list) };
+    },
+  },
 ];
+
+/**
+ * The dependant list as canonical text: normalised names, sorted by DOB then name then kind.
+ * Both the form and the record serialise through here, so a mere reorder is not a change.
+ */
+export function serialiseDependants(list: DependantValue[]): string {
+  const norm = list.map((d) => ({
+    name: d.name && d.name.trim() !== "" ? d.name.trim() : null,
+    dateOfBirth: d.dateOfBirth.trim(),
+    kind: d.kind,
+  }));
+  norm.sort(
+    (a, b) =>
+      a.dateOfBirth.localeCompare(b.dateOfBirth) ||
+      (a.name ?? "").localeCompare(b.name ?? "") ||
+      a.kind.localeCompare(b.kind)
+  );
+  return JSON.stringify(norm);
+}
+
+/**
+ * Validate a stored/submitted dependant list. The rules match the HR employee form: every
+ * dependant needs a real (non-future) date of birth, and one spouse at most (medical prices a
+ * single spouse — spec 023).
+ */
+export function parseDependantsList(
+  raw: string
+): { ok: true; list: DependantValue[] } | { ok: false; error: string } {
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return { ok: false, error: "The dependant list could not be read." };
+  }
+  if (!Array.isArray(data)) return { ok: false, error: "The dependant list could not be read." };
+  if (data.length > 12) return { ok: false, error: "That is too many dependants (max 12)." };
+
+  const list: DependantValue[] = [];
+  let spouses = 0;
+  for (const item of data) {
+    if (typeof item !== "object" || item === null) {
+      return { ok: false, error: "The dependant list could not be read." };
+    }
+    const { name, dateOfBirth, kind } = item as Record<string, unknown>;
+    if (kind !== "CHILD" && kind !== "SPOUSE") {
+      return { ok: false, error: "A dependant must be a child or a spouse." };
+    }
+    if (kind === "SPOUSE" && ++spouses > 1) {
+      return { ok: false, error: "Only one spouse can be listed." };
+    }
+    if (name !== null && name !== undefined && typeof name !== "string") {
+      return { ok: false, error: "A dependant's name could not be read." };
+    }
+    const trimmedName = typeof name === "string" ? name.trim() : "";
+    if (trimmedName.length > 120) {
+      return { ok: false, error: "A dependant's name is too long (max 120)." };
+    }
+    const dob = typeof dateOfBirth === "string" ? parseIsoDate(dateOfBirth) : null;
+    if (!dob) {
+      return { ok: false, error: "Every dependant needs a valid date of birth." };
+    }
+    if (dob.getTime() > Date.now()) {
+      return { ok: false, error: "A dependant's date of birth cannot be in the future." };
+    }
+    list.push({
+      name: trimmedName === "" ? null : trimmedName,
+      dateOfBirth: dob.toISOString().slice(0, 10),
+      kind,
+    });
+  }
+  return { ok: true, list };
+}
+
+/** `yyyy-mm-dd` → "12 Mar 1993", read in UTC so the date never shifts a day. */
+function displayIsoDate(iso: string): string {
+  const d = parseIsoDate(iso);
+  return d
+    ? d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })
+    : "—";
+}
 
 const BY_KEY = new Map(REQUESTABLE_FIELDS.map((f) => [f.key as string, f]));
 

@@ -37,6 +37,12 @@ const CATEGORIES: Category[] = [
         ready: true,
       },
       {
+        href: "/admin/data-requests",
+        title: "Data Requests",
+        body: "Ask the team to fill or verify profile fields — a popup + sidebar reminder until they answer.",
+        ready: true,
+      },
+      {
         href: "/admin/departments",
         title: "Departments",
         body: "Add, rename, or remove the departments used across records and filters.",

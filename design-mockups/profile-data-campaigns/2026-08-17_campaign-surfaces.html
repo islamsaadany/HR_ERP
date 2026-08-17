@@ -1,0 +1,181 @@
+<title>Data Request Campaigns</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-500:#2f4d78;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:66ch}
+  .proposal{margin-top:38px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 14px 36px;max-width:66ch}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;max-width:680px}
+  .lbl{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 5px}
+  .inp{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 11px;font-size:14px;color:var(--ink)}
+  .badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:999px;background:var(--navy-50);color:var(--navy-700)}
+  .btn-navy{display:inline-flex;align-items:center;border:0;background:var(--navy-800);color:#fff;font-size:13px;font-weight:600;padding:9px 16px;border-radius:9px;cursor:pointer}
+  .btn-ghost{display:inline-flex;align-items:center;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:13px;font-weight:600;padding:9px 16px;border-radius:9px;cursor:pointer}
+  .btn-confirm{display:inline-flex;align-items:center;gap:5px;border:1px solid #bbe3c5;background:#eef9f0;color:#1c7c37;font-size:12px;font-weight:700;padding:6px 12px;border-radius:9px;cursor:pointer}
+  .chip-ok{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid #bbe3c5;background:#eef9f0;color:#1c7c37}
+  .chip-fix{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .chip-pend{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .field{padding:13px 0;border-bottom:1px solid var(--line)}
+  .field:last-child{border-bottom:0}
+  .k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .decision{margin-top:30px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;max-width:680px}
+  .decision ul{margin:6px 0 0;padding-left:18px}
+  .decision li{margin:3px 0}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th{background:var(--navy-800);color:#fff;text-align:left;padding:8px 10px;font-weight:600;white-space:nowrap}
+  td{border-bottom:1px solid var(--line);padding:8px 10px;vertical-align:top}
+  footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12px}
+  /* modal chrome */
+  .overlay{background:rgba(10,26,48,.45);border-radius:14px;padding:34px 22px;display:grid;place-items:center}
+  .modal{background:var(--surface);border-radius:14px;max-width:560px;width:100%;padding:26px;box-shadow:0 18px 50px rgba(10,26,48,.35)}
+  .modal h3{font-family:Georgia,serif;font-size:20px;margin:0}
+  .camp{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold-600);margin:18px 0 2px}
+  /* sidebar strip */
+  .side{background:var(--navy-900);border-radius:14px;padding:18px 0;max-width:230px;color:#cfd8e6;font-size:14px}
+  .side .item{padding:9px 20px}
+  .side .item.active{background:var(--navy-800);color:#fff;border-left:3px solid var(--gold-500)}
+  .side .notif{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 14px 0;padding:10px 12px;border-radius:10px;background:var(--navy-800);border:1px solid var(--gold-600);color:#fff}
+  .count{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:999px;background:var(--gold-500);color:var(--navy-900);font-size:12px;font-weight:800;padding:0 6px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 033 · design review</p>
+  <h1>Profile data request campaigns</h1>
+  <p class="lede">HR or Finance picks fields and people; each targeted employee meets one popup on their next visit — empty fields to fill, prefilled ones to confirm or correct — validated exactly like My Profile, written straight to the registry. A sidebar notification keeps count until they finish, and the tracker shows HR who still owes what. Four surfaces below, in the navy/gold language.</p>
+
+  <!-- 1: the employee popup -->
+  <section class="proposal">
+    <h2><span class="num">1</span> The popup — what a targeted employee sees on opening the platform</h2>
+    <p class="sub">One modal even when several campaigns are open (each group labelled by its campaign title; a field asked twice appears once). Prefilled values carry a green <strong>Confirm</strong>; editing one replaces it and records “corrected”. “Later” closes it — the sidebar badge stays and the popup returns next visit.</p>
+    <div class="overlay">
+      <div class="modal">
+        <h3>HR asked you to complete your profile</h3>
+        <p style="margin:4px 0 0;font-size:13.5px;color:var(--muted)">2 fields to fill · 1 to verify — takes about a minute. Saved answers go straight to your profile.</p>
+
+        <p class="camp">Employee records update · HR</p>
+        <div class="field">
+          <div class="k">National ID <span style="color:#b91c1c">*</span></div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:5px">
+            <input class="inp" style="max-width:220px" inputmode="numeric" placeholder="14 digits" />
+          </div>
+          <p style="margin:5px 0 0;font-size:12px;color:var(--muted)">Exactly 14 digits, no spaces.</p>
+        </div>
+        <div class="field">
+          <div class="k">Date of birth — confirm it's right</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:5px">
+            <span style="font-size:15px">14 May 1991</span>
+            <button class="btn-confirm" type="button">✓ Confirm</button>
+            <button class="btn-ghost" type="button" style="font-size:12px;padding:6px 12px">Edit</button>
+          </div>
+        </div>
+
+        <p class="camp">Insurance data · Finance</p>
+        <div class="field">
+          <div class="k">Emergency contact phone <span style="color:#b91c1c">*</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:5px">
+            <select class="inp" style="max-width:140px"><option>🇪🇬 Egypt +20</option><option>…</option></select>
+            <input class="inp" style="max-width:150px" inputmode="numeric" placeholder="xxxxxxxxxx" />
+          </div>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;align-items:center">
+          <button class="btn-navy" type="button">Save answers</button>
+          <button class="btn-ghost" type="button">Later</button>
+          <span style="font-size:12px;color:var(--muted)">You can save some now and the rest later.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2: sidebar badge -->
+  <section class="proposal">
+    <h2><span class="num">2</span> The sidebar notification — until everything is answered</h2>
+    <p class="sub">A gold-edged notice pinned under the navigation with the total pending-field count across campaigns. Clicking it opens the popup. It disappears the moment nothing is pending.</p>
+    <div class="side">
+      <div class="item">Home</div>
+      <div class="item">Benefits</div>
+      <div class="item active">My Profile</div>
+      <div class="notif"><span style="font-size:13px">Profile data requested</span><span class="count">3</span></div>
+    </div>
+  </section>
+
+  <!-- 3: composer -->
+  <section class="proposal">
+    <h2><span class="num">3</span> The composer — Admin → Data requests → New</h2>
+    <p class="sub">Title, fields (checkboxes from the same registry the profile uses), audience (everyone / departments / picked people). Launch resolves the audience to a fixed list of active employees.</p>
+    <div class="card">
+      <div style="display:grid;gap:16px">
+        <div>
+          <label class="lbl">Title (employees see this)</label>
+          <input class="inp" style="width:100%;max-width:340px" value="Employee records update" />
+        </div>
+        <div>
+          <span class="lbl">Fields to request</span>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <label class="badge" style="padding:6px 11px"><input type="checkbox" checked /> National ID</label>
+            <label class="badge" style="padding:6px 11px"><input type="checkbox" checked /> Date of birth</label>
+            <label class="badge" style="padding:6px 11px"><input type="checkbox" /> Legal name (English)</label>
+            <label class="badge" style="padding:6px 11px"><input type="checkbox" /> Legal name (Arabic)</label>
+            <label class="badge" style="padding:6px 11px"><input type="checkbox" /> Phone</label>
+            <label class="badge" style="padding:6px 11px"><input type="checkbox" /> Marital status</label>
+            <label class="badge" style="padding:6px 11px"><input type="checkbox" /> Emergency contact</label>
+            <label class="badge" style="padding:6px 11px"><input type="checkbox" /> Dependants</label>
+          </div>
+        </div>
+        <div>
+          <span class="lbl">Audience</span>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:14px">
+            <label><input type="radio" name="aud" checked /> All active employees</label>
+            <label><input type="radio" name="aud" /> Departments…</label>
+            <label><input type="radio" name="aud" /> Pick employees…</label>
+          </div>
+        </div>
+        <div><button class="btn-navy" type="button">Launch — 58 employees will be asked</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4: tracker -->
+  <section class="proposal">
+    <h2><span class="num">4</span> The tracker — who still owes what</h2>
+    <p class="sub">One row per targeted employee; per field the outcome — <span class="chip-ok">Filled</span> / <span class="chip-ok">Confirmed</span> / <span class="chip-fix">Corrected</span> / <span class="chip-pend">Pending</span> — with the entered value. Header shows completion; Close ends the asking without touching written answers.</p>
+    <div class="card" style="max-width:100%">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px">
+        <div><strong style="font-family:Georgia,serif;font-size:17px">Employee records update</strong>
+        <span style="font-size:12.5px;color:var(--muted)"> · launched 17 Aug 2026 · HR</span></div>
+        <div style="display:flex;gap:10px;align-items:center"><span class="badge">41 / 58 complete</span><button class="btn-ghost" type="button" style="font-size:12px;padding:6px 12px">Close campaign</button></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <tr><th>Employee</th><th>National ID</th><th>Date of birth</th><th>Status</th></tr>
+          <tr><td>Omar Hassan</td><td><span class="chip-ok">Filled</span> 29105141234567</td><td><span class="chip-ok">Confirmed</span> 14 May 1991</td><td><span class="chip-ok">Complete</span></td></tr>
+          <tr><td>Sara Ibrahim</td><td><span class="chip-ok">Filled</span> 28811230101234</td><td><span class="chip-fix">Corrected</span> 23 Nov 1988 <span style="color:var(--muted)">(was 32 Nov …)</span></td><td><span class="chip-ok">Complete</span></td></tr>
+          <tr><td>Karim Adel</td><td><span class="chip-pend">Pending</span></td><td><span class="chip-pend">Pending</span></td><td><span class="chip-pend">Pending</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="decision">
+    <b>Decisions carried in from alignment — veto anything here:</b>
+    <ul>
+      <li>Creators: HR Admin, Finance, Super User. Audience: everyone / departments / picked people, frozen at launch (later hires need a new campaign).</li>
+      <li>Answers write <strong>directly</strong> to the employee record — registry and CSV update instantly; the tracker is HR's review, not an approval queue. Spec 029's change-request flow is untouched for employee-initiated corrections.</li>
+      <li>Popup always dismissible; the sidebar badge is the persistent reminder. Partial saves fine — only unanswered fields stay pending.</li>
+      <li>All field rules from rounds 1–5 apply (14-digit ID, per-country phone, RTL Arabic, dependant rules). In-app only, no email.</li>
+    </ul>
+  </div>
+
+  <footer>HR_ERP · spec 033 profile data request campaigns · mockup for sign-off · 17 August 2026 · controls are inert.</footer>
+</div>

@@ -26,6 +26,9 @@ export async function GET() {
     select: {
       name: true,
       email: true,
+      legalName: true,
+      legalNameAr: true,
+      nationalId: true,
       employeeId: true,
       department: true,
       businessUnit: { select: { name: true } },
@@ -52,6 +55,9 @@ export async function GET() {
   const header = [
     "Name",
     "Email",
+    "Legal Name (English)",
+    "Legal Name (Arabic)",
+    "National ID",
     "Employee ID",
     "Department",
     "Business Unit",
@@ -78,6 +84,9 @@ export async function GET() {
     const row = [
       e.name,
       e.email,
+      e.legalName ?? "",
+      e.legalNameAr ?? "",
+      e.nationalId ?? "",
       e.employeeId ?? "",
       e.department ?? "",
       e.businessUnit?.name ?? "",

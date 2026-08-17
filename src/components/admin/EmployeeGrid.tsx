@@ -20,6 +20,9 @@ export type GridRow = {
   id: string;
   name: string;
   email: string;
+  legalName: string;
+  legalNameAr: string;
+  nationalId: string;
   title: string;
   department: string;
   phone: string;
@@ -120,6 +123,11 @@ export function EmployeeGrid({
     return ([
       { key: "name", label: "Name", type: "text", editable: false, hideable: false },
       { key: "email", label: "Email", type: "email", editable: true, hideable: true },
+      // Identity fields (spec 029 rounds 3–5) — hidden by default so the table stays readable;
+      // toggle on from the Columns menu (the choice persists per user).
+      { key: "legalName", label: "Legal name (EN)", type: "text", editable: true, hideable: true },
+      { key: "legalNameAr", label: "Legal name (AR)", type: "text", editable: true, hideable: true },
+      { key: "nationalId", label: "National ID", type: "text", editable: true, hideable: true },
       { key: "employeeId", label: "Employee ID", type: "text", editable: true, hideable: true },
       { key: "title", label: "Title", type: "text", editable: true, hideable: true },
       {

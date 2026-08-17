@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
-import { requestableField } from "@/lib/profile/requestable";
+import { requestableField, parseDependantsList } from "@/lib/profile/requestable";
 
 export type DecisionState = { ok?: true; error?: string } | null;
 
@@ -38,21 +38,47 @@ export async function approveProfileField(
   const parsed = field.parse(row.requestedValue);
   if (!parsed.ok) return { error: parsed.error };
 
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: row.request.userId },
-      data: { [field.key]: parsed.value },
-    }),
-    prisma.profileChangeField.update({
-      where: { id },
-      data: {
-        status: "APPROVED",
-        decidedById: admin.id,
-        decidedAt: new Date(),
-        decisionReason: null,
-      },
-    }),
-  ]);
+  const markApproved = prisma.profileChangeField.update({
+    where: { id },
+    data: {
+      status: "APPROVED",
+      decidedById: admin.id,
+      decidedAt: new Date(),
+      decisionReason: null,
+    },
+  });
+
+  if (field.key === "dependants") {
+    // The dependant list is a SET, not a column: approval replaces the whole list, mirroring
+    // how the admin employee form already writes dependants. Removal is safe for medical
+    // history — MedicalCoveredPerson keeps its snapshot (dependantId just goes null).
+    const list = parseDependantsList(String(parsed.value ?? "[]"));
+    if (!list.ok) return { error: list.error };
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: row.request.userId },
+        data: {
+          dependants: {
+            deleteMany: {},
+            create: list.list.map((d) => ({
+              name: d.name,
+              dateOfBirth: new Date(`${d.dateOfBirth}T00:00:00.000Z`),
+              kind: d.kind,
+            })),
+          },
+        },
+      }),
+      markApproved,
+    ]);
+  } else {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: row.request.userId },
+        data: { [field.key]: parsed.value },
+      }),
+      markApproved,
+    ]);
+  }
 
   revalidateSurfaces(row.request.userId);
   return { ok: true };

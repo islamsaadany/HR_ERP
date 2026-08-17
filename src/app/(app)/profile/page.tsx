@@ -9,8 +9,15 @@ import {
   formatDate,
 } from "@/lib/labels";
 import { uploadMyDocument, deleteMyDocument } from "./documents-actions";
+import {
+  updateOwnLegalName,
+  updateOwnLegalNameAr,
+  updateOwnNationalId,
+} from "./request-actions";
 import { ChangePasswordCard } from "@/components/ChangePasswordCard";
-import { PhoneEditor } from "@/components/profile/PhoneEditor";
+import { SelfEditField } from "@/components/profile/SelfEditField";
+import { SelfEditPhone } from "@/components/profile/SelfEditPhone";
+import { RequestableSection } from "@/components/profile/RequestableSection";
 import { ChangeRequestPanel, type PanelRequest, type RequestRow } from "@/components/profile/ChangeRequestPanel";
 import {
   openRequestFor,
@@ -27,6 +34,15 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
       <div className="text-xs uppercase tracking-wide text-muted">{label}</div>
       <div className="mt-0.5 text-ink">{value ?? "—"}</div>
     </div>
+  );
+}
+
+/** The one ownership pill (unified attributes, 2026-08-17): HR alone edits this card. */
+function ManagedByHr() {
+  return (
+    <span className="rounded-full bg-navy-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-navy-700">
+      Managed by HR
+    </span>
   );
 }
 
@@ -79,6 +95,7 @@ export default async function ProfilePage({
 
   const age = ageFromDob(me.dateOfBirth);
   const yos = yearsOfService(me.startDate);
+  const descriptors = fieldDescriptors(me);
 
   return (
     <div className="max-w-3xl">
@@ -91,20 +108,41 @@ export default async function ProfilePage({
         {me.department ? ` · ${me.department}` : ""}
       </p>
 
-      {/* Public / contact */}
+      {/* Public / contact — HR-managed card with two self-edit exceptions (phone, legal name) */}
       <section className="mt-8 rounded-xl border border-line bg-surface p-6">
-        <h2 className="font-serif text-lg text-ink">Contact</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-serif text-lg text-ink">Contact</h2>
+          <ManagedByHr />
+        </div>
         <Field label="Email" value={me.email} />
-        <PhoneEditor phone={me.phone} />
+        <SelfEditPhone value={me.phone} />
+        <SelfEditField
+          label="Legal name (English)"
+          name="legalName"
+          value={me.legalName}
+          placeholder="e.g. Omar Ahmed Mahmoud Hassan"
+          hint="Your full official name in English, as on your passport or ID. Visible to you and HR only."
+          action={updateOwnLegalName}
+        />
+        <SelfEditField
+          label="Legal name (Arabic)"
+          name="legalNameAr"
+          value={me.legalNameAr}
+          placeholder="مثال: عمر أحمد محمود حسن"
+          hint="Your full official name in Arabic, exactly as written on your national ID. Visible to you and HR only."
+          dir="rtl"
+          lang="ar"
+          action={updateOwnLegalNameAr}
+        />
         <Field label="Department" value={me.department} />
         <Field label="Title" value={me.title} />
       </section>
 
       {/* Employment (read-only to employee) */}
       <section className="mt-6 rounded-xl border border-line bg-surface p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-serif text-lg text-ink">Employment</h2>
-          <span className="text-xs text-muted">Managed by HR</span>
+          <ManagedByHr />
         </div>
         <Field
           label="Employment type"
@@ -126,9 +164,12 @@ export default async function ProfilePage({
         />
       </section>
 
-      {/* Personal */}
-      <section className="mt-6 rounded-xl border border-line bg-surface p-6">
-        <h2 className="font-serif text-lg text-ink">Personal</h2>
+      {/* Personal — HR-managed, correctable by request from the card itself (spec 029) */}
+      <RequestableSection
+        title="Personal"
+        descriptors={descriptors.filter((d) => d.group === "Personal")}
+        hasOpenRequest={Boolean(openReq)}
+      >
         <Field
           label="Date of birth"
           value={
@@ -144,34 +185,49 @@ export default async function ProfilePage({
         <Field
           label="Dependants"
           value={
-            me.dependants.length === 0
-              ? "None"
-              : me.dependants
-                  .map((d) => {
-                    const a = ageFromDob(d.dateOfBirth);
-                    const who = d.name ?? (d.kind === "SPOUSE" ? "Spouse" : "Child");
-                    const tag = d.kind === "SPOUSE" ? " · spouse" : "";
-                    return `${who}${a !== null ? ` (${a})` : ""}${tag}`;
-                  })
-                  .join(", ")
+            me.dependants.length === 0 ? (
+              "None"
+            ) : (
+              <div className="mt-1">
+                {me.dependants.map((d) => {
+                  const a = ageFromDob(d.dateOfBirth);
+                  return (
+                    <div
+                      key={d.id}
+                      className="flex flex-wrap items-baseline gap-2 border-b border-dashed border-line py-2 last:border-b-0"
+                    >
+                      <span className="text-sm font-semibold text-ink">
+                        {d.name ?? (d.kind === "SPOUSE" ? "Spouse" : "Child")}
+                      </span>
+                      <span className="rounded-full bg-navy-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-navy-700">
+                        {d.kind === "SPOUSE" ? "Spouse" : "Child"}
+                      </span>
+                      <span className="text-sm text-muted">
+                        {formatDate(d.dateOfBirth)}
+                        {a !== null ? ` · ${a} yrs` : ""}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )
           }
         />
-      </section>
+      </RequestableSection>
 
-      {/* Emergency contact — HR-managed, read-only here (registry extension) */}
-      <section className="mt-6 rounded-xl border border-line bg-surface p-6">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-serif text-lg text-ink">Emergency contact</h2>
-          <span className="rounded-full bg-navy-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-navy-700">Managed by HR</span>
-        </div>
+      {/* Emergency contact — HR-managed, correctable by request from the card itself (spec 029) */}
+      <RequestableSection
+        title="Emergency contact"
+        descriptors={descriptors.filter((d) => d.group === "Emergency contact")}
+        hasOpenRequest={Boolean(openReq)}
+      >
         <Field label="Name" value={me.emergencyContactName} />
         <Field label="Relationship" value={me.emergencyContactRelationship} />
         <Field label="Phone" value={me.emergencyContactPhone} />
-      </section>
+      </RequestableSection>
 
-      {/* Change requests (spec 029) — propose a correction; HR decides field by field. */}
+      {/* Change requests (spec 029) — the receipt: pending state, withdraw, HR's decisions. */}
       <ChangeRequestPanel
-        descriptors={fieldDescriptors(me)}
         open={toPanel(openReq)}
         decided={openReq ? null : toPanel(decidedReq)}
       />
@@ -182,6 +238,18 @@ export default async function ProfilePage({
         <p className="mt-1 text-sm text-muted">
           Your personal documents (ID, certificates, contract). Only you and HR can see these.
         </p>
+
+        {/* National ID number — self-edited like the legal names (2026-08-17). */}
+        <div className="mt-2">
+          <SelfEditField
+            label="National ID"
+            name="nationalId"
+            value={me.nationalId}
+            placeholder="14 digits, e.g. 29105141234567"
+            hint="Your national ID number — exactly 14 digits, no spaces. Visible to you and HR only."
+            action={updateOwnNationalId}
+          />
+        </div>
 
         {docError ? (
           <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">

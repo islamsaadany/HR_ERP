@@ -102,6 +102,7 @@ When a request adds or removes a dependant for an employee who already has a com
 - **FR-001**: Employees MUST be able to submit a change request for their own record from My Profile, pre-filled with their current values.
 - **FR-002**: The system MUST restrict requestable fields to: emergency contact name, relationship, and phone; date of birth; marital status; and dependants.
 - **FR-002a**: Employees MUST be able to edit their own phone number directly on My Profile, without a request or review.
+- **FR-002b** *(2026-08-17)*: Employees MUST be able to edit their own legal name (full official name as written on the national ID) directly on My Profile, without a request or review. It is visible to the employee and HR only — never the Team Directory.
 - **FR-003**: The system MUST record only the fields whose requested value differs from the current value.
 - **FR-004**: The system MUST reject a submission containing no actual change.
 - **FR-005**: Submitting a request MUST NOT alter the employee record.
@@ -163,3 +164,29 @@ When a request adds or removes a dependant for an employee who already has a com
 - Any repricing or adjustment of an existing medical commitment; the warning informs HR, who acts separately.
 - Email or push notification of any kind.
 - Employees requesting changes to anyone else's record.
+
+## Amendments
+
+### 2026-08-17 — Unified attributes on My Profile (mockup-approved)
+- **The request entry point moved onto the cards.** The Personal and Emergency contact cards each carry a "Request a change" button that opens the same form scoped to that card's fields; the bottom "Change requests" panel no longer hosts the form — it is the receipt (pending state, withdraw, HR's per-field decisions). While a request is awaiting HR the card buttons give way to an "Awaiting HR" chip (one open request at a time, FR-006, unchanged).
+- **One ownership language.** HR-only cards (Contact, Employment) carry the same navy "Managed by HR" pill; the request button itself marks the requestable cards (no pill — a request path already says "not self-edit"); direct self-edit fields carry a gold "You edit" tag.
+- **Legal name** (FR-002b) joined phone as the second direct self-edit field, on the Contact card. Stored as `User.legalName` (migration `051`); HR can view and correct it on the admin employee form.
+- **Dependants render as one row each** (name · spouse/child · date of birth · derived age) instead of a comma-joined line.
+
+### 2026-08-17 (later same day) — Edit↔Save toggle, red Cancel, dependants delivered (mockup-approved)
+- **Self-edit fields rest closed.** Phone and Legal name show as plain values with a light-gold **Edit** button; pressing it opens the input and the button becomes a navy **Save** (pressing Save with nothing changed just closes — no server round trip). The "You edit" tag is retired — the button is the tag.
+- **The request form's Cancel is solid red**, so it reads as an active control beside the navy Send.
+- **Dependant changes are now requestable** — the R3 deferral is closed. The Personal card's form carries a dependants editor (correct a name or date of birth, add, remove; newly added rows highlighted); the whole list travels as ONE `dependants` field stored as canonical JSON text against the same registry, so HR approves or declines the set in a single decision. Approval replaces the dependant list (mirroring the admin form's write); `MedicalCoveredPerson` snapshots survive removal (the link just nulls). Rules match the HR form: every dependant needs a real, non-future date of birth; one spouse max.
+- **US3 / FR-015 is built**: when a request proposes a dependant change and the employee has a committed medical premium, HR's review card leads with a warning naming the covered people and stating the premium is not recalculated automatically.
+
+### 2026-08-17 (third round) — Arabic legal name + national ID (mockup-approved)
+- **Legal name is two fields**: `legalName` (English, as on the passport/ID) and `legalNameAr` (Arabic, exactly as on the national ID; the input and display are right-to-left, `lang="ar"`). Anything saved before the split stays as the English one.
+- **National ID** (`nationalId`, free text max 30 — formats vary and a rejected real ID is worse) sits on the **My Documents card above the upload section**, with the documents it belongs to.
+- All three follow FR-002b's pattern exactly: direct self-edit via the gold Edit → navy Save toggle, HR-correctable on the admin employee form, never in the Team Directory. Migration `052`.
+- **Cancel while editing** (same day): every self-edit field's open editor carries a red **Cancel** button beside Save, and the **Escape** key does the same — either discards whatever was typed and restores the saved value. Re-opening after a cancel starts from the saved value, never the discarded text.
+
+### 2026-08-17 (round 5) — Strict phone + national ID formats, CSV completeness (mockup-approved)
+- **Phone = country code + digits, one sequence.** A country dropdown (full list in `src/lib/phone.ts`, Egypt default) plus a digits-only input; stored as `+<dial><digits>` (e.g. `+201001234567`), no spaces anywhere, national-number length validated **per country** (Egypt 10, Saudi 9, UAE 9, …). Applies to the employee's own phone (My Profile), the **emergency contact phone** (request form and HR form alike), the admin employee form, the registry grid's inline edit, and the CSV importer — **strict everywhere**, server-enforced (`employeeSchema` refinements + the self-edit action + the requestable-field parser).
+- **National ID: exactly 14 digits**, no spaces — same strict-everywhere enforcement.
+- **Legacy values**: migration `053` normalizes stored phones that confidently parse (strip separators; `00…` → `+…`; Egyptian `01xxxxxxxxx` → `+20…`); anything ambiguous is left untouched until its owner next edits it. The CSV importer runs the same normalizer and errors the row (with the exact reason) when a value can't be read.
+- **CSV export/import round-trip completeness**: the export gains **Legal Name (English)**, **Legal Name (Arabic)**, and **National ID** columns, and the importer reads them back. A sheet **without** those columns leaves the stored values untouched (absent column ≠ clear), so pre-round-5 sheets can never wipe what employees typed.

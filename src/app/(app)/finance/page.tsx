@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireFinance } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { formatDate, toDateInput } from "@/lib/labels";
@@ -77,7 +78,16 @@ export default async function FinancePage({
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Finance · Payments</p>
-      <h1 className="mt-1 font-serif text-3xl text-ink">Payments</h1>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-serif text-3xl text-ink">Payments</h1>
+        {/* Finance can also run data-request campaigns (spec 033). */}
+        <Link
+          href="/admin/data-requests"
+          className="rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+        >
+          Data requests
+        </Link>
+      </div>
       <p className="mt-1 text-muted">
         Approved claims to pay — transfer the covered amount, then confirm it here (the employee is emailed). Reimbursed
         claims stay listed below for reference.

@@ -57,6 +57,7 @@ export function AppShell({
   showPayments = false,
   hiddenNav = [],
   navBadges = {},
+  dataRequestCount = 0,
   companyName = "Forefront People",
   shortName = "Forefront",
   logoUrl = null,
@@ -71,6 +72,8 @@ export function AppShell({
   showPayments?: boolean;
   hiddenNav?: string[];
   navBadges?: Record<string, number>;
+  /** Pending data-request fields (spec 033) — >0 renders the gold sidebar notice. */
+  dataRequestCount?: number;
   companyName?: string;
   shortName?: string;
   logoUrl?: string | null;
@@ -80,6 +83,17 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const nav = NAV.filter((item) => !hiddenNav.includes(item.href));
+
+  // Live data-request count (spec 033): the popup layer polls the server and broadcasts the
+  // real pending count; the server prop only paints the first frame. Without this, a badge
+  // could stay stale (or missing) until a hard reload — the dead-badge bug, 2026-08-17.
+  const [liveDataRequestCount, setLiveDataRequestCount] = useState(dataRequestCount);
+  useEffect(() => setLiveDataRequestCount(dataRequestCount), [dataRequestCount]);
+  useEffect(() => {
+    const onCount = (e: Event) => setLiveDataRequestCount((e as CustomEvent<number>).detail ?? 0);
+    window.addEventListener("hrerp:data-request-count", onCount);
+    return () => window.removeEventListener("hrerp:data-request-count", onCount);
+  }, []);
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [pref, setPref] = useState(false); // the user's manual preference
@@ -216,6 +230,22 @@ export function AppShell({
                 </Link>
               ) : null}
             </nav>
+            {liveDataRequestCount > 0 ? (
+              <div className="px-2 pb-2">
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("hrerp:open-data-requests"))}
+                  title={`Profile data requested (${liveDataRequestCount})`}
+                  aria-label={`Profile data requested, ${liveDataRequestCount} pending`}
+                  className="relative grid h-10 w-full place-items-center rounded-lg border border-gold-600 bg-navy-800 text-gold-300 hover:bg-navy-700"
+                >
+                  <NavIcon name="profile" />
+                  <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
+                    {liveDataRequestCount}
+                  </span>
+                </button>
+              </div>
+            ) : null}
             <div className="border-t border-navy-700 px-2 py-4">
               <form action={signOutAction}>
                 <button
@@ -326,6 +356,20 @@ export function AppShell({
                 </Link>
               ) : null}
             </nav>
+            {liveDataRequestCount > 0 ? (
+              <div className="px-3 pb-3">
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("hrerp:open-data-requests"))}
+                  className="flex w-full items-center justify-between gap-2 rounded-xl border border-gold-600 bg-navy-800 px-3 py-2.5 text-sm text-white hover:bg-navy-700"
+                >
+                  <span>Profile data requested</span>
+                  <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold-500 px-1.5 text-[11px] font-bold text-navy-900">
+                    {liveDataRequestCount}
+                  </span>
+                </button>
+              </div>
+            ) : null}
             <div className="border-t border-navy-700 px-4 py-4">
               <div className="truncate text-sm text-white">{name}</div>
               <div className="truncate text-xs text-navy-200">{email}</div>

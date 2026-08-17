@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { isLinked, linkKey } from "@/lib/switch-account";
 import { AppShell } from "@/components/AppShell";
 import { QueryToast } from "@/components/QueryToast";
+import { DataRequestLayer } from "@/components/profile/DataRequestLayer";
+import { dataRequestSummaryFor, type DataRequestSummary } from "@/lib/profile/campaigns";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +40,15 @@ export default async function AppLayout({
 
   const hiddenNav = await getDisabledHrefs();
   const brand = await getBrand();
+
+  // Data request campaigns (spec 033): what the popup shows + the sidebar count.
+  // Guarded so a pre-migration DB (no campaign tables) never breaks the shell.
+  let dataRequests: DataRequestSummary | null = null;
+  try {
+    dataRequests = await dataRequestSummaryFor(user.id);
+  } catch {
+    dataRequests = null;
+  }
 
   // In-app cue (FR-014): count the user's decided-but-unseen time-off requests.
   // Guarded so a pre-migration DB (no decisionSeenAt column) never breaks the shell.
@@ -106,6 +117,7 @@ export default async function AppLayout({
       showPayments={isFinance(user.role)}
       hiddenNav={hiddenNav}
       navBadges={{ "/time-off": timeoffBadge }}
+      dataRequestCount={dataRequests?.pendingCount ?? 0}
       companyName={brand.platformName}
       shortName={brand.shortName}
       logoUrl={brand.logoUrl}
@@ -117,6 +129,9 @@ export default async function AppLayout({
       }
     >
       {children}
+      {/* Always mounted: the popup freezes its field list at open, so it must survive the
+          re-render after the LAST answer (summary null) until the employee presses Finish. */}
+      <DataRequestLayer groups={dataRequests?.groups ?? []} />
       <QueryToast />
     </AppShell>
   );

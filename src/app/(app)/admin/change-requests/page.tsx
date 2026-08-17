@@ -30,6 +30,13 @@ export default async function ChangeRequestsPage() {
     employeeHasLeft: req.user.status !== "ACTIVE",
     submittedAt: formatDate(req.createdAt) ?? "",
     reason: req.reason,
+    // FR-015: a dependant change alters who the company insures. When this request proposes a
+    // dependant change and a medical premium is committed, HR sees it before deciding.
+    medicalCovered:
+      req.fields.some((f) => f.field === "dependants" && f.status === "PENDING") &&
+      req.user.medicalCommitments.length > 0
+        ? req.user.medicalCommitments[0].coveredPeople.map((p) => p.label)
+        : null,
     fields: req.fields.map((f) => ({
       id: f.id,
       label: fieldLabel(f.field),

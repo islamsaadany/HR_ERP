@@ -5,6 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
 import { REQUESTABLE_FIELDS } from "@/lib/profile/requestable";
 import { openRequestFor } from "@/lib/profile/change-requests";
+import {
+  isValidStoredPhone,
+  isValidNationalId,
+  nationalNumberError,
+  splitStoredPhone,
+} from "@/lib/phone";
 
 export type RequestState = { ok?: true; error?: string } | null;
 
@@ -31,6 +37,10 @@ export async function submitProfileChangeRequest(
       emergencyContactPhone: true,
       dateOfBirth: true,
       maritalStatus: true,
+      dependants: {
+        select: { name: true, dateOfBirth: true, kind: true },
+        orderBy: { dateOfBirth: "asc" },
+      },
     },
   });
   if (!user) return { error: "Profile not found." };
@@ -99,21 +109,27 @@ export async function cancelProfileChangeRequest(formData: FormData): Promise<vo
   revalidatePath("/admin/change-requests");
 }
 
-export type PhoneState = { ok?: true; error?: string } | null;
+/** Result shape shared by the direct self-edit actions (phone, legal name). */
+export type SelfEditState = { ok?: true; error?: string } | null;
 
 /**
  * The employee's own phone number, edited directly — no request, no review, no pending count
  * (FR-002a/FR-019). It is their contact number; nothing reads it for eligibility or money, so
  * routing it through HR would add a person to a change nobody else depends on.
  */
-export async function updateOwnPhone(_prev: PhoneState, formData: FormData): Promise<PhoneState> {
+export async function updateOwnPhone(_prev: SelfEditState, formData: FormData): Promise<SelfEditState> {
   const me = await requireUser();
   const raw = String(formData.get("phone") ?? "").trim();
-  if (raw.length > 40) return { error: "That phone number is too long." };
-  // Permissive on purpose: international formats, extensions and spacing vary, and a rejected
-  // valid number is worse than a loosely formatted one in a directory field.
-  if (raw !== "" && !/^[0-9+()\-.\s]{4,}$/.test(raw)) {
-    return { error: "Use digits, spaces and + ( ) - only." };
+  // Strict format (2026-08-17 round 5): one sequence "+<dial><digits>", digits-only, length
+  // validated per country (Egypt 10). The client dropdown builds this; the server re-checks.
+  if (raw !== "" && !isValidStoredPhone(raw)) {
+    const split = splitStoredPhone(raw);
+    return {
+      error: split
+        ? nationalNumberError(split.country, split.digits) ??
+          "That phone number isn't valid for the chosen country."
+        : "Pick a country code and enter the number in digits only.",
+    };
   }
 
   await prisma.user.update({
@@ -123,6 +139,66 @@ export async function updateOwnPhone(_prev: PhoneState, formData: FormData): Pro
 
   revalidatePath("/profile");
   revalidatePath("/directory");
+  return { ok: true };
+}
+
+/**
+ * The employee's own identity facts — legal names (English/Arabic) and national ID — edited
+ * directly for the same reason as phone: nothing reads them for eligibility or money, and HR
+ * can always correct them on the admin record. Never shown in the Directory.
+ *
+ * One helper, three exported actions: only exports of a "use server" file become endpoints.
+ */
+async function saveOwnText(
+  column: "legalName" | "legalNameAr" | "nationalId",
+  formData: FormData,
+  max: number,
+  tooLong: string
+): Promise<SelfEditState> {
+  const me = await requireUser();
+  const raw = String(formData.get(column) ?? "").trim();
+  if (raw.length > max) return { error: tooLong };
+
+  await prisma.user.update({
+    where: { id: me.id },
+    data: { [column]: raw === "" ? null : raw },
+  });
+
+  revalidatePath("/profile");
+  return { ok: true };
+}
+
+export async function updateOwnLegalName(
+  _prev: SelfEditState,
+  formData: FormData
+): Promise<SelfEditState> {
+  return saveOwnText("legalName", formData, 120, "That name is too long (max 120 characters).");
+}
+
+export async function updateOwnLegalNameAr(
+  _prev: SelfEditState,
+  formData: FormData
+): Promise<SelfEditState> {
+  return saveOwnText("legalNameAr", formData, 120, "That name is too long (max 120 characters).");
+}
+
+export async function updateOwnNationalId(
+  _prev: SelfEditState,
+  formData: FormData
+): Promise<SelfEditState> {
+  const me = await requireUser();
+  const raw = String(formData.get("nationalId") ?? "").trim();
+  // Exactly 14 digits, no spaces (2026-08-17 round 5). Empty clears the field.
+  if (raw !== "" && !isValidNationalId(raw)) {
+    return { error: "The national ID must be exactly 14 digits, with no spaces." };
+  }
+
+  await prisma.user.update({
+    where: { id: me.id },
+    data: { nationalId: raw === "" ? null : raw },
+  });
+
+  revalidatePath("/profile");
   return { ok: true };
 }
 

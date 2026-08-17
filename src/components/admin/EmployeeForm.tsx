@@ -4,12 +4,16 @@ import { useActionState, useState } from "react";
 import type { ActionState } from "@/app/(app)/admin/employees/actions";
 import { statusFromEndDate, formatYearsOfService } from "@/lib/tenure";
 import { tenureBandDisplay, STATUS_LABEL } from "@/lib/labels";
+import { PhoneInput } from "@/components/PhoneInput";
 
 type Dep = { name: string | null; dateOfBirth: string; kind: "CHILD" | "SPOUSE" };
 
 export type EmployeeFormValues = {
   name: string;
   email: string;
+  legalName: string | null;
+  legalNameAr: string | null;
+  nationalId: string | null;
   phone: string | null;
   department: string | null;
   title: string | null;
@@ -123,8 +127,32 @@ export function EmployeeForm({
             ) : null}
           </div>
           <div>
-            <label htmlFor={"emp-phone"} className={L}>Phone</label>
-            <input id={"emp-phone"} name="phone" defaultValue={values.phone ?? ""} className={I} />
+            <label htmlFor={"emp-legalName"} className={L}>Legal name (English)</label>
+            <input id={"emp-legalName"} name="legalName" defaultValue={values.legalName ?? ""} className={I} />
+            <p className="mt-1 text-xs text-muted">
+              As on the passport/ID. The employee can also edit this on their own profile.
+            </p>
+          </div>
+          <div>
+            <label htmlFor={"emp-legalNameAr"} className={L}>Legal name (Arabic)</label>
+            <input id={"emp-legalNameAr"} name="legalNameAr" defaultValue={values.legalNameAr ?? ""} dir="rtl" lang="ar" className={I} />
+            <p className="mt-1 text-xs text-muted">
+              As on the national ID. Also employee-editable.
+            </p>
+          </div>
+          <div>
+            <label htmlFor={"emp-nationalId"} className={L}>National ID</label>
+            <input id={"emp-nationalId"} name="nationalId" defaultValue={values.nationalId ?? ""} inputMode="numeric" maxLength={14} className={I} />
+            <p className="mt-1 text-xs text-muted">
+              Exactly 14 digits, no spaces. Also employee-editable (My Documents card).
+            </p>
+          </div>
+          <div>
+            <span className={L}>Phone</span>
+            <PhoneInput name="phone" value={values.phone ?? ""} ariaLabel="Phone" />
+            <p className="mt-1 text-xs text-muted">
+              Country code + digits only, no spaces (length checked per country).
+            </p>
           </div>
           <div>
             <label htmlFor={"emp-department"} className={L}>Department</label>
@@ -372,8 +400,12 @@ export function EmployeeForm({
             <input id={"emp-emergencyContactRelationship"} name="emergencyContactRelationship" defaultValue={values.emergencyContactRelationship ?? ""} className={I} />
           </div>
           <div className="sm:col-span-2">
-            <label htmlFor={"emp-emergencyContactPhone"} className={L}>Contact phone</label>
-            <input id={"emp-emergencyContactPhone"} name="emergencyContactPhone" defaultValue={values.emergencyContactPhone ?? ""} className={I} />
+            <span className={L}>Contact phone</span>
+            <PhoneInput
+              name="emergencyContactPhone"
+              value={values.emergencyContactPhone ?? ""}
+              ariaLabel="Emergency contact phone"
+            />
           </div>
         </div>
       </section>
