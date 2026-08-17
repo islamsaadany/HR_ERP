@@ -27,11 +27,6 @@ export type QueueRequest = {
   employeeHasLeft: boolean;
   submittedAt: string;
   reason: string | null;
-  /**
-   * Labels of the people covered by the employee's committed medical premium — set only when
-   * this request proposes a dependant change AND a commitment exists (FR-015). Null = no warning.
-   */
-  medicalCovered: string[] | null;
   fields: QueueField[];
 };
 
@@ -76,15 +71,6 @@ function RequestCard({ req }: { req: QueueRequest }) {
 
       {req.reason ? (
         <p className="mt-3 rounded-lg bg-navy-50 px-3 py-2 text-sm text-navy-700">“{req.reason}”</p>
-      ) : null}
-
-      {req.medicalCovered ? (
-        <div className="mt-3 rounded-lg border border-gold-300 bg-gold-50 px-3 py-2 text-sm text-gold-800">
-          <span className="font-semibold">Medical premium committed.</span> This employee has a
-          committed medical premium covering:{" "}
-          <span className="font-semibold">{req.medicalCovered.join(", ")}</span>. A dependant
-          change alters who is insured — the premium is not recalculated automatically.
-        </div>
       ) : null}
 
       <ul className="mt-4 divide-y divide-line">

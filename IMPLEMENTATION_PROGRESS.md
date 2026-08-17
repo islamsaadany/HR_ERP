@@ -837,11 +837,29 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     open request at a time is unchanged. The scoped form sends only its card's fields, which the
     server action already honoured (absent fields are not proposals).
   - **Dependants render as one row each** (name · spouse/child tag · DOB · derived age) instead of
-    a comma-joined line. Display-only — dependant *changes* stay deferred (research R3, they feed
-    medical pricing).
+    a comma-joined line.
   - Verified: `npx tsc --noEmit` + `npm run build` clean; `051` applied to a throwaway Postgres 16
     holding the pre-051 schema, a row inserted and read back through `legalName`, and
     `prisma migrate diff` then reporting **no drift** against the new schema.
+  - **Follow-up, same day (mockup-approved):** after the user tried it live —
+    - Self-edit fields now **rest closed**: a light-gold **Edit** button opens the input and turns
+      into a navy **Save**; saving (or pressing Save unchanged, which skips the server) locks the
+      field again. The "You edit" tag is retired — the button is the tag. Request-form **Cancel is
+      solid red**.
+    - **Dependant changes became requestable**, closing the R3 deferral. The Personal card's form
+      carries a dependants editor (fix a name/DOB, add, remove — new rows highlighted gold); the
+      list travels as ONE `dependants` registry field in canonical JSON text (no schema change),
+      HR decides the set in one click, and approval **replaces** the list exactly as the admin
+      form writes it. `MedicalCoveredPerson` snapshots survive a removal (link nulls). Same rules
+      as the HR form: real non-future DOB, one spouse max.
+    - **US3/FR-015 built**: a dependant request from an employee with a committed medical premium
+      shows HR a gold warning naming the covered people before any decision.
+    - Verified end to end in Chromium: employee saved a legal name through the toggle, proposed a
+      dependant addition (send button counted one change), HR saw the medical warning naming
+      "Omar Hassan (self), Sara Ali (spouse)", approved in one click, and the third dependant row
+      (with the exact requested DOB) appeared on the profile — the SQL showed the `Dependant` rows
+      replaced correctly. A fully-decided request leaves the queue (scenario 6), employee panel
+      shows Approved with decider and date. Zero unexpected console errors.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

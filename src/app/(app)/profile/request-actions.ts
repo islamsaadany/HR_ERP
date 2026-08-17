@@ -31,6 +31,10 @@ export async function submitProfileChangeRequest(
       emergencyContactPhone: true,
       dateOfBirth: true,
       maritalStatus: true,
+      dependants: {
+        select: { name: true, dateOfBirth: true, kind: true },
+        orderBy: { dateOfBirth: "asc" },
+      },
     },
   });
   if (!user) return { error: "Profile not found." };

@@ -61,6 +61,17 @@ export async function pendingRequests() {
           emergencyContactPhone: true,
           dateOfBirth: true,
           maritalStatus: true,
+          dependants: {
+            select: { name: true, dateOfBirth: true, kind: true },
+            orderBy: { dateOfBirth: "asc" },
+          },
+          // For the FR-015 warning: a dependant change alters who the company insures, so HR
+          // must see that a premium is already committed and who it covers. Latest commitment.
+          medicalCommitments: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { coveredPeople: { select: { label: true } } },
+          },
         },
       },
     },
