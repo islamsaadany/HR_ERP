@@ -136,3 +136,11 @@ Finance requests national IDs while HR separately requests emergency contacts. A
 - Requesting fields outside the requestable registry (e.g. employment type, salary — those stay HR-only edits).
 - An approval queue for campaign answers (direct write was the aligned decision; spec 029's change-request flow remains for employee-initiated corrections).
 - Editing a launched campaign's fields or audience.
+
+## Amendments
+
+### 2026-08-17 — Live-testing fixes + outcome CSV + registry columns
+- **Saving is not finishing.** A partial save keeps the popup open, shows "Saved — N fields left", and the close button becomes **Finish**; only Finish (or answering everything) closes it. The save button counts only fields still on screen.
+- **A confirmed field keeps its Edit button** — confirming a legacy value today's rules reject (e.g. an 11-digit national ID) errors, and the employee can now switch straight to editing it.
+- **Campaign outcome CSV**: the tracker carries a Download CSV button (`/api/admin/data-requests/[id]/export`, same access gate) — one row per targeted employee, a value + outcome column pair per field, status incl. "Left the company".
+- **Registry grid columns**: Legal name (EN), Legal name (AR), and National ID are grid columns (hidden by default, in the Columns menu, inline-editable under the same strict validation).

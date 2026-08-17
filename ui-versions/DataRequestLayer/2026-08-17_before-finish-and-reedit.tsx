@@ -36,13 +36,15 @@ export function DataRequestLayer({ groups }: { groups: DataRequestGroup[] }) {
     return () => window.removeEventListener(OPEN_DATA_REQUESTS_EVENT, reopen);
   }, []);
 
+  // A successful save re-renders the server layout; if fields remain (partial save), the
+  // fresh layer replaces this one. Close so the employee is not shown a stale form.
+  useEffect(() => {
+    if (state?.ok) setOpen(false);
+  }, [state]);
+
   if (!open) return null;
 
-  // A successful save re-renders the layout, so `groups` already shrinks to what is still
-  // pending — the popup STAYS open showing the rest (saving is not finishing; the Finish
-  // button is the way out). Count engagement only over fields still on screen, so an
-  // already-saved field never inflates the button label.
-  const engagedCount = descriptors.filter((d) => engaged[d.key]).length;
+  const engagedCount = Object.values(engaged).filter(Boolean).length;
   const toFill = descriptors.filter((d) => d.current === "").length;
   const toVerify = descriptors.length - toFill;
 
@@ -99,18 +101,10 @@ export function DataRequestLayer({ groups }: { groups: DataRequestGroup[] }) {
               onClick={() => setOpen(false)}
               className="rounded-lg border border-line px-4 py-2 text-sm text-muted hover:bg-navy-50"
             >
-              {state?.ok ? "Finish" : "Later"}
+              Later
             </button>
             <span className="text-xs text-muted">You can save some now and the rest later.</span>
           </div>
-          {state?.ok ? (
-            <p className="mt-3 rounded-lg bg-green-50 px-4 py-2 text-sm text-green-700">
-              Saved — your profile is updated.
-              {descriptors.length > 0
-                ? ` ${descriptors.length} field${descriptors.length === 1 ? "" : "s"} left.`
-                : ""}
-            </p>
-          ) : null}
           {state?.error ? (
             <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{state.error}</p>
           ) : null}
@@ -152,20 +146,9 @@ function FieldBlock({
             {displayCurrent(d)}
           </span>
           {confirmed ? (
-            <>
-              <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-[11px] font-bold text-green-700">
-                ✓ Confirmed
-              </span>
-              {/* Always leave a way back — e.g. confirming a legacy value the rules now
-                  reject needs the employee to be able to switch to editing it. */}
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted hover:bg-navy-50"
-              >
-                Edit
-              </button>
-            </>
+            <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-[11px] font-bold text-green-700">
+              ✓ Confirmed
+            </span>
           ) : (
             <>
               <button

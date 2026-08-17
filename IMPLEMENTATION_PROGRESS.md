@@ -915,6 +915,15 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     request (popup and badge gone), the tracker showed Filled/Confirmed with values, the CSV
     carried the campaign-filled ID, and closing removed a still-pending admin's own popup while
     the tracker stayed readable. Zero unexpected console errors.
+  - **Live-testing follow-up, same day:** a partial save now KEEPS the popup open ("Saved — N
+    fields left"; close button becomes **Finish**; only Finish or completing everything closes
+    it), the save-count only counts fields still on screen, and a ✓ Confirmed field keeps an
+    Edit button — confirming a legacy value the rules now reject (11-digit ID) errors and the
+    employee can switch straight to editing. Plus: **campaign outcome CSV** (Download CSV on the
+    tracker — value + outcome pair per field, per person) and the registry grid gained
+    **Legal name (EN) / (AR) / National ID** columns (hidden by default, in the Columns menu,
+    inline-editable under the strict rules). All 17 Chromium checks green, including the exact
+    reported repro (invalid legacy ID confirm → error → Edit → correct → save).
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

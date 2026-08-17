@@ -48,6 +48,12 @@ export default async function DataRequestTrackerPage({
           <span className="rounded-full bg-navy-50 px-3 py-1.5 text-sm font-bold text-navy-700">
             {completed.length} / {active.length} complete
           </span>
+          <a
+            href={`/api/admin/data-requests/${campaign.id}/export`}
+            className="rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+          >
+            Download CSV
+          </a>
           {campaign.closedAt ? (
             <span className="rounded-full border border-line bg-paper px-3 py-1.5 text-sm font-bold text-muted">
               Closed {formatDate(campaign.closedAt)}

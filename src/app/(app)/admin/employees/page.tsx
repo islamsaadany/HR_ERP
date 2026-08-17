@@ -39,6 +39,9 @@ export default async function EmployeesPage() {
         title: true,
         department: true,
         phone: true,
+        legalName: true,
+        legalNameAr: true,
+        nationalId: true,
         employmentType: true,
         tenureBand: true,
         startDate: true,
@@ -85,6 +88,9 @@ export default async function EmployeesPage() {
     title: e.title ?? "",
     department: e.department ?? "",
     phone: e.phone ?? "",
+    legalName: e.legalName ?? "",
+    legalNameAr: e.legalNameAr ?? "",
+    nationalId: e.nationalId ?? "",
     employmentType: e.employmentType ?? "",
     // Tenure band and status are derived (never hand-entered) so the grid is
     // always current: band from the hire date, status from the end date.
