@@ -10,7 +10,6 @@ import type { SelfEditState } from "@/app/(app)/profile/request-actions";
  * The field rests as a plain value with a light-gold Edit button; pressing it opens the input
  * and the button becomes a navy Save (mockup-approved 2026-08-17). Saving — or pressing Save
  * with nothing changed — locks it back to Edit, so the card reads as data, not as a form.
- * A red Cancel (or the Escape key) discards whatever was typed and restores the saved value.
  */
 export function SelfEditField({
   label,
@@ -48,12 +47,6 @@ export function SelfEditField({
     if (state?.ok) setEditing(false);
   }, [state]);
 
-  // Cancel = throw away what was typed and show the saved value again.
-  const cancel = () => {
-    setCurrent(initial);
-    setEditing(false);
-  };
-
   return (
     <div className="border-b border-line py-3 last:border-b-0">
       <div className="text-xs uppercase tracking-wide text-muted">{label}</div>
@@ -69,12 +62,6 @@ export function SelfEditField({
             autoFocus
             dir={dir}
             lang={lang}
-            onKeyDown={(e) => {
-              if (e.key === "Escape" && !pending) {
-                e.preventDefault();
-                cancel();
-              }
-            }}
             className="w-full max-w-[260px] rounded-lg border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:border-navy-500 focus:outline-none"
           />
           {changed ? (
@@ -95,14 +82,6 @@ export function SelfEditField({
               Save
             </button>
           )}
-          <button
-            type="button"
-            onClick={cancel}
-            disabled={pending}
-            className="rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-40"
-          >
-            Cancel
-          </button>
         </form>
       ) : (
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2">

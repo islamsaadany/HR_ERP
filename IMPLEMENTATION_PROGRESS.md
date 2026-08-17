@@ -872,6 +872,11 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
       drift; Chromium pass saved the Arabic name through the toggle (input confirmed RTL), saved
       a national ID above the upload section, and both survived reload. Zero unexpected console
       errors.
+  - **Fourth round, same day: cancel while editing.** Every self-edit field's open editor now
+    carries a red **Cancel** beside Save, and **Escape** does the same — either discards the
+    typed text and restores the saved value (re-opening starts from the saved value). Verified in
+    Chromium: cancel via button, cancel via Escape, re-open holds the saved value, and a normal
+    save still persists after cancel round-trips. Zero unexpected console errors.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
