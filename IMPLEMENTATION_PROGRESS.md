@@ -938,6 +938,13 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     + tracker, confirmed) — tracker history goes, profile writes stay. Verified against a
     PRODUCTION build this time: 20 scenario checks including both reported repros and a forced
     externally-settled field. Zero unexpected console errors.
+  - **Fourth live-testing round, same day: the dead badge.** Layouts do not re-render on
+    client-side navigation, so a campaign launched mid-session never reached the popup (badge
+    server-rendered, click dead). The layer now polls its own API (mount + tab focus + 30s),
+    merges new asks (auto-open), and broadcasts the live count to the badge, which also clears
+    live on completion. Answered rows carry an Edit button for mistaken confirmations (latest
+    answer wins; tracker shows Corrected; Cancel restores the chip). 14/14 production checks
+    including the exact reported scenario.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

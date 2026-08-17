@@ -35,71 +35,31 @@ const sittingAnswers = new Map<string, { value: string; confirmed: boolean }>();
  * sidebar count follows the server truth.
  */
 export function DataRequestLayer({ groups }: { groups: DataRequestGroup[] }) {
-  // What this sitting shows. Starts empty and is fed by the merge effect below — never
-  // directly by the shrinking server prop, so answered rows don't vanish mid-sitting.
-  const [frozen, setFrozen] = useState<DataRequestGroup[]>([]);
-  const [open, setOpen] = useState(false);
+  // Freeze what this sitting shows; later server re-renders shrink `groups` but not this.
+  const [frozen, setFrozen] = useState(groups);
+  const [open, setOpen] = useState(groups.length > 0);
 
-  // THE MERGE — new asks join the sitting, re-earn attention (auto-open), and answered rows
-  // stay because keys are never removed here. Fed from two sources: the layout prop (first
-  // paint) and the POLL below — the dead-badge bug (live, 2026-08-17) proved a campaign
-  // launched mid-session never arrives through layout props at all (layouts do not re-render
-  // on client-side navigation), so the layer must fetch its own truth.
-  const mergeIncoming = (incoming: DataRequestGroup[]) => {
-    if (!sittingGroups) sittingGroups = [];
-    const known = new Set(sittingGroups.flatMap((g) => g.descriptors.map((d) => d.key)));
-    let added = false;
-    for (const g of incoming) {
-      const fresh = g.descriptors.filter((d) => !known.has(d.key));
-      if (fresh.length === 0) continue;
-      fresh.forEach((d) => known.add(d.key));
-      const existing = sittingGroups.find((x) => x.campaignId === g.campaignId);
-      if (existing) existing.descriptors = [...existing.descriptors, ...fresh];
-      else sittingGroups.push({ ...g, descriptors: fresh });
-      added = true;
-    }
-    if (added) sittingClosed = false;
-    if (sittingGroups.length > 0) {
-      setFrozen(sittingGroups.map((g) => ({ ...g, descriptors: [...g.descriptors] })));
-      if (!sittingClosed) setOpen(true);
-    }
-  };
-
+  // Restore/seed the sitting store (client-only). A remount mid-sitting gets the FULL field
+  // list back — including rows the server already counts as answered — and reopens unless
+  // the person had closed the popup themselves.
   useEffect(() => {
-    mergeIncoming(groups);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups]);
-
-  // THE POLL — on mount, on returning to the tab, and every 30s: fetch the live summary,
-  // merge any new asks, and keep the sidebar badge count honest via a broadcast the shell
-  // listens for. This is what makes a campaign launched mid-session reach the employee.
-  useEffect(() => {
-    let alive = true;
-    const pull = async () => {
-      try {
-        const res = await fetch("/api/profile/data-requests", { cache: "no-store" });
-        if (!res.ok || !alive) return;
-        const summary = (await res.json()) as { pendingCount?: number; groups?: DataRequestGroup[] };
-        if (!alive) return;
-        window.dispatchEvent(
-          new CustomEvent("hrerp:data-request-count", { detail: summary.pendingCount ?? 0 })
-        );
-        if (summary.groups && summary.groups.length > 0) mergeIncoming(summary.groups);
-      } catch {
-        // Offline / transient — the next tick tries again.
+    if (sittingGroups && sittingGroups.length > 0) {
+      // Merge any brand-new asks (a campaign launched mid-session) into the stored sitting.
+      const known = new Set(sittingGroups.flatMap((g) => g.descriptors.map((d) => d.key)));
+      const additions = groups
+        .map((g) => ({ ...g, descriptors: g.descriptors.filter((d) => !known.has(d.key)) }))
+        .filter((g) => g.descriptors.length > 0);
+      if (additions.length > 0) {
+        sittingGroups = [...sittingGroups, ...additions];
+        sittingClosed = false; // new asks re-earn attention
       }
-    };
-    pull();
-    const interval = setInterval(pull, 30_000);
-    const onFocus = () => pull();
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
-    return () => {
-      alive = false;
-      clearInterval(interval);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
-    };
+    } else {
+      sittingGroups = groups;
+    }
+    if (sittingGroups.length > 0) {
+      setFrozen(sittingGroups);
+      setOpen(!sittingClosed);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -189,8 +149,6 @@ function FieldForm({ d }: { d: CampaignFieldDescriptor }) {
   // What this sitting saved, remembered locally AND in the module-scope sitting store, so a
   // component remount after the save/refresh can never reset an answered row to actionable.
   const [saved, setSaved] = useState<null | { value: string; confirmed: boolean }>(null);
-  // Set while re-editing an already-answered row — Cancel restores this answer.
-  const [prevAnswer, setPrevAnswer] = useState<null | { value: string; confirmed: boolean }>(null);
 
   useEffect(() => {
     const remembered = sittingAnswers.get(d.key);
@@ -203,7 +161,6 @@ function FieldForm({ d }: { d: CampaignFieldDescriptor }) {
       const answer = { value, confirmed: isPrefilled && value === d.current };
       sittingAnswers.set(d.key, answer);
       setSaved(answer);
-      setPrevAnswer(null);
       setEditing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -220,19 +177,6 @@ function FieldForm({ d }: { d: CampaignFieldDescriptor }) {
           <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-[11px] font-bold text-green-700">
             {saved.confirmed ? "✓ Confirmed" : "✓ Saved"}
           </span>
-          {/* Confirmed by mistake? Re-open and re-save — the server takes the latest answer. */}
-          <button
-            type="button"
-            onClick={() => {
-              setPrevAnswer(saved);
-              sittingAnswers.delete(d.key);
-              setSaved(null);
-              setEditing(true);
-            }}
-            className="rounded-lg border border-line px-3 py-1.5 text-xs font-semibold text-muted hover:bg-navy-50"
-          >
-            Edit
-          </button>
         </div>
       </div>
     );
@@ -279,19 +223,11 @@ function FieldForm({ d }: { d: CampaignFieldDescriptor }) {
           >
             {pending ? "Saving…" : "Save"}
           </button>
-          {isPrefilled || prevAnswer ? (
+          {isPrefilled ? (
             <button
               type="button"
               onClick={() => {
-                if (prevAnswer) {
-                  // Re-edit abandoned: restore the answered chip exactly as it was.
-                  sittingAnswers.set(d.key, prevAnswer);
-                  setValue(prevAnswer.value);
-                  setSaved(prevAnswer);
-                  setPrevAnswer(null);
-                } else {
-                  setValue(d.current);
-                }
+                setValue(d.current);
                 setEditing(false);
               }}
               className="rounded-lg bg-red-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-red-700"
