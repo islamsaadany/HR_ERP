@@ -3,6 +3,7 @@ import { requireDataRequestManager } from "@/lib/roles";
 import { listCampaigns } from "@/lib/profile/campaigns";
 import { campaignFieldLabel } from "@/lib/profile/campaign-fields";
 import { formatDate } from "@/lib/labels";
+import { DeleteCampaignButton } from "@/components/admin/DeleteCampaignButton";
 
 export const dynamic = "force-dynamic";
 
@@ -35,37 +36,37 @@ export default async function DataRequestsPage() {
           </p>
         ) : (
           campaigns.map((c) => (
-            <Link
+            <div
               key={c.id}
-              href={`/admin/data-requests/${c.id}`}
-              className="rounded-xl border border-line bg-surface p-5 transition hover:border-navy-200"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface p-5 transition hover:border-navy-200"
             >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-serif text-lg text-ink">{c.title}</span>
-                    {c.closedAt ? (
-                      <span className="rounded-full border border-line bg-paper px-2.5 py-0.5 text-[11px] font-bold text-muted">
-                        Closed
-                      </span>
-                    ) : (
-                      <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-[11px] font-bold text-green-700">
-                        Open
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-1 text-sm text-muted">
-                    {c.fields.map(campaignFieldLabel).join(" · ")}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted">
-                    {c.audience} · launched {formatDate(c.createdAt)} by {c.createdBy}
-                  </p>
+              <Link href={`/admin/data-requests/${c.id}`} className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-serif text-lg text-ink">{c.title}</span>
+                  {c.closedAt ? (
+                    <span className="rounded-full border border-line bg-paper px-2.5 py-0.5 text-[11px] font-bold text-muted">
+                      Closed
+                    </span>
+                  ) : (
+                    <span className="rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-[11px] font-bold text-green-700">
+                      Open
+                    </span>
+                  )}
                 </div>
+                <p className="mt-1 text-sm text-muted">
+                  {c.fields.map(campaignFieldLabel).join(" · ")}
+                </p>
+                <p className="mt-0.5 text-xs text-muted">
+                  {c.audience} · launched {formatDate(c.createdAt)} by {c.createdBy}
+                </p>
+              </Link>
+              <div className="flex items-center gap-2">
                 <span className="rounded-full bg-navy-50 px-3 py-1.5 text-sm font-bold text-navy-700">
                   {c.completed} / {c.targeted} complete
                 </span>
+                <DeleteCampaignButton id={c.id} title={c.title} />
               </div>
-            </Link>
+            </div>
           ))
         )}
       </div>

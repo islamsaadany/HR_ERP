@@ -42,19 +42,23 @@ export async function answerDataRequests(
     prisma.user.findUnique({ where: { id: me.id }, select: CAMPAIGN_USER_SELECT }),
     prisma.dataRequestTarget.findMany({
       where: { userId: me.id, campaign: { closedAt: null } },
-      include: { fields: { where: { status: "PENDING" } } },
+      // ALL requested fields, not just pending: answering must be IDEMPOTENT. A row the
+      // client shows as unanswered can already be settled (a refresh landed mid-save), and
+      // re-confirming or re-editing it must succeed — latest answer wins — never dead-end
+      // in "nothing pending" (live-testing bug, 2026-08-17).
+      include: { fields: true },
     }),
   ]);
   if (!user) return { error: "Profile not found." };
 
   // FR-011: an employee can only ever answer fields that were actually requested FROM THEM.
-  const pendingKeys = new Set(targets.flatMap((t) => t.fields.map((f) => f.field)));
-  if (pendingKeys.size === 0) return { error: "There is nothing pending to answer." };
+  const requestedKeys = new Set(targets.flatMap((t) => t.fields.map((f) => f.field)));
+  if (requestedKeys.size === 0) return { error: "There is nothing to answer here anymore." };
 
   const userWrites: Prisma.UserUpdateInput = {};
   const settlements: { field: string; status: DataRequestFieldStatus; value: string }[] = [];
 
-  for (const key of pendingKeys) {
+  for (const key of requestedKeys) {
     const raw = formData.get(key);
     if (raw === null) continue; // untouched — stays pending
     const field = campaignField(key);
@@ -101,9 +105,9 @@ export async function answerDataRequests(
     prisma.user.update({ where: { id: me.id }, data: userWrites }),
     ...settlements.map((s) =>
       prisma.dataRequestFieldState.updateMany({
+        // No status filter: a re-answer updates the earlier settlement (latest wins).
         where: {
           field: s.field,
-          status: "PENDING",
           target: { userId: me.id, campaign: { closedAt: null } },
         },
         data: { status: s.status, value: s.value, answeredAt },

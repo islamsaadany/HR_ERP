@@ -11,6 +11,17 @@ import { DependantsListEditor } from "@/components/profile/DependantsListEditor"
 export const OPEN_DATA_REQUESTS_EVENT = "hrerp:open-data-requests";
 
 /**
+ * The SITTING store — module scope, so it survives any component remount the framework
+ * performs after a save/refresh, and resets only on a full page load. Touched exclusively
+ * from effects/handlers (client-side), never during render, so SSR can't leak it between
+ * users. This is what guarantees the live-testing bugs stay dead: rows never vanish and
+ * answered chips never reset while the person is mid-sitting.
+ */
+let sittingGroups: DataRequestGroup[] | null = null;
+let sittingClosed = false;
+const sittingAnswers = new Map<string, { value: string; confirmed: boolean }>();
+
+/**
  * The data-request popup (spec 033, reworked after live testing 2026-08-17):
  *
  * EVERY ACTION IS PER FIELD. Each field is its own little form — ✓ Confirm saves it on the
@@ -25,14 +36,46 @@ export const OPEN_DATA_REQUESTS_EVENT = "hrerp:open-data-requests";
  */
 export function DataRequestLayer({ groups }: { groups: DataRequestGroup[] }) {
   // Freeze what this sitting shows; later server re-renders shrink `groups` but not this.
-  const [frozen] = useState(groups);
-  const [open, setOpen] = useState(frozen.length > 0);
+  const [frozen, setFrozen] = useState(groups);
+  const [open, setOpen] = useState(groups.length > 0);
+
+  // Restore/seed the sitting store (client-only). A remount mid-sitting gets the FULL field
+  // list back — including rows the server already counts as answered — and reopens unless
+  // the person had closed the popup themselves.
+  useEffect(() => {
+    if (sittingGroups && sittingGroups.length > 0) {
+      // Merge any brand-new asks (a campaign launched mid-session) into the stored sitting.
+      const known = new Set(sittingGroups.flatMap((g) => g.descriptors.map((d) => d.key)));
+      const additions = groups
+        .map((g) => ({ ...g, descriptors: g.descriptors.filter((d) => !known.has(d.key)) }))
+        .filter((g) => g.descriptors.length > 0);
+      if (additions.length > 0) {
+        sittingGroups = [...sittingGroups, ...additions];
+        sittingClosed = false; // new asks re-earn attention
+      }
+    } else {
+      sittingGroups = groups;
+    }
+    if (sittingGroups.length > 0) {
+      setFrozen(sittingGroups);
+      setOpen(!sittingClosed);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
-    const reopen = () => setOpen(true);
+    const reopen = () => {
+      sittingClosed = false;
+      setOpen(true);
+    };
     window.addEventListener(OPEN_DATA_REQUESTS_EVENT, reopen);
     return () => window.removeEventListener(OPEN_DATA_REQUESTS_EVENT, reopen);
   }, []);
+
+  const close = () => {
+    sittingClosed = true;
+    setOpen(false);
+  };
 
   if (frozen.length === 0 || !open) return null;
 
@@ -67,14 +110,14 @@ export function DataRequestLayer({ groups }: { groups: DataRequestGroup[] }) {
         <div className="mt-6 flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={close}
             className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700"
           >
             Finish
           </button>
           <button
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={close}
             className="rounded-lg border border-line px-4 py-2 text-sm text-muted hover:bg-navy-50"
           >
             Later
@@ -103,12 +146,21 @@ function FieldForm({ d }: { d: CampaignFieldDescriptor }) {
   const isPrefilled = d.current !== "";
   const [value, setValue] = useState(d.current);
   const [editing, setEditing] = useState(!isPrefilled);
-  // What this sitting saved, remembered locally so the row keeps showing the outcome.
+  // What this sitting saved, remembered locally AND in the module-scope sitting store, so a
+  // component remount after the save/refresh can never reset an answered row to actionable.
   const [saved, setSaved] = useState<null | { value: string; confirmed: boolean }>(null);
 
   useEffect(() => {
+    const remembered = sittingAnswers.get(d.key);
+    if (remembered) setSaved(remembered);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (state?.ok) {
-      setSaved({ value, confirmed: isPrefilled && value === d.current });
+      const answer = { value, confirmed: isPrefilled && value === d.current };
+      sittingAnswers.set(d.key, answer);
+      setSaved(answer);
       setEditing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

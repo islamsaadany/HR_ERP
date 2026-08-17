@@ -4,6 +4,7 @@ import { campaignTracker } from "@/lib/profile/campaigns";
 import { campaignField, campaignFieldLabel } from "@/lib/profile/campaign-fields";
 import { formatDate } from "@/lib/labels";
 import { closeCampaign } from "../actions";
+import { DeleteCampaignButton } from "@/components/admin/DeleteCampaignButton";
 import { BackLink } from "@/components/admin/BackLink";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +55,7 @@ export default async function DataRequestTrackerPage({
           >
             Download CSV
           </a>
+          <DeleteCampaignButton id={campaign.id} title={campaign.title} />
           {campaign.closedAt ? (
             <span className="rounded-full border border-line bg-paper px-3 py-1.5 text-sm font-bold text-muted">
               Closed {formatDate(campaign.closedAt)}

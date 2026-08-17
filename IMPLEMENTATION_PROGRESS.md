@@ -930,6 +930,14 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     their value with a ✓ Saved/✓ Confirmed chip (the layer stays mounted through the final
     save); the bottom buttons only close (Finish + Later). Chromium-verified end to end,
     including Enter-to-save isolation and the invalid-legacy-ID repro.
+  - **Third live-testing round, same day: idempotent answers + sitting store + delete.** Root
+    cause of the reported dead-ends: a refresh could land mid-save and settle a field while the
+    UI still showed it actionable — every later action on it then errored. The server now
+    accepts an answer for ANY requested field (latest wins), and a per-tab sitting store keeps
+    the popup's rows and chips immune to remounts. HR/Finance can also DELETE a campaign (list
+    + tracker, confirmed) — tracker history goes, profile writes stay. Verified against a
+    PRODUCTION build this time: 20 scenario checks including both reported repros and a forced
+    externally-settled field. Zero unexpected console errors.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.

@@ -82,3 +82,19 @@ export async function closeCampaign(formData: FormData): Promise<void> {
   revalidatePath("/admin/data-requests");
   revalidatePath(`/admin/data-requests/${id}`);
 }
+
+/**
+ * Delete a campaign entirely (2026-08-17 follow-up): removes it from the Data Requests tab,
+ * its popups/badges, and its tracker history (targets + field states cascade). Values already
+ * written to employee records STAY — they were direct profile writes, not campaign data.
+ */
+export async function deleteCampaign(formData: FormData): Promise<void> {
+  await requireDataRequestManager();
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return;
+  await prisma.dataRequestCampaign.delete({ where: { id } }).catch(() => {
+    // Already gone (double click / two admins) — deleting is idempotent.
+  });
+  revalidatePath("/admin/data-requests");
+  redirect("/admin/data-requests");
+}
