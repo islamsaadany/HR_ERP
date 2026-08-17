@@ -31,8 +31,8 @@ export async function GET(
   const header = [
     "Name",
     "Email",
-    "Status",
     ...campaign.fields.map((key) => campaignFieldLabel(key)),
+    "Status",
   ];
 
   const lines = [header.map(csvCell).join(",")];
@@ -42,12 +42,12 @@ export async function GET(
     const row = [
       t.user.name,
       t.user.email,
-      left ? "Left the company" : done ? "Complete" : "Pending",
       ...campaign.fields.map((key) => {
         const f = t.fields.find((x) => x.field === key);
         if (!f || f.value == null || f.status === "PENDING") return "";
         return campaignField(key)?.display(f.value) ?? f.value;
       }),
+      left ? "Left the company" : done ? "Complete" : "Pending",
     ];
     lines.push(row.map(csvCell).join(","));
   }
