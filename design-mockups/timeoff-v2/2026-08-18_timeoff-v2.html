@@ -1,0 +1,174 @@
+<title>Time-Off v2</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:70ch}
+  .proposal{margin-top:38px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 14px 36px;max-width:70ch}
+  .badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:999px;background:var(--navy-50);color:var(--navy-700)}
+  .btn-navy{display:inline-flex;align-items:center;border:0;background:var(--navy-800);color:#fff;font-size:13px;font-weight:600;padding:8px 15px;border-radius:9px;cursor:pointer}
+  .btn-ghost{display:inline-flex;align-items:center;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);font-size:13px;font-weight:600;padding:8px 15px;border-radius:9px;cursor:pointer}
+  .btn-red{display:inline-flex;align-items:center;border:1px solid #f3c6c6;background:var(--surface);color:#b91c1c;font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;cursor:pointer}
+  .inp{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 11px;font-size:13.5px;color:var(--ink)}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .tile .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .tile .v{font-size:22px;font-weight:700;color:var(--navy-800);margin-top:2px;font-variant-numeric:tabular-nums}
+  .tile .s{font-size:11px;color:var(--muted)}
+  table{border-collapse:collapse;width:100%;font-size:13px;background:var(--surface)}
+  th{background:var(--navy-800);color:#fff;text-align:left;padding:9px 10px;font-weight:600;white-space:nowrap}
+  th.n,td.n{text-align:right;font-variant-numeric:tabular-nums}
+  td{border-bottom:1px solid var(--line);padding:9px 10px;vertical-align:middle}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid #bbe3c5;background:#eef9f0;color:#1c7c37}
+  .c-pend{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-bad{border:1px solid #f3c6c6;background:#fdf0f0;color:#b91c1c}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h3{font-family:Georgia,serif;font-size:17px;margin:0 0 10px}
+  .warn{border-left:3px solid var(--gold-500);background:var(--gold-100);color:var(--gold-800);font-size:12.5px;padding:8px 12px;border-radius:0 8px 8px 0;margin-top:10px}
+  .decision{margin-top:30px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;max-width:760px}
+  .decision ul{margin:6px 0 0;padding-left:18px}
+  footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12px}
+  .navdemo{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 14px;font-size:13.5px;font-weight:600;color:var(--navy-700)}
+  .navbadge{display:inline-grid;place-items:center;min-width:19px;height:19px;border-radius:999px;background:var(--gold-500);color:var(--navy-900);font-size:11px;font-weight:800;padding:0 5px}
+  .navbadge.red{background:#dc2626;color:#fff}
+  .reqrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .kv{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:5px 0;border-bottom:1px dashed var(--line)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 035 · design review</p>
+  <h1>Time-Off v2 — working days &amp; the complete cycle</h1>
+  <p class="lede">Counts become <b>working days</b> (Fridays, Saturdays and listed public holidays never count). No limits — a visible per-year count for the employee, the manager, and HR. Plus: the manager gets a live nav badge, you're warned when you double-book yourself, approved future trips can be cancelled, and requests always follow your <i>current</i> manager. All figures below are illustrative.</p>
+
+  <!-- 1: employee page -->
+  <section class="proposal">
+    <h2><span class="num">1</span> The employee's Time-Off page</h2>
+    <p class="sub">A year-count card on top — informational, never a limit. The form previews the working-day cost live as dates are picked, and warns (doesn't block) on self-overlap. Approved future trips get a Cancel.</p>
+
+    <div style="display:grid;grid-template-columns:220px 1fr;gap:12px;align-items:start">
+      <div class="tile">
+        <div class="k">Taken in 2026</div>
+        <div class="v">12 <span style="font-size:13px;font-weight:600;color:var(--muted)">working days</span></div>
+        <div class="s">approved requests only · Fri/Sat &amp; public holidays don't count</div>
+      </div>
+      <div class="card">
+        <h3>Request time off</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:end">
+          <label style="font-size:11px;color:var(--muted)">START DATE<br><input class="inp" type="text" value="21/09/2026" readonly></label>
+          <label style="font-size:11px;color:var(--muted)">END DATE<br><input class="inp" type="text" value="30/09/2026" readonly></label>
+          <span class="badge" style="background:var(--gold-100);color:var(--gold-800);padding:6px 12px;font-size:11px">7 working days <span style="font-weight:400;text-transform:none;letter-spacing:0">— 10 calendar days minus 2 weekends minus Armed Forces Day (23/09)</span></span>
+          <button class="btn-navy" type="button">Submit request</button>
+        </div>
+        <div class="warn">⚠ Overlaps your approved request 28/09/2026 → 02/10/2026 — you can still submit, your manager will see both.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3>My requests</h3>
+      <div class="reqrow"><span>21/09/2026 → 30/09/2026 · <b>7 working days</b></span><span><span class="chip c-pend">Pending</span> <button class="btn-red" type="button">Cancel</button></span></div>
+      <div class="reqrow"><span>28/09/2026 → 02/10/2026 · <b>4 working days</b> <span style="color:var(--muted)">· Manager: “Enjoy!”</span></span><span><span class="chip c-ok">Approved</span> <button class="btn-red" type="button">Cancel trip</button></span></div>
+      <div class="reqrow" style="border-bottom:0"><span style="color:var(--muted)">02/03/2026 → 05/03/2026 · 4 working days · already taken</span><span><span class="chip c-ok">Approved</span></span></div>
+      <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0">An approved trip can be cancelled any time <b>before its start date</b> — the days come off your count and your manager sees the cancellation. Started or past trips are history (HR can correct records).</p>
+    </div>
+  </section>
+
+  <!-- 2: manager -->
+  <section class="proposal">
+    <h2><span class="num">2</span> The manager's side — a live badge, and context to decide</h2>
+    <p class="sub">The Time-Off nav item badges the manager the moment a report submits (same live mechanism as the requester's decision badge — no reload needed). Each approval card shows the requester's year count, so the decision has context.</p>
+
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:start">
+      <div>
+        <div class="navdemo">🌴 Time-Off <span class="navbadge">2</span></div>
+        <p style="font-size:11.5px;color:var(--muted);max-width:200px;margin:6px 0 0">Gold = requests waiting for <i>you</i> as manager; the red decision badge you already know stacks with it.</p>
+      </div>
+      <div class="card" style="flex:1;min-width:340px">
+        <h3>Requests to approve</h3>
+        <div style="border:1px solid var(--line);border-radius:10px;padding:12px">
+          <div style="display:flex;justify-content:space-between;gap:10px">
+            <b>Sara Ibrahim</b>
+            <span style="font-size:12.5px;color:var(--muted)"><b>5 working days</b> · 21/09 → 27/09/2026</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            <span class="badge">8 days taken in 2026</span>
+            <span class="chip c-pend">⚠ Overlaps with Karim Adel</span>
+          </div>
+          <p style="font-size:13px;margin:8px 0 0">“Family trip”</p>
+          <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
+            <input class="inp" placeholder="Comment (optional)" style="flex:1;min-width:150px">
+            <button class="btn-navy" type="button">Approve</button>
+            <button class="btn-ghost" type="button">Decline</button>
+          </div>
+        </div>
+        <p style="font-size:11.5px;color:var(--muted);margin:10px 0 0">If a reporting line changes, pending requests move to the <b>new</b> current manager automatically; a manager who left never keeps a queue (Super-User fallback, as today). When an employee leaves, their pending requests close on their own.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3: HR view -->
+  <section class="proposal">
+    <h2><span class="num">3</span> HR's company view — working days + a per-person year count</h2>
+    <p class="sub">The existing Admin → Time-Off table, with Days recounted as working days and a new “Taken 2026” column. A Public holidays button opens the new config (4).</p>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn-ghost" type="button">Public holidays…</button></div>
+    <div class="card" style="padding:0;overflow-x:auto">
+      <table>
+        <tr><th>Employee</th><th>Dates</th><th class="n">Working days</th><th class="n">Taken 2026</th><th>Approver</th><th>Status</th></tr>
+        <tr><td><b>Sara Ibrahim</b></td><td>21/09/2026 → 27/09/2026</td><td class="n">5</td><td class="n">8</td><td>Omar Hassan</td><td><span class="chip c-pend">Pending</span></td></tr>
+        <tr><td><b>Karim Adel</b></td><td>23/09/2026 → 24/09/2026 <span style="color:var(--gold-800);font-size:11px">⚠ overlaps Sara Ibrahim</span></td><td class="n">1</td><td class="n">14</td><td>Omar Hassan</td><td><span class="chip c-ok">Approved</span></td></tr>
+        <tr><td><b>Laila Mostafa</b></td><td>28/09/2026 → 02/10/2026 <span style="color:var(--muted);font-size:11px">· cancelled by Laila 20/09</span></td><td class="n">4</td><td class="n">3</td><td>Heba Radi</td><td><span class="chip c-off">Cancelled</span></td></tr>
+      </table>
+    </div>
+    <p style="font-size:11.5px;color:var(--muted);margin:8px 0 0;max-width:70ch">“Taken 2026” is that person's approved working days this calendar year — the same number the employee and the manager see. A request spanning New Year counts each year's days in its own year.</p>
+  </section>
+
+  <!-- 4: holidays config -->
+  <section class="proposal">
+    <h2><span class="num">4</span> Public holidays — a simple HR-managed list</h2>
+    <p class="sub">Admin → Time-Off → Public holidays. Date + name, add and remove. Listed days never count as working days, everywhere.</p>
+    <div class="grid2" style="max-width:760px">
+      <div class="card">
+        <h3>2026 holidays</h3>
+        <div class="kv"><span>25/04/2026 · Sinai Liberation Day</span><button class="btn-red" type="button">Remove</button></div>
+        <div class="kv"><span>01/05/2026 · Labour Day</span><button class="btn-red" type="button">Remove</button></div>
+        <div class="kv"><span>23/09/2026 · Armed Forces Day (observed)</span><button class="btn-red" type="button">Remove</button></div>
+        <div class="kv" style="border-bottom:0"><span>06/10/2026 · Armed Forces Day</span><button class="btn-red" type="button">Remove</button></div>
+      </div>
+      <div class="card">
+        <h3>Add a holiday</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <label style="font-size:11px;color:var(--muted)">DATE<br><input class="inp" type="text" value="dd/mm/yyyy" readonly style="width:100%"></label>
+          <label style="font-size:11px;color:var(--muted)">NAME<br><input class="inp" type="text" placeholder="e.g. Eid al-Fitr — day 1" style="width:100%"></label>
+          <button class="btn-navy" type="button" style="align-self:start">Add holiday</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--muted);margin:10px 0 0">Counts are always live: adding a holiday inside an already-approved trip lowers its displayed working-day count. Nothing is deducted from a limit, so nothing needs freezing.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="decision">
+    <b>Decisions carried in from alignment — veto anything here:</b>
+    <ul>
+      <li><b>No annual limit</b> — the count informs, never blocks. Counted <b>per calendar year</b>, approved requests only.</li>
+      <li>Weekend = <b>Friday + Saturday</b>; an <b>HR-managed public-holidays list</b> is also excluded. <b>No leave types.</b></li>
+      <li>Count visible to the employee, the manager on each approval card, and HR (new column).</li>
+      <li>Audit fixes: self-overlap <b>warning</b> (not a block), live <b>manager badge</b>, requests follow the <b>current</b> manager, leavers' pending requests auto-close, employees can <b>cancel an approved future trip</b>.</li>
+      <li>In-app only — no emails (standing rule). No half-days, no team calendar, no types in this round.</li>
+    </ul>
+  </div>
+
+  <footer>HR_ERP · spec 035 time-off v2 · mockup for sign-off · 18 August 2026 · controls are inert; dates &amp; figures illustrative.</footer>
+</div>
