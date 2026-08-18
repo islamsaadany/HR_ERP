@@ -10,7 +10,13 @@ function csvCell(v: string | number | null | undefined): string {
   const s = v == null ? "" : String(v);
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
-const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
+// Platform date standard dd/mm/yyyy (2026-08-17). The importer reads numeric dates
+// DAY-FIRST, so these round-trip to the same values.
+const iso = (d: Date | null) => {
+  if (!d) return "";
+  const t = d.toISOString().slice(0, 10);
+  return `${t.slice(8, 10)}/${t.slice(5, 7)}/${t.slice(0, 4)}`;
+};
 
 /**
  * Export the current employees as a CSV in the exact format the importer reads —

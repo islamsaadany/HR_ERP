@@ -313,6 +313,11 @@ function FieldForm({ d }: { d: CampaignFieldDescriptor }) {
 }
 
 function displayValue(d: CampaignFieldDescriptor, raw: string): string {
+  if (d.input === "date") {
+    // Platform standard dd/mm/yyyy — never show the stored ISO form (feedback 2026-08-17).
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw.trim());
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : raw;
+  }
   if (d.input === "select") {
     return d.options?.find((o) => o.value === raw)?.label ?? raw;
   }

@@ -128,7 +128,7 @@ export const REQUESTABLE_FIELDS: RequestableField[] = [
     display: (raw) => {
       const d = parseIsoDate(raw);
       return d
-        ? d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
+        ? d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" })
         : "—";
     },
     parse: (raw) => {
@@ -277,7 +277,7 @@ export function parseDependantsList(
 function displayIsoDate(iso: string): string {
   const d = parseIsoDate(iso);
   return d
-    ? d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })
+    ? d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" })
     : "—";
 }
 

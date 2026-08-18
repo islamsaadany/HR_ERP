@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatDate } from "@/lib/labels";
 import { requireIncentiveAccess, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { createCycle, deleteCycle } from "./actions";
@@ -69,7 +70,7 @@ export default async function IncentiveHome({
               <Link href={`/incentive/${c.id}`} className="min-w-0">
                 <div className="font-medium text-ink">{c.label}</div>
                 <div className="text-xs text-muted">
-                  {c.status === "final" ? "Final" : "Draft"} · created {c.createdAt.toISOString().slice(0, 10)}
+                  {c.status === "final" ? "Final" : "Draft"} · created {formatDate(c.createdAt)}
                 </div>
               </Link>
               <form action={deleteCycle}>

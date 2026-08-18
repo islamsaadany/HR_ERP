@@ -116,11 +116,12 @@ export function formatEGP2(n: unknown): string {
   return "EGP " + v.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/** The platform date standard: dd/mm/yyyy, everywhere a date is DISPLAYED (2026-08-17). */
 export function formatDate(d: Date | null | undefined): string {
   if (!d) return "—";
   return d.toLocaleDateString("en-GB", {
     day: "2-digit",
-    month: "short",
+    month: "2-digit",
     year: "numeric",
   });
 }
