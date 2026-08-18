@@ -6,7 +6,6 @@ import { formatDate } from "@/lib/labels";
 import { closeCampaign } from "../actions";
 import { DeleteCampaignButton } from "@/components/admin/DeleteCampaignButton";
 import { BackLink } from "@/components/admin/BackLink";
-import { AutoRefresh } from "@/components/AutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +39,6 @@ export default async function DataRequestTrackerPage({
 
   return (
     <div>
-      {/* Employees answer while this page sits open — keep the chips live (focus + 30s). */}
-      <AutoRefresh />
       <BackLink href="/admin/data-requests" label="Data requests" />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
         Admin · Data requests

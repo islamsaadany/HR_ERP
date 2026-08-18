@@ -107,6 +107,16 @@ export async function requireDataRequestManager() {
   return user;
 }
 
+/** Benefits reporting (spec 034): HR Admin, Finance, or Super User — read-only view + Excel. */
+export const canViewBenefitsReport = (role?: Role) => isAdmin(role) || isFinance(role);
+
+/** Require benefits-reporting access; redirect home otherwise. */
+export async function requireBenefitsReporting() {
+  const user = await requireUser();
+  if (!canViewBenefitsReport(user.role)) redirect("/dashboard");
+  return user;
+}
+
 /** Require Finance (or Super User); redirect home otherwise. Gates the payments queue (spec 020). */
 export async function requireFinance() {
   const user = await requireUser();
