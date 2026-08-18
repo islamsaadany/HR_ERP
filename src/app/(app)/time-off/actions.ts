@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/roles";
+import { requireUser, requireAdmin } from "@/lib/roles";
 import { getHolidaySet } from "@/lib/holidays";
 import { countWorkingDays } from "@/lib/workdays";
 import { canDecideLeave } from "@/lib/leave-queries";
@@ -159,6 +159,22 @@ export async function approveLeaveRequest(formData: FormData): Promise<void> {
 export async function declineLeaveRequest(formData: FormData): Promise<void> {
   const { id, comment } = readIdComment(formData);
   if (id) await applyDecision(id, "DECLINED", comment);
+}
+
+/**
+ * Delete a request outright (HR Admin / Super User only) — for entries added by mistake
+ * (requested 2026-08-18). A hard delete: the request vanishes from every view and from the
+ * working-day counts (counts are derived live, so nothing needs recomputing). The client
+ * guards it behind an explicit confirm.
+ */
+export async function deleteLeaveRequest(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = formData.get("id") as string;
+  if (!id) return;
+  await prisma.leaveRequest.delete({ where: { id } }).catch(() => {});
+  revalidatePath("/time-off");
+  revalidatePath("/admin/time-off");
+  revalidatePath("/dashboard");
 }
 
 /** Mark the current user's decided-but-unseen requests as seen — clears the nav badge (FR-014). */

@@ -18,6 +18,12 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Live-testing round (2026-08-18, built — no migration)
+- [x] **Time-Off**: the request form's day-count chip switched gold → **navy** (informational; gold stays for the overlap notice — user-approved), and HR can **Remove any request** from `/admin/time-off` (mistaken entries; confirm-guarded, admin-only hard delete; derived counts adjust automatically).
+- [x] **Guaranteed benefits — once-per-cycle guard**: the Release sheet skips (server-side, with a named count) anyone already holding a non-rejected claim for that benefit this cycle and marks their rows unselectable (*Claim submitted / Approved / Reimbursed*); the employee claim path and HR Record-entry now count `BenefitRelease` rows as consumed allocation, so nothing can pay the same guaranteed benefit twice (the Summer-allowance double). All three paths verified in a production build, incl. a DOM-forced bypass attempt refused server-side.
+- [x] **Data-request popup**: **Finish → Submit**, which only closes when every listed field is confirmed/filled — otherwise a red message counts what's left ("2 fields are still waiting…" → "1 field…"); Later still dismisses. Verified end-to-end (confirm-one/fill-one flow, answers on the profile).
+- [x] 24/24 production checks across the three fixes.
+
 ## Spec 035 — Time-Off v2: working-day counts + complete cycle (built 2026-08-18 — Neon migration `055` pending)
 - [x] Preceded by a **full module audit** (17 automated checks on the spec-005 cycle — all passed; gaps documented) and alignment: **no limits, count only, per calendar year; Fri+Sat weekend; HR-managed public holidays (+ Excel bulk upload, added at approval); no leave types; count visible to employee/manager/HR**. Mockup signed off (`design-mockups/timeoff-v2/2026-08-18_timeoff-v2.html`); bridge/long-weekend suggestions deferred to a later round at the user's request.
 - [x] `src/lib/workdays.ts` (pure, UTC-day): `countWorkingDays` / `workingDaysInYear` / `takenInYear` — shared verbatim by the server and the client form preview. `PublicHoliday` table + `LeaveRequest.cancelledAt` in **`prisma/sql/055_timeoff_v2.sql`**.

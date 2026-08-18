@@ -109,18 +109,36 @@ async function createClaimImpl(formData: FormData): Promise<void> {
     // Only benefits flagged `prorated` (Professional development) shrink to the cycle
     // length; event/season gifts (marriage, summer, special events, loans) stay full.
     const allocated = gb.prorated ? prorate(bandAmount, poolFraction) : bandAmount;
-    const existing = await prisma.benefitClaim.findMany({
-      where: {
-        userId: me.id,
-        planYearId: planYear.id,
-        guaranteedBenefitId: gb.id,
-        status: { not: "REJECTED" }, // every non-rejected claim consumes allowance
-      },
-      select: { amount: true, status: true },
-    });
-    const t = tracker(allocated, existing);
+    const [existing, releases] = await Promise.all([
+      prisma.benefitClaim.findMany({
+        where: {
+          userId: me.id,
+          planYearId: planYear.id,
+          guaranteedBenefitId: gb.id,
+          status: { not: "REJECTED" }, // every non-rejected claim consumes allowance
+        },
+        select: { amount: true, status: true },
+      }),
+      // An HR release from the bulk sheet grants the same allocation (spec 013) — it must
+      // consume it here too, or the person is paid twice (claim + release; found 2026-08-18).
+      prisma.benefitRelease.findMany({
+        where: { userId: me.id, planYearId: planYear.id, guaranteedBenefitId: gb.id },
+        select: { amount: true },
+      }),
+    ]);
+    const t = tracker(allocated, [
+      ...existing,
+      // A release is money already granted — same weight as a reimbursed claim.
+      ...releases.map((r) => ({ amount: r.amount, status: "REIMBURSED" as const })),
+    ]);
     if (claimType === "NOTE") {
-      if (t.remaining != null && t.remaining <= 0) fail("You've already requested this benefit.");
+      if (t.remaining != null && t.remaining <= 0) {
+        fail(
+          releases.length > 0
+            ? "You've already received this benefit this cycle (released by HR)."
+            : "You've already requested this benefit."
+        );
+      }
       claimAmount = t.remaining ?? allocated ?? 0;
     } else {
       if (!Number.isFinite(amount) || amount <= 0) fail("Enter a valid amount.");

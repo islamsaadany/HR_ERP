@@ -90,9 +90,7 @@ export function TimeOffRequestForm({
 
       {preview ? (
         <div className="sm:col-span-2">
-          {/* Navy = informational (house semantics; gold is reserved for notices like the
-              overlap warning below) — user-approved 2026-08-18. */}
-          <span className="inline-block rounded-full bg-navy-50 px-3 py-1.5 text-xs font-bold text-navy-700">
+          <span className="inline-block rounded-full bg-gold-100 px-3 py-1.5 text-xs font-bold text-gold-800">
             {preview.working} working day{preview.working === 1 ? "" : "s"}
             <span className="font-normal">
               {" "}

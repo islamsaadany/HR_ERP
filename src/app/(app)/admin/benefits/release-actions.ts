@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
 import { getActivePlanYear, amountForBand, isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
 
-export type ReleaseResult = { ok: boolean; error?: string };
+export type ReleaseResult = { ok: boolean; error?: string; skipped?: number };
 
 /**
  * Mark (or un-mark) a set of employees as "Released" for a fixed-allowance guaranteed benefit,
@@ -31,9 +31,23 @@ export async function setReleased(
   if (userIds.length === 0) return { ok: true };
 
   if (released) {
+    // A benefit already received (or in flight) via a CLAIM this cycle must not be released
+    // on top — that pays the person twice (the Summer-allowance double, 2026-08-18). Every
+    // non-rejected claim blocks: SUBMITTED reserves it, APPROVED/REIMBURSED already granted it.
+    const claimed = await prisma.benefitClaim.findMany({
+      where: {
+        guaranteedBenefitId: benefitId,
+        planYearId: planYear.id,
+        userId: { in: userIds },
+        status: { not: "REJECTED" },
+      },
+      select: { userId: true },
+    });
+    const alreadyClaimed = new Set(claimed.map((c) => c.userId));
+
     // Only active employees whose employment type is eligible for this benefit, with a resolvable band amount.
     const users = await prisma.user.findMany({
-      where: { id: { in: userIds }, status: "ACTIVE" },
+      where: { id: { in: userIds.filter((id) => !alreadyClaimed.has(id)) }, status: "ACTIVE" },
       select: { id: true, tenureBand: true, employmentType: true },
     });
     const data = users
@@ -55,6 +69,10 @@ export async function setReleased(
     if (data.length > 0) {
       // Presence of a row = released; skipDuplicates keeps the first release's snapshot/date.
       await prisma.benefitRelease.createMany({ data, skipDuplicates: true });
+    }
+    if (alreadyClaimed.size > 0) {
+      revalidatePath("/admin/benefits/release");
+      return { ok: true, skipped: alreadyClaimed.size };
     }
   } else {
     await prisma.benefitRelease.deleteMany({

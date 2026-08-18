@@ -9,6 +9,7 @@ import { getHolidaySet } from "@/lib/holidays";
 import { closeLeaverPending, takenByUserForYear } from "@/lib/leave-queries";
 import { approveLeaveRequest, declineLeaveRequest } from "../../time-off/actions";
 import { BackLink } from "@/components/admin/BackLink";
+import { DeleteLeaveRequestButton } from "@/components/admin/DeleteLeaveRequestButton";
 
 export const dynamic = "force-dynamic";
 
@@ -164,13 +165,21 @@ export default async function AdminTimeOffPage({
                       {r.decisionComment ? <div className="mt-0.5 text-xs text-muted">“{r.decisionComment}”</div> : null}
                     </td>
                     <td className="px-4 py-3">
-                      {r.status === "PENDING" ? (
-                        <form action={approveLeaveRequest} className="flex flex-wrap items-center gap-1.5">
-                          <input type="hidden" name="id" value={r.id} />
-                          <button type="submit" className="rounded-lg bg-navy-800 px-2.5 py-1 text-xs font-semibold text-white hover:bg-navy-700">Approve</button>
-                          <button type="submit" formAction={declineLeaveRequest} className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-navy-700 hover:border-red-300 hover:text-red-600">Decline</button>
-                        </form>
-                      ) : null}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {r.status === "PENDING" ? (
+                          <form action={approveLeaveRequest} className="flex flex-wrap items-center gap-1.5">
+                            <input type="hidden" name="id" value={r.id} />
+                            <button type="submit" className="rounded-lg bg-navy-800 px-2.5 py-1 text-xs font-semibold text-white hover:bg-navy-700">Approve</button>
+                            <button type="submit" formAction={declineLeaveRequest} className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-navy-700 hover:border-red-300 hover:text-red-600">Decline</button>
+                          </form>
+                        ) : null}
+                        {/* Mistaken entries are removable on any status (requested 2026-08-18). */}
+                        <DeleteLeaveRequestButton
+                          id={r.id}
+                          who={r.user.name}
+                          dates={`${formatDate(r.startDate)} → ${formatDate(r.endDate)}`}
+                        />
+                      </div>
                     </td>
                   </tr>
                 );
