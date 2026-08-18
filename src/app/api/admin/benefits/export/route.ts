@@ -5,6 +5,12 @@ import { getActivePlanYear } from "@/lib/benefits/config";
 
 export const dynamic = "force-dynamic";
 
+/** Platform date standard dd/mm/yyyy (2026-08-17). */
+const ddmmyyyy = (d: Date) => {
+  const t = d.toISOString().slice(0, 10);
+  return `${t.slice(8, 10)}/${t.slice(5, 7)}/${t.slice(0, 4)}`;
+};
+
 /** Minimal RFC-4180 CSV field escaping. */
 function csvCell(v: string | number | null | undefined): string {
   const s = v == null ? "" : String(v);
@@ -71,7 +77,7 @@ export async function GET(req: Request) {
         "",
         c.premium,
         "Committed",
-        c.committedAt.toISOString().slice(0, 10),
+        ddmmyyyy(c.committedAt),
       ]
         .map(csvCell)
         .join(",")
@@ -92,7 +98,7 @@ export async function GET(req: Request) {
         cl.catalogItem?.category ?? "",
         cl.amount,
         cl.status,
-        cl.createdAt.toISOString().slice(0, 10),
+        ddmmyyyy(cl.createdAt),
       ]
         .map(csvCell)
         .join(",")
