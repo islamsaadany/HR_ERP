@@ -2,7 +2,7 @@ import { requireUser, isAdmin } from "@/lib/roles";
 import { requireModuleEnabled } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
 import { getActivePlanYear, getMedicalRateBands, amountForBand, getMedicalCommitment, planYearWindow, poolCeilingFor, eligibilityWhere, isSalaryDriven, medicalScopeFor, fixedAllowanceFor, isFixedAllowance, medicalCycleCharge, medicalCarriedForward } from "@/lib/benefits/config";
-import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL, formatDate } from "@/lib/labels";
+import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL } from "@/lib/labels";
 import { flexCap } from "@/lib/benefits/rules";
 import { classifyEligibility, hasKnownStartDate, prorate, poolCycleFraction, cycleWholeMonths } from "@/lib/benefits/proration";
 import { annualPremiumForPerson, type Band } from "@/lib/benefits/rates";
@@ -302,19 +302,10 @@ export default async function BenefitsPage({
   const byC = new Map<string, BoardClaim[]>();
   const byG = new Map<string, BoardClaim[]>();
   let claimsCoveredTotal = 0;
-  const [claims, myReleases] = await Promise.all([
-    prisma.benefitClaim.findMany({
-      where: { userId: me.id, planYearId: planYear.id },
-      orderBy: { createdAt: "desc" },
-    }),
-    // HR bulk-sheet releases (spec 013) — the card must show "received" instead of a
-    // Request button that the server would refuse (once-per-cycle guard, 2026-08-18).
-    prisma.benefitRelease.findMany({
-      where: { userId: me.id, planYearId: planYear.id },
-      select: { guaranteedBenefitId: true, amount: true, releasedAt: true },
-    }),
-  ]);
-  const releaseByG = new Map(myReleases.map((r) => [r.guaranteedBenefitId, r]));
+  const claims = await prisma.benefitClaim.findMany({
+    where: { userId: me.id, planYearId: planYear.id },
+    orderBy: { createdAt: "desc" },
+  });
   for (const c of claims) {
     const row: BoardClaim = {
       amount: c.amount,
@@ -363,7 +354,6 @@ export default async function BenefitsPage({
       (isSalaryDriven(g) ? user.monthlySalary : null);
     if (fullAmount == null) return [];
     const allocated = g.prorated ? prorate(fullAmount, poolFraction) : fullAmount;
-    const release = releaseByG.get(g.id);
     return [{
       id: g.id,
       name: g.name,
@@ -372,8 +362,6 @@ export default async function BenefitsPage({
       allocated,
       proratedFrom: g.prorated && isProrated && allocated !== fullAmount ? fullAmount : null,
       claims: byG.get(g.id) ?? [],
-      releasedAmount: release?.amount ?? 0,
-      releasedAtLabel: release ? formatDate(release.releasedAt) : null,
     }];
   });
 

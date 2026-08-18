@@ -68,9 +68,6 @@ export type BoardGuaranteed = {
   /** The full (un-prorated) amount, shown struck-through when this benefit is prorated. */
   proratedFrom?: number | null;
   claims: BoardClaim[];
-  /** HR bulk-sheet release this cycle (spec 013) — consumes the allocation like a paid claim. */
-  releasedAmount?: number;
-  releasedAtLabel?: string | null;
 };
 /** Present when the pool is prorated to a short cycle (spec 019): the cycle's whole months (of 12). */
 export type BoardProration = { months: number } | null;
@@ -295,53 +292,30 @@ export function BenefitsBoard({
           <h2 className="font-serif text-xl">Guaranteed benefits</h2>
         </div>
         <div className="grid gap-px bg-line" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
-          {guaranteed.map((g) => {
-            // Once-per-cycle state (2026-08-18): an HR release or claims consuming the whole
-            // allocation replace the Request button with the true state — the server refuses
-            // a repeat anyway (claim-actions), so an actionable button would only mislead.
-            const t = tracker(g.allocated, g.claims);
-            const released = g.releasedAmount ?? 0;
-            const nothingLeft =
-              g.allocated != null && g.allocated - t.claimed - released <= 0;
-            // A NOTE benefit is requested in full, so ANY pending request means the ask is
-            // already in — only PROOF benefits legitimately claim a remainder in parts.
-            const state =
-              released > 0
-                ? { label: `✓ Received — released by HR${g.releasedAtLabel ? ` ${g.releasedAtLabel}` : ""}`, cls: "bg-green-50 text-green-700" }
-                : t.pending > 0 && (nothingLeft || g.claimType === "NOTE")
-                  ? { label: "Requested — in review", cls: "bg-gold-100 text-gold-800" }
-                  : nothingLeft
-                    ? { label: "✓ Received", cls: "bg-green-50 text-green-700" }
-                    : null;
-            return (
-              <div key={g.id} className="flex flex-col gap-1 bg-surface p-4">
-                <div className="text-sm font-medium text-ink">{g.name}</div>
-                <div className="min-h-[2rem] flex-1 text-xs text-muted">{g.note ?? ""}</div>
-                <div className="font-serif text-base text-navy-800">
-                  {g.allocated != null ? egp(g.allocated) : "Available"}
-                  {g.proratedFrom != null ? (
-                    <span className="ml-1.5 align-middle text-xs font-normal text-muted line-through">{egp(g.proratedFrom)}</span>
-                  ) : null}
-                </div>
-                {g.proratedFrom != null && proratedBadge ? <div>{proratedBadge}</div> : null}
-                {g.claimType === "NONE" ? (
-                  <div className="mt-1 text-[11px] text-muted">Paid automatically</div>
-                ) : state ? (
-                  <span className={"mt-1 self-start rounded-full px-2.5 py-1 text-[11px] font-bold " + state.cls}>
-                    {state.label}
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setGClaim(g)}
-                    className="mt-1 self-start rounded-lg border border-line px-3 py-1 text-xs font-semibold text-navy-700 hover:bg-navy-50"
-                  >
-                    {g.claimType === "PROOF" ? "Claim · proof" : "Request"}
-                  </button>
-                )}
+          {guaranteed.map((g) => (
+            <div key={g.id} className="flex flex-col gap-1 bg-surface p-4">
+              <div className="text-sm font-medium text-ink">{g.name}</div>
+              <div className="min-h-[2rem] flex-1 text-xs text-muted">{g.note ?? ""}</div>
+              <div className="font-serif text-base text-navy-800">
+                {g.allocated != null ? egp(g.allocated) : "Available"}
+                {g.proratedFrom != null ? (
+                  <span className="ml-1.5 align-middle text-xs font-normal text-muted line-through">{egp(g.proratedFrom)}</span>
+                ) : null}
               </div>
-            );
-          })}
+              {g.proratedFrom != null && proratedBadge ? <div>{proratedBadge}</div> : null}
+              {g.claimType !== "NONE" ? (
+                <button
+                  type="button"
+                  onClick={() => setGClaim(g)}
+                  className="mt-1 self-start rounded-lg border border-line px-3 py-1 text-xs font-semibold text-navy-700 hover:bg-navy-50"
+                >
+                  {g.claimType === "PROOF" ? "Claim · proof" : "Request"}
+                </button>
+              ) : (
+                <div className="mt-1 text-[11px] text-muted">Paid automatically</div>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
