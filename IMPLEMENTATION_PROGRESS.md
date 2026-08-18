@@ -18,13 +18,19 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
-## Spec 036 — Per-person guaranteed-benefit grants (built 2026-08-18 — Neon migration `056` pending)
+## Post-036 live-testing round (2026-08-18, built — no migration)
+- [x] **Essam bug**: a granted sub-3-month (or no-start-date) employee saw only the service-gate notice — a grant now overrides EVERY gate: the granted band renders beneath the notice (with a pointer sentence), fully requestable. Verified end-to-end (no-grant control unchanged; granted card at the typed amount; request accepted).
+- [x] **"Exceptional releases" tab** on Benefits Management (user request): the Release Guaranteed Benefit sheet moved off its standalone page into the tab (old URL redirects; header button removed; picker switches client-side over the new `buildReleaseSheet` lib), with the **Individual grants** panel underneath it (SU-only; Amounts is config-only again). Claim-guard, granted markers, and releasing verified inside the tab; HR Admin gets the sheet without the grants panel. Grant removal now also refused after a **release** (auditability).
+- [x] **Dashboard cleanup** (user request): Quick links section removed (duplicated the cards + nav); cards are **Benefits · Time-Off · Approvals (managers only) · Onboarding (while in progress)**; Team Directory card dropped (nav item remains).
+- [x] 22/22 production checks across the three changes.
+
+## Spec 036 — Per-person guaranteed-benefit grants (built 2026-08-18 — Neon migration `056` applied)
 - [x] Aligned (any blocking reason; typed amount pre-filled where derivable; open cycle only; Super-User managed), mockup **signed off** (`design-mockups/benefit-grants/2026-08-18_grants.html`), spec at `specs/036-guaranteed-benefit-grants/`. Replaces the same-day-reverted Release-sheet override.
 - [x] `GuaranteedBenefitGrant` (user × benefit × plan year unique, amount, grantor, date) — `prisma/sql/056_benefit_grants.sql`.
 - [x] **Individual grants panel** (Admin → Benefits → Amounts, SU-only): per-benefit grants table (reason chip, amount, grantor · date, Remove / *requested — can't remove* lock), add-row with block-reason-labelled employee picker + pre-filling amount; server actions `addGrant`/`removeGrant` (duplicate + zero-amount + salary-driven + non-active refused; removal refused over a non-rejected claim).
 - [x] **Normal-channel honor**: `claim-actions` (grant passes eligibility, granted figure = allocation, never re-prorated, wins over band); the employee page serves granted people every path — full board (amount overridden/appended), the under-6-months medical-only view (guaranteed band added), and a new **grants-only** view for people with no employment type; `manual-actions` + `release-actions` + the Release sheet honor granted amounts (gold *granted* marker); once-per-cycle guard + state chips unchanged and verified for granted people.
 - [x] **Verified against a production build**: **27/27** — reasons in the picker (part-time / no type / under 6 months / already eligible), prefill, disabled-without-amount, typed-amount storage, HR-Admin sees no panel, the under-6-months and no-type request journeys end-to-end (request → normal HR queue approve → paid → ✓ Received), removal lock and unused removal, sheet marker + release at granted amount + claim-guard block.
-- [ ] **User action**: paste `prisma/sql/056_benefit_grants.sql` into Neon (after 055).
+- [x] Neon migration `056` applied (user-confirmed 2026-08-18) — grants live in production.
 
 ## Live-testing round (2026-08-18, built — no migration)
 - [x] **Guaranteed cards show the true state**: employees who already requested / were paid / were released see a chip (gold *Requested — in review*, green *✓ Received* / *✓ Received — released by HR <date>*) instead of a Request button the server would refuse; PROOF benefits keep the button while a remainder is genuinely claimable. 7/7 production checks.
@@ -34,7 +40,7 @@
 - [x] **Data-request popup**: **Finish → Submit**, which only closes when every listed field is confirmed/filled — otherwise a red message counts what's left ("2 fields are still waiting…" → "1 field…"); Later still dismisses. Verified end-to-end (confirm-one/fill-one flow, answers on the profile).
 - [x] 24/24 production checks across the three fixes.
 
-## Spec 035 — Time-Off v2: working-day counts + complete cycle (built 2026-08-18 — Neon migration `055` pending)
+## Spec 035 — Time-Off v2: working-day counts + complete cycle (built 2026-08-18 — Neon migration `055` applied)
 - [x] Preceded by a **full module audit** (17 automated checks on the spec-005 cycle — all passed; gaps documented) and alignment: **no limits, count only, per calendar year; Fri+Sat weekend; HR-managed public holidays (+ Excel bulk upload, added at approval); no leave types; count visible to employee/manager/HR**. Mockup signed off (`design-mockups/timeoff-v2/2026-08-18_timeoff-v2.html`); bridge/long-weekend suggestions deferred to a later round at the user's request.
 - [x] `src/lib/workdays.ts` (pure, UTC-day): `countWorkingDays` / `workingDaysInYear` / `takenInYear` — shared verbatim by the server and the client form preview. `PublicHoliday` table + `LeaveRequest.cancelledAt` in **`prisma/sql/055_timeoff_v2.sql`**.
 - [x] `src/lib/leave-queries.ts`: current-org-chart approval queue (`pendingApprovalWhere` — orphans go to every Super User), `canDecideLeave` (current manager or HR/SU fallback; snapshot is history), `closeLeaverPending` (reconcile-on-read), `takenByUserForYear`, `timeOffBadgeCount`.
@@ -42,7 +48,7 @@
 - [x] Live nav badge both directions: `/api/time-off/badge` + `TimeOffBadgeSync` (poll on mount/focus/45s → `hrerp:timeoff-count` → AppShell), layout paints the first frame via `timeOffBadgeCount`; dashboard Approvals tile uses the same query.
 - [x] Admin: Working-days + **Taken <year>** columns, current-manager approver label on pending rows, cancelled-by-employee annotation, **Public holidays** page (list by year, add/remove, pre-filled Excel template + bulk upload with bad-row reporting), decider recorded on `approverId`.
 - [x] **Verified against a production build** + throwaway Postgres: **34/34** checks — 4-working-day preview breakdown (7 calendar − 2 weekend − 1 holiday), template round-trip + upload (2 imported, 1 bad row reported, no duplicates), live badge appear/clear without reload, re-route on reporting-line change (old manager loses it, new manager decides, decider recorded), orphan → every-SU queue, leaver auto-close, year-boundary split (4 of 6 days in 2026), cancel-approved trail, employee refusals (holidays page + template route).
-- [ ] **User action**: paste `prisma/sql/055_timeoff_v2.sql` into Neon (after 054).
+- [x] Neon migration `055` applied (user-confirmed 2026-08-18) — public holidays + cancel-approved live in production.
 
 ## Spec 034 — Benefits Reporting (built 2026-08-18 — no migration)
 - [x] Aligned (engine-identical pool math incl. pending; cycle picker; HR Admin + Finance + Super User; popup detail; formatted Excel; leavers behind a filter; "No pool" rows kept visible), mockup **signed off** (`design-mockups/benefits-reporting/2026-08-18_reporting-page.html`), spec at `specs/034-benefits-reporting/spec.md`.

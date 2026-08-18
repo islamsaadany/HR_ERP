@@ -34,8 +34,7 @@ const isFullWidthRoute = (path: string) =>
   path.startsWith("/incentive/") ||
   path === "/directory" ||
   path === "/admin/time-off" ||
-  path === "/admin/benefits" ||
-  path === "/admin/benefits/release";
+  path === "/admin/benefits";
 
 /**
  * Routes pinned to the viewport height so ONLY their data table scrolls — no

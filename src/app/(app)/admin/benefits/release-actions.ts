@@ -84,7 +84,7 @@ export async function setReleased(
       await prisma.benefitRelease.createMany({ data, skipDuplicates: true });
     }
     if (alreadyClaimed.size > 0) {
-      revalidatePath("/admin/benefits/release");
+      revalidatePath("/admin/benefits");
       return { ok: true, skipped: alreadyClaimed.size };
     }
   } else {
@@ -93,6 +93,6 @@ export async function setReleased(
     });
   }
 
-  revalidatePath("/admin/benefits/release");
+  revalidatePath("/admin/benefits");
   return { ok: true };
 }

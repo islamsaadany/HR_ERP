@@ -8,7 +8,7 @@ import { getActivePlanYear } from "@/lib/benefits/config";
 
 export type GrantResult = { ok: true; message?: string } | { ok: false; error: string };
 
-const PATHS = ["/admin/benefits", "/benefits", "/admin/benefits/release"];
+const PATHS = ["/admin/benefits", "/benefits"];
 
 /**
  * Grant ONE active employee ONE guaranteed benefit for the open cycle, at a typed amount
@@ -67,16 +67,28 @@ export async function removeGrant(formData: FormData): Promise<GrantResult> {
   });
   if (!grant) return { ok: false, error: "Grant not found." };
 
-  const claims = await prisma.benefitClaim.count({
-    where: {
-      userId: grant.userId,
-      guaranteedBenefitId: grant.guaranteedBenefitId,
-      planYearId: grant.planYearId,
-      status: { not: "REJECTED" },
-    },
-  });
+  const [claims, releases] = await Promise.all([
+    prisma.benefitClaim.count({
+      where: {
+        userId: grant.userId,
+        guaranteedBenefitId: grant.guaranteedBenefitId,
+        planYearId: grant.planYearId,
+        status: { not: "REJECTED" },
+      },
+    }),
+    prisma.benefitRelease.count({
+      where: {
+        userId: grant.userId,
+        guaranteedBenefitId: grant.guaranteedBenefitId,
+        planYearId: grant.planYearId,
+      },
+    }),
+  ]);
   if (claims > 0) {
     return { ok: false, error: `${grant.user.name} has already requested this benefit — the grant can't be removed. Handle the claim first.` };
+  }
+  if (releases > 0) {
+    return { ok: false, error: `${grant.user.name} was already released this benefit at the granted amount — the grant can't be removed (the money story must stay auditable).` };
   }
 
   await prisma.guaranteedBenefitGrant.delete({ where: { id } });
