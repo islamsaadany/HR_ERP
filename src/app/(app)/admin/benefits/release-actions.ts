@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/roles";
+import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { getActivePlanYear, amountForBand, isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
 
 export type ReleaseResult = { ok: boolean; error?: string; skipped?: number };
@@ -12,13 +12,20 @@ export type ReleaseResult = { ok: boolean; error?: string; skipped?: number };
  * in the active plan year (spec 013). HR/Super-User only. Salary-driven benefits (Loans) are
  * rejected. Only active employees of the benefit's employment type with a resolvable band amount
  * are affected; the released amount snapshots the band figure at release time.
+ *
+ * SUPER-USER override (2026-08-18): a Super User may release to ANY active employee — outside
+ * the benefit's eligibility, missing band, whatever the reason — by supplying a typed amount in
+ * `overrides` (employee id → EGP). Overrides are ignored for every other role, never replace a
+ * resolvable band figure, and never bypass the once-per-cycle claim guard.
  */
 export async function setReleased(
   benefitId: string,
   userIds: string[],
-  released: boolean
+  released: boolean,
+  overrides?: Record<string, number>
 ): Promise<ReleaseResult> {
   const actor = await requireAdmin();
+  const su = isSuperUser(actor.role);
 
   const planYear = await getActivePlanYear();
   if (!planYear) return { ok: false, error: "Benefits selection isn't open right now." };
@@ -51,13 +58,17 @@ export async function setReleased(
       select: { id: true, tenureBand: true, employmentType: true },
     });
     const data = users
-      .map((u) => ({
-        id: u.id,
-        amount:
+      .map((u) => {
+        const bandAmount =
           u.tenureBand && u.employmentType && isEligibleFor(u.employmentType, benefit)
             ? amountForBand(u.employmentType, u.tenureBand, benefit)
-            : null,
-      }))
+            : null;
+        // Super-User typed amount — only where no band figure resolves, only a positive integer.
+        const o = su ? overrides?.[u.id] : undefined;
+        const overrideAmount =
+          typeof o === "number" && Number.isFinite(o) && Math.floor(o) > 0 ? Math.floor(o) : null;
+        return { id: u.id, amount: bandAmount ?? overrideAmount };
+      })
       .filter((x): x is { id: string; amount: number } => x.amount != null)
       .map((x) => ({
         userId: x.id,
