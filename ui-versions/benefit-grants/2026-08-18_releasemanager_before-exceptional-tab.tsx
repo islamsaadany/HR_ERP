@@ -76,23 +76,19 @@ const blockedByClaim = (r: ReleaseRow) => !r.released && r.claimState !== "";
 
 export function ReleaseManager({
   benefits,
-  rowsByBenefit,
+  selectedBenefitId,
+  benefitName,
   planYearName,
+  rows,
 }: {
   benefits: ReleaseBenefit[];
-  /** Rows for every grantable benefit — the picker switches client-side (no navigation),
-   *  so the sheet can live inside the Exceptional releases tab (2026-08-18). */
-  rowsByBenefit: Record<string, ReleaseRow[]>;
+  selectedBenefitId: string | null;
+  benefitName: string;
   planYearName: string;
+  rows: ReleaseRow[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [selectedBenefitId, setSelectedBenefitId] = useState<string>("");
-  const rows = useMemo(() => rowsByBenefit[selectedBenefitId] ?? [], [rowsByBenefit, selectedBenefitId]);
-  const benefitName = useMemo(
-    () => benefits.find((b) => b.id === selectedBenefitId)?.label.split(" — ")[0] ?? "",
-    [benefits, selectedBenefitId]
-  );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [cols, setCols] = useState<Set<string>>(
     new Set(COLUMNS.filter((c) => c.def && !c.anchor).map((c) => c.key))
@@ -184,11 +180,10 @@ export function ReleaseManager({
           <label htmlFor="release-benefit" className="block text-xs font-medium uppercase tracking-wide text-muted mb-1">Benefit to release</label>
           <select
             id="release-benefit"
-            value={selectedBenefitId}
+            value={selectedBenefitId ?? ""}
             onChange={(e) => {
-              setSelectedBenefitId(e.target.value);
-              setSelected(new Set());
-              setMsg(null);
+              const v = e.target.value;
+              router.push(v ? `/admin/benefits/release?benefit=${v}` : "/admin/benefits/release");
             }}
             className="w-80 rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
           >

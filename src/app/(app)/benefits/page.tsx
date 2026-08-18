@@ -228,11 +228,34 @@ export default async function BenefitsPage({
         </div>
       );
     }
+    // A grant (spec 036) overrides EVERY service gate below — someone under 3 months, or
+    // with no start date at all, still sees and requests what was granted to them
+    // (live-testing gap 2026-08-18: granted sub-3-month employees saw only the empty state).
+    const grantedBand = await grantedBoardFor(medPlanYear.id);
+    const grantsSection =
+      grantedBand.length > 0 ? (
+        <BenefitsBoard
+          grantsOnly
+          guaranteed={grantedBand}
+          ceiling={0}
+          poolUsed={0}
+          poolRemaining={0}
+          cap={0}
+          automatic={[]}
+          groups={[]}
+          medicalPeople={[]}
+          medicalCommitted={null}
+          planYearOpen
+          error={claimError}
+          claimSuccess={claimOk === "1"}
+        />
+      ) : null;
     if (!hasKnownStartDate(user.startDate)) {
       return (
         <div>
           {medHeader}
           <NoStartDateNotice />
+          {grantsSection}
         </div>
       );
     }
@@ -243,7 +266,9 @@ export default async function BenefitsPage({
           <div className="mt-8 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
             Your benefits open with your length of service: medical insurance after 3 months, and the flexible
             basket &amp; guaranteed benefits after 6 months. Contact HR if your start date looks wrong.
+            {grantedBand.length > 0 ? " Benefits granted to you individually are available below." : ""}
           </div>
+          {grantsSection}
         </div>
       );
     }
@@ -258,6 +283,7 @@ export default async function BenefitsPage({
         <div>
           {medHeader}
           <SetupNotice module="Benefits" files="003_seed_benefits.sql + 034_medical_age_rate_card.sql" isAdmin={isAdmin(me.role)} />
+          {grantsSection}
         </div>
       );
     }
@@ -275,7 +301,7 @@ export default async function BenefitsPage({
           poolUsed={0}
           poolRemaining={0}
           cap={0}
-          guaranteed={await grantedBoardFor(medPlanYear.id)}
+          guaranteed={grantedBand}
           automatic={[]}
           groups={[]}
           medicalPeople={medPeople}

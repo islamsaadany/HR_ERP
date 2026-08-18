@@ -41,8 +41,6 @@ import { ManualReleaseModal } from "@/components/admin/ManualReleaseModal";
 import { CatalogueGrid, type CatalogueGridRow } from "@/components/admin/CatalogueGrid";
 import { AddCatalogItemModal } from "@/components/admin/AddCatalogItemModal";
 import { BenefitGrantsPanel, type GrantsBenefit } from "@/components/admin/BenefitGrantsPanel";
-import { ReleaseManager } from "@/components/benefits/ReleaseManager";
-import { buildReleaseSheet } from "@/lib/benefits/release-sheet";
 
 export const dynamic = "force-dynamic";
 
@@ -584,7 +582,7 @@ export default async function AdminBenefitsPage({
   let grantsBenefits: GrantsBenefit[] | null = null;
   if (isSuper && active) {
     try {
-      const [grants, allActive, cycleReleases] = await Promise.all([
+      const [grants, allActive] = await Promise.all([
         prisma.guaranteedBenefitGrant.findMany({
           where: { planYearId: active.id },
           include: {
@@ -597,10 +595,6 @@ export default async function AdminBenefitsPage({
           where: { status: "ACTIVE" },
           orderBy: { name: "asc" },
           select: { id: true, name: true, employmentType: true, startDate: true },
-        }),
-        prisma.benefitRelease.findMany({
-          where: { planYearId: active.id },
-          select: { userId: true, guaranteedBenefitId: true },
         }),
       ]);
       const grantable = guaranteedBenefits.filter((g) => !isSalaryDriven(g));
@@ -637,11 +631,10 @@ export default async function AdminBenefitsPage({
               amount: x.amount,
               grantedBy: x.grantedBy?.name ?? "—",
               grantedAtLabel: formatDate(x.grantedAt),
-              // Locked once a non-rejected claim OR a release exists on the grant (FR-007).
-              locked:
-                pendingClaims.some(
-                  (c) => c.userId === x.userId && c.guaranteedBenefitId === g.id && c.status !== "REJECTED"
-                ) || cycleReleases.some((r) => r.userId === x.userId && r.guaranteedBenefitId === g.id),
+              // Locked once a non-rejected claim exists on the grant (FR-007).
+              locked: pendingClaims.some(
+                (c) => c.userId === x.userId && c.guaranteedBenefitId === g.id && c.status !== "REJECTED"
+              ),
             };
           }),
           candidates: allActive
@@ -874,35 +867,6 @@ export default async function AdminBenefitsPage({
         readView={rateCardRead}
         editView={rateCardEdit}
       />
-    </div>
-  );
-
-  // ── Tab: Exceptional releases (2026-08-18) ──────────────────────────────
-  // Everything paid OUTSIDE an employee's own request: the bulk release sheet
-  // (spec 013 — payroll releases without a request) and, for Super Users, the
-  // per-person grants (spec 036) that make a blocked person requestable.
-  const releaseSheet = active ? await buildReleaseSheet(active) : null;
-  const exceptionalPanel = (
-    <div className="space-y-6">
-      <section>
-        <h2 className="font-serif text-lg text-ink">Release Guaranteed Benefit</h2>
-        <p className="mt-1 max-w-3xl text-sm text-muted">
-          Mark employees released without a request — a payroll record, not the claim flow —
-          and download the sheet. Salary is never shown here. Someone who already claimed a
-          benefit this cycle can&apos;t be released it on top.
-        </p>
-        {active && releaseSheet ? (
-          <ReleaseManager
-            benefits={releaseSheet.benefits}
-            rowsByBenefit={releaseSheet.rowsByBenefit}
-            planYearName={active.name}
-          />
-        ) : (
-          <p className="mt-4 rounded-xl border border-dashed border-line bg-surface p-8 text-center text-sm text-muted">
-            No open plan year. Open one via <strong>Plan year</strong> to release allowances.
-          </p>
-        )}
-      </section>
       {/* Spec 036: Super-User-only per-person exceptions. */}
       {grantsBenefits && active ? (
         <BenefitGrantsPanel benefits={grantsBenefits} planYearName={active.name} />
@@ -924,6 +888,12 @@ export default async function AdminBenefitsPage({
             className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
           >
             Reporting
+          </a>
+          <a
+            href="/admin/benefits/release"
+            className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+          >
+            Release Guaranteed Benefit
           </a>
           <a
             href="/benefits/policy"
@@ -982,11 +952,6 @@ export default async function AdminBenefitsPage({
             badge: medicalNeedingAttention,
             badgeTone: "bad",
             node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{medicalPanel}</div>,
-          },
-          {
-            id: "exceptional",
-            label: "Exceptional releases",
-            node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{exceptionalPanel}</div>,
           },
           { id: "catalogue", label: "Benefits Catalogue", node: cataloguePanel },
           { id: "amounts", label: "Amounts", node: <div className="md:min-h-0 md:flex-1 md:overflow-auto">{amountsPanel}</div> },

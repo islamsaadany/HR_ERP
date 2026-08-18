@@ -18,6 +18,12 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Post-036 live-testing round (2026-08-18, built — no migration)
+- [x] **Essam bug**: a granted sub-3-month (or no-start-date) employee saw only the service-gate notice — a grant now overrides EVERY gate: the granted band renders beneath the notice (with a pointer sentence), fully requestable. Verified end-to-end (no-grant control unchanged; granted card at the typed amount; request accepted).
+- [x] **"Exceptional releases" tab** on Benefits Management (user request): the Release Guaranteed Benefit sheet moved off its standalone page into the tab (old URL redirects; header button removed; picker switches client-side over the new `buildReleaseSheet` lib), with the **Individual grants** panel underneath it (SU-only; Amounts is config-only again). Claim-guard, granted markers, and releasing verified inside the tab; HR Admin gets the sheet without the grants panel. Grant removal now also refused after a **release** (auditability).
+- [x] **Dashboard cleanup** (user request): Quick links section removed (duplicated the cards + nav); cards are **Benefits · Time-Off · Approvals (managers only) · Onboarding (while in progress)**; Team Directory card dropped (nav item remains).
+- [x] 22/22 production checks across the three changes.
+
 ## Spec 036 — Per-person guaranteed-benefit grants (built 2026-08-18 — Neon migration `056` applied)
 - [x] Aligned (any blocking reason; typed amount pre-filled where derivable; open cycle only; Super-User managed), mockup **signed off** (`design-mockups/benefit-grants/2026-08-18_grants.html`), spec at `specs/036-guaranteed-benefit-grants/`. Replaces the same-day-reverted Release-sheet override.
 - [x] `GuaranteedBenefitGrant` (user × benefit × plan year unique, amount, grantor, date) — `prisma/sql/056_benefit_grants.sql`.
