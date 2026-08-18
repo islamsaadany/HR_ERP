@@ -112,89 +112,7 @@ export default async function BenefitsPage({
     <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Benefits</p>
   );
 
-  // Per-person grants (spec 036) — fetched before ANY branch, because a grant exists
-  // precisely for people the normal paths exclude (no type, no band). Guarded pre-migration.
-  const activePlanYear = await getActivePlanYear();
-  type MyGrant = { guaranteedBenefitId: string; amount: number; guaranteedBenefit: { name: string; note: string | null; claimType: "NONE" | "NOTE" | "PROOF" } };
-  let myGrants: MyGrant[] = [];
-  if (activePlanYear) {
-    try {
-      myGrants = (await prisma.guaranteedBenefitGrant.findMany({
-        where: { userId: me.id, planYearId: activePlanYear.id },
-        include: { guaranteedBenefit: { select: { name: true, note: true, claimType: true } } },
-      })) as MyGrant[];
-    } catch {
-      myGrants = [];
-    }
-  }
-  /** Board rows for the granted benefits, with claim/release state (used by the early branches). */
-  async function grantedBoardFor(planYearId: string): Promise<BoardGuaranteed[]> {
-    if (myGrants.length === 0) return [];
-    const ids = myGrants.map((g) => g.guaranteedBenefitId);
-    const [gClaims, gReleases] = await Promise.all([
-      prisma.benefitClaim.findMany({
-        where: { userId: me.id, planYearId, guaranteedBenefitId: { in: ids } },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.benefitRelease.findMany({
-        where: { userId: me.id, planYearId, guaranteedBenefitId: { in: ids } },
-      }),
-    ]);
-    return myGrants.map((g) => {
-      const release = gReleases.find((r) => r.guaranteedBenefitId === g.guaranteedBenefitId);
-      return {
-        id: g.guaranteedBenefitId,
-        name: g.guaranteedBenefit.name,
-        note: g.guaranteedBenefit.note,
-        claimType: g.guaranteedBenefit.claimType,
-        allocated: g.amount,
-        proratedFrom: null,
-        claims: gClaims
-          .filter((c) => c.guaranteedBenefitId === g.guaranteedBenefitId)
-          .map((c) => ({
-            amount: c.amount,
-            status: c.status,
-            note: c.note,
-            proofName: c.proofName,
-            proofUrl: c.proofUrl ? `/api/claims/${c.id}/proof` : null,
-            decisionNote: c.decisionNote,
-            createdAt: c.createdAt,
-          })),
-        releasedAmount: release?.amount ?? 0,
-        releasedAtLabel: release ? formatDate(release.releasedAt) : null,
-      };
-    });
-  }
-
   if (!user?.employmentType) {
-    // A granted person the rules can't classify still gets their granted benefits (spec 036).
-    if (myGrants.length > 0 && activePlanYear) {
-      return (
-        <div>
-          {eyebrow}
-          <h1 className="mt-1 font-serif text-3xl text-ink">Benefits</h1>
-          <p className="mt-1 text-muted">
-            Your employment type isn&apos;t set yet, so only benefits granted to you individually
-            appear here. Contact HR for the rest.
-          </p>
-          <BenefitsBoard
-            grantsOnly
-            guaranteed={await grantedBoardFor(activePlanYear.id)}
-            ceiling={0}
-            poolUsed={0}
-            poolRemaining={0}
-            cap={0}
-            automatic={[]}
-            groups={[]}
-            medicalPeople={[]}
-            medicalCommitted={null}
-            planYearOpen
-            error={claimError}
-            claimSuccess={claimOk === "1"}
-          />
-        </div>
-      );
-    }
     return (
       <div>
         {eyebrow}
@@ -275,7 +193,7 @@ export default async function BenefitsPage({
           poolUsed={0}
           poolRemaining={0}
           cap={0}
-          guaranteed={await grantedBoardFor(medPlanYear.id)}
+          guaranteed={[]}
           automatic={[]}
           groups={[]}
           medicalPeople={medPeople}
@@ -458,29 +376,6 @@ export default async function BenefitsPage({
       releasedAtLabel: release ? formatDate(release.releasedAt) : null,
     }];
   });
-  // Per-person grants (spec 036): a granted benefit joins the board at the GRANTED amount —
-  // which wins over a band figure where both exist (the grant was the explicit decision) —
-  // and benefits outside this person's eligibility are appended.
-  for (const g of myGrants) {
-    const existing = guaranteedBoard.find((b) => b.id === g.guaranteedBenefitId);
-    if (existing) {
-      existing.allocated = g.amount;
-      existing.proratedFrom = null;
-    } else {
-      const release = releaseByG.get(g.guaranteedBenefitId);
-      guaranteedBoard.push({
-        id: g.guaranteedBenefitId,
-        name: g.guaranteedBenefit.name,
-        note: g.guaranteedBenefit.note,
-        claimType: g.guaranteedBenefit.claimType,
-        allocated: g.amount,
-        proratedFrom: null,
-        claims: byG.get(g.guaranteedBenefitId) ?? [],
-        releasedAmount: release?.amount ?? 0,
-        releasedAtLabel: release ? formatDate(release.releasedAt) : null,
-      });
-    }
-  }
 
   // Medical eligibility (spec 021): computed from the eligible, active medical catalogue items.
   // Medical is rendered by the board's own single section, so it is excluded from the flex groups.

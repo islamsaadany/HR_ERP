@@ -83,29 +83,6 @@ export default async function BenefitReleasePage({
         select: { userId: true, status: true, createdAt: true, decidedAt: true, transferDate: true },
       }),
     ]);
-    // Per-person grants (spec 036): granted people join the sheet at their granted amount,
-    // marked — payroll must see them. Guarded pre-migration.
-    const grants = await prisma.guaranteedBenefitGrant
-      .findMany({
-        where: { guaranteedBenefitId: selected.id, planYearId: planYear.id },
-        include: {
-          user: {
-            select: {
-              id: true, name: true, email: true, department: true, title: true,
-              employmentType: true, startDate: true, phone: true,
-              status: true, reportsTo: { select: { name: true } },
-            },
-          },
-        },
-      })
-      .catch(() => []);
-    const grantByUser = new Map(grants.map((g) => [g.userId, g.amount]));
-    // Append granted people the eligibility-scoped query didn't include (active only).
-    const listed = new Set(employees.map((e) => e.id));
-    const allRows = [
-      ...employees,
-      ...grants.filter((g) => !listed.has(g.userId) && g.user.status === "ACTIVE").map((g) => g.user),
-    ].sort((a, b) => a.name.localeCompare(b.name));
     const releasedBy = new Map(releases.map((r) => [r.userId, toDateInput(r.releasedAt)]));
     // One claim state per employee, most advanced wins: reimbursed > approved > requested.
     const RANK = { requested: 0, approved: 1, reimbursed: 2 } as const;
@@ -121,14 +98,11 @@ export default async function BenefitReleasePage({
     }
 
     const now = new Date();
-    rows = allRows.map((e) => {
+    rows = employees.map((e) => {
       // Derive the tenure band live from the hire date so a stale stored band never
       // drives the amount or the status.
       const band = deriveTenureBand(e.startDate, now).band;
-      // A grant's typed amount wins for the granted person (spec 036); otherwise the band figure.
-      const grantAmount = grantByUser.get(e.id) ?? null;
-      const amount =
-        grantAmount ?? (band && e.employmentType ? amountForBand(e.employmentType, band, selected) : null);
+      const amount = band && e.employmentType ? amountForBand(e.employmentType, band, selected) : null;
       // When no amount resolves, name the real cause.
       const attention =
         amount != null
@@ -161,7 +135,6 @@ export default async function BenefitReleasePage({
         releasedAt: releasedBy.get(e.id) ?? "",
         claimState: claim?.state ?? "",
         claimDate: claim?.date ?? "",
-        granted: grantAmount != null,
       };
     });
   }

@@ -70,11 +70,11 @@ async function createClaimImpl(formData: FormData): Promise<void> {
     where: { id: me.id },
     select: { employmentType: true, tenureBand: true, monthlySalary: true, startDate: true },
   });
-  if (!user?.employmentType) fail("Your profile isn't set — contact HR.");
-  // Tenure band is derived from the hire date so claim-time enforcement always
-  // uses the current band (never a stale stored value).
+  if (!user) fail("Your profile isn't set — contact HR.");
+  // Tenure band is derived from the hire date so claim-time enforcement always uses the
+  // current band. Type/band are REQUIRED per branch below, not here — a per-person grant
+  // (spec 036) deliberately serves people the rules can't classify (no type, no band yet).
   const tenureBand = deriveTenureBand(user.startDate).band;
-  if (!tenureBand) fail("Your profile isn't set — contact HR.");
 
   // Cycle-length proration (spec 019, revised): scale the pool ceiling / Professional-development
   // allocation by the LENGTH of the plan-year cycle, for every eligible employee (0 if not yet
@@ -93,22 +93,46 @@ async function createClaimImpl(formData: FormData): Promise<void> {
 
   if (kind === "guaranteed") {
     const gb = await prisma.guaranteedBenefit.findUnique({ where: { id: benefitId } });
-    const gbEligible = gb && (user.employmentType === "FULL_TIME" ? gb.eligibleFullTime : gb.eligiblePartTime);
-    if (!gb || !gbEligible) fail("That benefit isn't available to you.");
+    if (!gb) fail("That benefit isn't available to you.");
+    // A per-person grant (spec 036) makes this ONE employee eligible for this ONE benefit
+    // this cycle, at the granted amount. Guarded for a pre-migration DB.
+    const grant = await prisma.guaranteedBenefitGrant
+      .findUnique({
+        where: {
+          userId_guaranteedBenefitId_planYearId: {
+            userId: me.id,
+            guaranteedBenefitId: gb.id,
+            planYearId: planYear.id,
+          },
+        },
+      })
+      .catch(() => null);
+    const typeEligible =
+      user.employmentType != null &&
+      (user.employmentType === "FULL_TIME" ? gb.eligibleFullTime : gb.eligiblePartTime);
+    if (!typeEligible && !grant) fail("That benefit isn't available to you.");
     benefitName = gb.name;
     claimType = gb.claimType;
     if (claimType === "NONE") fail("That benefit is paid automatically — no claim needed.");
-    // The monthly-salary fallback is ONLY valid for genuinely salary-driven benefits
-    // (Loans — every band intentionally blank). For a band-based benefit that simply has
-    // no amount set for this employee's type/tenure (e.g. an unset part-time figure), a
-    // null band amount means "not available" — never authorize a claim off the salary.
-    const bandAmount =
-      amountForBand(user.employmentType, tenureBand, gb) ??
-      (isSalaryDriven(gb) ? user.monthlySalary : null);
-    if (bandAmount == null) fail("That benefit has no amount set for you yet — contact HR.");
-    // Only benefits flagged `prorated` (Professional development) shrink to the cycle
-    // length; event/season gifts (marriage, summer, special events, loans) stay full.
-    const allocated = gb.prorated ? prorate(bandAmount, poolFraction) : bandAmount;
+    let allocated: number;
+    if (grant) {
+      // The granted figure IS the person's allocation — typed by the Super User, never
+      // re-prorated (the decision named the exact amount).
+      allocated = grant.amount;
+    } else {
+      if (!user.employmentType || !tenureBand) fail("Your profile isn't set — contact HR.");
+      // The monthly-salary fallback is ONLY valid for genuinely salary-driven benefits
+      // (Loans — every band intentionally blank). For a band-based benefit that simply has
+      // no amount set for this employee's type/tenure (e.g. an unset part-time figure), a
+      // null band amount means "not available" — never authorize a claim off the salary.
+      const bandAmount =
+        amountForBand(user.employmentType, tenureBand, gb) ??
+        (isSalaryDriven(gb) ? user.monthlySalary : null);
+      if (bandAmount == null) fail("That benefit has no amount set for you yet — contact HR.");
+      // Only benefits flagged `prorated` (Professional development) shrink to the cycle
+      // length; event/season gifts (marriage, summer, special events, loans) stay full.
+      allocated = gb.prorated ? prorate(bandAmount, poolFraction) : bandAmount;
+    }
     const [existing, releases] = await Promise.all([
       prisma.benefitClaim.findMany({
         where: {
@@ -149,6 +173,8 @@ async function createClaimImpl(formData: FormData): Promise<void> {
     }
     link.guaranteedBenefitId = gb.id;
   } else if (kind === "catalog") {
+    // The flexible basket has no grants — it stays strictly type-and-band gated.
+    if (!user.employmentType || !tenureBand) fail("Your profile isn't set — contact HR.");
     const item = await prisma.benefitCatalogItem.findUnique({ where: { id: benefitId } });
     if (!item || !item.active) fail("That benefit isn't available.");
     const itemEligible = user.employmentType === "FULL_TIME" ? item.eligibleFullTime : item.eligiblePartTime;

@@ -161,7 +161,6 @@ export function BenefitsBoard({
   planYearOpen,
   proration,
   medicalOnly,
-  grantsOnly,
   medicalOffered = true,
   medicalEligible = true,
   familyMedical = true,
@@ -193,9 +192,6 @@ export function BenefitsBoard({
   proration?: BoardProration;
   /** Sub-6-month employee (spec 019): only medical is available; the rest unlocks at 6 months. */
   medicalOnly?: boolean;
-  /** Spec 036: render ONLY the guaranteed band (+ its claim modal) — for a granted person
-   *  the normal page paths can't classify (no employment type). */
-  grantsOnly?: boolean;
   /** Whether any medical cover is offered to this employee (spec 021). When false, no medical row shows. */
   medicalOffered?: boolean;
   /** False before the employee reaches 3 months of service — the row shows locked, not set-up-able. */
@@ -252,11 +248,47 @@ export function BenefitsBoard({
   ) : null;
 
   // Sub-6-month employee (spec 019): medical is available now; everything else waits for 6 months.
-  // The guaranteed band — shared by the full board, the medical-only view (a granted
-  // under-6-months person, spec 036), and the grants-only view (a granted person the
-  // rules can't classify at all).
-  const guaranteedBand =
-    guaranteed.length > 0 ? (
+  if (medicalOnly) {
+    return (
+      <>
+        <section className="mt-6 overflow-hidden rounded-2xl border border-line">
+          <div className="bg-navy-900 px-6 py-4 text-white">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-300">Available now</div>
+            <h2 className="font-serif text-xl">{familyMedical ? "Medical insurance" : "Personal medical insurance"}</h2>
+          </div>
+          <div className="space-y-3 bg-surface p-5">
+            {error ? <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
+            {medicalOffered ? (
+              <MedicalRow committed={medicalCommitted} familyMedical={familyMedical} onSetup={() => setMedOpen(true)} />
+            ) : (
+              <p className="rounded-lg border border-dashed border-line bg-paper px-4 py-3 text-sm text-muted">Medical insurance isn&apos;t available on your plan. Contact HR.</p>
+            )}
+            {medicalProration ? (
+              <p className="rounded-lg bg-navy-50 px-3 py-2 text-xs text-navy-700">
+                You joined part-way through the plan year, so your medical premium is prorated to the remaining{" "}
+                {medicalProration.months} {medicalProration.months === 1 ? "month" : "months"}. You&apos;ll get a full-year
+                premium next plan year.
+              </p>
+            ) : null}
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-line bg-paper px-4 py-3">
+              <span className="text-sm text-muted">Flexible basket &amp; guaranteed benefits</span>
+              <span className="rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-800">
+                Unlocks at 6 months
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {medOpen ? (
+          <MedicalModal people={medicalPeople} missingDob={medicalMissingDob} ceiling={ceiling} familyMedical={familyMedical} premiumFraction={medicalPremiumFraction} onClose={() => setMedOpen(false)} />
+        ) : null}
+      </>
+    );
+  }
+
+  return (
+    <ToastContext.Provider value={notify}>
+      {/* Guaranteed band — full width, above the two columns */}
       <section className="mt-6 overflow-hidden rounded-2xl border border-line">
         <div className="bg-navy-900 px-6 py-4 text-white">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-300">You receive automatically</div>
@@ -312,66 +344,6 @@ export function BenefitsBoard({
           })}
         </div>
       </section>
-    ) : null;
-
-  // Grants-only (spec 036): a granted person the normal page paths can't serve at all
-  // (no employment type). Just their granted benefits, fully requestable.
-  if (grantsOnly) {
-    return (
-      <ToastContext.Provider value={notify}>
-        {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
-        {guaranteedBand}
-        {gClaim ? <GuaranteedClaimModal benefit={gClaim} onClose={() => setGClaim(null)} /> : null}
-      </ToastContext.Provider>
-    );
-  }
-
-  if (medicalOnly) {
-    return (
-      <ToastContext.Provider value={notify}>
-        <section className="mt-6 overflow-hidden rounded-2xl border border-line">
-          <div className="bg-navy-900 px-6 py-4 text-white">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-gold-300">Available now</div>
-            <h2 className="font-serif text-xl">{familyMedical ? "Medical insurance" : "Personal medical insurance"}</h2>
-          </div>
-          <div className="space-y-3 bg-surface p-5">
-            {error ? <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
-            {medicalOffered ? (
-              <MedicalRow committed={medicalCommitted} familyMedical={familyMedical} onSetup={() => setMedOpen(true)} />
-            ) : (
-              <p className="rounded-lg border border-dashed border-line bg-paper px-4 py-3 text-sm text-muted">Medical insurance isn&apos;t available on your plan. Contact HR.</p>
-            )}
-            {medicalProration ? (
-              <p className="rounded-lg bg-navy-50 px-3 py-2 text-xs text-navy-700">
-                You joined part-way through the plan year, so your medical premium is prorated to the remaining{" "}
-                {medicalProration.months} {medicalProration.months === 1 ? "month" : "months"}. You&apos;ll get a full-year
-                premium next plan year.
-              </p>
-            ) : null}
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-line bg-paper px-4 py-3">
-              <span className="text-sm text-muted">Flexible basket &amp; guaranteed benefits</span>
-              <span className="rounded-full bg-gold-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold-800">
-                Unlocks at 6 months
-              </span>
-            </div>
-          </div>
-        </section>
-
-        {/* A granted guaranteed benefit is requestable even before 6 months (spec 036). */}
-        {guaranteedBand}
-
-        {medOpen ? (
-          <MedicalModal people={medicalPeople} missingDob={medicalMissingDob} ceiling={ceiling} familyMedical={familyMedical} premiumFraction={medicalPremiumFraction} onClose={() => setMedOpen(false)} />
-        ) : null}
-        {gClaim ? <GuaranteedClaimModal benefit={gClaim} onClose={() => setGClaim(null)} /> : null}
-      </ToastContext.Provider>
-    );
-  }
-
-  return (
-    <ToastContext.Provider value={notify}>
-      {/* Guaranteed band — full width, above the two columns */}
-      {guaranteedBand}
 
       {/* Flexible band — the same header shape as the guaranteed band above, filled gold
           instead of navy. The palette flip is what signals the switch from "the company

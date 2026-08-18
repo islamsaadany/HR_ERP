@@ -26,8 +26,6 @@ export type ReleaseRow = {
   // payment) or "reimbursed" (Finance confirmed). "" when there is none.
   claimState: "requested" | "approved" | "reimbursed" | "";
   claimDate: string; // YYYY-MM-DD or ""
-  /** Per-person grant (spec 036): the amount IS the granted figure; marked on the sheet. */
-  granted?: boolean;
 };
 
 // Column catalogue. `anchor` columns are always in the sheet; the rest are toggleable.
@@ -272,17 +270,7 @@ export function ReleaseManager({
                         />
                       </td>
                       <td className="px-3 py-2 tabular-nums text-muted">{i + 1}</td>
-                      <td className="px-3 py-2 text-ink">
-                        {r.name}
-                        {r.granted ? (
-                          <span
-                            className="ml-1.5 rounded-full bg-gold-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gold-800"
-                            title="Granted individually for this cycle — the amount is the granted figure"
-                          >
-                            granted
-                          </span>
-                        ) : null}
-                      </td>
+                      <td className="px-3 py-2 text-ink">{r.name}</td>
                       <td className="px-3 py-2 text-muted">{r.tenure || "—"}</td>
                       <td className="px-3 py-2">
                         {typeCode(r.employmentType) ? (

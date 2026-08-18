@@ -47,18 +47,29 @@ export async function setReleased(
     });
     const alreadyClaimed = new Set(claimed.map((c) => c.userId));
 
-    // Only active employees whose employment type is eligible for this benefit, with a resolvable band amount.
-    const users = await prisma.user.findMany({
-      where: { id: { in: userIds.filter((id) => !alreadyClaimed.has(id)) }, status: "ACTIVE" },
-      select: { id: true, tenureBand: true, employmentType: true },
-    });
+    // Only active employees whose employment type is eligible for this benefit, with a
+    // resolvable band amount — OR a per-person grant (spec 036), whose typed amount wins.
+    const [users, grants] = await Promise.all([
+      prisma.user.findMany({
+        where: { id: { in: userIds.filter((id) => !alreadyClaimed.has(id)) }, status: "ACTIVE" },
+        select: { id: true, tenureBand: true, employmentType: true },
+      }),
+      prisma.guaranteedBenefitGrant
+        .findMany({
+          where: { guaranteedBenefitId: benefitId, planYearId: planYear.id, userId: { in: userIds } },
+          select: { userId: true, amount: true },
+        })
+        .catch(() => []),
+    ]);
+    const grantByUser = new Map(grants.map((g) => [g.userId, g.amount]));
     const data = users
       .map((u) => ({
         id: u.id,
         amount:
-          u.tenureBand && u.employmentType && isEligibleFor(u.employmentType, benefit)
+          grantByUser.get(u.id) ??
+          (u.tenureBand && u.employmentType && isEligibleFor(u.employmentType, benefit)
             ? amountForBand(u.employmentType, u.tenureBand, benefit)
-            : null,
+            : null),
       }))
       .filter((x): x is { id: string; amount: number } => x.amount != null)
       .map((x) => ({

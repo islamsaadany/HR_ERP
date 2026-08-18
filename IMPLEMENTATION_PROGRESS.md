@@ -18,6 +18,14 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Spec 036 — Per-person guaranteed-benefit grants (built 2026-08-18 — Neon migration `056` pending)
+- [x] Aligned (any blocking reason; typed amount pre-filled where derivable; open cycle only; Super-User managed), mockup **signed off** (`design-mockups/benefit-grants/2026-08-18_grants.html`), spec at `specs/036-guaranteed-benefit-grants/`. Replaces the same-day-reverted Release-sheet override.
+- [x] `GuaranteedBenefitGrant` (user × benefit × plan year unique, amount, grantor, date) — `prisma/sql/056_benefit_grants.sql`.
+- [x] **Individual grants panel** (Admin → Benefits → Amounts, SU-only): per-benefit grants table (reason chip, amount, grantor · date, Remove / *requested — can't remove* lock), add-row with block-reason-labelled employee picker + pre-filling amount; server actions `addGrant`/`removeGrant` (duplicate + zero-amount + salary-driven + non-active refused; removal refused over a non-rejected claim).
+- [x] **Normal-channel honor**: `claim-actions` (grant passes eligibility, granted figure = allocation, never re-prorated, wins over band); the employee page serves granted people every path — full board (amount overridden/appended), the under-6-months medical-only view (guaranteed band added), and a new **grants-only** view for people with no employment type; `manual-actions` + `release-actions` + the Release sheet honor granted amounts (gold *granted* marker); once-per-cycle guard + state chips unchanged and verified for granted people.
+- [x] **Verified against a production build**: **27/27** — reasons in the picker (part-time / no type / under 6 months / already eligible), prefill, disabled-without-amount, typed-amount storage, HR-Admin sees no panel, the under-6-months and no-type request journeys end-to-end (request → normal HR queue approve → paid → ✓ Received), removal lock and unused removal, sheet marker + release at granted amount + claim-guard block.
+- [ ] **User action**: paste `prisma/sql/056_benefit_grants.sql` into Neon (after 055).
+
 ## Live-testing round (2026-08-18, built — no migration)
 - [x] **Guaranteed cards show the true state**: employees who already requested / were paid / were released see a chip (gold *Requested — in review*, green *✓ Received* / *✓ Received — released by HR <date>*) instead of a Request button the server would refuse; PROOF benefits keep the button while a remainder is genuinely claimable. 7/7 production checks.
 - [x] **Release sheet renamed "Release Guaranteed Benefit"** (page + entry button). A typed-amount Super-User override shipped and was **reverted the same day** on user feedback — the real need is ineligible employees getting the benefit through the normal request→approve→pay flow, which the sheet (a payroll record) can't provide; per-person **eligibility grants** are the planned solution (next spec).
@@ -985,4 +993,4 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 
 ---
 
-*Last Updated: 2026-08-18 — Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*
+*Last Updated: 2026-08-18 — Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*

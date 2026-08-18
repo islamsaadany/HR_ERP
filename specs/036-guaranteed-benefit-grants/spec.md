@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-18
 
-**Status**: Draft
+**Status**: Built (2026-08-18 — mockup signed off, implemented, verified 27/27 against a production build; Neon migration `056` pending)
 
 **Input**: User description: "Some employees are blocked from a guaranteed benefit (e.g. the Summer allowance) for mixed reasons — wrong employment type, under 6 months, no start date — and management wants specific individuals to receive it anyway through the normal channel: it appears on their Benefits page, they Request it, HR approves, Finance pays, with every existing guard applying."
 
