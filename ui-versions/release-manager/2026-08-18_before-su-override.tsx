@@ -25,8 +25,6 @@ export type ReleaseRow = {
   // A recorded claim for this benefit: "approved" (HR back-filled, awaiting Finance
   // payment) or "reimbursed" (Finance confirmed). "" when there is none.
   claimState: "requested" | "approved" | "reimbursed" | "";
-  /** The snapshot on the release row — what a released row actually paid (covers overrides). */
-  releaseAmount?: number | null;
   claimDate: string; // YYYY-MM-DD or ""
 };
 
@@ -59,12 +57,10 @@ const egp = (n: number | null) => (n == null ? "" : formatEGP(n));
 const typeCode = (label: string) =>
   label === "Full-time" ? "FT" : label === "Part-time" ? "PT" : "";
 const statusText = (r: ReleaseRow) =>
-  // Released first: an override release (Super User) has no configured amount, and must
-  // still read as released rather than as its old attention reason.
-  r.released
-    ? `Released — ${r.releasedAt}`
-    : r.amount == null
+  r.amount == null
     ? r.attention || "no allowance"
+    : r.released
+    ? `Released — ${r.releasedAt}`
     : r.claimState === "reimbursed"
     ? `Reimbursed — ${r.claimDate}`
     : r.claimState === "approved"
@@ -82,28 +78,16 @@ export function ReleaseManager({
   benefitName,
   planYearName,
   rows,
-  superOverride = false,
 }: {
   benefits: ReleaseBenefit[];
   selectedBenefitId: string | null;
   benefitName: string;
   planYearName: string;
   rows: ReleaseRow[];
-  /** Super User: rows without a resolvable amount get a typed-amount override (2026-08-18). */
-  superOverride?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  // Super-User typed amounts for rows the band table can't price (keyed by employee id).
-  const [overrides, setOverrides] = useState<Record<string, string>>({});
-  const overrideAmount = (r: ReleaseRow): number | null => {
-    if (!superOverride || r.amount != null) return null;
-    const n = Math.floor(Number(overrides[r.id] ?? ""));
-    return Number.isFinite(n) && n > 0 ? n : null;
-  };
-  const effectiveAmount = (r: ReleaseRow): number | null =>
-    r.amount ?? (r.released ? r.releaseAmount ?? null : overrideAmount(r));
   const [cols, setCols] = useState<Set<string>>(
     new Set(COLUMNS.filter((c) => c.def && !c.anchor).map((c) => c.key))
   );
@@ -125,7 +109,7 @@ export function ReleaseManager({
       case "rowNum": return i + 1;
       case "name": return r.name;
       case "tenure": return r.tenure;
-      case "amount": return effectiveAmount(r) ?? "";
+      case "amount": return r.amount ?? "";
       case "status": return statusText(r);
       case "email": return r.email;
       case "department": return r.department;
@@ -155,14 +139,8 @@ export function ReleaseManager({
   function mark(released: boolean) {
     const ids = [...selected];
     if (!selectedBenefitId || ids.length === 0) return;
-    // Typed override amounts for the selected rows the band table can't price (Super User).
-    const overridesPayload: Record<string, number> = {};
-    for (const r of rows) {
-      const o = overrideAmount(r);
-      if (o != null && selected.has(r.id)) overridesPayload[r.id] = o;
-    }
     startTransition(async () => {
-      const res = await setReleased(selectedBenefitId, ids, released, overridesPayload);
+      const res = await setReleased(selectedBenefitId, ids, released);
       if (res.ok) {
         setSelected(new Set());
         const skipped = res.skipped ?? 0;
@@ -284,14 +262,8 @@ export function ReleaseManager({
                       <td className="px-3 py-2">
                         <input
                           type="checkbox"
-                          disabled={effectiveAmount(r) == null || blockedByClaim(r)}
-                          title={
-                            blockedByClaim(r)
-                              ? "Already received via a claim this cycle — can't be released again"
-                              : r.amount == null && superOverride && overrideAmount(r) == null
-                                ? "Enter an amount first"
-                                : undefined
-                          }
+                          disabled={r.amount == null || blockedByClaim(r)}
+                          title={blockedByClaim(r) ? "Already received via a claim this cycle — can't be released again" : undefined}
                           checked={selected.has(r.id)}
                           onChange={() => toggleOne(r.id)}
                           aria-label={`Select ${r.name}`}
@@ -316,36 +288,12 @@ export function ReleaseManager({
                           <span className="text-muted">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-ink">
-                        {r.amount != null ? (
-                          egp(r.amount)
-                        ) : r.released ? (
-                          egp(r.releaseAmount ?? null)
-                        ) : superOverride && !blockedByClaim(r) ? (
-                          // Super-User override: no configured amount — type what to release.
-                          <input
-                            type="number"
-                            min={1}
-                            placeholder="EGP…"
-                            value={overrides[r.id] ?? ""}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              setOverrides((o) => ({ ...o, [r.id]: v }));
-                              // Clearing the amount deselects the row — never release a blank.
-                              if (!(Math.floor(Number(v)) > 0)) setSelected((s) => { const n = new Set(s); n.delete(r.id); return n; });
-                            }}
-                            className="w-24 rounded-lg border border-gold-300 bg-gold-50 px-2 py-1 text-right text-sm tabular-nums focus:border-navy-500 focus:outline-none"
-                            aria-label={`Amount to release for ${r.name}`}
-                          />
-                        ) : (
-                          ""
-                        )}
-                      </td>
+                      <td className="px-3 py-2 text-right tabular-nums text-ink">{egp(r.amount)}</td>
                       <td className="px-3 py-2">
-                        {r.released ? (
-                          <span className="text-xs font-semibold text-navy-700">Released — {r.releasedAt}</span>
-                        ) : r.amount == null ? (
+                        {r.amount == null ? (
                           <span className="text-xs font-medium text-gold-700">{r.attention || "no allowance"}</span>
+                        ) : r.released ? (
+                          <span className="text-xs font-semibold text-navy-700">Released — {r.releasedAt}</span>
                         ) : r.claimState === "reimbursed" ? (
                           <span className="text-xs font-semibold text-green-700">Reimbursed — {r.claimDate}</span>
                         ) : r.claimState === "approved" ? (

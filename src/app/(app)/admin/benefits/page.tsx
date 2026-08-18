@@ -816,7 +816,7 @@ export default async function AdminBenefitsPage({
             href="/admin/benefits/release"
             className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
           >
-            Release a benefit
+            Release Guaranteed Benefit
           </a>
           <a
             href="/benefits/policy"
