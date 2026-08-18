@@ -1,4 +1,4 @@
-import { requireAdmin, isSuperUser } from "@/lib/roles";
+import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { getActivePlanYear, amountForBand, isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
 import { EMPLOYMENT_TYPE_LABEL, STATUS_LABEL, toDateInput, tenureBandDisplay } from "@/lib/labels";
@@ -21,10 +21,7 @@ export default async function BenefitReleasePage({
 }: {
   searchParams: Promise<{ benefit?: string }>;
 }) {
-  const me = await requireAdmin();
-  // A Super User may release to ANYONE active — outside the benefit's eligibility, with a
-  // typed amount (requested 2026-08-18). HR Admin keeps the eligibility-scoped sheet.
-  const superOverride = isSuperUser(me.role);
+  await requireAdmin();
   const { benefit: benefitId } = await searchParams;
 
   const eyebrow = (
@@ -66,11 +63,7 @@ export default async function BenefitReleasePage({
     ];
     const [employees, releases, claims] = await Promise.all([
       prisma.user.findMany({
-        // Super User: every active employee, whatever their type (or none). Others: only
-        // the benefit's eligible employment types, as before.
-        where: superOverride
-          ? { status: "ACTIVE" }
-          : { status: "ACTIVE", employmentType: { in: typeIn.length ? [...typeIn] : ["FULL_TIME", "PART_TIME"] } },
+        where: { status: "ACTIVE", employmentType: { in: typeIn.length ? [...typeIn] : ["FULL_TIME", "PART_TIME"] } },
         orderBy: { name: "asc" },
         select: {
           id: true, name: true, email: true, department: true, title: true,
@@ -80,7 +73,7 @@ export default async function BenefitReleasePage({
       }),
       prisma.benefitRelease.findMany({
         where: { guaranteedBenefitId: selected.id, planYearId: planYear.id },
-        select: { userId: true, releasedAt: true, amount: true },
+        select: { userId: true, releasedAt: true },
       }),
       // Claims for this benefit — every non-rejected one blocks a release on top (paying
       // twice; found 2026-08-18): SUBMITTED reserves the allocation, APPROVED/REIMBURSED
@@ -90,7 +83,7 @@ export default async function BenefitReleasePage({
         select: { userId: true, status: true, createdAt: true, decidedAt: true, transferDate: true },
       }),
     ]);
-    const releasedBy = new Map(releases.map((r) => [r.userId, { date: toDateInput(r.releasedAt), amount: r.amount }]));
+    const releasedBy = new Map(releases.map((r) => [r.userId, toDateInput(r.releasedAt)]));
     // One claim state per employee, most advanced wins: reimbursed > approved > requested.
     const RANK = { requested: 0, approved: 1, reimbursed: 2 } as const;
     const claimBy = new Map<string, { state: "requested" | "approved" | "reimbursed"; date: string }>();
@@ -109,19 +102,13 @@ export default async function BenefitReleasePage({
       // Derive the tenure band live from the hire date so a stale stored band never
       // drives the amount or the status.
       const band = deriveTenureBand(e.startDate, now).band;
-      // The band figure only auto-fills for an employee the benefit is actually configured
-      // for — an ineligible type must never inherit a leftover column value; the Super User
-      // types the amount instead.
-      const eligibleType = e.employmentType != null && isEligibleFor(e.employmentType, selected);
-      const amount = eligibleType && band ? amountForBand(e.employmentType!, band, selected) : null;
+      const amount = band && e.employmentType ? amountForBand(e.employmentType, band, selected) : null;
       // When no amount resolves, name the real cause.
       const attention =
         amount != null
           ? ""
           : !e.employmentType
           ? "no employment type"
-          : !eligibleType
-          ? `not eligible (${EMPLOYMENT_TYPE_LABEL[e.employmentType].toLowerCase()})`
           : !band
           ? !e.startDate
             ? "no hire date"
@@ -145,9 +132,7 @@ export default async function BenefitReleasePage({
         amount,
         attention,
         released: releasedBy.has(e.id),
-        releasedAt: releasedBy.get(e.id)?.date ?? "",
-        // The snapshot from the release row — the amount an override release actually paid.
-        releaseAmount: releasedBy.get(e.id)?.amount ?? null,
+        releasedAt: releasedBy.get(e.id) ?? "",
         claimState: claim?.state ?? "",
         claimDate: claim?.date ?? "",
       };
@@ -171,7 +156,6 @@ export default async function BenefitReleasePage({
         benefitName={selected?.name ?? ""}
         planYearName={planYear.name}
         rows={rows}
-        superOverride={superOverride}
       />
     </div>
   );
