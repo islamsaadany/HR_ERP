@@ -165,3 +165,6 @@ Finance requests national IDs while HR separately requests emergency contacts. A
 ### 2026-08-17 — Colour semantics + CSV simplification (fifth round)
 - **Green means done, never do**: the ✓ Confirm action button is navy (the house action colour, like Save); green is reserved for the ✓ Confirmed / ✓ Saved state chips.
 - **Campaign CSV is values-only**: one column per requested field with the submitted data; the per-field outcome columns are gone. The single per-person Status column stays (Complete / Pending / Left the company) so an empty cell is never mistaken for a cleared value; outcomes remain on the tracker.
+
+### 2026-08-17 — Campaign download is a formatted Excel workbook
+- The tracker's download is now a styled **.xlsx** (same conventions as the incentive workbooks): sheet named after the campaign, a bold navy title row with an audience/launched/completion meta line, a navy header row (white bold, frozen, auto-filtered), sized columns, and colour-coded Status (green Complete, grey Pending, red Left the company). Content is unchanged — just the submitted values, Status last.

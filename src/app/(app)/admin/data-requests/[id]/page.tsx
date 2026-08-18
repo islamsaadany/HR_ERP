@@ -53,7 +53,7 @@ export default async function DataRequestTrackerPage({
             href={`/api/admin/data-requests/${campaign.id}/export`}
             className="rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
           >
-            Download CSV
+            Download Excel
           </a>
           <DeleteCampaignButton id={campaign.id} title={campaign.title} />
           {campaign.closedAt ? (
