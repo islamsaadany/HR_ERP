@@ -1,0 +1,163 @@
+<title>Benefits Reporting</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:70ch}
+  .proposal{margin-top:38px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 14px 36px;max-width:70ch}
+  .badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:999px;background:var(--navy-50);color:var(--navy-700)}
+  .btn-navy{display:inline-flex;align-items:center;border:0;background:var(--navy-800);color:#fff;font-size:13px;font-weight:600;padding:8px 15px;border-radius:9px;cursor:pointer}
+  .btn-ghost{display:inline-flex;align-items:center;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);font-size:13px;font-weight:600;padding:8px 15px;border-radius:9px;cursor:pointer}
+  .inp{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 11px;font-size:13.5px;color:var(--ink)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .tile .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .tile .v{font-size:20px;font-weight:700;color:var(--navy-800);margin-top:2px;font-variant-numeric:tabular-nums}
+  .tile .s{font-size:11px;color:var(--muted)}
+  table{border-collapse:collapse;width:100%;font-size:13px;background:var(--surface)}
+  th{background:var(--navy-800);color:#fff;text-align:left;padding:9px 10px;font-weight:600;white-space:nowrap;cursor:pointer}
+  th.money,td.money{text-align:right;font-variant-numeric:tabular-nums}
+  td{border-bottom:1px solid var(--line);padding:9px 10px;vertical-align:middle}
+  tr.click:hover td{background:var(--navy-50);cursor:pointer}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-active{border:1px solid #bbe3c5;background:#eef9f0;color:#1c7c37}
+  .c-pending{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-none{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-full{border:1px solid #f3c6c6;background:#fdf0f0;color:#b91c1c}
+  .bar{height:6px;border-radius:999px;background:var(--navy-50);min-width:70px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--navy-700)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .decision{margin-top:30px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13px;max-width:760px}
+  .decision ul{margin:6px 0 0;padding-left:18px}
+  footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12px}
+  .overlay{background:rgba(10,26,48,.45);border-radius:14px;padding:30px 18px;display:grid;place-items:center}
+  .modal{background:var(--surface);border-radius:14px;max-width:640px;width:100%;padding:24px;box-shadow:0 18px 50px rgba(10,26,48,.35)}
+  .modal h3{font-family:Georgia,serif;font-size:20px;margin:0}
+  .sect{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--gold-600);margin:18px 0 6px}
+  .kv{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:5px 0;border-bottom:1px dashed var(--line)}
+  .kv b{font-variant-numeric:tabular-nums}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 034 · design review</p>
+  <h1>Benefits Reporting</h1>
+  <p class="lede">A read-only cycle overview for HR/Finance: every figure computed by the same engine that enforces claims (pending claims reserve pool money; guaranteed benefits sit outside the pool; medical counts what THIS cycle absorbs). Click a person → the full story in a popup. Download the whole table as a formatted Excel.</p>
+
+  <!-- 1: the page -->
+  <section class="proposal">
+    <h2><span class="num">1</span> The page — Admin → Benefits → Reporting</h2>
+    <p class="sub">Cycle picker (defaults to the open cycle) · summary tiles that always equal the table's sums · sortable/filterable full-width table · Download Excel in the house workbook style. Rows are clickable.</p>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px">
+      <select class="inp"><option>2026 cycle (open) · 1 Jan – 31 Dec</option><option>2025 cycle</option></select>
+      <select class="inp"><option>All departments</option><option>Consulting</option></select>
+      <select class="inp"><option>All statuses</option><option>Pending review</option><option>Pool exhausted</option><option>No activity</option></select>
+      <input class="inp" placeholder="Search name…" style="min-width:160px" />
+      <span style="flex:1"></span>
+      <button class="btn-ghost" type="button">Download Excel</button>
+    </div>
+
+    <div class="tiles">
+      <div class="tile"><div class="k">Pool ceilings</div><div class="v">1,240,000</div><div class="s">58 employees</div></div>
+      <div class="tile"><div class="k">Medical charged</div><div class="v">402,500</div><div class="s">this cycle's share</div></div>
+      <div class="tile"><div class="k">Flexible used</div><div class="v">318,240</div><div class="s">incl. 41,200 pending</div></div>
+      <div class="tile"><div class="k">Remaining</div><div class="v">519,260</div><div class="s">42% of ceilings</div></div>
+      <div class="tile"><div class="k">Guaranteed paid</div><div class="v">96,000</div><div class="s">own budget — not pool</div></div>
+    </div>
+
+    <div class="card" style="overflow-x:auto">
+      <table>
+        <tr>
+          <th>Employee ↕</th><th class="money">Pool ceiling ↕</th><th class="money">Medical</th>
+          <th class="money">Flex used</th><th class="money">Pending</th><th class="money">Remaining ↕</th>
+          <th class="money">Guaranteed</th><th>Utilization</th><th>Status</th>
+        </tr>
+        <tr class="click">
+          <td><b>Omar Hassan</b><br><span style="font-size:11px;color:var(--muted)">Consulting</span></td>
+          <td class="money">30,000</td><td class="money">13,000</td><td class="money">9,400</td><td class="money">2,400</td>
+          <td class="money"><b>7,600</b></td><td class="money">8,000</td>
+          <td><div class="bar"><i style="width:75%"></i></div></td>
+          <td><span class="chip c-pending">Pending review (1)</span></td>
+        </tr>
+        <tr class="click">
+          <td><b>Sara Ibrahim</b><br><span style="font-size:11px;color:var(--muted)">Finance</span></td>
+          <td class="money">12,500 <span class="badge" style="font-size:9px">prorated</span></td><td class="money">—</td><td class="money">12,500</td><td class="money">—</td>
+          <td class="money"><b>0</b></td><td class="money">—</td>
+          <td><div class="bar"><i style="width:100%"></i></div></td>
+          <td><span class="chip c-full">Pool exhausted</span></td>
+        </tr>
+        <tr class="click">
+          <td><b>Karim Adel</b><br><span style="font-size:11px;color:var(--muted)">Consulting</span></td>
+          <td class="money">22,000</td><td class="money">10,800</td><td class="money">—</td><td class="money">—</td>
+          <td class="money"><b>11,200</b></td><td class="money">—</td>
+          <td><div class="bar"><i style="width:49%"></i></div></td>
+          <td><span class="chip c-active">Active</span></td>
+        </tr>
+        <tr class="click">
+          <td><b>Laila Mostafa</b><br><span style="font-size:11px;color:var(--muted)">People</span></td>
+          <td class="money">—</td><td class="money">—</td><td class="money">—</td><td class="money">—</td><td class="money">—</td><td class="money">—</td>
+          <td></td><td><span class="chip c-none">No pool — type not set</span></td>
+        </tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 2: the popup -->
+  <section class="proposal">
+    <h2><span class="num">2</span> The person popup — the full story behind the row</h2>
+    <p class="sub">Opens on row click. Read-only. Totals always reconcile to the row. Proof links open the authorized claim-proof route.</p>
+    <div class="overlay">
+      <div class="modal">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:start">
+          <div>
+            <h3>Omar Hassan</h3>
+            <p style="margin:2px 0 0;font-size:12.5px;color:var(--muted)">Consulting · Full-time · 2–4 years · 2026 cycle</p>
+          </div>
+          <button class="btn-ghost" type="button" style="padding:5px 12px">✕ Close</button>
+        </div>
+
+        <p class="sect">Pool</p>
+        <div class="kv"><span>Ceiling (Full-time · 2–4 yrs, full cycle)</span><b>30,000</b></div>
+        <div class="kv"><span>Medical — this cycle's charge</span><b>13,000</b></div>
+        <div class="kv"><span>Flexible claims (incl. pending)</span><b>9,400</b></div>
+        <div class="kv" style="border-bottom:2px solid var(--navy-100)"><span><b>Remaining</b></span><b>7,600</b></div>
+
+        <p class="sect">Medical</p>
+        <div class="kv"><span>Policy term 01/06/2026 – 31/05/2027 · committed 14/06/2026</span><b>26,000 total</b></div>
+        <div class="kv"><span>Covers: Omar Hassan (self) · Sara Ali (spouse)</span><b>13,000 this cycle</b></div>
+
+        <p class="sect">Guaranteed (own budget — not pool)</p>
+        <div class="kv"><span>Travel allowance · released 12/07/2026 by Heba Radi</span><b>8,000</b></div>
+
+        <p class="sect">Flexible claims</p>
+        <div class="kv"><span>04/03/2026 · Gym membership · receipt 5,000 → covered 4,000 · <span class="chip c-active">Reimbursed</span> · <a href="#">proof</a></span><b>4,000</b></div>
+        <div class="kv"><span>22/05/2026 · Courses · receipt 4,500 → covered 3,000 <span class="badge" style="font-size:9px">clamped: benefit cap</span> · <span class="chip c-active">Approved</span> · <a href="#">proof</a></span><b>3,000</b></div>
+        <div class="kv"><span>10/08/2026 · Nursery · receipt 3,000 → covered 2,400 · <span class="chip c-pending">Pending</span> · <a href="#">proof</a></span><b>2,400</b></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="decision">
+    <b>Decisions carried in from alignment — veto anything here:</b>
+    <ul>
+      <li>Access: HR Admin, Finance, Super User. Read-only — nothing on this page mutates benefits.</li>
+      <li>Pool math identical to the claim engine: pending claims count in used/remaining AND get their own column; guaranteed benefits shown separately, never in the pool; medical = this cycle's charge.</li>
+      <li>Cycle picker defaults to the open cycle; every figure recomputes per cycle under that cycle's own cap setting.</li>
+      <li>Leavers excluded by default (a filter can include them); unconfigured employees listed with "No pool" rather than hidden.</li>
+      <li>Download Excel: the current table in the house workbook style (navy header, frozen panes, filters, dd/mm/yyyy).</li>
+    </ul>
+  </div>
+
+  <footer>HR_ERP · spec 034 benefits reporting · mockup for sign-off · 18 August 2026 · controls are inert; figures illustrative.</footer>
+</div>
