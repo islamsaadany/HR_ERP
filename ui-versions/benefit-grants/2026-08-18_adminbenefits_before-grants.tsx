@@ -1,4 +1,4 @@
-import { requireAdmin, isSuperUser } from "@/lib/roles";
+import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { formatDate, EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL, TENURE_BAND_ORDER, formatEGP as egp, formatEGP2, formatNumber } from "@/lib/labels";
 import { BackLink } from "@/components/admin/BackLink";
@@ -15,7 +15,6 @@ import {
   isFixedAllowance,
   planYearWindow,
   medicalCycleCharge,
-  amountForBand,
 } from "@/lib/benefits/config";
 import { classifyEligibility, hasKnownStartDate, poolCycleFraction, prorate } from "@/lib/benefits/proration";
 import { overlapWholeMonths } from "@/lib/benefits/policy-year";
@@ -40,7 +39,6 @@ import { ToastForm } from "@/components/admin/ToastForm";
 import { ManualReleaseModal } from "@/components/admin/ManualReleaseModal";
 import { CatalogueGrid, type CatalogueGridRow } from "@/components/admin/CatalogueGrid";
 import { AddCatalogItemModal } from "@/components/admin/AddCatalogItemModal";
-import { BenefitGrantsPanel, type GrantsBenefit } from "@/components/admin/BenefitGrantsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -49,8 +47,7 @@ export default async function AdminBenefitsPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const me = await requireAdmin();
-  const isSuper = isSuperUser(me.role);
+  await requireAdmin();
   const { error } = await searchParams;
   const planYears = await prisma.planYear.findMany({
     orderBy: { createdAt: "desc" },
@@ -577,76 +574,6 @@ export default async function AdminBenefitsPage({
 
   const medicalNeedingAttention = medicalRows.filter((r) => r.overCharged > 0 || r.cancelled || r.frozen).length;
 
-  // ── Individual grants (spec 036) — Super-User exceptions, shown on the Amounts tab ──
-  // Guarded so a pre-migration DB (no grant table yet) just hides the panel.
-  let grantsBenefits: GrantsBenefit[] | null = null;
-  if (isSuper && active) {
-    try {
-      const [grants, allActive] = await Promise.all([
-        prisma.guaranteedBenefitGrant.findMany({
-          where: { planYearId: active.id },
-          include: {
-            user: { select: { name: true, employmentType: true, department: true } },
-            grantedBy: { select: { name: true } },
-          },
-          orderBy: { grantedAt: "desc" },
-        }),
-        prisma.user.findMany({
-          where: { status: "ACTIVE" },
-          orderBy: { name: "asc" },
-          select: { id: true, name: true, employmentType: true, startDate: true },
-        }),
-      ]);
-      const grantable = guaranteedBenefits.filter((g) => !isSalaryDriven(g));
-      const reasonAndPrefill = (
-        u: (typeof allActive)[number],
-        g: (typeof grantable)[number]
-      ): { reason: string; prefill: number | null } => {
-        if (!u.employmentType) return { reason: "no employment type", prefill: null };
-        if (!isEligibleFor(u.employmentType, g)) {
-          return { reason: `not eligible (${EMPLOYMENT_TYPE_LABEL[u.employmentType].toLowerCase()})`, prefill: null };
-        }
-        const band = deriveTenureBand(u.startDate).band;
-        if (!band) return { reason: !u.startDate ? "no hire date" : "< 6 months — no band yet", prefill: null };
-        const amt = amountForBand(u.employmentType, band, g);
-        if (amt == null) return { reason: `no ${u.employmentType === "FULL_TIME" ? "full-time" : "part-time"} amount set`, prefill: null };
-        return { reason: "", prefill: amt };
-      };
-      grantsBenefits = grantable.map((g) => {
-        const gGrants = grants.filter((x) => x.guaranteedBenefitId === g.id);
-        const grantedIds = new Set(gGrants.map((x) => x.userId));
-        return {
-          id: g.id,
-          name: `${g.name} — ${eligibilityText(g)}`,
-          grants: gGrants.map((x) => {
-            const u = allActive.find((a) => a.id === x.userId);
-            const rp = u ? reasonAndPrefill(u, g) : { reason: "", prefill: null };
-            return {
-              id: x.id,
-              userName: x.user.name,
-              userMeta: [x.user.employmentType ? EMPLOYMENT_TYPE_LABEL[x.user.employmentType] : null, x.user.department]
-                .filter(Boolean)
-                .join(" · ") || "—",
-              reason: rp.reason,
-              amount: x.amount,
-              grantedBy: x.grantedBy?.name ?? "—",
-              grantedAtLabel: formatDate(x.grantedAt),
-              // Locked once a non-rejected claim exists on the grant (FR-007).
-              locked: pendingClaims.some(
-                (c) => c.userId === x.userId && c.guaranteedBenefitId === g.id && c.status !== "REJECTED"
-              ),
-            };
-          }),
-          candidates: allActive
-            .filter((u) => !grantedIds.has(u.id))
-            .map((u) => ({ id: u.id, name: u.name, ...reasonAndPrefill(u, g) })),
-        };
-      });
-    } catch {
-      grantsBenefits = null;
-    }
-  }
-
   // ── Tab 1: Medical commitments ──────────────────────────────────────────
   // Management view (mockup signed off 2026-08-16): a counts-first rail, one line per
   // person, and the per-cycle split behind the row you open. Every figure and wording the
@@ -867,10 +794,6 @@ export default async function AdminBenefitsPage({
         readView={rateCardRead}
         editView={rateCardEdit}
       />
-      {/* Spec 036: Super-User-only per-person exceptions. */}
-      {grantsBenefits && active ? (
-        <BenefitGrantsPanel benefits={grantsBenefits} planYearName={active.name} />
-      ) : null}
     </div>
   );
 

@@ -137,6 +137,8 @@ model User {
   paidClaims         BenefitClaim[]      @relation("ClaimPayer")
   benefitReleases    BenefitRelease[]    @relation("ReleaseSubject")
   releasesGiven      BenefitRelease[]    @relation("ReleaseActor")
+  benefitGrants      GuaranteedBenefitGrant[] @relation("GrantSubject")
+  benefitGrantsGiven GuaranteedBenefitGrant[] @relation("GrantActor")
   medicalRecoveries  MedicalRecovery[]   @relation("RecoverySubject")
   recoveriesSettled  MedicalRecovery[]   @relation("RecoverySettler")
 
@@ -457,6 +459,7 @@ model PlanYear {
   medicalCharges     MedicalCycleCharge[]
   claims             BenefitClaim[]
   releases           BenefitRelease[]
+  benefitGrants      GuaranteedBenefitGrant[]
 }
 
 /// Pool ceiling per (employment type × tenure band). Max claimable for the year.
@@ -502,6 +505,28 @@ model GuaranteedBenefit {
   prorated         Boolean          @default(false)
   claims           BenefitClaim[]
   releases         BenefitRelease[]
+  grants           GuaranteedBenefitGrant[]
+}
+
+/// A per-person eligibility exception (spec 036): ONE employee granted ONE guaranteed benefit
+/// for ONE plan year, at an explicit Super-User-typed amount. The granted person goes through
+/// the completely normal request → approve → pay flow; a grant never widens the benefit's
+/// general eligibility and expires with the cycle.
+model GuaranteedBenefitGrant {
+  id                  String            @id @default(cuid())
+  guaranteedBenefitId String
+  guaranteedBenefit   GuaranteedBenefit @relation(fields: [guaranteedBenefitId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User              @relation("GrantSubject", fields: [userId], references: [id], onDelete: Cascade)
+  planYearId          String
+  planYear            PlanYear          @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  amount              Int
+  grantedById         String?
+  grantedBy           User?             @relation("GrantActor", fields: [grantedById], references: [id], onDelete: SetNull)
+  grantedAt           DateTime          @default(now())
+
+  @@unique([userId, guaranteedBenefitId, planYearId])
+  @@index([planYearId])
 }
 
 /**

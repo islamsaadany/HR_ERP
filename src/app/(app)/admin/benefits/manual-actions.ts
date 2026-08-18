@@ -172,6 +172,33 @@ async function flatAllocation(
   if (kind === "guaranteed") {
     const gb = await prisma.guaranteedBenefit.findUnique({ where: { id } });
     if (!gb) return { ok: false, error: "Guaranteed benefit not found." };
+    // A per-person grant (spec 036) makes this employee eligible at the granted amount.
+    const grant = await prisma.guaranteedBenefitGrant
+      .findUnique({
+        where: {
+          userId_guaranteedBenefitId_planYearId: {
+            userId: user.id,
+            guaranteedBenefitId: id,
+            planYearId: planYear.id,
+          },
+        },
+      })
+      .catch(() => null);
+    if (grant) {
+      allocation = grant.amount;
+      claimWhere.guaranteedBenefitId = id;
+      const existingGrant = await prisma.benefitClaim.findMany({
+        where: { userId: user.id, planYearId: planYear.id, status: { not: "REJECTED" }, guaranteedBenefitId: id },
+        select: { amount: true },
+      });
+      const releasesGrant = await prisma.benefitRelease.findMany({
+        where: { userId: user.id, planYearId: planYear.id, guaranteedBenefitId: id },
+        select: { amount: true },
+      });
+      const claimedGrant =
+        existingGrant.reduce((s, c) => s + c.amount, 0) + releasesGrant.reduce((s, r) => s + r.amount, 0);
+      return { ok: true, allocation, remaining: Math.max(0, allocation - claimedGrant), claimWhere };
+    }
     if (!user.employmentType) return { ok: false, error: "The employee has no employment type set." };
     if (!isEligibleFor(user.employmentType, gb)) {
       return { ok: false, error: "That guaranteed benefit doesn't apply to this employee's employment type." };

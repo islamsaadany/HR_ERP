@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, isSuperUser } from "@/lib/roles";
+import { requireAdmin } from "@/lib/roles";
 import { getActivePlanYear, amountForBand, isSalaryDriven, isEligibleFor } from "@/lib/benefits/config";
 
 export type ReleaseResult = { ok: boolean; error?: string; skipped?: number };
@@ -12,20 +12,15 @@ export type ReleaseResult = { ok: boolean; error?: string; skipped?: number };
  * in the active plan year (spec 013). HR/Super-User only. Salary-driven benefits (Loans) are
  * rejected. Only active employees of the benefit's employment type with a resolvable band amount
  * are affected; the released amount snapshots the band figure at release time.
- *
- * SUPER-USER override (2026-08-18): a Super User may release to ANY active employee — outside
- * the benefit's eligibility, missing band, whatever the reason — by supplying a typed amount in
- * `overrides` (employee id → EGP). Overrides are ignored for every other role, never replace a
- * resolvable band figure, and never bypass the once-per-cycle claim guard.
+ * (A short-lived typed-amount Super-User override was reverted 2026-08-18 — releasing outside
+ * eligibility is not this sheet's job; per-person eligibility grants are the coming solution.)
  */
 export async function setReleased(
   benefitId: string,
   userIds: string[],
-  released: boolean,
-  overrides?: Record<string, number>
+  released: boolean
 ): Promise<ReleaseResult> {
   const actor = await requireAdmin();
-  const su = isSuperUser(actor.role);
 
   const planYear = await getActivePlanYear();
   if (!planYear) return { ok: false, error: "Benefits selection isn't open right now." };
@@ -52,23 +47,30 @@ export async function setReleased(
     });
     const alreadyClaimed = new Set(claimed.map((c) => c.userId));
 
-    // Only active employees whose employment type is eligible for this benefit, with a resolvable band amount.
-    const users = await prisma.user.findMany({
-      where: { id: { in: userIds.filter((id) => !alreadyClaimed.has(id)) }, status: "ACTIVE" },
-      select: { id: true, tenureBand: true, employmentType: true },
-    });
+    // Only active employees whose employment type is eligible for this benefit, with a
+    // resolvable band amount — OR a per-person grant (spec 036), whose typed amount wins.
+    const [users, grants] = await Promise.all([
+      prisma.user.findMany({
+        where: { id: { in: userIds.filter((id) => !alreadyClaimed.has(id)) }, status: "ACTIVE" },
+        select: { id: true, tenureBand: true, employmentType: true },
+      }),
+      prisma.guaranteedBenefitGrant
+        .findMany({
+          where: { guaranteedBenefitId: benefitId, planYearId: planYear.id, userId: { in: userIds } },
+          select: { userId: true, amount: true },
+        })
+        .catch(() => []),
+    ]);
+    const grantByUser = new Map(grants.map((g) => [g.userId, g.amount]));
     const data = users
-      .map((u) => {
-        const bandAmount =
-          u.tenureBand && u.employmentType && isEligibleFor(u.employmentType, benefit)
+      .map((u) => ({
+        id: u.id,
+        amount:
+          grantByUser.get(u.id) ??
+          (u.tenureBand && u.employmentType && isEligibleFor(u.employmentType, benefit)
             ? amountForBand(u.employmentType, u.tenureBand, benefit)
-            : null;
-        // Super-User typed amount — only where no band figure resolves, only a positive integer.
-        const o = su ? overrides?.[u.id] : undefined;
-        const overrideAmount =
-          typeof o === "number" && Number.isFinite(o) && Math.floor(o) > 0 ? Math.floor(o) : null;
-        return { id: u.id, amount: bandAmount ?? overrideAmount };
-      })
+            : null),
+      }))
       .filter((x): x is { id: string; amount: number } => x.amount != null)
       .map((x) => ({
         userId: x.id,
