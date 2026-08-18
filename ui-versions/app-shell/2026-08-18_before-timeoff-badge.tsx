@@ -94,17 +94,6 @@ export function AppShell({
     window.addEventListener("hrerp:data-request-count", onCount);
     return () => window.removeEventListener("hrerp:data-request-count", onCount);
   }, []);
-
-  // Live Time-Off badge (spec 035): decisions unseen + approvals awaiting the user as
-  // manager. TimeOffBadgeSync polls and broadcasts; the server prop paints the first frame.
-  const [liveTimeOffCount, setLiveTimeOffCount] = useState<number | null>(null);
-  useEffect(() => {
-    const onCount = (e: Event) => setLiveTimeOffCount((e as CustomEvent<number>).detail ?? 0);
-    window.addEventListener("hrerp:timeoff-count", onCount);
-    return () => window.removeEventListener("hrerp:timeoff-count", onCount);
-  }, []);
-  const badgeFor = (href: string): number =>
-    href === "/time-off" && liveTimeOffCount != null ? liveTimeOffCount : navBadges[href] ?? 0;
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [pref, setPref] = useState(false); // the user's manual preference
@@ -172,7 +161,7 @@ export function AppShell({
             </div>
             <nav className="flex flex-1 flex-col items-center gap-1 py-4">
               {nav.map((item) => {
-                const badge = badgeFor(item.href);
+                const badge = navBadges[item.href] ?? 0;
                 return (
                   <Link
                     key={item.href}
@@ -299,7 +288,7 @@ export function AppShell({
             <nav className="flex-1 space-y-1 px-3 py-4">
               {nav.map((item) => {
                 const on = isActive(item.href);
-                const badge = badgeFor(item.href);
+                const badge = navBadges[item.href] ?? 0;
                 return (
                   <Link
                     key={item.href}

@@ -24,7 +24,7 @@ export type ReleaseRow = {
   releasedAt: string; // YYYY-MM-DD or ""
   // A recorded claim for this benefit: "approved" (HR back-filled, awaiting Finance
   // payment) or "reimbursed" (Finance confirmed). "" when there is none.
-  claimState: "requested" | "approved" | "reimbursed" | "";
+  claimState: "approved" | "reimbursed" | "";
   claimDate: string; // YYYY-MM-DD or ""
 };
 
@@ -65,12 +65,7 @@ const statusText = (r: ReleaseRow) =>
     ? `Reimbursed — ${r.claimDate}`
     : r.claimState === "approved"
     ? "Approved — awaiting payment"
-    : r.claimState === "requested"
-    ? "Claim submitted — in review"
     : "Not released";
-
-/** A row that already received (or reserved) this benefit via a claim can't be released on top. */
-const blockedByClaim = (r: ReleaseRow) => !r.released && r.claimState !== "";
 
 export function ReleaseManager({
   benefits,
@@ -93,14 +88,12 @@ export function ReleaseManager({
   );
   const [msg, setMsg] = useState<string | null>(null);
 
-  // Rows that can actually be released (active + resolvable amount + not already served by
-  // a claim this cycle — releasing on top would pay the person twice; 2026-08-18).
-  const releasable = useMemo(() => rows.filter((r) => r.amount != null && !blockedByClaim(r)), [rows]);
+  // Rows that can actually be released (active + resolvable amount).
+  const releasable = useMemo(() => rows.filter((r) => r.amount != null), [rows]);
   const total = useMemo(() => rows.reduce((s, r) => s + (r.amount ?? 0), 0), [rows]);
   const releasedCount = rows.filter((r) => r.released).length;
   const reimbursedCount = rows.filter((r) => !r.released && r.claimState === "reimbursed").length;
   const awaitingCount = rows.filter((r) => !r.released && r.claimState === "approved").length;
-  const requestedCount = rows.filter((r) => !r.released && r.claimState === "requested").length;
 
   const activeCols = COLUMNS.filter((c) => c.anchor || cols.has(c.key));
 
@@ -143,14 +136,7 @@ export function ReleaseManager({
       const res = await setReleased(selectedBenefitId, ids, released);
       if (res.ok) {
         setSelected(new Set());
-        const skipped = res.skipped ?? 0;
-        setMsg(
-          released
-            ? skipped > 0
-              ? `Marked ${ids.length - skipped} as released · ${skipped} skipped — already received this benefit via a claim this cycle.`
-              : `Marked ${ids.length} as released.`
-            : `Marked ${ids.length} as not released.`
-        );
+        setMsg(released ? `Marked ${ids.length} as released.` : `Marked ${ids.length} as not released.`);
         router.refresh();
       } else {
         setMsg(res.error ?? "Something went wrong.");
@@ -260,14 +246,7 @@ export function ReleaseManager({
                   rows.map((r, i) => (
                     <tr key={r.id} className="border-b border-line last:border-0">
                       <td className="px-3 py-2">
-                        <input
-                          type="checkbox"
-                          disabled={r.amount == null || blockedByClaim(r)}
-                          title={blockedByClaim(r) ? "Already received via a claim this cycle — can't be released again" : undefined}
-                          checked={selected.has(r.id)}
-                          onChange={() => toggleOne(r.id)}
-                          aria-label={`Select ${r.name}`}
-                        />
+                        <input type="checkbox" disabled={r.amount == null} checked={selected.has(r.id)} onChange={() => toggleOne(r.id)} aria-label={`Select ${r.name}`} />
                       </td>
                       <td className="px-3 py-2 tabular-nums text-muted">{i + 1}</td>
                       <td className="px-3 py-2 text-ink">{r.name}</td>
@@ -298,8 +277,6 @@ export function ReleaseManager({
                           <span className="text-xs font-semibold text-green-700">Reimbursed — {r.claimDate}</span>
                         ) : r.claimState === "approved" ? (
                           <span className="text-xs font-semibold text-blue-700">Approved — awaiting payment</span>
-                        ) : r.claimState === "requested" ? (
-                          <span className="text-xs font-semibold text-gold-700">Claim submitted — in review</span>
                         ) : (
                           <span className="text-xs font-semibold text-red-700">Not released</span>
                         )}
@@ -312,7 +289,7 @@ export function ReleaseManager({
                 <tfoot>
                   <tr className="border-t border-line bg-surface text-sm">
                     <td colSpan={5} className="px-3 py-2 text-right font-medium text-muted">
-                      Total · {rows.length} employees · {releasedCount} released{reimbursedCount ? ` · ${reimbursedCount} reimbursed` : ""}{awaitingCount ? ` · ${awaitingCount} awaiting payment` : ""}{requestedCount ? ` · ${requestedCount} claim in review` : ""}
+                      Total · {rows.length} employees · {releasedCount} released{reimbursedCount ? ` · ${reimbursedCount} reimbursed` : ""}{awaitingCount ? ` · ${awaitingCount} awaiting payment` : ""}
                     </td>
                     <td className="px-3 py-2 text-right font-serif text-navy-800 tabular-nums">{egp(total)}</td>
                     <td className="px-3 py-2" />

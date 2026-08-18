@@ -388,11 +388,24 @@ model LeaveRequest {
   // Null once a decision (approve/decline) is made and not yet seen by the requester;
   // set when the requester views their Time-Off page. Drives the nav badge (FR-014).
   decisionSeenAt  DateTime?
+  /// Set when the request is cancelled (spec 035). A cancelled row WITH a decidedAt was an
+  /// approved trip the employee called off before it started — shown as such to manager/HR.
+  cancelledAt     DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
   @@index([userId])
   @@index([approverId, status])
+}
+
+/// An HR-managed public holiday (spec 035). Listed dates never count as working days
+/// anywhere time off is counted — alongside the fixed Friday+Saturday weekend. Company-wide;
+/// stored as a date at UTC midnight, unique so a day can't be listed twice.
+model PublicHoliday {
+  id        String   @id @default(cuid())
+  date      DateTime @unique
+  name      String
+  createdAt DateTime @default(now())
 }
 
 // ─── Benefits (spec 007) ────────────────────────────────────────────────

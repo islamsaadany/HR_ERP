@@ -75,26 +75,22 @@ export default async function BenefitReleasePage({
         where: { guaranteedBenefitId: selected.id, planYearId: planYear.id },
         select: { userId: true, releasedAt: true },
       }),
-      // Claims for this benefit — every non-rejected one blocks a release on top (paying
-      // twice; found 2026-08-18): SUBMITTED reserves the allocation, APPROVED/REIMBURSED
-      // already granted it. Surfaced as distinct statuses and unselectable in the sheet.
+      // Claims recorded for this benefit (HR back-fills these as APPROVED; Finance
+      // confirms → REIMBURSED). Surfaced as a distinct status so a paid/in-flight
+      // person isn't mistaken for "not released".
       prisma.benefitClaim.findMany({
-        where: { guaranteedBenefitId: selected.id, planYearId: planYear.id, status: { not: "REJECTED" } },
-        select: { userId: true, status: true, createdAt: true, decidedAt: true, transferDate: true },
+        where: { guaranteedBenefitId: selected.id, planYearId: planYear.id, status: { in: ["APPROVED", "REIMBURSED"] } },
+        select: { userId: true, status: true, decidedAt: true, transferDate: true },
       }),
     ]);
     const releasedBy = new Map(releases.map((r) => [r.userId, toDateInput(r.releasedAt)]));
-    // One claim state per employee, most advanced wins: reimbursed > approved > requested.
-    const RANK = { requested: 0, approved: 1, reimbursed: 2 } as const;
-    const claimBy = new Map<string, { state: "requested" | "approved" | "reimbursed"; date: string }>();
+    // One claim state per employee: prefer REIMBURSED (terminal) over APPROVED (in-flight).
+    const claimBy = new Map<string, { state: "approved" | "reimbursed"; date: string }>();
     for (const c of claims) {
-      const state =
-        c.status === "REIMBURSED" ? ("reimbursed" as const) : c.status === "APPROVED" ? ("approved" as const) : ("requested" as const);
-      const date = toDateInput(
-        state === "reimbursed" ? c.transferDate ?? c.decidedAt : state === "approved" ? c.decidedAt : c.createdAt
-      );
+      const state = c.status === "REIMBURSED" ? ("reimbursed" as const) : ("approved" as const);
+      const date = toDateInput(state === "reimbursed" ? c.transferDate ?? c.decidedAt : c.decidedAt);
       const prev = claimBy.get(c.userId);
-      if (!prev || RANK[state] > RANK[prev.state]) claimBy.set(c.userId, { state, date });
+      if (!prev || (prev.state === "approved" && state === "reimbursed")) claimBy.set(c.userId, { state, date });
     }
 
     const now = new Date();

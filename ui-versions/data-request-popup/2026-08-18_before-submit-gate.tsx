@@ -117,22 +117,6 @@ export function DataRequestLayer({ groups }: { groups: DataRequestGroup[] }) {
     setOpen(false);
   };
 
-  // Submit only closes once EVERY listed field has been answered this sitting (confirmed,
-  // filled, or corrected — all land in the sitting store). Otherwise it names how many are
-  // left and stays open (user feedback 2026-08-18). "Later" still dismisses freely.
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const submit = () => {
-    const left = frozen.flatMap((g) => g.descriptors).filter((d) => !sittingAnswers.has(d.key)).length;
-    if (left > 0) {
-      setSubmitError(
-        `Please confirm or fill every field first — ${left} ${left === 1 ? "field is" : "fields are"} still waiting. Use Later if you want to come back to it.`
-      );
-      return;
-    }
-    setSubmitError(null);
-    close();
-  };
-
   if (frozen.length === 0 || !open) return null;
 
   const descriptors = frozen.flatMap((g) => g.descriptors);
@@ -163,17 +147,13 @@ export function DataRequestLayer({ groups }: { groups: DataRequestGroup[] }) {
           </div>
         ))}
 
-        {submitError ? (
-          <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{submitError}</p>
-        ) : null}
-
         <div className="mt-6 flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={submit}
+            onClick={close}
             className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700"
           >
-            Submit
+            Finish
           </button>
           <button
             type="button"

@@ -211,11 +211,22 @@ async function flatAllocation(
     return { ok: false, error: "No allocation exists for that benefit — nothing to release against." };
   }
 
-  const existing = await prisma.benefitClaim.findMany({
-    where: { userId: user.id, planYearId: planYear.id, status: { not: "REJECTED" }, ...claimWhere },
-    select: { amount: true },
-  });
-  const claimed = existing.reduce((s, c) => s + c.amount, 0);
+  const [existing, releases] = await Promise.all([
+    prisma.benefitClaim.findMany({
+      where: { userId: user.id, planYearId: planYear.id, status: { not: "REJECTED" }, ...claimWhere },
+      select: { amount: true },
+    }),
+    // A bulk-sheet release (guaranteed benefits only) consumed the allocation too — without
+    // this, a manual entry on top pays the person twice (found 2026-08-18).
+    claimWhere.guaranteedBenefitId
+      ? prisma.benefitRelease.findMany({
+          where: { userId: user.id, planYearId: planYear.id, guaranteedBenefitId: claimWhere.guaranteedBenefitId },
+          select: { amount: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  const claimed =
+    existing.reduce((s, c) => s + c.amount, 0) + releases.reduce((s, r) => s + r.amount, 0);
   return { ok: true, allocation, remaining: Math.max(0, allocation - claimed), claimWhere };
 }
 
