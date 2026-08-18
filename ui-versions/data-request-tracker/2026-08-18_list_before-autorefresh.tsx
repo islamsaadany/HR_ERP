@@ -4,7 +4,6 @@ import { listCampaigns } from "@/lib/profile/campaigns";
 import { campaignFieldLabel } from "@/lib/profile/campaign-fields";
 import { formatDate } from "@/lib/labels";
 import { DeleteCampaignButton } from "@/components/admin/DeleteCampaignButton";
-import { AutoRefresh } from "@/components/AutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +14,6 @@ export default async function DataRequestsPage() {
 
   return (
     <div className="max-w-4xl">
-      {/* Completion counts move as employees answer — keep them live (focus + 30s). */}
-      <AutoRefresh />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin</p>
       <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-serif text-3xl text-ink">Data requests</h1>

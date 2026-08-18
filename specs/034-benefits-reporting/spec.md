@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-18
 
-**Status**: Draft
+**Status**: Built (2026-08-18 — mockup signed off, implemented, verified 46/46 against a production build incl. SC-001)
 
 **Input**: User description: "A reporting page for HR in benefits management to see the status per person, the benefits basket value and what was released, etc. — and if they click on the person they get a full detailed report popup with more data."
 

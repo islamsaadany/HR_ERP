@@ -18,6 +18,21 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Spec 034 — Benefits Reporting (built 2026-08-18 — no migration)
+- [x] Aligned (engine-identical pool math incl. pending; cycle picker; HR Admin + Finance + Super User; popup detail; formatted Excel; leavers behind a filter; "No pool" rows kept visible), mockup **signed off** (`design-mockups/benefits-reporting/2026-08-18_reporting-page.html`), spec at `specs/034-benefits-reporting/spec.md`.
+- [x] `src/lib/benefits/report.ts` — the one report builder (page + Excel share it): per employee, ceiling via `deriveTenureBand` + ceiling table + `poolCycleFraction`/`prorate` (sub-6-month employees get their medical-only entry ceiling at the 3-month mid-joiner fraction, exactly as their own page does), medical via the bulk equivalent of `getMedicalCommitment` + `medicalCycleCharge`, flex used = non-rejected catalogue claims (pending kept in and ALSO split out), guaranteed = releases + guaranteed claims (never pool), per-cycle `flexCapEnabled`, status chip (No pool / No activity / Active / Pending review (n) / Pool exhausted). Nothing denormalised.
+- [x] Page `/admin/benefits/report` (gated `requireBenefitsReporting` — HR Admin/Finance/Super User; Finance gets a back link to Payments instead of Benefits Management) + client `BenefitsReportTable` (cycle picker defaulting to the open cycle, department/status/search/leavers filters, sortable columns, tiles = the VISIBLE table's sums, row-click popup with ceiling derivation / medical people / guaranteed items / claim-by-claim incl. rejected history + proof links). Read-only throughout.
+- [x] Excel export `/api/admin/benefits/report/export` in the house workbook style (navy header, frozen panes, autoFilter, sized columns); the page passes its CURRENT filters on the URL and the route re-applies them, so the workbook always matches the visible table.
+- [x] Entry points: **Reporting** button on Admin → Benefits; **Benefits report** link on Finance → Payments.
+- [x] **Verified against a production build** + throwaway Postgres: 46/46 checks — row figures equal the employee's own Benefits page (SC-001: 30,000 / 9,600 cross-checked in the same run), tiles follow every filter, leaver hidden/included, rejected claim counts nowhere but history, popup totals reconcile, Excel figures + prorated-from note + leavers param, Finance access, employee refused (page redirect + export 307).
+
+## Finance payments sub-tabs (2026-08-18, built — no migration)
+- [x] `/finance` split into two sub-tabs via the house `AdminBenefitsTabs`: **Payments confirmation** (gold badge = APPROVED awaiting) and **Medical recoveries** (red badge = OPEN recoveries). Toasts stay above the tabs; snapshot `ui-versions/finance-page/2026-08-18_before-subtabs.tsx`. Browser-verified in the same 46-check run (badge counts, tab switch, queue + recoveries panels).
+
+## Data-request tracker liveness fix (2026-08-18)
+- [x] Reported: tracker showed **Pending** while the freshly downloaded Excel said **Complete**. Root cause: both read the SAME query (`campaignTracker`) — the tracker in the browser was a **stale render** (answers landed after the page was drawn; the download link always hits the server fresh). Same family as the dead-badge bug: a server page never re-renders on its own.
+- [x] Fix: `src/components/AutoRefresh.tsx` (router.refresh on window focus + every 30s, only while visible) dropped into the tracker page and the campaigns list. Snapshots in `ui-versions/data-request-tracker/`. Verified end-to-end: settle a field in the DB while the tracker sits open → chip flips to Confirmed and the counter to 1/1 on a focus event, **no reload**.
+
 ## Admin Benefits management views (2026-08-16, built — no migration)
 - [x] Mockups built and **signed off** before any component was touched: `design-mockups/medical-commitments/2026-08-16_management-view.html` and `design-mockups/benefits-claims/2026-08-16_claims-queue.html` (rail revised on review to counts-first: Eligible · Committed · Needs attention · Committed premium last).
 - [x] **Medical commitments** → `components/admin/MedicalCommitmentsPanel.tsx`: rail, filter chips + search + click-to-sort, one row per person, per-cycle split behind the opened row, **Manage** panel with per-person age→band working and a live "was X → Y" delta, and a **Not committed** chase list naming DOB-blocked employees. Every figure/wording/action from the old always-expanded list is kept.
@@ -952,4 +967,4 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 
 ---
 
-*Last Updated: 2026-08-17 — unified profile attributes; legal names (EN/AR) + national ID; requestable dependants; strict phone/ID formats + CSV completeness (spec 029, migrations 051–053); profile data request campaigns (spec 033, migration 054).*
+*Last Updated: 2026-08-18 — Benefits Reporting page + Excel (spec 034); Finance payments sub-tabs; data-request tracker auto-refresh fix.*

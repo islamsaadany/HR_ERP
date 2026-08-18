@@ -3,7 +3,6 @@ import { requireFinance } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { formatDate, toDateInput } from "@/lib/labels";
 import { PaymentsQueue, type PaymentRow } from "@/components/finance/PaymentsQueue";
-import { AdminBenefitsTabs } from "@/components/admin/AdminBenefitsTabs";
 import { RecoveriesTable, type RecoveryRow } from "@/components/finance/RecoveriesTable";
 import { syncMedicalRecoveries } from "@/lib/benefits/recoveries";
 
@@ -81,22 +80,13 @@ export default async function FinancePage({
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Finance · Payments</p>
       <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-serif text-3xl text-ink">Payments</h1>
-        <div className="flex items-center gap-2">
-          {/* Finance shares the read-only benefits report (spec 034). */}
-          <Link
-            href="/admin/benefits/report"
-            className="rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
-          >
-            Benefits report
-          </Link>
-          {/* Finance can also run data-request campaigns (spec 033). */}
-          <Link
-            href="/admin/data-requests"
-            className="rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
-          >
-            Data requests
-          </Link>
-        </div>
+        {/* Finance can also run data-request campaigns (spec 033). */}
+        <Link
+          href="/admin/data-requests"
+          className="rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+        >
+          Data requests
+        </Link>
       </div>
       <p className="mt-1 text-muted">
         Approved claims to pay — transfer the covered amount, then confirm it here (the employee is emailed). Reimbursed
@@ -117,33 +107,16 @@ export default async function FinancePage({
         <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
       ) : null}
 
-      {/* Sub-tabs (2026-08-18): the confirmation queue and medical recoveries each get their
-          own tab, badged with what still needs action. Reuses the house tab component. */}
-      <AdminBenefitsTabs
-        tabs={[
-          {
-            id: "payments",
-            label: "Payments confirmation",
-            badge: rows.filter((r) => r.status === "APPROVED").length,
-            node: <PaymentsQueue rows={rows} />,
-          },
-          {
-            id: "recoveries",
-            label: "Medical recoveries",
-            badge: recoveryRows.filter((r) => r.status === "OPEN").length,
-            badgeTone: "bad",
-            node: (
-              <section>
-                <p className="max-w-prose text-muted">
-                  Premium already paid for cover after someone&apos;s last day. Chase the insurer,
-                  then record what came back — or write it off with a reason.
-                </p>
-                <RecoveriesTable rows={recoveryRows} />
-              </section>
-            ),
-          },
-        ]}
-      />
+      <PaymentsQueue rows={rows} />
+
+      <section className="mt-12">
+        <h2 className="font-serif text-2xl text-ink">Medical recoveries</h2>
+        <p className="mt-1 max-w-prose text-muted">
+          Premium already paid for cover after someone&apos;s last day. Chase the insurer, then record
+          what came back — or write it off with a reason.
+        </p>
+        <RecoveriesTable rows={recoveryRows} />
+      </section>
     </div>
   );
 }
