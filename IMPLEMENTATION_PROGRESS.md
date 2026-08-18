@@ -18,6 +18,16 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Spec 035 — Time-Off v2: working-day counts + complete cycle (built 2026-08-18 — Neon migration `055` pending)
+- [x] Preceded by a **full module audit** (17 automated checks on the spec-005 cycle — all passed; gaps documented) and alignment: **no limits, count only, per calendar year; Fri+Sat weekend; HR-managed public holidays (+ Excel bulk upload, added at approval); no leave types; count visible to employee/manager/HR**. Mockup signed off (`design-mockups/timeoff-v2/2026-08-18_timeoff-v2.html`); bridge/long-weekend suggestions deferred to a later round at the user's request.
+- [x] `src/lib/workdays.ts` (pure, UTC-day): `countWorkingDays` / `workingDaysInYear` / `takenInYear` — shared verbatim by the server and the client form preview. `PublicHoliday` table + `LeaveRequest.cancelledAt` in **`prisma/sql/055_timeoff_v2.sql`**.
+- [x] `src/lib/leave-queries.ts`: current-org-chart approval queue (`pendingApprovalWhere` — orphans go to every Super User), `canDecideLeave` (current manager or HR/SU fallback; snapshot is history), `closeLeaverPending` (reconcile-on-read), `takenByUserForYear`, `timeOffBadgeCount`.
+- [x] Employee page: year-count card, live working-day preview with breakdown, self-overlap warning (warn, not block), zero-working-day refusal (client + server), Cancel on pending + **Cancel trip** on approved-future (frees the count; "was approved — cancelled" trail). Manager cards: working days + requester's year chip; overlap pool now includes reports' approved trips.
+- [x] Live nav badge both directions: `/api/time-off/badge` + `TimeOffBadgeSync` (poll on mount/focus/45s → `hrerp:timeoff-count` → AppShell), layout paints the first frame via `timeOffBadgeCount`; dashboard Approvals tile uses the same query.
+- [x] Admin: Working-days + **Taken <year>** columns, current-manager approver label on pending rows, cancelled-by-employee annotation, **Public holidays** page (list by year, add/remove, pre-filled Excel template + bulk upload with bad-row reporting), decider recorded on `approverId`.
+- [x] **Verified against a production build** + throwaway Postgres: **34/34** checks — 4-working-day preview breakdown (7 calendar − 2 weekend − 1 holiday), template round-trip + upload (2 imported, 1 bad row reported, no duplicates), live badge appear/clear without reload, re-route on reporting-line change (old manager loses it, new manager decides, decider recorded), orphan → every-SU queue, leaver auto-close, year-boundary split (4 of 6 days in 2026), cancel-approved trail, employee refusals (holidays page + template route).
+- [ ] **User action**: paste `prisma/sql/055_timeoff_v2.sql` into Neon (after 054).
+
 ## Spec 034 — Benefits Reporting (built 2026-08-18 — no migration)
 - [x] Aligned (engine-identical pool math incl. pending; cycle picker; HR Admin + Finance + Super User; popup detail; formatted Excel; leavers behind a filter; "No pool" rows kept visible), mockup **signed off** (`design-mockups/benefits-reporting/2026-08-18_reporting-page.html`), spec at `specs/034-benefits-reporting/spec.md`.
 - [x] `src/lib/benefits/report.ts` — the one report builder (page + Excel share it): per employee, ceiling via `deriveTenureBand` + ceiling table + `poolCycleFraction`/`prorate` (sub-6-month employees get their medical-only entry ceiling at the 3-month mid-joiner fraction, exactly as their own page does), medical via the bulk equivalent of `getMedicalCommitment` + `medicalCycleCharge`, flex used = non-rejected catalogue claims (pending kept in and ALSO split out), guaranteed = releases + guaranteed claims (never pool), per-cycle `flexCapEnabled`, status chip (No pool / No activity / Active / Pending review (n) / Pool exhausted). Nothing denormalised.
@@ -967,4 +977,4 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 
 ---
 
-*Last Updated: 2026-08-18 — Benefits Reporting page + Excel (spec 034); Finance payments sub-tabs; data-request tracker auto-refresh fix.*
+*Last Updated: 2026-08-18 — Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*

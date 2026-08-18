@@ -9,8 +9,6 @@ import { AppShell } from "@/components/AppShell";
 import { QueryToast } from "@/components/QueryToast";
 import { DataRequestLayer } from "@/components/profile/DataRequestLayer";
 import { dataRequestSummaryFor, type DataRequestSummary } from "@/lib/profile/campaigns";
-import { timeOffBadgeCount } from "@/lib/leave-queries";
-import { TimeOffBadgeSync } from "@/components/TimeOffBadgeSync";
 
 export const dynamic = "force-dynamic";
 
@@ -52,13 +50,17 @@ export default async function AppLayout({
     dataRequests = null;
   }
 
-  // Time-Off badge first frame (spec 005 FR-014 + spec 035 FR-006): the user's unseen
-  // decisions PLUS pending requests awaiting them as the current manager. Kept live after
-  // this render by TimeOffBadgeSync (layouts don't re-render on client navigation).
-  // Guarded so a pre-migration DB never breaks the shell.
+  // In-app cue (FR-014): count the user's decided-but-unseen time-off requests.
+  // Guarded so a pre-migration DB (no decisionSeenAt column) never breaks the shell.
   let timeoffBadge = 0;
   try {
-    timeoffBadge = await timeOffBadgeCount(user);
+    timeoffBadge = await prisma.leaveRequest.count({
+      where: {
+        userId: user.id,
+        status: { in: ["APPROVED", "DECLINED"] },
+        decisionSeenAt: null,
+      },
+    });
   } catch {
     timeoffBadge = 0;
   }
@@ -130,7 +132,6 @@ export default async function AppLayout({
       {/* Always mounted: the popup freezes its field list at open, so it must survive the
           re-render after the LAST answer (summary null) until the employee presses Finish. */}
       <DataRequestLayer groups={dataRequests?.groups ?? []} />
-      <TimeOffBadgeSync />
       <QueryToast />
     </AppShell>
   );

@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-18
 
-**Status**: Draft
+**Status**: Built (2026-08-18 — mockup signed off, implemented, verified 34/34 against a production build; Neon migration `055` pending)
 
 **Input**: User description: "Upgrade the minimal Time-Off module (spec 005) into a fully functioning vacation workflow per the 2026-08-18 audit: working-day counting (Fri/Sat + HR-managed public holidays excluded), a per-calendar-year days-taken count visible to employee/manager/HR, no entitlement limit and no leave types, fix the audit gaps (self-overlap warning, manager pending badge, current-manager routing, leaver auto-close), and allow cancelling an approved future request."
 
@@ -106,6 +106,7 @@ HR maintains a simple list of public holidays (date + name) in admin configurati
 - **FR-008**: Marking an employee as Left MUST close their pending requests automatically.
 - **FR-009**: The employee MUST be able to cancel an APPROVED request before its start date; it becomes Cancelled, leaves the counts, and remains visible as cancelled to manager/HR. Started/past requests cannot be self-cancelled.
 - **FR-010**: HR Admin / Super User MUST manage the public-holidays list (add/remove date + name); changes apply to all future count displays; access is enforced server-side.
+- **FR-012** *(added at build approval, 2026-08-18)*: The holidays screen MUST also support bulk upload: a downloadable Excel template (pre-filled with the current list, with a how-to sheet) and an upload that creates new dates, updates existing ones (never duplicates), and reports skipped bad rows instead of silently dropping them.
 - **FR-011**: All existing spec-005 behaviour not amended here (validation, statuses, HR fallback decisions, decision badge/comments) MUST keep working unchanged.
 
 ### Key Entities
@@ -130,4 +131,5 @@ HR maintains a simple list of public holidays (date + name) in admin configurati
 - The holidays list is company-wide (no per-business-unit calendars in this version).
 - No email notifications — in-app badges only (standing rule: email is limited to the benefit-claim workflow).
 - Out of scope: leave types, half-days, entitlements/balances/carry-over, team calendar view.
+- **Deferred by request (2026-08-18, revisit after this ships):** bridge suggestions — when a public holiday lands near a weekend, the system spots the "bridge" day(s) and highlights the long-weekend opportunity to the team as a travel/rest nudge. To be designed as its own round once v2 is live.
 - Depends on the existing registry reporting lines and the spec-005 request cycle.

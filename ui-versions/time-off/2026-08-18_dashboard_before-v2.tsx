@@ -6,7 +6,6 @@ import { getActivePlanYear } from "@/lib/benefits/config";
 import { getDisabledModules, getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
 import { formatDate } from "@/lib/labels";
-import { pendingApprovalWhere } from "@/lib/leave-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -46,8 +45,7 @@ export default async function DashboardPage() {
       prisma.onboardingActivity.count({ where: { active: true, track: { in: tracks } } }),
       prisma.activityCompletion.count({ where: { userId: me.id } }),
       prisma.leaveRequest.count({ where: { userId: me.id, status: "PENDING" } }),
-      // Current-org-chart approvals (spec 035, FR-007) — same query as the queue itself.
-      prisma.leaveRequest.count({ where: pendingApprovalWhere(me) }),
+      prisma.leaveRequest.count({ where: { approverId: me.id, status: "PENDING" } }),
       planYear
         ? prisma.medicalCommitment.findFirst({
             // Committed for THIS cycle — including a term committed last cycle that still charges it.

@@ -3,10 +3,7 @@ import type { LeaveStatus } from "@prisma/client";
 import { requireAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/labels";
-import { LEAVE_STATUS_LABEL, LEAVE_STATUS_CLASS, overlaps } from "@/lib/leave";
-import { countWorkingDays } from "@/lib/workdays";
-import { getHolidaySet } from "@/lib/holidays";
-import { closeLeaverPending, takenByUserForYear } from "@/lib/leave-queries";
+import { LEAVE_STATUS_LABEL, LEAVE_STATUS_CLASS, dayCount, overlaps } from "@/lib/leave";
 import { approveLeaveRequest, declineLeaveRequest } from "../../time-off/actions";
 import { BackLink } from "@/components/admin/BackLink";
 
@@ -29,21 +26,14 @@ export default async function AdminTimeOffPage({
   const { status } = await searchParams;
   const active = FILTERS.some((f) => f.key === status) ? status! : "ALL";
 
-  // Idempotent sweep (spec 035, FR-008): a leaver's pending requests close on read.
-  await closeLeaverPending();
-
   const where = active === "ALL" ? {} : { status: active as LeaveStatus };
-  const year = new Date().getUTCFullYear();
 
-  const [holidaySet, requests, pool] = await Promise.all([
-    getHolidaySet(),
+  const [requests, pool] = await Promise.all([
     prisma.leaveRequest.findMany({
       where,
       orderBy: [{ status: "asc" }, { startDate: "asc" }],
       include: {
-        // reportsTo = the CURRENT approver of a pending request (spec 035, FR-007);
-        // approver = the snapshot / eventual decider, shown on decided rows.
-        user: { select: { name: true, reportsTo: { select: { name: true, status: true } } } },
+        user: { select: { name: true } },
         approver: { select: { name: true } },
       },
     }),
@@ -53,7 +43,6 @@ export default async function AdminTimeOffPage({
       select: { id: true, userId: true, startDate: true, endDate: true, user: { select: { name: true } } },
     }),
   ]);
-  const takenByUser = await takenByUserForYear(year, holidaySet);
 
   function clashesFor(r: { id: string; userId: string; startDate: Date; endDate: Date }): string[] {
     return pool
@@ -66,36 +55,13 @@ export default async function AdminTimeOffPage({
       .map((o) => o.user.name);
   }
 
-  /** Who this request sits with / was decided by. Pending → the current org chart. */
-  function approverLabel(r: (typeof requests)[number]): string {
-    if (r.status === "PENDING") {
-      return r.user.reportsTo?.status === "ACTIVE"
-        ? r.user.reportsTo.name
-        : "Super User (fallback)";
-    }
-    return r.approver?.name ?? "—";
-  }
-
   return (
     // Full-height flex column (desktop) so the table is the only scroller.
     <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
       <BackLink href="/admin" label="Admin" />
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin · Time-Off</p>
-          <h1 className="mt-1 font-serif text-3xl text-ink">All time-off requests</h1>
-          <p className="mt-1 text-muted">
-            Every request across the company, counted in working days (Fri/Sat &amp; public
-            holidays excluded). You can approve or decline pending ones as a fallback.
-          </p>
-        </div>
-        <a
-          href="/admin/time-off/holidays"
-          className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
-        >
-          Public holidays…
-        </a>
-      </div>
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin · Time-Off</p>
+      <h1 className="mt-1 font-serif text-3xl text-ink">All time-off requests</h1>
+      <p className="mt-1 text-muted">Every request across the company. You can approve or decline pending ones as a fallback.</p>
 
       {/* Status filter */}
       <div className="mt-6 flex flex-wrap gap-2">
@@ -121,8 +87,7 @@ export default async function AdminTimeOffPage({
             <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
               <th className="px-4 py-3 font-medium">Employee</th>
               <th className="px-4 py-3 font-medium">Dates</th>
-              <th className="px-4 py-3 font-medium text-right">Working days</th>
-              <th className="px-4 py-3 font-medium text-right">Taken {year}</th>
+              <th className="px-4 py-3 font-medium">Days</th>
               <th className="px-4 py-3 font-medium">Approver</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3" />
@@ -131,12 +96,11 @@ export default async function AdminTimeOffPage({
           <tbody>
             {requests.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-sm text-muted">No requests.</td>
+                <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted">No requests.</td>
               </tr>
             ) : (
               requests.map((r) => {
                 const clashes = r.status === "PENDING" || r.status === "APPROVED" ? clashesFor(r) : [];
-                const wasApprovedThenCancelled = r.status === "CANCELLED" && r.decidedAt != null;
                 return (
                   <tr key={r.id} className="border-b border-line last:border-b-0 align-top">
                     <td className="px-4 py-3 font-medium text-ink">{r.user.name}</td>
@@ -146,17 +110,9 @@ export default async function AdminTimeOffPage({
                         <div className="mt-0.5 text-xs font-medium text-gold-700">⚠ Overlaps with {clashes.join(", ")}</div>
                       ) : null}
                       {r.note ? <div className="mt-0.5 text-xs text-ink">“{r.note}”</div> : null}
-                      {r.cancelledAt ? (
-                        <div className="mt-0.5 text-xs text-muted">
-                          {wasApprovedThenCancelled ? "was approved · " : ""}cancelled by employee {formatDate(r.cancelledAt)}
-                        </div>
-                      ) : null}
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-muted">
-                      {countWorkingDays(r.startDate, r.endDate, holidaySet)}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-muted">{takenByUser.get(r.userId) ?? 0}</td>
-                    <td className="px-4 py-3 text-muted">{approverLabel(r)}</td>
+                    <td className="px-4 py-3 tabular-nums text-muted">{dayCount(r.startDate, r.endDate)}</td>
+                    <td className="px-4 py-3 text-muted">{r.approver?.name ?? "—"}</td>
                     <td className="px-4 py-3">
                       <span className={"rounded-full px-2 py-0.5 text-xs font-semibold " + LEAVE_STATUS_CLASS[r.status]}>
                         {LEAVE_STATUS_LABEL[r.status]}
