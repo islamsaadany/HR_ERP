@@ -147,3 +147,48 @@ export async function sendBulkEmail(input: {
     return 0;
   }
 }
+
+/**
+ * Send one email and REPORT what happened, instead of swallowing it.
+ *
+ * `sendEmail` and `sendBulkEmail` are deliberately silent — a claim or an announcement must
+ * never be rolled back because mail failed. But a TEST send has the opposite requirement:
+ * its whole purpose is to tell you whether delivery works, so "nothing arrived and nothing
+ * was said" is the one useless outcome. This names the blocker — missing key, missing
+ * sender, master toggle off, or Resend's own rejection — so the screen can print it.
+ */
+export async function sendReportedEmail(input: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!apiKey) return { ok: false, error: "RESEND_API_KEY isn't set in the environment." };
+  if (!from) return { ok: false, error: "EMAIL_FROM isn't set in the environment." };
+  const to = (input.to ?? "").trim();
+  if (!to) return { ok: false, error: "No recipient address." };
+
+  const settings = await getNotificationSettings();
+  if (!settings.emailEnabled) {
+    return {
+      ok: false,
+      error: "Email notifications are switched off — turn on the master toggle at Admin → Notifications.",
+    };
+  }
+  const fromHeader = settings.fromName ? `${settings.fromName} <${from}>` : from;
+  try {
+    const res = await resend!.emails.send({
+      from: fromHeader,
+      to,
+      subject: input.subject,
+      html: input.html,
+    });
+    if (res.error) {
+      // Resend's own words — usually an unverified sending domain, which no amount of
+      // in-app configuration will fix.
+      return { ok: false, error: `Resend rejected it: ${res.error.message ?? "unknown error"}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "The send failed." };
+  }
+}

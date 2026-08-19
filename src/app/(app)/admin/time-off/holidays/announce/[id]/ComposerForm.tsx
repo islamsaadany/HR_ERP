@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { sendAnnouncement, sendTestAnnouncement, saveAnnouncementDraft } from "../../actions";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  sendAnnouncement,
+  sendTestAnnouncement,
+  saveAnnouncementDraft,
+  type ComposerResult,
+} from "../../actions";
 
 export type Recipient = { id: string; name: string | null; email: string; department: string | null };
 
@@ -33,6 +39,30 @@ export function ComposerForm({
   /** The bridge day the message links to, or null when the calendar offers none. */
   suggestedLabel: string | null;
 }) {
+  const router = useRouter();
+
+  /**
+   * One action slot for all four buttons. Whichever ran last reports here, so the page
+   * never navigates — it just refreshes its server data quietly and shows the banner below
+   * the title. `pending` disables the buttons so a double-click can't send twice.
+   */
+  const [result, run, pending] = useActionState<ComposerResult | null, FormData>(
+    async (_prev, formData) => {
+      const intent = String(formData.get("intent") ?? "send");
+      if (intent === "test") return sendTestAnnouncement(formData);
+      if (intent === "save") return saveAnnouncementDraft(formData);
+      return sendAnnouncement(formData);
+    },
+    null
+  );
+
+  // A send changes what the page says about this holiday (announced, recipient count, the
+  // outdated flag) — pull the fresh server render in without a navigation.
+  useEffect(() => {
+    if (result?.ok) router.refresh();
+  }, [result, router]);
+
+  const [intent, setIntent] = useState<"send" | "test" | "save">("send");
   const [language, setLanguage] = useState<"both" | "en" | "ar">("both");
   const [picker, setPicker] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -55,8 +85,20 @@ export function ComposerForm({
   ];
 
   return (
-    <form action={sendAnnouncement} className="mt-6">
+    <form action={run} className="mt-6">
       <input type="hidden" name="id" value={holidayId} />
+      <input type="hidden" name="intent" value={intent} />
+
+      {result?.ok && result.message ? (
+        <p className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {result.message}
+        </p>
+      ) : null}
+      {result && !result.ok ? (
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {result.error}
+        </p>
+      ) : null}
       <input type="hidden" name="language" value={language} />
       {resendConfirmed ? <input type="hidden" name="resendConfirmed" value="1" /> : null}
       {/* The picked people ride along so the server sends to exactly what the chips show. */}
@@ -157,11 +199,12 @@ export function ComposerForm({
             />
           </div>
           <button
-            formAction={sendTestAnnouncement}
             formNoValidate
-            className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700"
+            disabled={pending}
+            onClick={() => setIntent("test")}
+            className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-700 disabled:bg-navy-200"
           >
-            Send
+            {pending && intent === "test" ? "Sending…" : "Send"}
           </button>
           <button
             type="button"
@@ -179,17 +222,19 @@ export function ComposerForm({
       {/* The three ways to send, plus keeping the wording for later. */}
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <button
-          disabled={!canSend}
+          disabled={!canSend || pending}
+          onClick={() => setIntent("send")}
           className="rounded-lg bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-700 disabled:cursor-not-allowed disabled:bg-navy-200"
         >
-          {sendLabel}
+          {pending && intent === "send" ? "Sending…" : sendLabel}
         </button>
 
         {chosen.length > 0 ? (
           <button
             name="audience"
             value="selected"
-            disabled={!canSend}
+            disabled={!canSend || pending}
+            onClick={() => setIntent("send")}
             className="rounded-lg bg-navy-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-700 disabled:cursor-not-allowed disabled:bg-navy-200"
           >
             Send to {chosen.length} selected
@@ -213,11 +258,12 @@ export function ComposerForm({
         </button>
 
         <button
-          formAction={saveAnnouncementDraft}
           formNoValidate
-          className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-muted hover:border-navy-200 hover:text-navy-700"
+          disabled={pending}
+          onClick={() => setIntent("save")}
+          className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-muted hover:border-navy-200 hover:text-navy-700 disabled:opacity-50"
         >
-          Save draft
+          {pending && intent === "save" ? "Saving…" : "Save draft"}
         </button>
 
         <span className="w-full text-xs text-muted">

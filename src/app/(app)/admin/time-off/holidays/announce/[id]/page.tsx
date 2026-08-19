@@ -23,14 +23,11 @@ const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
  */
 export default async function AnnounceHolidayPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; ok?: string }>;
 }) {
   await requireAdmin();
   const { id } = await params;
-  const { error, ok } = await searchParams;
 
   const holiday = await prisma.publicHoliday.findUnique({
     where: { id },
@@ -89,9 +86,6 @@ export default async function AnnounceHolidayPage({
           ? "Opened with your saved draft. Edit anything before sending; what you send is what people read."
           : "Drafted from the calendar. Edit anything before sending; what you send is what people read."}
       </p>
-
-      {ok ? <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{ok}</p> : null}
-      {error ? <p className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
 
       {tentative ? (
         <p className="mt-4 rounded-lg border border-gold-300 bg-gold-100 px-4 py-3 text-sm text-gold-800">
