@@ -1,0 +1,158 @@
+<title>Announcement Composer</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green-50:#eef7f1;--green-200:#bfe0cb;--green-700:#2f7a4d;
+    --font-serif:"Iowan Old Style",Palatino,Georgia,serif;
+    --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}html,body{margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);padding:26px 18px 70px;}
+  .wrap{max-width:980px;margin:0 auto;}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-600);margin:0;}
+  h1{font-family:var(--font-serif);font-size:27px;margin:4px 0 4px;}
+  .lead{color:var(--muted);font-size:13.5px;line-height:1.6;margin:0 0 16px;}
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;font-weight:600;}
+  input,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:14px;background:var(--surface);color:var(--ink);font-family:inherit;}
+  textarea{line-height:1.65;resize:vertical;}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr;}}
+  .btn{border:none;background:var(--navy-800);color:#fff;font-size:13.5px;font-weight:600;padding:10px 18px;border-radius:9px;cursor:pointer;font-family:inherit;}
+  .btn:hover{background:var(--navy-700);}
+  .btn.ghost{background:var(--surface);color:var(--navy-700);border:1px solid var(--navy-200);}
+  .btn.ghost:hover{background:var(--navy-50);}
+  .btn.quiet{background:var(--surface);color:var(--muted);border:1px solid var(--line);}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+  .seg button{border:none;background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:7px 13px;cursor:pointer;font-family:inherit;}
+  .seg button.on{background:var(--navy-800);color:#fff;}
+  .note{border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.55;margin-bottom:14px;}
+  .note.ok{background:var(--green-50);border:1px solid var(--green-200);color:var(--green-700);}
+  .chips{margin-top:16px;border:1px solid var(--navy-200);background:rgba(236,239,245,.6);border-radius:12px;padding:12px 14px;}
+  .chips .h{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--navy-700);}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--navy-200);background:var(--surface);border-radius:999px;padding:3px 10px;font-size:12.5px;margin:7px 6px 0 0;}
+  .chip b{font-weight:400;}
+  .chip span{color:var(--muted);cursor:pointer;}
+  .test{margin-top:16px;border:1px dashed var(--navy-200);background:linear-gradient(0deg,var(--navy-50),transparent);border-radius:12px;padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+  .test .f{flex:1;min-width:230px;}
+  .foot{width:100%;font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .actions{margin-top:20px;display:flex;flex-wrap:wrap;gap:9px;align-items:center;}
+  .hide{display:none!important;}
+  .modal-bg{position:fixed;inset:0;background:rgba(10,26,48,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;}
+  .modal{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(10,26,48,.3);}
+  .modal h2{font-family:var(--font-serif);font-size:20px;margin:0 0 4px;}
+  .list{margin-top:8px;border:1px solid var(--line);border-radius:9px;overflow-y:auto;flex:1;min-height:0;}
+  .list label{display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--line);padding:9px 12px;font-size:13.5px;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:400;margin:0;cursor:pointer;}
+  .list label:last-child{border-bottom:none;}
+  .list label:hover{background:var(--navy-50);}
+  .list input{width:auto;}
+  .dept{font-size:11.5px;color:var(--muted);}
+  .mini{display:flex;gap:12px;align-items:center;font-size:12px;margin-top:8px;}
+  .mini a{color:var(--navy-700);font-weight:600;text-decoration:none;cursor:pointer;}
+  .mini .count{margin-left:auto;color:var(--muted);}
+  .cap{font-family:var(--font-serif);font-size:16px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--line);}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Admin · Time-Off · Announcement</p>
+  <h1>Sham El-Nessim — tell the team</h1>
+  <p class="lead">Drafted from the calendar. Edit anything before sending; what you send is what people read.</p>
+
+  <div class="note ok" id="msg">Test sent to islam@forefront.consulting — nothing was recorded and nobody else got it.</div>
+
+  <div><label>Subject</label><input value="Sham El-Nessim is coming — and there's a bridge worth taking"></div>
+
+  <div class="row" style="margin-top:16px">
+    <span style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600">Send in</span>
+    <span class="seg">
+      <button class="on" onclick="lang(this,'both')">English + Arabic</button>
+      <button onclick="lang(this,'en')">English only</button>
+      <button onclick="lang(this,'ar')">Arabic only</button>
+    </span>
+  </div>
+
+  <div class="grid2">
+    <div id="en-col"><label>Message · English</label>
+      <textarea rows="11">Hi everyone,
+
+Sham El-Nessim falls on Monday 13/04/2026. Sunday 12/04/2026 is the only working day standing between it and our weekend — take that one day off and you are away from 10/04/2026 to 13/04/2026: 4 days for 1 day of leave.
+
+Please use it. Rest properly, travel if you have been meaning to, spend the time with your family, and come back with your energy restored.
+
+Happy Sham El-Nessim.</textarea></div>
+    <div id="ar-col"><label>Message · Arabic</label>
+      <textarea rows="11" dir="rtl">يا جماعة،
+
+شم النسيم يوم الاتنين 13/04/2026. ويوم الأحد 12/04/2026 هو يوم الشغل الوحيد اللي فاصل بينه وبين الويك إند — خدوه إجازة وتبقى إجازتكم من 10/04 لحد 13/04: 4 أيام مقابل يوم إجازة واحد.
+
+استغلّوها بجد: ارتاحوا صح، وسافروا لو ناويين، واقضوا وقت مع أهلكم، وارجعوا وانتم مليانين طاقة.
+
+كل سنة وانتوا طيبين.</textarea></div>
+  </div>
+
+  <div class="chips" id="chips">
+    <div class="h">Sending to 3 people</div>
+    <div>
+      <span class="chip"><b>Nour Hassan</b><span onclick="drop(this)">×</span></span>
+      <span class="chip"><b>Omar Fathy</b><span onclick="drop(this)">×</span></span>
+      <span class="chip"><b>Mariam Adel</b><span onclick="drop(this)">×</span></span>
+    </div>
+  </div>
+
+  <div class="test hide" id="test">
+    <div class="f"><label>Send one copy to</label><input type="email" value="islam@forefront.consulting"></div>
+    <button class="btn">Send</button>
+    <button class="btn quiet" onclick="tog('test')">Cancel</button>
+    <p class="foot">Subject is prefixed “[TEST]”. Nothing is recorded and nobody else receives it.</p>
+  </div>
+
+  <div class="actions">
+    <button class="btn">Send to everyone</button>
+    <button class="btn" id="selbtn">Send to 3 selected</button>
+    <button class="btn ghost" onclick="openPicker()">Change who…</button>
+    <button class="btn ghost" onclick="tog('test')">Send test…</button>
+    <button class="btn quiet">Save draft</button>
+    <span class="foot">The “request 12/04/2026 off” button is added to the message automatically.</span>
+  </div>
+
+  <p class="cap">The people popup — opens on “Send to selected…”</p>
+  <div style="position:relative;border:1px solid var(--line);border-radius:14px;background:rgba(10,26,48,.06);padding:26px;display:flex;justify-content:center">
+    <div class="modal" style="box-shadow:0 10px 30px rgba(10,26,48,.18)">
+      <h2>Who should get this?</h2>
+      <p class="lead" style="margin:0">Tick the people to send to. Everyone else hears nothing.</p>
+      <input placeholder="Search name or department…" style="margin-top:12px">
+      <div class="mini"><a>Select all shown</a><a style="color:var(--muted)">Clear</a><span class="count">3 picked</span></div>
+      <div class="list" style="max-height:200px">
+        <label><input type="checkbox" checked><span>Nour Hassan</span><span class="dept">· Consulting</span></label>
+        <label><input type="checkbox" checked><span>Omar Fathy</span><span class="dept">· Consulting</span></label>
+        <label><input type="checkbox" checked><span>Mariam Adel</span><span class="dept">· Finance</span></label>
+        <label><input type="checkbox"><span>Youssef Kamal</span><span class="dept">· Delivery</span></label>
+        <label><input type="checkbox"><span>Salma Ibrahim</span><span class="dept">· People</span></label>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn quiet">Cancel</button><button class="btn">Done · 3</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function lang(b,v){
+    b.parentElement.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});
+    b.classList.add('on');
+    document.getElementById('en-col').classList.toggle('hide', v==='ar');
+    document.getElementById('ar-col').classList.toggle('hide', v==='en');
+  }
+  function tog(id){document.getElementById(id).classList.toggle('hide')}
+  function drop(el){
+    var chip=el.parentElement, box=chip.parentElement; chip.remove();
+    var n=box.querySelectorAll('.chip').length;
+    document.querySelector('#chips .h').textContent='Sending to '+n+(n===1?' person':' people');
+    document.getElementById('selbtn').textContent='Send to '+n+' selected';
+    if(n===0){document.getElementById('chips').classList.add('hide');document.getElementById('selbtn').classList.add('hide');
+      document.querySelector('.actions .ghost').textContent='Send to selected…';}
+  }
+  function openPicker(){window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}
+</script>
