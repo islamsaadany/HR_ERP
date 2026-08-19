@@ -318,6 +318,18 @@ export function draftHolidayAnnouncement(d: {
   return { subject, bodyEn, bodyAr };
 }
 
+/**
+ * Bold every dd/mm/yyyy date, and stop mail clients turning it into a blue link.
+ *
+ * Gmail and Apple Mail auto-detect anything date-shaped and linkify it, which made the one
+ * fact people actually scan for look like a hyperlink to nowhere. A zero-width space inside
+ * the year defeats the pattern matcher while leaving the text visually identical — the date
+ * still reads, and still copies, as 27/08/2026.
+ */
+const DATE_RE = /\b(\d{2})\/(\d{2})\/(\d{4})\b/g;
+const emphasiseDates = (html: string) =>
+  html.replace(DATE_RE, (_m, d, mo, y) => `<strong>${d}/${mo}/&#8203;${y}</strong>`);
+
 /** Turn plain-text paragraphs into the email shell's paragraph markup. */
 const paragraphs = (text: string, rtl = false) =>
   text
@@ -328,7 +340,7 @@ const paragraphs = (text: string, rtl = false) =>
       (block) =>
         `<p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:${INK};${
           rtl ? "direction:rtl;text-align:right;" : ""
-        }">${escapeHtml(block).replace(/\n/g, "<br>")}</p>`
+        }">${emphasiseDates(escapeHtml(block)).replace(/\n/g, "<br>")}</p>`
     )
     .join("");
 
