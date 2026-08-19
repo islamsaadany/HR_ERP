@@ -8,7 +8,11 @@ import { requireAdmin } from "@/lib/roles";
 import { formatDate } from "@/lib/labels";
 import { expandRange, getHolidaySet } from "@/lib/holidays";
 import { sendEmail, sendBulkEmail } from "@/lib/email/client";
-import { holidayDayReturned, renderHolidayAnnouncement } from "@/lib/email/templates";
+import {
+  holidayDayReturned,
+  renderHolidayAnnouncement,
+  type AnnouncementLanguage,
+} from "@/lib/email/templates";
 import { buildAnnouncementDraft } from "@/lib/timeoff/announcement";
 import { fetchHolidaySuggestions } from "@/lib/timeoff/holiday-source";
 
@@ -409,6 +413,50 @@ export async function uploadHolidays(formData: FormData): Promise<void> {
   ok(summary);
 }
 
+/** Which script(s) to send. Anything unrecognised falls back to English only. */
+function readLanguage(formData: FormData): AnnouncementLanguage {
+  const raw = ((formData.get("language") as string) ?? "").trim();
+  return raw === "ar" || raw === "both" ? raw : "en";
+}
+
+/**
+ * Send ONE copy to a single address so HR can read the real thing before the team does.
+ *
+ * Deliberately writes NO announcement record and touches no state: a test is a rehearsal,
+ * not a send, and must not make the holiday look announced or trip the "already announced"
+ * guard. It also ignores the audience choice — a test goes exactly where HR typed.
+ */
+export async function sendTestAnnouncement(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = ((formData.get("id") as string) ?? "").trim();
+  const to = ((formData.get("testTo") as string) ?? "").trim();
+  if (!id) return;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) fail("Enter a valid email address to send the test to.");
+
+  const holiday = await prisma.publicHoliday.findUnique({ where: { id } });
+  if (!holiday) fail("That holiday no longer exists.");
+
+  const subject = ((formData.get("subject") as string) ?? "").trim();
+  const bodyEn = ((formData.get("bodyEn") as string) ?? "").trim();
+  const bodyAr = ((formData.get("bodyAr") as string) ?? "").trim();
+  const language = readLanguage(formData);
+  if (!subject) fail("Give the announcement a subject before testing it.");
+
+  const draft = buildAnnouncementDraft(holiday!, await getHolidaySet());
+  const rendered = renderHolidayAnnouncement({
+    subject: `[TEST] ${subject}`,
+    bodyEn,
+    bodyAr,
+    language,
+    suggested: draft.suggested,
+  });
+  const reached = await sendBulkEmail({ to: [to], subject: rendered.subject, html: rendered.html });
+
+  PATHS.forEach((p) => revalidatePath(p));
+  if (reached > 0) ok(`Test sent to ${to} — nothing was recorded and nobody else got it.`);
+  fail(`Nothing was sent to ${to}. Email is off or not configured — check Admin → Notifications.`);
+}
+
 /**
  * Send the announcement HR reviewed (spec 037, FR-010).
  *
@@ -436,9 +484,11 @@ export async function sendAnnouncement(formData: FormData): Promise<void> {
 
   const subject = ((formData.get("subject") as string) ?? "").trim();
   const bodyEn = ((formData.get("bodyEn") as string) ?? "").trim();
-  if (!subject || !bodyEn) {
-    fail("Give the announcement a subject and a message.");
-  }
+  const bodyAr = ((formData.get("bodyAr") as string) ?? "").trim();
+  const language = readLanguage(formData);
+  if (!subject) fail("Give the announcement a subject.");
+  if ((language === "en" || language === "both") && !bodyEn) fail("The English message is empty.");
+  if ((language === "ar" || language === "both") && !bodyAr) fail("The Arabic message is empty.");
 
   // Re-sending at dates already announced needs an explicit second click (FR-010).
   const last = holiday!.announcements[0];
@@ -458,14 +508,22 @@ export async function sendAnnouncement(formData: FormData): Promise<void> {
   const holidaySet = await getHolidaySet();
   const draft = buildAnnouncementDraft(holiday!, holidaySet, { isCorrection });
 
+  // Everyone, or just the people HR ticked.
+  const picked = formData.getAll("recipient").map(String).filter(Boolean);
+  const toSelected = formData.get("audience") === "selected";
+  if (toSelected && picked.length === 0) {
+    fail("Tick at least one person, or switch back to sending to everyone.");
+  }
   const recipients = await prisma.user.findMany({
-    where: { status: "ACTIVE" },
+    where: { status: "ACTIVE", ...(toSelected ? { id: { in: picked } } : {}) },
     select: { email: true },
   });
 
   const rendered = renderHolidayAnnouncement({
     subject,
     bodyEn,
+    bodyAr,
+    language,
     suggested: draft.suggested,
   });
 
@@ -476,9 +534,7 @@ export async function sendAnnouncement(formData: FormData): Promise<void> {
       kind: isCorrection ? "CORRECTION" : "ORIGINAL",
       subject,
       bodyEn,
-      // Composed but not sent while the Arabic half is switched off — kept so turning it
-      // back on needs no migration and no lost history.
-      bodyAr: draft.bodyAr,
+      bodyAr,
       announcedStart: holiday!.actualStart,
       announcedEnd: holiday!.actualEnd,
       bridgeDates: draft.bridgeISO.length ? draft.bridgeISO.join(",") : null,
@@ -499,7 +555,7 @@ export async function sendAnnouncement(formData: FormData): Promise<void> {
   PATHS.forEach((p) => revalidatePath(p));
   ok(
     reached > 0
-      ? `${isCorrection ? "Correction" : "Announcement"} sent to ${reached} ${reached === 1 ? "person" : "people"}.`
+      ? `${isCorrection ? "Correction" : "Announcement"} sent to ${reached} ${reached === 1 ? "person" : "people"}${toSelected ? " (the people you picked)" : ""}.`
       : `${isCorrection ? "Correction" : "Announcement"} recorded, and the dashboard banner is live. ` +
         `No email went out — check email settings if you expected it to.`
   );

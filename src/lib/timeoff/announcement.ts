@@ -10,7 +10,8 @@ import { formatDate } from "@/lib/labels";
 import { dayKey } from "@/lib/workdays";
 
 const WEEKDAY_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const WEEKDAY_AR = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+// Egyptian everyday forms — الاتنين/التلات/الأربع, not the MSA الإثنين/الثلاثاء/الأربعاء.
+const WEEKDAY_AR = ["الأحد", "الاتنين", "التلات", "الأربع", "الخميس", "الجمعة", "السبت"];
 
 /** "Monday 13/04/2026" — the weekday matters here; the date format stays the house dd/mm/yyyy. */
 export function withWeekday(d: Date): string {
@@ -29,8 +30,8 @@ function spanEn(start: Date, end: Date): string {
 
 function spanAr(start: Date, end: Date): string {
   return start.getTime() === end.getTime()
-    ? withWeekdayAr(start)
-    : `من ${withWeekdayAr(start)} حتى ${withWeekdayAr(end)}`;
+    ? `يوم ${withWeekdayAr(start)}`
+    : `من ${withWeekdayAr(start)} لحد ${withWeekdayAr(end)}`;
 }
 
 export type AnnouncementDraft = {
@@ -74,7 +75,7 @@ export function buildAnnouncementDraft(
     bridgesAr: shape.bridges.map(withWeekdayAr),
     stretch: shape.bridges.length ? `from ${formatDate(shape.stretchStart)} to ${formatDate(shape.stretchEnd)}` : null,
     stretchAr: shape.bridges.length
-      ? `من ${formatDate(shape.stretchStart)} حتى ${formatDate(shape.stretchEnd)}`
+      ? `من ${formatDate(shape.stretchStart)} لحد ${formatDate(shape.stretchEnd)}`
       : null,
     stretchDays: shape.bridges.length ? shape.stretchDays : shape.totalDaysOff,
     isCorrection: !!opts.isCorrection,

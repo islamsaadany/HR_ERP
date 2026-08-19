@@ -249,7 +249,7 @@ export function draftHolidayAnnouncement(d: {
   const correctionEn = d.isCorrection
     ? "A correction to what we sent earlier — the dates have changed.\n\n"
     : "";
-  const correctionAr = d.isCorrection ? "تصحيح لما أرسلناه سابقاً — تغيّرت التواريخ.\n\n" : "";
+  const correctionAr = d.isCorrection ? "تصحيح للرسالة اللي بعتناها قبل كده — التواريخ اتغيّرت.\n\n" : "";
 
   // The calendar sentence changes shape with what the calendar actually offers, so we never
   // promise a bridge that isn't there (spec 037: describe it honestly).
@@ -266,12 +266,12 @@ export function draftHolidayAnnouncement(d: {
       }.`;
 
   const calendarAr = d.fallsOnWeekendOnly
-    ? `يوافق ${arName} ${d.holidayWhenAr} — وهو ضمن عطلة نهاية الأسبوع هذا العام، فلا يضيف يوم إجازة.`
+    ? `${arName} ${d.holidayWhenAr} — يعني في الويك إند نفسه السنة دي، فمش هيزوّد يوم إجازة.`
     : bridgeCount
-    ? `يوافق ${arName} ${d.holidayWhenAr}. و${
-        bridgeCount === 1 ? `يوم ${d.bridgesAr[0]} هو يوم العمل الوحيد` : `${d.bridgesAr.join(" و")} هما يوما العمل الوحيدان`
-      } الذي يفصل بينه وبين عطلة نهاية الأسبوع — خذ هذا اليوم إجازةً وتكون عطلتك ${d.stretchAr}: ${d.stretchDays} أيام مقابل ${bridgeCount === 1 ? "يوم إجازة واحد" : `${bridgeCount} أيام إجازة`}.`
-    : `يوافق ${arName} ${d.holidayWhenAr}${d.stretchDays >= 3 ? `، وتكون لدينا ${d.stretchDays} أيام إجازة متصلة` : ""}.`;
+    ? `${arName} ${d.holidayWhenAr}. و${
+        bridgeCount === 1 ? `يوم ${d.bridgesAr[0]} هو يوم الشغل الوحيد` : `${d.bridgesAr.join(" و")} هما يومين الشغل الوحيدين`
+      } اللي فاصل بينه وبين الويك إند — خدوه إجازة وتبقى إجازتكم ${d.stretchAr}: ${d.stretchDays} أيام مقابل ${bridgeCount === 1 ? "يوم إجازة واحد" : `${bridgeCount} أيام إجازة`}.`
+    : `${arName} ${d.holidayWhenAr}${d.stretchDays >= 3 ? `، يعني ${d.stretchDays} أيام إجازة ورا بعض` : ""}.`;
 
   const inviteEn = d.fallsOnWeekendOnly
     ? `Not much of a break this time, but the day is still worth marking — rest where you can, ` +
@@ -284,14 +284,14 @@ export function draftHolidayAnnouncement(d: {
     `${correctionEn}Hi everyone,\n\n` + `${calendarEn}\n\n` + `${inviteEn}\n\n` + `Happy ${d.holidayName}.`;
 
   const inviteAr = d.fallsOnWeekendOnly
-    ? `ليست إجازة طويلة هذه المرة، لكن المناسبة تستحق الاحتفاء — استريحوا قدر ما تستطيعون، ` +
-      `وترقّبوا الإجازة القادمة.`
-    : `نتمنى أن تستفيدوا منها: استريحوا جيداً، وسافروا إن كنتم تنوون ذلك، واقضوا الوقت مع عائلاتكم، ` +
-      `وعودوا وقد استعدتم طاقتكم. أنتم أدرى بالتزاماتكم — فإن لم يكن لديكم ما هو عاجل أو حرج، فخذوا ` +
-      `إجازتكم؛ العمل سيظل في انتظاركم.`;
+    ? `مش إجازة طويلة المرة دي، بس المناسبة تستاهل — ارتاحوا قد ما تقدروا، ` +
+      `والإجازة الجاية قريبة.`
+    : `استغلّوها بجد: ارتاحوا صح، وسافروا لو ناويين، واقضوا وقت مع أهلكم، وارجعوا ` +
+      `وانتم مليانين طاقة. انتوا أعرف بظروف شغلكم — لو مفيش حاجة مستعجلة أو حرجة، ` +
+      `خدوا إجازتكم؛ الشغل هيفضل مستنيكم.`;
 
   const bodyAr =
-    `${correctionAr}مرحباً بالجميع،\n\n` + `${calendarAr}\n\n` + `${inviteAr}\n\n` + `كل عام وأنتم بخير.`;
+    `${correctionAr}يا جماعة،\n\n` + `${calendarAr}\n\n` + `${inviteAr}\n\n` + `كل سنة وانتوا طيبين.`;
 
   const subject = d.isCorrection
     ? `Correction: ${d.holidayName} — new dates`
@@ -325,33 +325,54 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/** Which script(s) the team receives. */
+export type AnnouncementLanguage = "en" | "ar" | "both";
+
 /**
  * Render the announcement HR approved into the house email shell.
  *
- * ENGLISH ONLY for now (2026-08-19, user's call): the bilingual send was one message with an
- * Arabic block under a divider, and the Arabic half is switched off until it's wanted. The
- * draft still composes `bodyAr` and it is still stored on the announcement record, so turning
- * it back on is re-adding the block here and the field in the composer.
+ * HR chooses the script per send: English only, Arabic only, or both in one message
+ * (English first, then the Arabic block right-to-left under a divider). Everything HR typed
+ * is escaped — the draft is editable, so it is untrusted markup.
  */
 export function renderHolidayAnnouncement(d: {
   subject: string;
   bodyEn: string;
-  /** Composed and recorded, but not sent while the Arabic half is switched off. */
-  bodyAr?: string;
+  bodyAr: string;
+  language: AnnouncementLanguage;
   /** yyyy-mm-dd range for the prefilled request, when there is a bridge to suggest. */
   suggested: { startISO: string; endISO: string; label: string; labelAr: string } | null;
 }) {
-  const cta = d.suggested
-    ? `<p style="margin:0 0 6px;"><a href="${link(
-        `/time-off?start=${d.suggested.startISO}&end=${d.suggested.endISO}`
-      )}" style="background:${NAVY};color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border-radius:8px;display:inline-block;">Request ${
-        d.suggested.label
-      } off →</a></p>` +
-      `<p style="margin:0 0 4px;font-size:12px;color:${MUTED};">Goes to your manager like any other request.</p>`
+  const href = d.suggested
+    ? link(`/time-off?start=${d.suggested.startISO}&end=${d.suggested.endISO}`)
+    : "";
+  const button = (label: string, rtl: boolean) =>
+    `<p style="margin:0 0 6px;${rtl ? "direction:rtl;text-align:right;" : ""}"><a href="${href}" style="background:${NAVY};color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border-radius:8px;display:inline-block;">${label}</a></p>`;
+
+  const showEn = d.language === "en" || d.language === "both";
+  const showAr = d.language === "ar" || d.language === "both";
+
+  const enBlock = showEn
+    ? paragraphs(d.bodyEn) +
+      (d.suggested
+        ? button(`Request ${d.suggested.label} off →`, false) +
+          `<p style="margin:0 0 4px;font-size:12px;color:${MUTED};">Goes to your manager like any other request.</p>`
+        : "")
     : "";
 
-  return {
-    subject: d.subject,
-    html: layout(escapeHtml(d.subject), paragraphs(d.bodyEn) + cta),
-  };
+  const arInner =
+    paragraphs(d.bodyAr, true) +
+    (d.suggested
+      ? button(`اطلب إجازة ${d.suggested.labelAr} ←`, true) +
+        `<p style="margin:0;direction:rtl;text-align:right;font-size:12px;color:${MUTED};">الطلب بيروح لمديرك زي أي طلب إجازة.</p>`
+      : "");
+
+  // The divider only earns its place when both scripts are in the same message.
+  const arBlock = showAr
+    ? d.language === "both"
+      ? `<div style="border-top:1px solid ${LINE};margin-top:18px;padding-top:14px;">${arInner}</div>`
+      : arInner
+    : "";
+
+  return { subject: d.subject, html: layout(escapeHtml(d.subject), enBlock + arBlock) };
 }

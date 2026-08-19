@@ -8,7 +8,7 @@ import { isOffDay } from "@/lib/timeoff/breaks";
 import { formatDate } from "@/lib/labels";
 import { dayKey } from "@/lib/workdays";
 import { BackLink } from "@/components/admin/BackLink";
-import { sendAnnouncement } from "../../actions";
+import { sendAnnouncement, sendTestAnnouncement } from "../../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +39,11 @@ export default async function AnnounceHolidayPage({
   if (!holiday) notFound();
 
   const holidaySet = await getHolidaySet();
+  const employees = await prisma.user.findMany({
+    where: { status: "ACTIVE" },
+    select: { id: true, name: true, email: true, department: true },
+    orderBy: { name: "asc" },
+  });
   const outdated = announcementOutdated(holiday);
   const announced = alreadyAnnounced(holiday);
   const isCorrection = outdated;
@@ -184,13 +189,91 @@ export default async function AnnounceHolidayPage({
           />
         </div>
 
-        {/* English only for now (2026-08-19): the Arabic half of the announcement is switched
-            off, so the composer doesn't offer a field that would never be sent. */}
-        <div className="mt-4">
-          <label htmlFor="ann-en" className="mb-1 block text-xs uppercase tracking-wide text-muted">
-            Message
-          </label>
-          <textarea id="ann-en" name="bodyEn" rows={14} defaultValue={draft.bodyEn} required className={areaCls} />
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div>
+            <label htmlFor="ann-en" className="mb-1 block text-xs uppercase tracking-wide text-muted">
+              Message · English
+            </label>
+            <textarea id="ann-en" name="bodyEn" rows={14} defaultValue={draft.bodyEn} className={areaCls} />
+          </div>
+          <div>
+            <label htmlFor="ann-ar" className="mb-1 block text-xs uppercase tracking-wide text-muted">
+              Message · Arabic
+            </label>
+            <textarea id="ann-ar" name="bodyAr" dir="rtl" rows={14} defaultValue={draft.bodyAr} className={areaCls} />
+          </div>
+        </div>
+
+        {/* ── Which script, and who gets it ─────────────────────────── */}
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <fieldset className="rounded-xl border border-line bg-surface p-4">
+            <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-muted">Send in</legend>
+            <div className="mt-1 flex flex-col gap-2 text-sm">
+              {[
+                { v: "both", label: "English and Arabic", hint: "one message, English then Arabic" },
+                { v: "en", label: "English only", hint: "" },
+                { v: "ar", label: "Arabic only", hint: "" },
+              ].map((o) => (
+                <label key={o.v} className="flex items-start gap-2">
+                  <input type="radio" name="language" value={o.v} defaultChecked={o.v === "both"} className="mt-1" />
+                  <span>
+                    {o.label}
+                    {o.hint ? <span className="block text-[11.5px] text-muted">{o.hint}</span> : null}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="rounded-xl border border-line bg-surface p-4">
+            <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-muted">Send to</legend>
+            <div className="mt-1 flex flex-col gap-2 text-sm">
+              <label className="flex items-center gap-2">
+                <input type="radio" name="audience" value="all" defaultChecked />
+                <span>Everyone ({employees.length} {employees.length === 1 ? "person" : "people"})</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="radio" name="audience" value="selected" />
+                <span>Only the people I tick below</span>
+              </label>
+            </div>
+            <div className="mt-2 max-h-44 overflow-y-auto rounded-lg border border-line p-2">
+              {employees.map((e) => (
+                <label key={e.id} className="flex items-center gap-2 py-0.5 text-[13px]">
+                  <input type="checkbox" name="recipient" value={e.id} />
+                  <span className="text-ink">{e.name ?? e.email}</span>
+                  {e.department ? <span className="text-[11px] text-muted">· {e.department}</span> : null}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+
+        {/* A rehearsal: goes only to the address typed, records nothing. */}
+        <div className="mt-5 flex flex-wrap items-end gap-2 rounded-xl border border-dashed border-navy-200 bg-navy-50/40 p-4">
+          <div className="min-w-[240px] flex-1">
+            <label htmlFor="ann-test" className="mb-1 block text-xs uppercase tracking-wide text-muted">
+              Send a test to one address first
+            </label>
+            <input
+              id="ann-test"
+              name="testTo"
+              type="email"
+              placeholder="you@forefront.consulting"
+              className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm focus:border-navy-500 focus:outline-none"
+            />
+          </div>
+          <button
+            formAction={sendTestAnnouncement}
+            formNoValidate
+            className="rounded-lg border border-navy-200 bg-surface px-4 py-2 text-sm font-semibold text-navy-700 hover:bg-navy-50"
+          >
+            Send test
+          </button>
+          <p className="w-full text-[11.5px] text-muted">
+            Uses whatever is typed above, subject prefixed “[TEST]”. Nothing is recorded and nobody
+            else receives it.
+          </p>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
