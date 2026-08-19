@@ -228,10 +228,10 @@ export function BenefitsReportTable({
       </div>
 
       {/* ── The table ─────────────────────────────────────────────────── */}
-      {/* max-h + overflow-auto is what makes the sticky header and totals row work: with
-          `overflow-x-auto` alone the browser computes overflow-y to auto anyway, so the sticky
-          cells would anchor to a container that never scrolls and never actually stick. */}
-      <div className="mt-4 max-h-[70vh] overflow-auto rounded-xl border border-line bg-surface">
+      {/* NOT a scroller. The report PAGE owns the single scroll region and the sticky header
+          and totals row anchor to it — an inner overflow box here is what produced two
+          scrollbars fighting each other. */}
+      <div className="mt-4 rounded-xl border border-line bg-surface">
         <table className="w-full min-w-[860px] text-sm">
           <thead>
             <tr>
