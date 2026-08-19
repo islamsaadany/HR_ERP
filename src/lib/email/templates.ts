@@ -208,3 +208,161 @@ export function holidayVerificationReminder(d: {
     ),
   };
 }
+
+/**
+ * H3 — the team announcement for an upcoming holiday: English, then Arabic.
+ *
+ * Deterministic templates, no model in the loop: HR reviews and edits this text before it
+ * goes anywhere, so the draft has to be the same every time and defensible line by line.
+ * The tone is the point of the whole feature — it invites rest, travel and family time, and
+ * hands the decision to the person ("assuming nothing critical is on your plate") rather
+ * than instructing them.
+ *
+ * The bodies are built as plain text so HR can edit them in a textarea; `renderAnnouncement`
+ * below wraps whatever HR finally approved into the house email shell.
+ */
+export function draftHolidayAnnouncement(d: {
+  holidayName: string;
+  localName?: string | null;
+  /** Display-formatted (dd/mm/yyyy) with weekday, e.g. "Monday 13/04/2026". */
+  holidayWhen: string;
+  holidayWhenAr: string;
+  /** Bridge days, display-formatted; empty when the calendar offers none. */
+  bridges: string[];
+  bridgesAr: string[];
+  /** The whole stretch off if the bridges are taken, and how many days that is. */
+  stretch: string | null;
+  stretchAr: string | null;
+  stretchDays: number;
+  isCorrection: boolean;
+  /**
+   * True when every day of the holiday falls on the Fri/Sat weekend, so it adds no day off.
+   * The draft must say so rather than inviting people to "take the break" they don't get —
+   * spec 037's honest-calendar rule.
+   */
+  fallsOnWeekendOnly?: boolean;
+}) {
+  const arName = d.localName?.trim() || d.holidayName;
+  const bridgeCount = d.bridges.length;
+  const dayWord = bridgeCount === 1 ? "day" : "days";
+
+  const correctionEn = d.isCorrection
+    ? "A correction to what we sent earlier — the dates have changed.\n\n"
+    : "";
+  const correctionAr = d.isCorrection ? "تصحيح لما أرسلناه سابقاً — تغيّرت التواريخ.\n\n" : "";
+
+  // The calendar sentence changes shape with what the calendar actually offers, so we never
+  // promise a bridge that isn't there (spec 037: describe it honestly).
+  const calendarEn = d.fallsOnWeekendOnly
+    ? `${d.holidayName} falls on ${d.holidayWhen} — our weekend this year, so it doesn't add a day off.`
+    : bridgeCount
+    ? `${d.holidayName} falls on ${d.holidayWhen}. ${
+        bridgeCount === 1 ? `${d.bridges[0]} is the only working day` : `${d.bridges.join(" and ")} are the only working days`
+      } standing between it and our weekend — take ${
+        bridgeCount === 1 ? "that one day" : "those days"
+      } off and you are away ${d.stretch}: ${d.stretchDays} days for ${bridgeCount} ${dayWord} of leave.`
+    : `${d.holidayName} falls on ${d.holidayWhen}${
+        d.stretchDays >= 3 ? `, giving us ${d.stretchDays} days off in a row` : ""
+      }.`;
+
+  const calendarAr = d.fallsOnWeekendOnly
+    ? `يوافق ${arName} ${d.holidayWhenAr} — وهو ضمن عطلة نهاية الأسبوع هذا العام، فلا يضيف يوم إجازة.`
+    : bridgeCount
+    ? `يوافق ${arName} ${d.holidayWhenAr}. و${
+        bridgeCount === 1 ? `يوم ${d.bridgesAr[0]} هو يوم العمل الوحيد` : `${d.bridgesAr.join(" و")} هما يوما العمل الوحيدان`
+      } الذي يفصل بينه وبين عطلة نهاية الأسبوع — خذ هذا اليوم إجازةً وتكون عطلتك ${d.stretchAr}: ${d.stretchDays} أيام مقابل ${bridgeCount === 1 ? "يوم إجازة واحد" : `${bridgeCount} أيام إجازة`}.`
+    : `يوافق ${arName} ${d.holidayWhenAr}${d.stretchDays >= 3 ? `، وتكون لدينا ${d.stretchDays} أيام إجازة متصلة` : ""}.`;
+
+  const inviteEn = d.fallsOnWeekendOnly
+    ? `Not much of a break this time, but the day is still worth marking — rest where you can, ` +
+      `and keep an eye out for the next one.`
+    : `Please use it. Rest properly, travel if you have been meaning to, spend the time with your ` +
+      `family, and come back with your energy restored. You know your own commitments best — if ` +
+      `nothing critical or urgent is sitting on your plate, take the break. The work will still be here.`;
+
+  const bodyEn =
+    `${correctionEn}Hi everyone,\n\n` + `${calendarEn}\n\n` + `${inviteEn}\n\n` + `Happy ${d.holidayName}.`;
+
+  const inviteAr = d.fallsOnWeekendOnly
+    ? `ليست إجازة طويلة هذه المرة، لكن المناسبة تستحق الاحتفاء — استريحوا قدر ما تستطيعون، ` +
+      `وترقّبوا الإجازة القادمة.`
+    : `نتمنى أن تستفيدوا منها: استريحوا جيداً، وسافروا إن كنتم تنوون ذلك، واقضوا الوقت مع عائلاتكم، ` +
+      `وعودوا وقد استعدتم طاقتكم. أنتم أدرى بالتزاماتكم — فإن لم يكن لديكم ما هو عاجل أو حرج، فخذوا ` +
+      `إجازتكم؛ العمل سيظل في انتظاركم.`;
+
+  const bodyAr =
+    `${correctionAr}مرحباً بالجميع،\n\n` + `${calendarAr}\n\n` + `${inviteAr}\n\n` + `كل عام وأنتم بخير.`;
+
+  const subject = d.isCorrection
+    ? `Correction: ${d.holidayName} — new dates`
+    : bridgeCount
+      ? `${d.holidayName} is coming — and there's a bridge worth taking`
+      : `${d.holidayName} is coming`;
+
+  return { subject, bodyEn, bodyAr };
+}
+
+/** Turn plain-text paragraphs into the email shell's paragraph markup. */
+const paragraphs = (text: string, rtl = false) =>
+  text
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map(
+      (block) =>
+        `<p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:${INK};${
+          rtl ? "direction:rtl;text-align:right;" : ""
+        }">${escapeHtml(block).replace(/\n/g, "<br>")}</p>`
+    )
+    .join("");
+
+/** Escape anything HR typed — the draft is editable, so it is untrusted markup. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Render the announcement HR approved into the house email shell: English, a rule, then the
+ * Arabic block right-to-left, with the "request the bridge" button in both languages when
+ * the calendar actually offers one.
+ */
+export function renderHolidayAnnouncement(d: {
+  subject: string;
+  bodyEn: string;
+  bodyAr: string;
+  /** yyyy-mm-dd range for the prefilled request, when there is a bridge to suggest. */
+  suggested: { startISO: string; endISO: string; label: string; labelAr: string } | null;
+}) {
+  const cta = d.suggested
+    ? `<p style="margin:0 0 6px;"><a href="${link(
+        `/time-off?start=${d.suggested.startISO}&end=${d.suggested.endISO}`
+      )}" style="background:${NAVY};color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border-radius:8px;display:inline-block;">Request ${
+        d.suggested.label
+      } off →</a></p>` +
+      `<p style="margin:0 0 4px;font-size:12px;color:${MUTED};">Goes to your manager like any other request.</p>`
+    : "";
+  const ctaAr = d.suggested
+    ? `<p style="margin:0;direction:rtl;text-align:right;"><a href="${link(
+        `/time-off?start=${d.suggested.startISO}&end=${d.suggested.endISO}`
+      )}" style="background:${NAVY};color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border-radius:8px;display:inline-block;">اطلب إجازة ${
+        d.suggested.labelAr
+      } ←</a></p>`
+    : "";
+
+  return {
+    subject: d.subject,
+    html: layout(
+      escapeHtml(d.subject),
+      paragraphs(d.bodyEn) +
+        cta +
+        `<div style="border-top:1px solid ${LINE};margin-top:18px;padding-top:14px;">` +
+        paragraphs(d.bodyAr, true) +
+        ctaAr +
+        `</div>`
+    ),
+  };
+}

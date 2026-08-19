@@ -21,22 +21,13 @@ export type ExistingRange = {
 export function TimeOffRequestForm({
   holidays,
   existing,
-  initialStart = "",
-  initialEnd = "",
 }: {
   /** Listed public holidays as { iso: yyyy-mm-dd, name } — for the count and the breakdown. */
   holidays: { iso: string; name: string }[];
   existing: ExistingRange[];
-  /**
-   * Dates to open with (spec 037): the bridge day an announcement suggested, arriving as
-   * ?start=&end= on the page. A suggestion only — the employee can change either date, and
-   * the server validates whatever they actually submit.
-   */
-  initialStart?: string;
-  initialEnd?: string;
 }) {
-  const [start, setStart] = useState(initialStart);
-  const [end, setEnd] = useState(initialEnd);
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
   const today = new Date().toISOString().slice(0, 10);
 
   const holidaySet = useMemo(() => new Set(holidays.map((h) => h.iso)), [holidays]);

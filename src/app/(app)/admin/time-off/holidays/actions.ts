@@ -6,9 +6,10 @@ import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
 import { formatDate } from "@/lib/labels";
-import { expandRange } from "@/lib/holidays";
-import { sendEmail } from "@/lib/email/client";
-import { holidayDayReturned } from "@/lib/email/templates";
+import { expandRange, getHolidaySet } from "@/lib/holidays";
+import { sendEmail, sendBulkEmail } from "@/lib/email/client";
+import { holidayDayReturned, renderHolidayAnnouncement } from "@/lib/email/templates";
+import { buildAnnouncementDraft } from "@/lib/timeoff/announcement";
 import { fetchHolidaySuggestions } from "@/lib/timeoff/holiday-source";
 
 // Holiday administration (spec 035, evolved by spec 037). Every rule lives here because these
@@ -385,4 +386,100 @@ export async function uploadHolidays(formData: FormData): Promise<void> {
   }`;
   if (badRows.length) fail(summary);
   ok(summary);
+}
+
+/**
+ * Send the announcement HR reviewed (spec 037, FR-010).
+ *
+ * Only a date-confirmed holiday may be announced — telling the whole company a date that is
+ * still a prediction is worse than telling them nothing. The record is written BEFORE the
+ * send and carries the text exactly as HR approved it plus a snapshot of the dates, which is
+ * what later flags "announced with an outdated date" if the holiday moves.
+ *
+ * The send itself is fire-and-forget and bulk: a mail failure never rolls back the record,
+ * and a company with no email configured still gets the dashboard banner.
+ */
+export async function sendAnnouncement(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const id = ((formData.get("id") as string) ?? "").trim();
+  if (!id) return;
+
+  const holiday = await prisma.publicHoliday.findUnique({
+    where: { id },
+    include: { announcements: { orderBy: { sentAt: "desc" }, take: 1 } },
+  });
+  if (!holiday) fail("That holiday no longer exists.");
+  if (holiday!.status === "TENTATIVE") {
+    fail("Verify the date first — the team shouldn't be told a date that might still move.");
+  }
+
+  const subject = ((formData.get("subject") as string) ?? "").trim();
+  const bodyEn = ((formData.get("bodyEn") as string) ?? "").trim();
+  const bodyAr = ((formData.get("bodyAr") as string) ?? "").trim();
+  if (!subject || !bodyEn || !bodyAr) {
+    fail("Subject and both messages are needed — the team gets English and Arabic together.");
+  }
+
+  // Re-sending at dates already announced needs an explicit second click (FR-010).
+  const last = holiday!.announcements[0];
+  const sameDates =
+    !!last &&
+    last.announcedStart.getTime() === holiday!.actualStart.getTime() &&
+    last.announcedEnd.getTime() === holiday!.actualEnd.getTime();
+  if (sameDates && !formData.get("resendConfirmed")) {
+    fail(
+      `${holiday!.name} was already announced on ${formatDate(last!.sentAt)}. ` +
+        `Sending again reaches everyone a second time — confirm to go ahead.`
+    );
+  }
+  // A holiday whose dates changed since its last send is a CORRECTION, not a fresh notice.
+  const isCorrection = !!last && !sameDates;
+
+  const holidaySet = await getHolidaySet();
+  const draft = buildAnnouncementDraft(holiday!, holidaySet, { isCorrection });
+
+  const recipients = await prisma.user.findMany({
+    where: { status: "ACTIVE" },
+    select: { email: true },
+  });
+
+  const rendered = renderHolidayAnnouncement({
+    subject,
+    bodyEn,
+    bodyAr,
+    suggested: draft.suggested,
+  });
+
+  // Record first: what went out is the record, and a mail failure must not erase it.
+  const sent = await prisma.holidayAnnouncement.create({
+    data: {
+      holidayId: holiday!.id,
+      kind: isCorrection ? "CORRECTION" : "ORIGINAL",
+      subject,
+      bodyEn,
+      bodyAr,
+      announcedStart: holiday!.actualStart,
+      announcedEnd: holiday!.actualEnd,
+      bridgeDates: draft.bridgeISO.length ? draft.bridgeISO.join(",") : null,
+      sentById: admin.id,
+      recipientCount: 0,
+    },
+  });
+
+  const reached = await sendBulkEmail({
+    to: recipients.map((r) => r.email),
+    subject: rendered.subject,
+    html: rendered.html,
+  });
+  await prisma.holidayAnnouncement
+    .update({ where: { id: sent.id }, data: { recipientCount: reached } })
+    .catch(() => {});
+
+  PATHS.forEach((p) => revalidatePath(p));
+  ok(
+    reached > 0
+      ? `${isCorrection ? "Correction" : "Announcement"} sent to ${reached} ${reached === 1 ? "person" : "people"}.`
+      : `${isCorrection ? "Correction" : "Announcement"} recorded, and the dashboard banner is live. ` +
+        `No email went out — check email settings if you expected it to.`
+  );
 }

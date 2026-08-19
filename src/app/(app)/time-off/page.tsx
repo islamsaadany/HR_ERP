@@ -16,11 +16,11 @@ export const dynamic = "force-dynamic";
 export default async function TimeOffPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; start?: string; end?: string }>;
 }) {
   const me = await requireUser();
   await requireModuleEnabled("timeoff");
-  const { error } = await searchParams;
+  const { error, start: startParam, end: endParam } = await searchParams;
 
   // Idempotent sweep (spec 035, FR-008): a leaver's pending requests close on read.
   await closeLeaverPending();
@@ -114,6 +114,26 @@ export default async function TimeOffPage({
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
+  // Prefill from an announcement's "request this bridge" link (spec 037, FR-013). Anything
+  // malformed or already past degrades to the plain form rather than erroring — a stale link
+  // in an old email must never be a dead end.
+  const isoRe = /^\d{4}-\d{2}-\d{2}$/;
+  const todayISO = dayKey(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())));
+  const validStart = startParam && isoRe.test(startParam) && startParam >= todayISO ? startParam : "";
+  const validEnd =
+    validStart && endParam && isoRe.test(endParam) && endParam >= validStart ? endParam : validStart;
+
+  // If they already asked for those days, show that instead of inviting a duplicate.
+  const suggestionCovered =
+    validStart && validEnd
+      ? myRequests.find(
+          (r) =>
+            (r.status === "PENDING" || r.status === "APPROVED") &&
+            dayKey(r.startDate) <= validStart &&
+            dayKey(r.endDate) >= validEnd
+        ) ?? null
+      : null;
+
   return (
     <div className="max-w-3xl">
       <MarkLeaveSeen hasUnseen={hasUnseen} signature={badgeSignature} />
@@ -141,8 +161,44 @@ export default async function TimeOffPage({
           </p>
         </div>
         <section className="rounded-xl border border-line bg-surface p-6">
-          <h2 className="mb-4 font-serif text-lg text-ink">Request time off</h2>
-          <TimeOffRequestForm holidays={formHolidays} existing={myOpenRanges} />
+          {suggestionCovered ? (
+            <>
+              <h2 className="mb-2 font-serif text-lg text-ink">You&apos;ve already asked for these days</h2>
+              <p className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                <b>
+                  {formatDate(suggestionCovered.startDate)}
+                  {suggestionCovered.endDate.getTime() !== suggestionCovered.startDate.getTime()
+                    ? ` → ${formatDate(suggestionCovered.endDate)}`
+                    : ""}{" "}
+                  — {LEAVE_STATUS_LABEL[suggestionCovered.status].toLowerCase()}.
+                </b>{" "}
+                {suggestionCovered.status === "APPROVED"
+                  ? "Nothing more to do; enjoy the break."
+                  : "Your manager has it."}
+              </p>
+              <p className="mt-2 text-xs text-muted">
+                Want to extend it? Request the extra days as a separate request below.
+              </p>
+              <div className="mt-4 border-t border-dashed border-line pt-4">
+                <TimeOffRequestForm holidays={formHolidays} existing={myOpenRanges} />
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="mb-4 font-serif text-lg text-ink">Request time off</h2>
+              {validStart ? (
+                <p className="mb-3 rounded-lg border border-navy-100 bg-navy-50 px-3 py-2 text-sm text-navy-700">
+                  Filled in from the holiday announcement — change the dates if you want more.
+                </p>
+              ) : null}
+              <TimeOffRequestForm
+                holidays={formHolidays}
+                existing={myOpenRanges}
+                initialStart={validStart}
+                initialEnd={validEnd}
+              />
+            </>
+          )}
         </section>
       </div>
 
