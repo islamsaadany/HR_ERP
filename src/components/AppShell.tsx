@@ -38,16 +38,24 @@ const isFullWidthRoute = (path: string) =>
   path === "/admin/benefits/report";
 
 /**
- * Routes pinned to the viewport height so ONLY their data table scrolls — no
- * second, page-level scrollbar. The header stays put and the table fills the
- * remaining height. Desktop only (md+); mobile keeps normal page flow. Starting
- * with the employee registry; other data-table pages can opt in later.
+ * Routes pinned to the viewport height so ONLY their data table scrolls — no second,
+ * page-level scrollbar. The header stays put and the table fills the remaining height.
+ * Desktop only (md+); mobile keeps normal page flow.
+ *
+ * The test is ONE table on screen at a time. Admin Benefits qualifies despite holding many,
+ * because it is tabbed. Pages that stack several tables at once — the incentive cycle report,
+ * Finance, incentive config — are deliberately absent: there is no single header worth
+ * freezing there, so ordinary page scrolling reads better.
  */
 const isSingleScrollRoute = (path: string) =>
   path === "/admin/employees" ||
   path === "/directory" ||
   path === "/admin/time-off" ||
-  path === "/admin/benefits";
+  path === "/admin/benefits" ||
+  path === "/admin/benefits/report" ||
+  path === "/admin/employees/import" ||
+  // One campaign tracker per page; the list page above it is not a table.
+  (path.startsWith("/admin/data-requests/") && path !== "/admin/data-requests");
 
 export function AppShell({
   name,

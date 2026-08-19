@@ -8,7 +8,7 @@ export default async function ImportEmployeesPage() {
   await requireAdmin();
 
   return (
-    <div>
+    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
       <BackLink href="/admin/employees" label="Employees" />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
         Admin · Registry

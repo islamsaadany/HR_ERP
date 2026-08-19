@@ -39,7 +39,7 @@ export default async function DataRequestTrackerPage({
   const completed = active.filter((t) => t.fields.every((f) => f.status !== "PENDING"));
 
   return (
-    <div>
+    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
       {/* Employees answer while this page sits open — keep the chips live (focus + 30s). */}
       <AutoRefresh />
       <BackLink href="/admin/data-requests" label="Data requests" />
@@ -82,8 +82,10 @@ export default async function DataRequestTrackerPage({
         page is the receipt, not an approval queue.
       </p>
 
-      <div className="mt-6 overflow-x-auto rounded-xl border border-line bg-surface">
-        <table className="w-full min-w-[560px] text-sm">
+      {/* House single-scroll table: sticky navy header, frozen first column, height from
+          the flex column (see AppShell's single-scroll routes). */}
+      <div className="mt-6 ff-data-scroll rounded-xl border border-line bg-surface md:flex-1 md:min-h-0 md:!max-h-none">
+        <table className="ff-data-table w-full min-w-[560px] text-sm">
           <thead>
             <tr>
               <th className="bg-navy-800 px-4 py-2.5 text-left font-semibold text-white">Employee</th>
