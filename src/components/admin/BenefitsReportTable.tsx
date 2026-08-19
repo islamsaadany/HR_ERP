@@ -136,7 +136,7 @@ export function BenefitsReportTable({
 
   const sortableTh = (key: SortKey, label: string, moneyCol = true) => (
     <th
-      className={`sticky top-0 z-20 cursor-pointer select-none bg-navy-800 px-3 py-2.5 font-semibold text-white ${moneyCol ? "text-right" : "text-left"}`}
+      className={`cursor-pointer select-none bg-navy-800 px-3 py-2.5 font-semibold text-white ${moneyCol ? "text-right" : "text-left"}`}
       onClick={() => setSort((s) => ({ key, dir: s.key === key ? ((-s.dir) as 1 | -1) : key === "name" ? 1 : -1 }))}
       title="Sort"
     >
@@ -162,7 +162,7 @@ export function BenefitsReportTable({
   }, [selectedCycleId, department, status, search, includeLeavers]);
 
   return (
-    <div>
+    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
       {/* ── Filter row ─────────────────────────────────────────────────── */}
       <div className="mt-4 flex flex-wrap items-center gap-2.5">
         <select
@@ -228,11 +228,12 @@ export function BenefitsReportTable({
       </div>
 
       {/* ── The table ─────────────────────────────────────────────────── */}
-      {/* NOT a scroller. The report PAGE owns the single scroll region and the sticky header
-          and totals row anchor to it — an inner overflow box here is what produced two
-          scrollbars fighting each other. */}
-      <div className="mt-4 rounded-xl border border-line bg-surface">
-        <table className="w-full min-w-[860px] text-sm">
+      {/* The ONE scroller on this page (house pattern, same as the registry and catalogue):
+          `ff-data-scroll` + `ff-data-table` give the sticky navy header and frozen first
+          column, and md:flex-1/!max-h-none hand the height to the flex column so the table
+          fills the viewport instead of a guessed 70vh. */}
+      <div className="mt-4 ff-data-scroll rounded-xl border border-line bg-surface md:flex-1 md:min-h-0 md:!max-h-none">
+        <table className="ff-data-table w-full min-w-[860px] text-sm">
           <thead>
             <tr>
               {sortableTh("name", "Employee", false)}
@@ -242,8 +243,8 @@ export function BenefitsReportTable({
               {sortableTh("pending", "Pending")}
               {sortableTh("remaining", "Remaining")}
               {sortableTh("guaranteed", "Guaranteed")}
-              <th className="sticky top-0 z-20 bg-navy-800 px-3 py-2.5 text-left font-semibold text-white">Utilization</th>
-              <th className="sticky top-0 z-20 bg-navy-800 px-3 py-2.5 text-left font-semibold text-white">Status</th>
+              <th className="bg-navy-800 px-3 py-2.5 text-left font-semibold text-white">Utilization</th>
+              <th className="bg-navy-800 px-3 py-2.5 text-left font-semibold text-white">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -305,8 +306,8 @@ export function BenefitsReportTable({
             <tfoot>
               {/* Totals for the rows currently shown — the same figures as the tiles above, so
                   filtering the table moves both together. */}
-              <tr className="sticky bottom-0 z-10 border-t-2 border-navy-200 bg-paper font-bold text-ink">
-                <td className="px-3 py-3">
+              <tr className="sticky bottom-0 z-[3] border-t-2 border-navy-200 bg-paper font-bold text-ink">
+                <td className="px-3 py-3 !bg-paper">
                   Total · {visible.length} {visible.length === 1 ? "person" : "people"}
                 </td>
                 <td className="px-3 py-3 text-right tabular-nums">{formatNumber(tiles.ceilings)}</td>

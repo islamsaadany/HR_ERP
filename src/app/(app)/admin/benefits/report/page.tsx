@@ -23,7 +23,7 @@ export default async function BenefitsReportPage({
   const report = selectedId ? await cycleReport(selectedId) : null;
 
   return (
-    <div className="md:flex md:h-full md:min-h-0 md:flex-col">
+    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
       {/* Finance can't open Benefits Management — send them back where they came from. */}
       {isAdmin(me.role) ? (
         <BackLink href="/admin/benefits" label="Benefits Management" />
@@ -34,10 +34,6 @@ export default async function BenefitsReportPage({
         Admin · Benefits
       </p>
       <h1 className="mt-1 font-serif text-3xl text-ink">Benefits Reporting</h1>
-      {/* One scroll region for everything below the title: the description, the tiles and the
-          filters scroll away, then the table's own header takes over as the sticky row. Two
-          nested scrollers (page + table) was the thing that felt broken. */}
-      <div className="md:min-h-0 md:flex-1 md:overflow-auto">
       <p className="mt-1 max-w-3xl text-sm text-muted">
         Where the whole company stands this cycle — computed by the same engine that enforces
         claims, so every row matches the employee&apos;s own Benefits page. Read-only.
@@ -66,7 +62,6 @@ export default async function BenefitsReportPage({
           selectedCycleId={report.planYear.id}
         />
       )}
-      </div>
     </div>
   );
 }
