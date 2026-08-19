@@ -326,14 +326,18 @@ function escapeHtml(s: string): string {
 }
 
 /**
- * Render the announcement HR approved into the house email shell: English, a rule, then the
- * Arabic block right-to-left, with the "request the bridge" button in both languages when
- * the calendar actually offers one.
+ * Render the announcement HR approved into the house email shell.
+ *
+ * ENGLISH ONLY for now (2026-08-19, user's call): the bilingual send was one message with an
+ * Arabic block under a divider, and the Arabic half is switched off until it's wanted. The
+ * draft still composes `bodyAr` and it is still stored on the announcement record, so turning
+ * it back on is re-adding the block here and the field in the composer.
  */
 export function renderHolidayAnnouncement(d: {
   subject: string;
   bodyEn: string;
-  bodyAr: string;
+  /** Composed and recorded, but not sent while the Arabic half is switched off. */
+  bodyAr?: string;
   /** yyyy-mm-dd range for the prefilled request, when there is a bridge to suggest. */
   suggested: { startISO: string; endISO: string; label: string; labelAr: string } | null;
 }) {
@@ -345,24 +349,9 @@ export function renderHolidayAnnouncement(d: {
       } off →</a></p>` +
       `<p style="margin:0 0 4px;font-size:12px;color:${MUTED};">Goes to your manager like any other request.</p>`
     : "";
-  const ctaAr = d.suggested
-    ? `<p style="margin:0;direction:rtl;text-align:right;"><a href="${link(
-        `/time-off?start=${d.suggested.startISO}&end=${d.suggested.endISO}`
-      )}" style="background:${NAVY};color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border-radius:8px;display:inline-block;">اطلب إجازة ${
-        d.suggested.labelAr
-      } ←</a></p>`
-    : "";
 
   return {
     subject: d.subject,
-    html: layout(
-      escapeHtml(d.subject),
-      paragraphs(d.bodyEn) +
-        cta +
-        `<div style="border-top:1px solid ${LINE};margin-top:18px;padding-top:14px;">` +
-        paragraphs(d.bodyAr, true) +
-        ctaAr +
-        `</div>`
-    ),
+    html: layout(escapeHtml(d.subject), paragraphs(d.bodyEn) + cta),
   };
 }

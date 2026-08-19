@@ -184,13 +184,27 @@ export default async function AnnounceHolidayPage({
           />
         </div>
 
-        {/* English only for now (2026-08-19): the Arabic half of the announcement is switched
-            off, so the composer doesn't offer a field that would never be sent. */}
-        <div className="mt-4">
-          <label htmlFor="ann-en" className="mb-1 block text-xs uppercase tracking-wide text-muted">
-            Message
-          </label>
-          <textarea id="ann-en" name="bodyEn" rows={14} defaultValue={draft.bodyEn} required className={areaCls} />
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div>
+            <label htmlFor="ann-en" className="mb-1 block text-xs uppercase tracking-wide text-muted">
+              Message · English
+            </label>
+            <textarea id="ann-en" name="bodyEn" rows={14} defaultValue={draft.bodyEn} required className={areaCls} />
+          </div>
+          <div>
+            <label htmlFor="ann-ar" className="mb-1 block text-xs uppercase tracking-wide text-muted">
+              Message · Arabic
+            </label>
+            <textarea
+              id="ann-ar"
+              name="bodyAr"
+              dir="rtl"
+              rows={14}
+              defaultValue={draft.bodyAr}
+              required
+              className={areaCls}
+            />
+          </div>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">

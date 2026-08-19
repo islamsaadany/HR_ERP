@@ -436,9 +436,8 @@ export async function sendAnnouncement(formData: FormData): Promise<void> {
 
   const subject = ((formData.get("subject") as string) ?? "").trim();
   const bodyEn = ((formData.get("bodyEn") as string) ?? "").trim();
-  const bodyAr = ((formData.get("bodyAr") as string) ?? "").trim();
-  if (!subject || !bodyEn || !bodyAr) {
-    fail("Subject and both messages are needed — the team gets English and Arabic together.");
+  if (!subject || !bodyEn) {
+    fail("Give the announcement a subject and a message.");
   }
 
   // Re-sending at dates already announced needs an explicit second click (FR-010).
@@ -467,7 +466,6 @@ export async function sendAnnouncement(formData: FormData): Promise<void> {
   const rendered = renderHolidayAnnouncement({
     subject,
     bodyEn,
-    bodyAr,
     suggested: draft.suggested,
   });
 
@@ -478,7 +476,9 @@ export async function sendAnnouncement(formData: FormData): Promise<void> {
       kind: isCorrection ? "CORRECTION" : "ORIGINAL",
       subject,
       bodyEn,
-      bodyAr,
+      // Composed but not sent while the Arabic half is switched off — kept so turning it
+      // back on needs no migration and no lost history.
+      bodyAr: draft.bodyAr,
       announcedStart: holiday!.actualStart,
       announcedEnd: holiday!.actualEnd,
       bridgeDates: draft.bridgeISO.length ? draft.bridgeISO.join(",") : null,
