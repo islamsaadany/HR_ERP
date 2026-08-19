@@ -12,7 +12,7 @@
 | 2 — Team Directory | 🟢 Complete (V1) |
 | 3 — Onboarding | 🟢 Complete |
 | 4 — Handbook & Resources | 🟢 Complete |
-| 5 — Time-Off / Leave | 🟢 Complete (V1) |
+| 5 — Time-Off / Leave | 🟢 Complete (**v2** — working-day counts, holidays, full cycle; spec 035) |
 | 6 — Benefits (admin config) | 🟢 Complete |
 | 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |

@@ -190,6 +190,15 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   guaranteed benefit (e.g. **summer allowance**) to the **whole team at once** and **download a sheet** of employee
   name + amount-to-release for payroll/Finance. Distinct from the coverage work; to be specced next (own spec).
 
+- **2026-08-17 — Identity data standards + data request campaigns (built, specs `029`/`033`, migrations `051`–`054`).** Self-editable legal names (EN/AR) + 14-digit national ID; strict per-country phone format; **dd/mm/yyyy display standard platform-wide (screens + CSVs)**; HR/Finance field-request campaigns with popup + live badge + tracker + formatted Excel outcome.
+- **2026-08-18 — Benefits Reporting is read-only and engine-identical (built, spec `034`, no migration).** One report builder shared by page + Excel; pending claims count as used with their own column; guaranteed money never in the pool; access HR Admin/Finance/Super User; per-person popup; leavers behind a filter.
+- **2026-08-18 — Time-Off counts working days, no limits (built, spec `035`, migration `055`).** Weekend = **Friday + Saturday**; an **HR-managed public-holidays list** (with Excel bulk upload) also never counts; **no annual entitlement — a per-calendar-year count only**, visible to employee/manager/HR; no leave types. Approvals follow the **current** org chart; leavers' pending requests auto-close; approved future trips are employee-cancellable; HR can delete mistaken requests. **Deferred:** bridge/long-weekend suggestions (own round after v2).
+- **2026-08-18 — A guaranteed benefit is paid at most once per cycle (built, no migration).** Claims and bulk releases are mutually aware across all three payment paths; employee cards show the true state (navy=action, gold=in review, green=received) instead of a dead Request button.
+- **2026-08-18 — Exceptions to benefit eligibility are per-person GRANTS, not sheet overrides (built, spec `036`, migration `056`).** A Release-sheet typed-amount Super-User override shipped and was **reverted the same day**: the sanctioned mechanism is a Super-User **grant** (one person × one benefit × the open cycle × a typed amount) that routes the person through the normal request→approve→pay flow. Grants override every service gate on the employee page and expire with the cycle.
+- **2026-08-18 — "Exceptional releases" tab.** Everything paid outside an employee's own request (bulk release sheet + grants) lives in one Benefits Management tab; the standalone release page redirects; Amounts is config-only.
+- **2026-08-18 — Dashboard = cards only.** Quick links removed (duplicated cards + nav); cards are Benefits · Time-Off · Approvals (managers) · Onboarding (while in progress).
+- **2026-08-18 — Campaign popup submits, not finishes.** "Finish" → **Submit**, blocked until every listed field is confirmed/filled; "Later" still dismisses. Monitoring pages (tracker, campaign list) auto-refresh on focus + 30s.
+
 ### Resolved earlier / Open
 - **A · Design language** — *resolved 2026-07-27:* **navy/gold** (Forefront reference tool) product-wide. The benefits selector's layout/interaction is preserved but recolored to navy/gold (not paper/pine).
 - **E · Real benefit figures** — *resolved:* ceilings, guaranteed amounts, and medical rate card all confirmed (spec `007`).
@@ -197,4 +206,4 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ---
 
-*Last Updated: 2026-08-16.*
+*Last Updated: 2026-08-18.*

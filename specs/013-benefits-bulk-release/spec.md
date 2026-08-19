@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-05
 
-**Status**: Draft
+**Status**: Built (v1) — **amended 2026-08-18**: renamed **Release Guaranteed Benefit** and moved into Admin → Benefits → **Exceptional releases** tab (standalone page redirects); the sheet skips anyone already served by a non-rejected claim this cycle (once-per-cycle guard) and lists per-person **grants** (spec 036) at their granted amount with a *granted* marker.
 
 **Input**: User description: "HR needs to release a single guaranteed benefit — e.g. the summer allowance — to the whole applicable team at once, and download a sheet of employee + amount for payroll/Finance to action. HR picks one fixed allowance benefit; the system computes each applicable active employee's amount (band-derived) and lists them. The **default sheet** has a row-number column, then employee name, then tenure, then the allowance value — and the person generating the report can **choose which non-confidential columns from the registry to include**, making it dynamic and self-serve. **Salary is confidential (HR can't see it), so it is never a column, and the salary-based benefit (Loans) is excluded.** HR/Super User only. Fixed allowance benefits only — not the flexible basket. Does not move money."
 

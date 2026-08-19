@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-27
 
-**Status**: Draft
+**Status**: Built (v1) — **amended by spec 035 (Time-Off v2, 2026-08-18)**: day counts became WORKING days (Fri/Sat + HR holiday list excluded), per-calendar-year taken counts on all surfaces, live manager badge, approver = current org chart, self-overlap warning, leaver auto-close, cancel-approved-future, admin delete. FR-011/FR-014 and the approver-routing assumption are superseded as written there.
 
 **Input**: User description: "Time-Off (V1, minimal) — an employee requests time off (full days), their direct manager approves or declines, and the request is recorded. One generic 'Time off' type; no balances/allowances in v1; full days only. Onboarding links to how to request leave."
 
