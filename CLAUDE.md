@@ -198,8 +198,19 @@ HR_ERP/
 ### Database operations (Neon)
 Claude Code sessions **do not** have production `DATABASE_URL` and **cannot** push schema changes to the user's DB directly. Two handoff surfaces:
 
-- **`npm run db:*` scripts** — if a local terminal is available.
-- **`prisma/sql/` numbered files** — hand-runnable SQL to paste into Neon's SQL editor, in order. Whenever `prisma/schema.prisma` or `prisma/seed.ts` changes, regenerate the corresponding `prisma/sql/00N_*.sql` file and commit it **in the same commit**. Tell the user exactly which file(s) to paste and in what order.
+- **Deploy applies them automatically (the normal path).** `scripts/apply-sql.mjs` runs inside the
+  Vercel build (`package.json` → `build`): it applies every not-yet-applied `prisma/sql/*.sql` in
+  numeric order and records each in a `_sql_migrations` table, so a file runs exactly once and a
+  redeploy is a no-op. It is deliberately **non-fatal** — a migration or connection failure logs
+  loudly and lets the deploy continue, so an un-applied file is retried next deploy rather than
+  taking the site down. **Check the Vercel build log for `[apply-sql]` after any schema change**;
+  a file that failed there still needs pasting by hand.
+- **`prisma/sql/` numbered files** — also hand-runnable in Neon's SQL editor, which is the fallback
+  when the deploy-time run fails. Whenever `prisma/schema.prisma` or `prisma/seed.ts` changes,
+  regenerate the corresponding `prisma/sql/0NN_*.sql` file and commit it **in the same commit**,
+  and keep it **idempotent** (the runner may retry it).
+- **`npm run db:apply` / other `npm run db:*` scripts** — the same runner, if a local terminal with
+  the connection string is available.
 
 **Never** run `prisma db push` against the user's DB from a session, and **never** ask the user to paste their `DATABASE_URL` into chat.
 
@@ -250,4 +261,4 @@ prior sessions have accidentally reverted agreed-upon designs.
 
 ---
 
-*Last Updated: 2026-08-19 (Added: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. Neon migrations applied through `056`; **`057` is ready to paste**.)*
+*Last Updated: 2026-08-19 (Added: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. Neon migration `057` applies itself on deploy — verified through `scripts/apply-sql.mjs`.)*

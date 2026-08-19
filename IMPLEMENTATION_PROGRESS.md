@@ -18,7 +18,7 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
-## Spec 037 — Official holidays: verification, bridges & team announcements (built 2026-08-19 — Neon migration `057` PENDING)
+## Spec 037 — Official holidays: verification, bridges & team announcements (built 2026-08-19 — migration `057` applies on deploy)
 - **The log grew up.** `PublicHoliday` moved from a single unique date to two date **ranges** —
   `original*` (announced, frozen) and `actual*` (observed, what every count reads) — plus a
   `TENTATIVE | VERIFIED | MOVED` status, `FETCHED | MANUAL` source, and verification stamps. A
@@ -44,8 +44,10 @@
   dropped, re-run idempotent, **zero drift** vs `schema.prisma`); cron exercised live (401 without
   the secret, `{"reminded":1}` then `{"reminded":0}`); fetch + grouping checked against the real
   2026 Egypt data; drafts rendered for bridge / multi-day / weekend-only / correction cases.
-- **Action required:** paste `prisma/sql/057_official_holidays.sql` into Neon, and set
-  `CRON_SECRET` in Vercel so the daily job can run.
+- **Deployment:** `057` is applied automatically by `scripts/apply-sql.mjs` in the Vercel build —
+  verified by replaying a production-shaped database (legacy rows + a ledger through `056`) through
+  the real runner: it applied exactly `057`, backfilled the legacy holidays, and a second run
+  applied nothing. **Action required:** set `CRON_SECRET` in Vercel so the daily job can run.
 
 ## Claims: HR can reopen a rejected claim (2026-08-19, built — no migration)
 - A rejection was terminal. HR Admin / Super User can now **Reopen** a rejected claim from the
@@ -1040,4 +1042,4 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 
 ---
 
-*Last Updated: 2026-08-19 — Official holidays + team vacation announcements (spec 037, migration `057` PENDING + `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*
+*Last Updated: 2026-08-19 — Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*
