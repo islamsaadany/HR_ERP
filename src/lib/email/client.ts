@@ -94,3 +94,56 @@ export async function sendEmail(input: EmailInput): Promise<void> {
     console.error("[email] send failed (ignored):", err);
   }
 }
+
+/**
+ * Send ONE message to many people (spec 037 team announcements).
+ *
+ * Resend's batch endpoint takes at most 100 messages per call, so recipients are chunked;
+ * a company of any realistic size is one or two calls. Everything else matches `sendEmail`'s
+ * posture exactly — env-gated, master-toggle-gated, and fire-and-forget: a failed send is
+ * logged and swallowed so the announcement record (already written) is never rolled back.
+ *
+ * Returns how many recipients were actually addressed, which the caller records as the
+ * announcement's reach. Zero means nothing went out — no configuration, toggle off, or no
+ * valid addresses — and is not an error.
+ */
+export async function sendBulkEmail(input: {
+  to: (string | null | undefined)[];
+  subject: string;
+  html: string;
+}): Promise<number> {
+  try {
+    if (!resend || !from) {
+      console.info("[email] disabled (no RESEND_API_KEY / EMAIL_FROM) — skipping bulk:", input.subject);
+      return 0;
+    }
+    const settings = await getNotificationSettings();
+    if (!settings.emailEnabled) {
+      console.info("[email] disabled via settings — skipping bulk:", input.subject);
+      return 0;
+    }
+    const recipients = Array.from(
+      new Set(input.to.map((t) => (t ?? "").trim()).filter((t) => t.length > 0))
+    );
+    if (recipients.length === 0) {
+      console.warn("[email] no recipients — skipping bulk:", input.subject);
+      return 0;
+    }
+    const fromHeader = settings.fromName ? `${settings.fromName} <${from}>` : from;
+    const CHUNK = 100; // Resend's per-call ceiling
+    for (let i = 0; i < recipients.length; i += CHUNK) {
+      const batch = recipients.slice(i, i + CHUNK).map((to) => ({
+        from: fromHeader,
+        to,
+        subject: input.subject,
+        html: input.html,
+      }));
+      await resend.batch.send(batch);
+    }
+    return recipients.length;
+  } catch (err) {
+    // Fire-and-forget: a send failure must never undo the state change that triggered it.
+    console.error("[email] bulk send failed (ignored):", err);
+    return 0;
+  }
+}

@@ -188,7 +188,8 @@ HR_ERP/
 - **Identity data standards (spec 029/033, 2026-08-17)** — dates DISPLAY as **dd/mm/yyyy** everywhere (screens and CSVs; `formatDate` is the one formatter; ISO only in storage and `<input type="date">` plumbing). Phones are ONE sequence `+<dial><digits>` validated per country (`src/lib/phone.ts`); national ID is exactly 14 digits — strict server-side everywhere including the importer. Employee-answerable fields live in ONE registry (`campaign-fields.ts` composing `requestable.ts`); **data request campaigns** (Admin → Data Requests, HR/Finance) collect them via a per-field-saving popup + live sidebar badge, writing directly to `User`. Colour semantics: navy = action, green = done-state only.
 - **Time-Off counts WORKING days, never limits (spec 035, 2026-08-18)** — weekend is **Friday + Saturday**, the HR-managed public-holidays list also never counts (`src/lib/workdays.ts` is the ONE counting engine, shared server + client preview); there is **no entitlement/limit — only a per-calendar-year taken count** visible to employee/manager/HR; no leave types. Approvals resolve against the **current** org chart (`pendingApprovalWhere`/`canDecideLeave`), never the stored approver snapshot.
 - **A guaranteed benefit is paid at most once per cycle (2026-08-18)** — claims and bulk releases are mutually aware in every payment path (employee claim, HR Record entry, Release sheet); employee cards show the true state (gold in-review / green received) instead of a dead button. **Eligibility exceptions are per-person GRANTS (spec 036)**: a Super User grants one person one benefit for the open cycle at a typed amount (Exceptional releases tab); the person then uses the completely normal request→approve→pay flow — never widen a benefit's general eligibility for one person, and never pay around the flow via sheet overrides (one was shipped and reverted same-day).
-- **Email is limited to the benefit-claim workflow (spec 020)** — the original "no emails, ever (v1)" rule was **reversed for this one workflow** (approved 2026-08-10). Transactional claim notifications (submit→HR, approve→Finance, reject/reimburse→employee) send via **Resend**, **env-gated** (`RESEND_API_KEY`/`EMAIL_FROM`) and **fire-and-forget** (never block a state change), configurable + master-toggleable at **Admin → Notifications**. Still **no** invitations, reminders, marketing, or other notifications outside this workflow.
+- **Official holidays are a lifecycle, not a date list (spec 037, 2026-08-19)** — a holiday is ONE entry covering a **date range** (Eid included) with an **announced** range and an **actual/observed** range; all working-day counting reads the actual one, so moving a holiday re-counts every request live. Status is `TENTATIVE | VERIFIED | MOVED`; HR fetches a year from Nager.Date as **suggestions only** (nothing stored without confirmation) and actual ranges may never overlap (enforced in the server actions — Prisma can't express it). A **daily Vercel Cron** (`/api/cron/holidays`, `CRON_SECRET`) nudges HR to verify a tentative date within a configurable lead (default 14 days) — it can **never** email employees. Team announcements are **drafted deterministically** (English then Arabic, warm, with bridge/long-weekend callouts) and **only ever sent by a human**; each send snapshots the dates it went out with, which is what flags "announced with an outdated date" and makes the next draft a correction. A **bridge is exactly ONE working day** between off-days. Moving a holiday onto someone's booked leave emails them the day was returned.
+- **Email is limited to TWO workflows (specs 020 + 037)** — the original "no emails, ever (v1)" rule was reversed for the benefit-claim workflow (approved 2026-08-10) and widened to the holiday/vacation workflow (approved 2026-08-19). Transactional claim notifications (submit→HR, approve→Finance, reject/reimburse→employee) send via **Resend**, **env-gated** (`RESEND_API_KEY`/`EMAIL_FROM`) and **fire-and-forget** (never block a state change), configurable + master-toggleable at **Admin → Notifications**. Still **no** invitations, marketing, or other notifications outside these two workflows.
 
 ---
 
@@ -197,8 +198,19 @@ HR_ERP/
 ### Database operations (Neon)
 Claude Code sessions **do not** have production `DATABASE_URL` and **cannot** push schema changes to the user's DB directly. Two handoff surfaces:
 
-- **`npm run db:*` scripts** — if a local terminal is available.
-- **`prisma/sql/` numbered files** — hand-runnable SQL to paste into Neon's SQL editor, in order. Whenever `prisma/schema.prisma` or `prisma/seed.ts` changes, regenerate the corresponding `prisma/sql/00N_*.sql` file and commit it **in the same commit**. Tell the user exactly which file(s) to paste and in what order.
+- **Deploy applies them automatically (the normal path).** `scripts/apply-sql.mjs` runs inside the
+  Vercel build (`package.json` → `build`): it applies every not-yet-applied `prisma/sql/*.sql` in
+  numeric order and records each in a `_sql_migrations` table, so a file runs exactly once and a
+  redeploy is a no-op. It is deliberately **non-fatal** — a migration or connection failure logs
+  loudly and lets the deploy continue, so an un-applied file is retried next deploy rather than
+  taking the site down. **Check the Vercel build log for `[apply-sql]` after any schema change**;
+  a file that failed there still needs pasting by hand.
+- **`prisma/sql/` numbered files** — also hand-runnable in Neon's SQL editor, which is the fallback
+  when the deploy-time run fails. Whenever `prisma/schema.prisma` or `prisma/seed.ts` changes,
+  regenerate the corresponding `prisma/sql/0NN_*.sql` file and commit it **in the same commit**,
+  and keep it **idempotent** (the runner may retry it).
+- **`npm run db:apply` / other `npm run db:*` scripts** — the same runner, if a local terminal with
+  the connection string is available.
 
 **Never** run `prisma db push` against the user's DB from a session, and **never** ask the user to paste their `DATABASE_URL` into chat.
 
@@ -213,6 +225,7 @@ Claude Code sessions **do not** have production `DATABASE_URL` and **cannot** pu
 | `ALLOWED_EMAIL_DOMAIN` | Domain allowed to sign in (e.g. `forefront.consulting`) |
 | `ADMIN_EMAILS` | Comma-separated bootstrap admin allowlist |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob token for document storage |
+| `CRON_SECRET` | Authenticates the daily holidays cron route (`/api/cron/holidays`, spec 037) |
 
 ### Build Commands
 ```bash
@@ -248,4 +261,4 @@ prior sessions have accidentally reverted agreed-upon designs.
 
 ---
 
-*Last Updated: 2026-08-18 (Added: the live-page polling rule; Time-Off working-day standard (spec 035); the once-per-cycle guaranteed-benefit guard + per-person grants (spec 036). Neon migrations applied through `056`.)*
+*Last Updated: 2026-08-19 (Added: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. Neon migration `057` applies itself on deploy — verified through `scripts/apply-sql.mjs`.)*

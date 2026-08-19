@@ -11,7 +11,11 @@ import { deriveTenureBand } from "@/lib/tenure";
 import { sumMedicalPremium, type PricedPerson } from "@/lib/benefits/rates";
 import { getNotificationSettings } from "@/lib/notifications/settings";
 import { sendEmail } from "@/lib/email/client";
-import { claimApprovedToFinance, claimRejectedToEmployee } from "@/lib/email/templates";
+import {
+  claimApprovedToFinance,
+  claimRejectedToEmployee,
+  claimReopenedToEmployee,
+} from "@/lib/email/templates";
 
 /** Parse a yyyy-mm-dd form value to a Date, or null if absent/invalid. */
 function parseDate(raw: FormDataEntryValue | null): Date | null {
@@ -435,6 +439,67 @@ export async function rejectClaim(formData: FormData): Promise<void> {
     to: claim.user.email,
     ...claimRejectedToEmployee({ benefitName: benefitNameOf(claim), reason }),
   });
+  revalidatePath("/admin/benefits");
+  revalidatePath("/benefits");
+}
+
+/**
+ * Overturn a rejection (HR Admin or Super User) — the claim goes BACK TO THE REVIEW QUEUE.
+ *
+ * Deliberately not a jump straight to Approved: money never moves outside the normal
+ * request → approve → pay path (the shortcut override that skipped it was shipped and
+ * reverted same-day). Reopened means SUBMITTED again, so it re-enters the queue, HR sees it
+ * with its pool meter (a rejected claim released its allowance — reopening takes it back),
+ * and approving it runs the untouched `approveOne`, Finance email included.
+ *
+ * The rejection reason is preserved inside the audit note rather than dropped: the ledger's
+ * decision column would otherwise show the old "declined because…" against a later approval.
+ *
+ * The reason is REQUIRED and travels both ways: into the ledger's trail for HR, and into the
+ * email so the employee learns why the decline was lifted. The employee already received the
+ * decline email, so they are told it no longer stands — fire-and-forget, never blocking.
+ */
+export async function reopenClaim(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  const id = formData.get("id") as string;
+  const reason = (formData.get("reason") as string | null)?.trim() || null;
+  if (!id) return;
+  // Required, not optional: overturning a decision the employee was already told about is
+  // exactly the moment a record of WHY is worth having — for the ledger and for them.
+  if (!reason) {
+    redirect(
+      "/admin/benefits?error=" +
+        encodeURIComponent("Give a reason for reopening the claim — it's recorded and sent to the employee.")
+    );
+  }
+
+  const claim = await prisma.benefitClaim.findUnique({ where: { id }, include: CLAIM_WITH_PARTIES });
+  // Only a rejection can be overturned. Anything else is already live in the flow (or paid),
+  // and a race with another admin is a no-op, not an error — same posture as approveOne.
+  if (!claim || claim.status !== "REJECTED") return;
+
+  const wasRejectedFor = claim.decisionNote?.trim();
+  const trail =
+    `Reopened by ${admin.name ?? "an admin"} — ${reason}` +
+    (wasRejectedFor ? ` (originally declined: ${wasRejectedFor})` : "");
+
+  await prisma.benefitClaim.update({
+    where: { id },
+    data: {
+      status: "SUBMITTED",
+      // Undecided again: the queue sorts on createdAt and the ledger reads decidedAt, so a
+      // stale decision stamp would put a live claim back among the decided ones.
+      decidedAt: null,
+      reviewedById: null,
+      decisionNote: trail,
+    },
+  });
+
+  await sendEmail({
+    to: claim.user.email,
+    ...claimReopenedToEmployee({ benefitName: benefitNameOf(claim), reason }),
+  });
+
   revalidatePath("/admin/benefits");
   revalidatePath("/benefits");
 }

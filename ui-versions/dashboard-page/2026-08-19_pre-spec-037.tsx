@@ -7,9 +7,6 @@ import { getDisabledModules } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
 import { formatDate } from "@/lib/labels";
 import { pendingApprovalWhere } from "@/lib/leave-queries";
-import { nextAnnouncedHoliday, getHolidaySet } from "@/lib/holidays";
-import { describeBreak } from "@/lib/timeoff/breaks";
-import { HolidayBanner } from "@/components/HolidayBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -60,13 +57,6 @@ export default async function DashboardPage() {
 
   const on = (key: string) => !disabled.has(key);
 
-  // Upcoming announced holiday (spec 037): read live, so it appears for people who joined
-  // after the email and clears itself once the holiday passes. Only when Time-Off is on.
-  const upcoming = on("timeoff") ? await nextAnnouncedHoliday() : null;
-  const upcomingShape = upcoming
-    ? describeBreak(upcoming.actualStart, upcoming.actualEnd, await getHolidaySet())
-    : null;
-
   const onbPct = assignedCount === 0 ? 100 : Math.round((completedCount / assignedCount) * 100);
   const onboardingDone = assignedCount > 0 && completedCount >= assignedCount;
 
@@ -88,18 +78,6 @@ export default async function DashboardPage() {
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Dashboard</p>
       <h1 className="mt-1 font-serif text-3xl text-ink">Welcome, {firstName}</h1>
       <p className="mt-2 text-muted">Your {brand.companyName} home.</p>
-
-      {upcoming && upcomingShape ? (
-        <HolidayBanner
-          name={upcoming.name}
-          start={upcoming.actualStart}
-          end={upcoming.actualEnd}
-          bridgeDays={upcomingShape.bridges}
-          stretchStart={upcomingShape.stretchStart}
-          stretchEnd={upcomingShape.stretchEnd}
-          stretchDays={upcomingShape.stretchDays}
-        />
-      ) : null}
 
       <div className="ff-stagger mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {showBenefits ? <Tile title="Benefits" href="/benefits">{benefitsMsg}</Tile> : null}

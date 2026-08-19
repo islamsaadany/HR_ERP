@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/labels";
 import { LEAVE_STATUS_LABEL, LEAVE_STATUS_CLASS, overlaps } from "@/lib/leave";
 import { countWorkingDays, dayKey, takenInYear } from "@/lib/workdays";
-import { getHolidaySet, expandRange } from "@/lib/holidays";
+import { getHolidaySet } from "@/lib/holidays";
 import { pendingApprovalWhere, closeLeaverPending } from "@/lib/leave-queries";
 import { MarkLeaveSeen } from "@/components/MarkLeaveSeen";
 import { TimeOffRequestForm, type ExistingRange } from "@/components/TimeOffRequestForm";
@@ -16,11 +16,11 @@ export const dynamic = "force-dynamic";
 export default async function TimeOffPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; start?: string; end?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const me = await requireUser();
   await requireModuleEnabled("timeoff");
-  const { error, start: startParam, end: endParam } = await searchParams;
+  const { error } = await searchParams;
 
   // Idempotent sweep (spec 035, FR-008): a leaver's pending requests close on read.
   await closeLeaverPending();
@@ -28,7 +28,7 @@ export default async function TimeOffPage({
   const year = new Date().getUTCFullYear();
   const [holidaySet, holidayRows, myRequests, approvals] = await Promise.all([
     getHolidaySet(),
-    prisma.publicHoliday.findMany({ orderBy: { actualStart: "asc" } }).catch(() => []),
+    prisma.publicHoliday.findMany({ orderBy: { date: "asc" } }).catch(() => []),
     prisma.leaveRequest.findMany({
       where: { userId: me.id },
       orderBy: { createdAt: "desc" },
@@ -84,11 +84,7 @@ export default async function TimeOffPage({
 
   // The form's client-side inputs: holidays (for the live preview) and my open ranges
   // (for the self-overlap warning, FR-005).
-  // Every day of every holiday's ACTUAL range, so the client preview greys out the same days
-  // the server counts (spec 037: a multi-day holiday is one row covering several days).
-  const formHolidays = holidayRows.flatMap((h) =>
-    expandRange(h.actualStart, h.actualEnd).map((iso) => ({ iso, name: h.name }))
-  );
+  const formHolidays = holidayRows.map((h) => ({ iso: dayKey(h.date), name: h.name }));
   const myOpenRanges: ExistingRange[] = myRequests
     .filter((r) => r.status === "PENDING" || r.status === "APPROVED")
     .map((r) => ({
@@ -102,41 +98,12 @@ export default async function TimeOffPage({
     (r) => (r.status === "APPROVED" || r.status === "DECLINED") && r.decisionSeenAt == null
   );
 
-  // What the nav badge counts, as this render sees it. Any submit/approve/decline/cancel
-  // revalidates this page, so a changed signature is the cue for the badge to re-check
-  // immediately instead of waiting out its 45s poll (stale-badge report, 2026-08-19).
-  const badgeSignature = [
-    approvals.length,
-    myRequests.filter((r) => r.status === "PENDING").length,
-    myRequests.filter((r) => (r.status === "APPROVED" || r.status === "DECLINED") && r.decisionSeenAt == null).length,
-  ].join(":");
-
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  // Prefill from an announcement's "request this bridge" link (spec 037, FR-013). Anything
-  // malformed or already past degrades to the plain form rather than erroring — a stale link
-  // in an old email must never be a dead end.
-  const isoRe = /^\d{4}-\d{2}-\d{2}$/;
-  const todayISO = dayKey(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())));
-  const validStart = startParam && isoRe.test(startParam) && startParam >= todayISO ? startParam : "";
-  const validEnd =
-    validStart && endParam && isoRe.test(endParam) && endParam >= validStart ? endParam : validStart;
-
-  // If they already asked for those days, show that instead of inviting a duplicate.
-  const suggestionCovered =
-    validStart && validEnd
-      ? myRequests.find(
-          (r) =>
-            (r.status === "PENDING" || r.status === "APPROVED") &&
-            dayKey(r.startDate) <= validStart &&
-            dayKey(r.endDate) >= validEnd
-        ) ?? null
-      : null;
-
   return (
     <div className="max-w-3xl">
-      <MarkLeaveSeen hasUnseen={hasUnseen} signature={badgeSignature} />
+      <MarkLeaveSeen hasUnseen={hasUnseen} />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Time-Off</p>
       <h1 className="mt-1 font-serif text-3xl text-ink">Time off</h1>
       <p className="mt-1 text-muted">Request time off; your manager approves it.</p>
@@ -161,44 +128,8 @@ export default async function TimeOffPage({
           </p>
         </div>
         <section className="rounded-xl border border-line bg-surface p-6">
-          {suggestionCovered ? (
-            <>
-              <h2 className="mb-2 font-serif text-lg text-ink">You&apos;ve already asked for these days</h2>
-              <p className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                <b>
-                  {formatDate(suggestionCovered.startDate)}
-                  {suggestionCovered.endDate.getTime() !== suggestionCovered.startDate.getTime()
-                    ? ` → ${formatDate(suggestionCovered.endDate)}`
-                    : ""}{" "}
-                  — {LEAVE_STATUS_LABEL[suggestionCovered.status].toLowerCase()}.
-                </b>{" "}
-                {suggestionCovered.status === "APPROVED"
-                  ? "Nothing more to do; enjoy the break."
-                  : "Your manager has it."}
-              </p>
-              <p className="mt-2 text-xs text-muted">
-                Want to extend it? Request the extra days as a separate request below.
-              </p>
-              <div className="mt-4 border-t border-dashed border-line pt-4">
-                <TimeOffRequestForm holidays={formHolidays} existing={myOpenRanges} />
-              </div>
-            </>
-          ) : (
-            <>
-              <h2 className="mb-4 font-serif text-lg text-ink">Request time off</h2>
-              {validStart ? (
-                <p className="mb-3 rounded-lg border border-navy-100 bg-navy-50 px-3 py-2 text-sm text-navy-700">
-                  Filled in from the holiday announcement — change the dates if you want more.
-                </p>
-              ) : null}
-              <TimeOffRequestForm
-                holidays={formHolidays}
-                existing={myOpenRanges}
-                initialStart={validStart}
-                initialEnd={validEnd}
-              />
-            </>
-          )}
+          <h2 className="mb-4 font-serif text-lg text-ink">Request time off</h2>
+          <TimeOffRequestForm holidays={formHolidays} existing={myOpenRanges} />
         </section>
       </div>
 

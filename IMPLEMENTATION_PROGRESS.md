@@ -18,6 +18,49 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track placeholder + Handoff | ⬜ Not started |
 
+## Spec 037 — Official holidays: verification, bridges & team announcements (built 2026-08-19 — migration `057` applies on deploy)
+- **The log grew up.** `PublicHoliday` moved from a single unique date to two date **ranges** —
+  `original*` (announced, frozen) and `actual*` (observed, what every count reads) — plus a
+  `TENTATIVE | VERIFIED | MOVED` status, `FETCHED | MANUAL` source, and verification stamps. A
+  multi-day holiday like Eid is **one entry**. `lib/workdays.ts` (the one counting engine) is
+  untouched; `getHolidaySet` expands ranges into its day-key input.
+- **Fetch, don't type.** HR pulls a year from Nager.Date as **suggestions only** — grouped so
+  consecutive days of one holiday arrive as a single entry — and confirms what's real. A re-fetch
+  whose prediction moved offers "apply as move". Actual ranges may never overlap (server-enforced).
+- **Verification.** A daily **Vercel Cron** (`/api/cron/holidays`, `CRON_SECRET` — the app's first
+  scheduled job) reminds HR once per holiday inside a configurable lead (default 14 days, set on
+  Admin → Notifications). It can never email employees.
+- **Announcements.** Deterministic bilingual drafts (English then Arabic, warm, with bridge and
+  long-weekend callouts) that **only a human sends**. Each send snapshots its dates, which flags
+  "announced with an outdated date" and makes the next draft a correction. Bulk, fire-and-forget.
+- **Employees.** A live dashboard banner (visible to people who joined after the email, clears
+  itself once past) and a one-click CTA that opens the normal request form prefilled with the
+  bridge — normal manager approval, normal counting. An already-booked range shows its status
+  instead of inviting a duplicate.
+- **Care for the edges.** Moving a holiday onto someone's booked leave emails them the day was
+  returned; past-dated edits need explicit confirmation; a holiday landing on the weekend is
+  described honestly rather than inviting a break that doesn't exist.
+- Verified: migration `057` proven on a throwaway Postgres (legacy rows backfill, old column
+  dropped, re-run idempotent, **zero drift** vs `schema.prisma`); cron exercised live (401 without
+  the secret, `{"reminded":1}` then `{"reminded":0}`); fetch + grouping checked against the real
+  2026 Egypt data; drafts rendered for bridge / multi-day / weekend-only / correction cases.
+- **Deployment:** `057` is applied automatically by `scripts/apply-sql.mjs` in the Vercel build —
+  verified by replaying a production-shaped database (legacy rows + a ledger through `056`) through
+  the real runner: it applied exactly `057`, backfilled the legacy holidays, and a second run
+  applied nothing. **Action required:** set `CRON_SECRET` in Vercel so the daily job can run.
+
+## Claims: HR can reopen a rejected claim (2026-08-19, built — no migration)
+- A rejection was terminal. HR Admin / Super User can now **Reopen** a rejected claim from the
+  ledger with a **required reason**: it returns to the review queue (never straight to Approved —
+  money keeps flowing through request → approve → pay), the reason lands in the ledger trail, and
+  the employee is emailed that the decline no longer stands (they had already had the decline mail).
+
+## Time-Off badge liveness fix (2026-08-19)
+- The nav badge only re-checked on mount, tab focus and a 45s timer, so it sat on a stale number
+  while the page below already showed the truth. The page now signals it the moment its request
+  state changes (submit/approve/decline/cancel, and after marking a decision seen); it also
+  re-checks on `visibilitychange` for returning to the app on mobile.
+
 ## Post-036 live-testing round (2026-08-18, built — no migration)
 - [x] **Essam bug**: a granted sub-3-month (or no-start-date) employee saw only the service-gate notice — a grant now overrides EVERY gate: the granted band renders beneath the notice (with a pointer sentence), fully requestable. Verified end-to-end (no-grant control unchanged; granted card at the typed amount; request accepted).
 - [x] **"Exceptional releases" tab** on Benefits Management (user request): the Release Guaranteed Benefit sheet moved off its standalone page into the tab (old URL redirects; header button removed; picker switches client-side over the new `buildReleaseSheet` lib), with the **Individual grants** panel underneath it (SU-only; Amounts is config-only again). Claim-guard, granted markers, and releasing verified inside the tab; HR Admin gets the sheet without the grants panel. Grant removal now also refused after a **release** (auditability).
@@ -999,4 +1042,4 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
 
 ---
 
-*Last Updated: 2026-08-18 — Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*
+*Last Updated: 2026-08-19 — Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*

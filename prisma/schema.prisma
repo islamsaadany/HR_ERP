@@ -130,17 +130,18 @@ model User {
   leaveApprovals LeaveRequest[] @relation("LeaveApprover")
 
   // Benefits
-  medicalCommitments MedicalCommitment[] @relation("MedicalOwner")
-  committedMedical   MedicalCommitment[] @relation("MedicalCommitter")
-  benefitClaims      BenefitClaim[]      @relation("ClaimOwner")
-  reviewedClaims     BenefitClaim[]      @relation("ClaimReviewer")
-  paidClaims         BenefitClaim[]      @relation("ClaimPayer")
-  benefitReleases    BenefitRelease[]    @relation("ReleaseSubject")
-  releasesGiven      BenefitRelease[]    @relation("ReleaseActor")
-  benefitGrants      GuaranteedBenefitGrant[] @relation("GrantSubject")
-  benefitGrantsGiven GuaranteedBenefitGrant[] @relation("GrantActor")
-  medicalRecoveries  MedicalRecovery[]   @relation("RecoverySubject")
-  recoveriesSettled  MedicalRecovery[]   @relation("RecoverySettler")
+  medicalCommitments       MedicalCommitment[]      @relation("MedicalOwner")
+  committedMedical         MedicalCommitment[]      @relation("MedicalCommitter")
+  benefitClaims            BenefitClaim[]           @relation("ClaimOwner")
+  reviewedClaims           BenefitClaim[]           @relation("ClaimReviewer")
+  paidClaims               BenefitClaim[]           @relation("ClaimPayer")
+  sentHolidayAnnouncements HolidayAnnouncement[]    @relation("HolidayAnnouncer")
+  benefitReleases          BenefitRelease[]         @relation("ReleaseSubject")
+  releasesGiven            BenefitRelease[]         @relation("ReleaseActor")
+  benefitGrants            GuaranteedBenefitGrant[] @relation("GrantSubject")
+  benefitGrantsGiven       GuaranteedBenefitGrant[] @relation("GrantActor")
+  medicalRecoveries        MedicalRecovery[]        @relation("RecoverySubject")
+  recoveriesSettled        MedicalRecovery[]        @relation("RecoverySettler")
 
   // Profile change requests (spec 029)
   profileChangeRequests ProfileChangeRequest[] @relation("ChangeRequester")
@@ -400,14 +401,89 @@ model LeaveRequest {
   @@index([approverId, status])
 }
 
-/// An HR-managed public holiday (spec 035). Listed dates never count as working days
-/// anywhere time off is counted — alongside the fixed Friday+Saturday weekend. Company-wide;
-/// stored as a date at UTC midnight, unique so a day can't be listed twice.
+/// Where a holiday entry came from. A fetched suggestion is only a prediction until HR
+/// verifies it; one HR typed by hand is deliberate, so it starts verified.
+enum HolidaySource {
+  FETCHED
+  MANUAL
+}
+
+/// A holiday's date confidence (spec 037). TENTATIVE entries are what the daily cron asks
+/// HR to check; VERIFIED and MOVED are both date-confirmed and may be announced.
+enum HolidayStatus {
+  TENTATIVE
+  VERIFIED
+  MOVED
+}
+
+/// An HR-managed public holiday (spec 035, evolved by spec 037). Every day of the ACTUAL
+/// range counts as a non-working day everywhere time off is counted — alongside the fixed
+/// Friday+Saturday weekend.
+///
+/// Two ranges, because the government moves holidays: `original*` is what was announced and
+/// never changes after creation, `actual*` is where the holiday really lands and is what all
+/// counting reads. A range (not a single date) so a multi-day holiday like Eid is ONE entry
+/// that HR verifies and moves as a whole. All dates are UTC midnight; single-day holidays
+/// have start == end. Actual ranges never overlap — enforced in the admin server actions,
+/// which are the only write path (Prisma cannot express an exclusion constraint).
 model PublicHoliday {
-  id        String   @id @default(cuid())
-  date      DateTime @unique
-  name      String
-  createdAt DateTime @default(now())
+  id             String        @id @default(cuid())
+  name           String
+  /// Arabic name from the fetch source, used by the bilingual announcement. Null when HR
+  /// typed the entry by hand and gave only the English name.
+  localName      String?
+  originalStart  DateTime
+  originalEnd    DateTime
+  actualStart    DateTime
+  actualEnd      DateTime
+  status         HolidayStatus @default(TENTATIVE)
+  source         HolidaySource @default(MANUAL)
+  /// Set when HR confirms the date or moves it — either way the date is settled.
+  verifiedAt     DateTime?
+  /// Stamped when the cron has asked HR to verify this occurrence, so the reminder is sent
+  /// once per holiday rather than every day of its window.
+  reminderSentAt DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @default(now()) @updatedAt
+
+  announcements HolidayAnnouncement[]
+
+  @@index([actualStart])
+}
+
+/// Whether this send was the holiday's first announcement or a correction issued after its
+/// dates changed (spec 037 FR-018).
+enum AnnouncementKind {
+  ORIGINAL
+  CORRECTION
+}
+
+/// One announcement actually sent to the team about one holiday (spec 037).
+///
+/// Stores the text AS SENT — HR edits the draft, so the draft is not the record. The
+/// `announced*` range is a snapshot of the holiday's actual dates at send time: when the
+/// holiday later moves, comparing the two is what flags "announced with an outdated date"
+/// without needing a status column to keep in step.
+model HolidayAnnouncement {
+  id             String           @id @default(cuid())
+  holidayId      String
+  holiday        PublicHoliday    @relation(fields: [holidayId], references: [id], onDelete: Cascade)
+  kind           AnnouncementKind @default(ORIGINAL)
+  subject        String
+  bodyEn         String
+  bodyAr         String
+  announcedStart DateTime
+  announcedEnd   DateTime
+  /// Comma-joined yyyy-mm-dd bridge days called out in this message — powers the banner's
+  /// callout and the prefilled request link.
+  bridgeDates    String?
+  sentById       String?
+  sentBy         User?            @relation("HolidayAnnouncer", fields: [sentById], references: [id], onDelete: SetNull)
+  sentAt         DateTime         @default(now())
+  /// How many active employees the send addressed — the audit of reach at that moment.
+  recipientCount Int              @default(0)
+
+  @@index([holidayId])
 }
 
 // ─── Benefits (spec 007) ────────────────────────────────────────────────
@@ -436,9 +512,9 @@ enum ClaimStatus {
 
 /// A benefits cycle. Employees can save/submit only while OPEN.
 model PlanYear {
-  id                 String               @id @default(cuid())
+  id                 String                   @id @default(cuid())
   name               String
-  status             PlanYearStatus       @default(OPEN)
+  status             PlanYearStatus           @default(OPEN)
   /// Proration window (spec 019). Admin-set; nullable for legacy rows / fallback.
   /// When either is null the year is treated as having no window → no proration.
   startDate          DateTime?
@@ -450,11 +526,11 @@ model PlanYear {
   /// changes the rules a closed cycle's claims were judged under, and what was allowed when
   /// would no longer be recoverable. Changing it is never retroactive — no existing claim is
   /// re-evaluated, reduced or reversed.
-  flexCapEnabled     Boolean              @default(true)
+  flexCapEnabled     Boolean                  @default(true)
   flexCapChangedById String?
-  flexCapChangedBy   User?                @relation("FlexCapChanger", fields: [flexCapChangedById], references: [id], onDelete: SetNull)
+  flexCapChangedBy   User?                    @relation("FlexCapChanger", fields: [flexCapChangedById], references: [id], onDelete: SetNull)
   flexCapChangedAt   DateTime?
-  createdAt          DateTime             @default(now())
+  createdAt          DateTime                 @default(now())
   medicalCommitments MedicalCommitment[]
   medicalCharges     MedicalCycleCharge[]
   claims             BenefitClaim[]
@@ -477,7 +553,7 @@ model PoolCeiling {
 /// held per employment type × tenure band (ft* / pt* columns) on the numbers-only Amounts tab.
 /// Superseded the old "one row per (benefit × employmentType)" model.
 model GuaranteedBenefit {
-  id               String           @id @default(cuid())
+  id               String                   @id @default(cuid())
   name             String
   note             String?
   /// Grouping category shown in the unified catalogue (spec 021), aligned with the flexible
@@ -485,8 +561,8 @@ model GuaranteedBenefit {
   /// description). Null falls back to "Other".
   category         String?
   /// Who this benefit is available to. Drives what each employee sees by their employment type.
-  eligibleFullTime Boolean          @default(true)
-  eligiblePartTime Boolean          @default(true)
+  eligibleFullTime Boolean                  @default(true)
+  eligiblePartTime Boolean                  @default(true)
   /// Full-time amounts per tenure band (null = salary-driven / not set).
   ftBand6mo2y      Int?
   ftBand2to4y      Int?
@@ -497,12 +573,12 @@ model GuaranteedBenefit {
   ptBand2to4y      Int?
   ptBand4to7y      Int?
   ptBand7to10y     Int?
-  order            Int              @default(0)
-  claimType        ClaimType        @default(NOTE)
+  order            Int                      @default(0)
+  claimType        ClaimType                @default(NOTE)
   /// Whether this guaranteed benefit's annual budget is prorated for mid-year
   /// starters (spec 019). True only for Professional development; event/season
   /// gifts (marriage, summer, special events, loans) stay false = full-when-triggered.
-  prorated         Boolean          @default(false)
+  prorated         Boolean                  @default(false)
   claims           BenefitClaim[]
   releases         BenefitRelease[]
   grants           GuaranteedBenefitGrant[]
@@ -982,12 +1058,14 @@ model BusinessUnit {
 /// The Resend API key and sender address live in env (RESEND_API_KEY, EMAIL_FROM),
 /// never here. With emails off or unconfigured the workflow still runs; nothing is sent.
 model NotificationSettings {
-  id           String   @id @default("singleton")
-  emailEnabled Boolean  @default(false)
-  hrInbox      String?
-  financeInbox String?
-  fromName     String?
-  updatedAt    DateTime @default(now()) @updatedAt
+  id                   String   @id @default("singleton")
+  emailEnabled         Boolean  @default(false)
+  hrInbox              String?
+  financeInbox         String?
+  fromName             String?
+  /// Days before a holiday that HR is asked to confirm its date (spec 037 FR-015).
+  verificationLeadDays Int      @default(14)
+  updatedAt            DateTime @default(now()) @updatedAt
 }
 
 // ─── Profile change requests (spec 029) ─────────────────────────────────

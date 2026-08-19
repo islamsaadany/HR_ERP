@@ -27,6 +27,29 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ## Decisions log
 
+### Spec 037 — Official holidays & vacation notifications (aligned 2026-08-19)
+- **Fetch source**: Nager.Date, **suggestion-only** — nothing stored without HR confirming, so a
+  wrong prediction can never reach working-day counting. (The source does **not** list Eid al-Fitr
+  for Egypt, so manual entry still matters.)
+- **Two ranges per holiday**: announced vs actual/observed. Counting reads the **actual** one.
+- **Multi-day holidays are ONE entry** covering a date range (user's explicit choice over one row
+  per day) — verified and moved as a whole.
+- **Bridge = exactly one working day** between off-days ("1 day is the classic"). Two-day gaps are
+  never called bridges.
+- **Announcements are review-and-send**, never automatic; the cron may nudge HR but may never
+  email employees. Email scope widened from spec 020's single workflow to include this one
+  (constitution 1.2.0).
+- **Eight edge cases decided by the user**: live recount on a move; auto-zero + good-news email
+  when a move lands on booked leave; HR-sent corrections after an announced date changes;
+  past-dated edits allowed with a warning; weekend-dated holidays allowed and described honestly;
+  overlapping actual ranges blocked; re-fetch shows prediction diffs with apply-as-move.
+- **Parked (out of scope)**: company-declared breaks. Recorded intent for when it returns — HR
+  declares the break, employees do **not** file requests for those days, and the days at most
+  appear in an informational counter, never through the request/approval flow.
+- **Claims**: a rejected claim may be reopened by HR Admin or Super User with a **required
+  reason**, returning it to the review queue — never straight to Approved (money keeps flowing
+  through request → approve → pay).
+
 ### Settled
 - **2026 — Stack:** Next.js 16 + Prisma + Postgres + Tailwind, NextAuth Google, Vercel Blob, Vercel deploy. Firebase reference reimplemented, not reused.
 - **2026 — Repo:** `islamsaadany/HR_ERP` (new repo; now in session scope).

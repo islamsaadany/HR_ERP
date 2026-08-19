@@ -4,8 +4,7 @@ import React, { useMemo, useState } from "react";
 import { formatEGP as egp } from "@/lib/labels";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS } from "@/lib/benefits/claims";
 import type { ClaimStatus } from "@prisma/client";
-import { approveClaim, approveClaims, rejectClaim, reopenClaim } from "@/app/(app)/admin/benefits/actions";
-import { ConfirmSubmitButton } from "@/components/admin/ConfirmSubmitButton";
+import { approveClaim, approveClaims, rejectClaim } from "@/app/(app)/admin/benefits/actions";
 
 /**
  * Claims — review queue + ledger (mockup signed off 2026-08-16,
@@ -89,9 +88,6 @@ export function ClaimsPanel({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<string | null>(null);
   const [ledgerFilter, setLedgerFilter] = useState<LedgerFilter>("all");
-  // Which rejected row is currently being reopened — the reason box replaces the button in
-  // that one cell, so the rest of the ledger doesn't reflow.
-  const [reopening, setReopening] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
   const selectedRows = queue.filter((r) => selected.has(r.id));
@@ -371,13 +367,12 @@ export function ClaimsPanel({
                   <th className={TH + " text-right"}>Claim</th>
                   <th className={TH}>Status</th>
                   <th className={TH}>By</th>
-                  <th className={TH} />
                 </tr>
               </thead>
               <tbody>
                 {visibleLedger.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-sm text-muted">
+                    <td colSpan={6} className="px-3 py-8 text-center text-sm text-muted">
                       No claims match this filter.
                     </td>
                   </tr>
@@ -408,42 +403,6 @@ export function ClaimsPanel({
                         ) : null}
                       </td>
                       <td className={TD + " text-muted"}>{r.byName}</td>
-                      <td className={TD + " text-right"}>
-                        {r.status !== "REJECTED" ? null : reopening === r.id ? (
-                          <form action={reopenClaim} className="flex flex-wrap items-center justify-end gap-1.5">
-                            <input type="hidden" name="id" value={r.id} />
-                            <input
-                              name="reason"
-                              required
-                              autoFocus
-                              maxLength={200}
-                              placeholder="Why? — sent to them"
-                              className="min-w-[190px] rounded-lg border border-line bg-surface px-2.5 py-1 text-[11.5px] focus:border-navy-500 focus:outline-none"
-                            />
-                            <ConfirmSubmitButton
-                              message={`Send ${r.userName}'s ${r.benefitName} claim back to the review queue? The decline is undone, they are emailed with your reason, and the claim must still be approved as normal.`}
-                              className="rounded-lg bg-navy-800 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-navy-700"
-                            >
-                              Reopen
-                            </ConfirmSubmitButton>
-                            <button
-                              type="button"
-                              onClick={() => setReopening(null)}
-                              className="rounded-lg border border-line px-2 py-1 text-[11px] font-semibold text-muted hover:border-navy-200"
-                            >
-                              Cancel
-                            </button>
-                          </form>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setReopening(r.id)}
-                            className="rounded-lg border border-navy-200 px-2.5 py-1 text-[11px] font-semibold text-navy-700 hover:bg-navy-50"
-                          >
-                            Reopen
-                          </button>
-                        )}
-                      </td>
                     </tr>
                   ))
                 )}
@@ -454,7 +413,7 @@ export function ClaimsPanel({
                     {visibleLedger.length} claim{visibleLedger.length === 1 ? "" : "s"} · filtered total
                   </td>
                   <td className={TD + " text-right tabular-nums text-ink"}>{egp(ledgerTotal)}</td>
-                  <td className={TD} colSpan={3} />
+                  <td className={TD} colSpan={2} />
                 </tr>
               </tfoot>
             </table>

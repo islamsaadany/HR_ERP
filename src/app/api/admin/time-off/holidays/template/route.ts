@@ -17,11 +17,11 @@ const NAVY = "FF0F2444";
  */
 export async function GET() {
   await requireAdmin();
-  const existing = await prisma.publicHoliday.findMany({ orderBy: { date: "asc" } }).catch(() => []);
+  const existing = await prisma.publicHoliday.findMany({ orderBy: { actualStart: "asc" } }).catch(() => []);
 
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Holidays", { views: [{ state: "frozen", ySplit: 1 }] });
-  const header = ws.addRow(["Date", "Holiday name"]);
+  const header = ws.addRow(["First day", "Last day", "Holiday name"]);
   header.eachCell((c) => {
     c.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 10 };
     c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } };
@@ -29,20 +29,25 @@ export async function GET() {
   });
   header.height = 20;
   for (const h of existing) {
-    const row = ws.addRow([formatDate(h.date), h.name]);
+    // The ACTUAL (observed) range — what counting reads. A single-day holiday repeats the date.
+    const row = ws.addRow([formatDate(h.actualStart), formatDate(h.actualEnd), h.name]);
     row.getCell(1).alignment = { horizontal: "left" };
+    row.getCell(2).alignment = { horizontal: "left" };
   }
   ws.getColumn(1).width = 16;
-  ws.getColumn(2).width = 36;
+  ws.getColumn(2).width = 16;
+  ws.getColumn(3).width = 36;
 
   const help = wb.addWorksheet("How to fill");
   const lines = [
     "Public holidays — bulk upload",
     "",
     "• One holiday per row on the Holidays sheet, under the header.",
-    "• Date: dd/mm/yyyy (e.g. 06/10/2026) or a real Excel date — both work.",
-    "• Holiday name: any short label (e.g. Eid al-Fitr — day 1).",
-    "• Re-uploading updates the name of a date that's already listed; it never duplicates.",
+    "• First day / Last day: dd/mm/yyyy (e.g. 06/10/2026) or a real Excel date — both work.",
+    "• A one-day holiday repeats the same date in both columns.",
+    "• A multi-day holiday (e.g. Eid) is ONE row covering all its days — not one row per day.",
+    "• Holiday name: any short label (e.g. Eid al-Fitr).",
+    "• Re-uploading updates a holiday that already starts on that date; it never duplicates.",
     "• Listed dates stop counting as working days everywhere in Time-Off.",
   ];
   lines.forEach((t, i) => {

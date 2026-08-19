@@ -43,10 +43,17 @@ clever compression. Aim for "engineered enough": neither fragile nor over-abstra
 ## Technology & Data Constraints
 - Stack: Next.js 16 (App Router) + React 19 + TypeScript; PostgreSQL (Neon) + Prisma;
   NextAuth v5 Google provider (domain-locked to the company domain); Tailwind CSS;
-  Vercel Blob for files; Vercel deploy. Email: **limited to the benefit-claim
-  workflow (spec 020)** via Resend — env-gated (`RESEND_API_KEY`/`EMAIL_FROM`),
-  fire-and-forget, master-toggleable. (Amends the original "no email in v1"
-  constraint, approved 2026-08-10.) No other emails.
+  Vercel Blob for files; Vercel deploy. Email: limited to **two** workflows —
+  the benefit-claim workflow (spec 020) and the holiday/vacation workflow
+  (spec 037: HR verification reminders, team announcements, and the
+  "your day was returned" notice) — via Resend, env-gated
+  (`RESEND_API_KEY`/`EMAIL_FROM`), fire-and-forget, master-toggleable.
+  (Amends "no email in v1", approved 2026-08-10; widened to the holiday
+  workflow, approved 2026-08-19.) No other emails.
+- Scheduled work: one daily Vercel Cron job (`/api/cron/holidays`, spec 037),
+  authenticated with `CRON_SECRET`. A scheduled job may nudge HR; it may never
+  send anything to employees — company-wide messages are reviewed and sent by a
+  human.
 - Roles: `EMPLOYEE`, `HR_ADMIN`, `SUPER_USER` (superset of HR Admin). A `manager`
   capability derives from the org chart (an employee with direct reports).
 - Sessions do not hold the production `DATABASE_URL`. Schema/data reach the DB only via
@@ -67,5 +74,8 @@ This constitution supersedes conflicting practices. Amendments require explicit 
 approval and must be reflected in `CLAUDE.md` and any dependent spec-kit templates in the
 same change. All spec-kit commands and reviews check work against these principles.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-27 | **Last Amended**: 2026-08-10
-(1.1.0 — email allowed for the spec 020 benefit-claim workflow; see Technology & Data Constraints.)
+**Version**: 1.2.0 | **Ratified**: 2026-07-27 | **Last Amended**: 2026-08-19
+(1.1.0 — email allowed for the spec 020 benefit-claim workflow.
+1.2.0 — email widened to the spec 037 holiday/vacation workflow, and the first
+scheduled job admitted, with the rule that a cron may nudge HR but never email
+employees; see Technology & Data Constraints.)
