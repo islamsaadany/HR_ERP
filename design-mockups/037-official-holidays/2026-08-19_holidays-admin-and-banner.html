@@ -1,0 +1,510 @@
+<title>Official Holidays Mockup</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-500:#2f4d78;
+    --navy-600:#1f3a63;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green-50:#eef7f1;--green-200:#bfe0cb;--green-700:#2f7a4d;
+    --red-50:#fdf0ef;--red-200:#f3c9c4;--red-600:#c0392b;--red-700:#9d2f23;
+    --shadow:0 1px 2px rgba(16,36,68,.04),0 1px 3px rgba(16,36,68,.06);
+    --shadow-lg:0 10px 40px rgba(10,26,48,.14);
+    --font-serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;padding:28px 18px 80px;}
+  .wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:34px;}
+
+  /* Mockup chrome (not part of the product) */
+  .sheet-head{border-bottom:2px solid var(--navy-800);padding-bottom:14px;}
+  .sheet-head h1{font-family:var(--font-serif);font-size:27px;margin:4px 0 6px;}
+  .sheet-head p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.6;max-width:68ch;}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-600);margin:0;}
+  .screen{display:flex;flex-direction:column;gap:12px;}
+  .screen > .cap{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;}
+  .cap .n{font-family:var(--font-serif);font-size:19px;}
+  .cap .why{font-size:12.5px;color:var(--muted);}
+  .frame{border:1px solid var(--line);background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:26px;}
+
+  /* Product-side type */
+  h2.page{font-family:var(--font-serif);font-size:26px;margin:4px 0 0;}
+  .lead{color:var(--muted);font-size:13.5px;line-height:1.6;margin:6px 0 0;max-width:70ch;}
+  .card{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:18px;}
+  .card h3{font-family:var(--font-serif);font-size:17px;margin:0 0 4px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr;}}
+
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;font-weight:600;}
+  input,select,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:14px;background:var(--surface);color:var(--ink);font-family:inherit;}
+  textarea{line-height:1.6;resize:vertical;}
+  .btn{border:none;background:var(--navy-800);color:#fff;font-size:13.5px;font-weight:600;padding:9px 16px;border-radius:9px;cursor:pointer;font-family:inherit;}
+  .btn:hover{background:var(--navy-700);}
+  .btn.ghost{background:var(--surface);color:var(--navy-700);border:1px solid var(--navy-200);}
+  .btn.ghost:hover{background:var(--navy-50);}
+  .btn.sm{font-size:12px;padding:6px 11px;border-radius:8px;}
+  .btn.danger{background:var(--surface);color:var(--red-600);border:1px solid var(--red-200);}
+  :focus-visible{outline:2px solid var(--gold-300);outline-offset:2px;}
+
+  .chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;letter-spacing:.01em;white-space:nowrap;}
+  .chip.tent{background:var(--gold-100);color:var(--gold-800);border:1px solid var(--gold-200);}
+  .chip.ver{background:var(--green-50);color:var(--green-700);border:1px solid var(--green-200);}
+  .chip.moved{background:var(--navy-50);color:var(--navy-700);border:1px solid var(--navy-100);}
+  .chip.warn{background:var(--gold-100);color:var(--gold-800);border:1px solid var(--gold-300);}
+  .chip.new{background:var(--navy-800);color:#fff;}
+  .chip.rec{background:var(--paper);color:var(--muted);border:1px solid var(--line);}
+  .chip.diff{background:var(--gold-100);color:var(--gold-800);border:1px solid var(--gold-300);}
+
+  .hlist{list-style:none;margin:10px 0 0;padding:0;}
+  .hlist li{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:11px 0;border-bottom:1px dashed var(--line);}
+  .hlist li:last-child{border-bottom:none;}
+  .hlist .dt{font-variant-numeric:tabular-nums;font-weight:600;min-width:158px;}
+  .hlist .nm{flex:1;min-width:130px;}
+  .hlist .acts{display:flex;gap:6px;margin-left:auto;}
+  .was{display:block;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:400;}
+  .yr{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 0;}
+
+  .note{border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.55;}
+  .note.info{background:var(--navy-50);border:1px solid var(--navy-100);color:var(--navy-700);}
+  .note.warn{background:var(--gold-100);border:1px solid var(--gold-300);color:var(--gold-800);}
+  .note.bad{background:var(--red-50);border:1px solid var(--red-200);color:var(--red-700);}
+  .note.good{background:var(--green-50);border:1px solid var(--green-200);color:var(--green-700);}
+  .note b{font-weight:700;}
+
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+  .seg button{border:none;background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:inherit;}
+  .seg button.on{background:var(--navy-800);color:#fff;}
+  .hide{display:none!important;}
+
+  .bridge{border:1px dashed var(--navy-200);border-radius:12px;background:linear-gradient(0deg,var(--navy-50),transparent);padding:13px 15px;}
+  .bridge .h{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--gold-600);margin-bottom:7px;}
+
+  /* Calendar strip — shows the break shape the way the draft describes it */
+  .strip{display:flex;gap:4px;flex-wrap:wrap;margin-top:9px;}
+  .day{width:56px;border:1px solid var(--line);border-radius:8px;padding:5px 3px;text-align:center;background:var(--surface);}
+  .day .dow{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);}
+  .day .num{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .day .tag{font-size:8.5px;text-transform:uppercase;letter-spacing:.03em;margin-top:1px;}
+  .day.off{background:var(--navy-800);border-color:var(--navy-800);color:#fff;}
+  .day.off .dow,.day.off .tag{color:var(--navy-100);}
+  .day.wknd{background:var(--navy-50);border-color:var(--navy-100);color:var(--navy-700);}
+  .day.wknd .dow,.day.wknd .tag{color:var(--navy-500);}
+  .day.brdg{background:var(--gold-100);border-color:var(--gold-300);color:var(--gold-800);}
+  .day.brdg .dow,.day.brdg .tag{color:var(--gold-600);}
+
+  .banner{border:1px solid var(--gold-300);border-radius:14px;background:linear-gradient(0deg,var(--gold-100),var(--surface));padding:17px 19px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
+  .banner .txt{flex:1;min-width:250px;}
+  .banner .ttl{font-family:var(--font-serif);font-size:19px;margin:0 0 3px;}
+  .banner .sub{font-size:13px;color:var(--muted);line-height:1.5;margin:0;}
+  .banner .sub b{color:var(--ink);}
+
+  .mail{border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+  .mail .mh{background:var(--navy-800);color:#fff;padding:11px 15px;font-size:12.5px;}
+  .mail .mh .sj{font-weight:700;font-size:13.5px;display:block;margin-top:2px;}
+  .mail .mb{padding:17px 19px;font-size:13.5px;line-height:1.68;}
+  .mail .mb p{margin:0 0 11px;}
+  .mail .rtl{direction:rtl;text-align:right;border-top:1px solid var(--line);margin-top:6px;padding-top:14px;font-size:14px;}
+  .cta-inline{display:inline-block;background:var(--navy-800);color:#fff;text-decoration:none;font-weight:600;font-size:13px;padding:8px 15px;border-radius:9px;}
+
+  .kv{display:flex;gap:9px;font-size:12.5px;color:var(--muted);margin-top:9px;flex-wrap:wrap;}
+  .kv span{background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:2px 9px;}
+  .foot{font-size:12px;color:var(--muted);line-height:1.55;margin-top:11px;}
+  .stack{display:flex;flex-direction:column;gap:14px;}
+  .rowend{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+</style>
+
+<div class="wrap">
+
+  <div class="sheet-head">
+    <p class="eyebrow">Spec 037 · Mockup for sign-off · 19/08/2026</p>
+    <h1>Official holidays — admin, announcement, banner</h1>
+    <p>Every screen this feature touches, in the house navy/gold. Nothing here redesigns an existing
+      surface: the holidays screen keeps its two-column shape and the dashboard keeps its cards — the
+      new pieces are the fetch panel, the status/date columns, the announcement composer, and the banner.
+      Colour follows the house rule: <b>navy = action, gold = needs your attention, green = done</b>.</p>
+  </div>
+
+  <!-- ═══ 1. Admin holidays screen ═══ -->
+  <section class="screen">
+    <div class="cap">
+      <span class="n">1 · Admin → Time-Off → Public holidays</span>
+      <span class="why">the log, its statuses, and the fetch panel</span>
+    </div>
+    <div class="frame">
+      <p class="eyebrow">Admin · Time-Off</p>
+      <h2 class="page">Public holidays</h2>
+      <p class="lead">Listed dates never count as working days — alongside the Friday + Saturday weekend.
+        Counts are always live: moving a holiday immediately re-counts every request it touches.</p>
+
+      <div class="note warn" style="margin-top:16px">
+        <b>2 holidays need verifying.</b> Eid al-Fitr (20/03/2026) and Sham El-Nessim (13/04/2026) are
+        inside the 14-day check window — confirm the date or move it.
+      </div>
+
+      <div class="grid2" style="margin-top:16px">
+        <!-- The list -->
+        <div class="card">
+          <h3>Listed holidays</h3>
+          <p class="yr">2026</p>
+          <ul class="hlist">
+            <li>
+              <span class="dt">25/01/2026</span>
+              <span class="nm">Revolution Day</span>
+              <span class="chip ver">✓ Verified</span>
+              <span class="acts"><button class="btn ghost sm">Move</button><button class="btn danger sm">Remove</button></span>
+            </li>
+            <li>
+              <span class="dt">20/03 → 23/03/2026<span class="was">4 days · Eid al-Fitr</span></span>
+              <span class="nm">Eid al-Fitr</span>
+              <span class="chip tent">● Tentative — verify</span>
+              <span class="acts"><button class="btn sm">Verify</button><button class="btn ghost sm">Move</button></span>
+            </li>
+            <li>
+              <span class="dt">14/04/2026<span class="was">announced 13/04/2026</span></span>
+              <span class="nm">Sham El-Nessim</span>
+              <span class="chip moved">⇄ Moved</span>
+              <span class="acts"><button class="btn ghost sm">Move</button><button class="btn danger sm">Remove</button></span>
+            </li>
+            <li>
+              <span class="dt">25/04/2026</span>
+              <span class="nm">Sinai Liberation Day</span>
+              <span class="chip ver">✓ Verified</span>
+              <span class="chip warn">⚠ Announced with an outdated date</span>
+              <span class="acts"><button class="btn sm">Send correction</button></span>
+            </li>
+            <li>
+              <span class="dt">01/05/2026</span>
+              <span class="nm">Labour Day</span>
+              <span class="chip ver">✓ Verified</span>
+              <span class="acts"><button class="btn sm">Prepare announcement</button></span>
+            </li>
+          </ul>
+          <p class="foot">Original vs. actual: a moved holiday shows the announced date underneath, so the
+            history stays visible. Counting always uses the actual date.</p>
+        </div>
+
+        <!-- Fetch + add + upload -->
+        <div class="stack">
+          <div class="card">
+            <h3>Fetch official holidays</h3>
+            <p class="lead" style="margin-bottom:12px">Pulls the announced list for a year. Nothing is
+              saved until you confirm — fixed holidays arrive verified, moon-dependent ones as tentative.</p>
+            <div class="rowend">
+              <div style="max-width:130px"><label for="fy">Year</label><input id="fy" value="2026"></div>
+              <button class="btn">Fetch list</button>
+              <span class="seg" style="margin-left:auto">
+                <button class="on" onclick="fetchState('ok')">Result</button>
+                <button onclick="fetchState('err')">Source down</button>
+              </span>
+            </div>
+
+            <div id="f-ok">
+              <ul class="hlist" style="margin-top:14px">
+                <li>
+                  <span class="dt">18/06 → 21/06/2026</span>
+                  <span class="nm">Eid al-Adha</span>
+                  <span class="chip new">New</span>
+                  <span class="acts"><button class="btn sm">Confirm</button></span>
+                </li>
+                <li>
+                  <span class="dt">01/05/2026</span>
+                  <span class="nm">Labour Day</span>
+                  <span class="chip rec">Already recorded</span>
+                </li>
+                <li>
+                  <span class="dt">13/04/2026<span class="was">you recorded 14/04/2026</span></span>
+                  <span class="nm">Sham El-Nessim</span>
+                  <span class="chip diff">Different date</span>
+                  <span class="acts"><button class="btn ghost sm">Apply as move</button></span>
+                </li>
+              </ul>
+              <p class="foot">Eid arrives as <b>one entry</b> covering its four days — verify or move it as a
+                whole. “Different date” means the source now predicts something else than you recorded.</p>
+            </div>
+
+            <div id="f-err" class="hide">
+              <div class="note bad" style="margin-top:14px">
+                <b>Couldn’t reach the holidays source.</b> Nothing was changed. Try again in a moment, or
+                add the holidays by hand below — the log doesn’t depend on the fetch.
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Add a holiday</h3>
+            <div class="rowend" style="margin-top:10px">
+              <div style="min-width:132px;flex:1"><label for="a1">First day</label><input id="a1" type="date" value="2026-07-23"></div>
+              <div style="min-width:132px;flex:1"><label for="a2">Last day</label><input id="a2" type="date" value="2026-07-23"></div>
+            </div>
+            <div style="margin-top:10px"><label for="a3">Name</label><input id="a3" placeholder="e.g. Revolution Day"></div>
+            <button class="btn" style="margin-top:11px">Add holiday</button>
+            <p class="foot">Leave the last day the same for a single-day holiday. Added by hand = verified.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 2. Move dialog ═══ -->
+  <section class="screen">
+    <div class="cap">
+      <span class="n">2 · Moving a holiday</span>
+      <span class="why">the three things that can happen when the government shifts a date</span>
+    </div>
+    <div class="frame">
+      <div class="rowend" style="margin-bottom:14px">
+        <span class="seg">
+          <button class="on" onclick="moveState('ok')">Normal move</button>
+          <button onclick="moveState('clash')">Clashes with another</button>
+          <button onclick="moveState('past')">Date already passed</button>
+        </span>
+      </div>
+
+      <div class="card" style="max-width:560px">
+        <h3>Move Eid al-Fitr</h3>
+        <p class="lead">Announced <b>20/03 → 23/03/2026</b>. Set the days it will actually be observed —
+          the announced dates stay on record.</p>
+        <div class="rowend" style="margin-top:13px">
+          <div style="min-width:140px;flex:1"><label for="m1">First day</label><input id="m1" type="date" value="2026-03-21"></div>
+          <div style="min-width:140px;flex:1"><label for="m2">Last day</label><input id="m2" type="date" value="2026-03-24"></div>
+        </div>
+
+        <div id="m-ok" style="margin-top:13px">
+          <div class="note info">Working-day counts update everywhere the moment you save — including
+            requests that are already approved.</div>
+          <button class="btn" style="margin-top:12px">Save new dates</button>
+        </div>
+
+        <div id="m-clash" class="hide" style="margin-top:13px">
+          <div class="note bad"><b>Those dates overlap Sham El-Nessim (14/04/2026).</b> Two holidays can’t
+            cover the same day — move or remove that one first, then try again.</div>
+          <button class="btn" style="margin-top:12px" disabled>Save new dates</button>
+        </div>
+
+        <div id="m-past" class="hide" style="margin-top:13px">
+          <div class="note warn"><b>This holiday has already passed.</b> Changing it will change how many
+            days off everyone is recorded as having taken in 2026. Only do this to fix a genuine mistake.</div>
+          <label style="margin-top:11px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);display:flex;gap:8px;align-items:center">
+            <input type="checkbox" style="width:auto"> I understand past counts will change
+          </label>
+          <button class="btn" style="margin-top:11px">Save new dates</button>
+        </div>
+      </div>
+
+      <div class="note good" style="margin-top:16px;max-width:700px">
+        <b>If the move lands on someone’s approved day off</b> — say they booked the bridge and it just
+        became an official holiday — that request quietly stops counting against them, and they get a
+        short “good news, your day was returned” email. Their request is never cancelled for them.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 3. Announcement composer ═══ -->
+  <section class="screen">
+    <div class="cap">
+      <span class="n">3 · Announcement composer</span>
+      <span class="why">drafted for HR, edited by HR, sent only by HR</span>
+    </div>
+    <div class="frame">
+      <p class="eyebrow">Admin · Time-Off · Announcement</p>
+      <h2 class="page">Eid al-Fitr — tell the team</h2>
+      <p class="lead">Drafted from the calendar. Edit anything before sending; what you send is what people read.</p>
+
+      <div class="bridge" style="margin-top:16px">
+        <div class="h">What the calendar gives us</div>
+        <div style="font-size:13.5px;line-height:1.6">
+          <b>4 holiday days</b> (20–23 March) sit right after the weekend, and <b>Tuesday 24 March is a
+          bridge</b> — one working day before the next weekend. Taking it turns this into <b>9 days off in a row</b>.
+        </div>
+        <div class="strip">
+          <div class="day wknd"><div class="dow">Fri</div><div class="num">19</div><div class="tag">weekend</div></div>
+          <div class="day off"><div class="dow">Sat</div><div class="num">20</div><div class="tag">Eid</div></div>
+          <div class="day off"><div class="dow">Sun</div><div class="num">21</div><div class="tag">Eid</div></div>
+          <div class="day off"><div class="dow">Mon</div><div class="num">22</div><div class="tag">Eid</div></div>
+          <div class="day off"><div class="dow">Tue</div><div class="num">23</div><div class="tag">Eid</div></div>
+          <div class="day brdg"><div class="dow">Wed</div><div class="num">24</div><div class="tag">bridge</div></div>
+          <div class="day wknd"><div class="dow">Thu</div><div class="num">25</div><div class="tag">weekend</div></div>
+          <div class="day wknd"><div class="dow">Fri</div><div class="num">26</div><div class="tag">weekend</div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px"><label for="s1">Subject</label>
+        <input id="s1" value="Eid al-Fitr is coming — and there's a bridge worth taking"></div>
+
+      <div class="grid2" style="margin-top:14px">
+        <div>
+          <label for="be">Message · English</label>
+          <textarea id="be" rows="12">Hi everyone,
+
+Eid al-Fitr falls on Saturday 20 – Tuesday 23 March. With the weekend before it, that is five days off already — and Wednesday 24 March is a single working day standing between the holiday and the next weekend. Take that one day and you have nine days straight.
+
+Please use it. Rest properly, travel if you have been meaning to, spend the time with your family, and come back with your energy restored. You know your own commitments best — if nothing critical or urgent is sitting on your plate, take the break. The work will still be here.
+
+Eid Mubarak.</textarea>
+        </div>
+        <div>
+          <label for="ba">Message · Arabic</label>
+          <textarea id="ba" dir="rtl" rows="12">مرحباً بالجميع،
+
+يوافق عيد الفطر يومي السبت ٢٠ حتى الثلاثاء ٢٣ مارس. ومع عطلة نهاية الأسبوع التي تسبقه، تصبح خمسة أيام إجازة متصلة — ويوم الأربعاء ٢٤ مارس هو يوم عمل واحد يفصل بين العيد وعطلة نهاية الأسبوع التالية. خذ هذا اليوم وتصبح إجازتك تسعة أيام متواصلة.
+
+نتمنى أن تستفيدوا منها: استريحوا جيداً، وسافروا إن كنتم تنوون ذلك، واقضوا الوقت مع عائلاتكم، وعودوا وقد استعدتم طاقتكم. أنتم أدرى بالتزاماتكم — فإن لم يكن لديكم ما هو عاجل أو حرج، فخذوا إجازتكم؛ العمل سيظل في انتظاركم.
+
+عيد مبارك.</textarea>
+        </div>
+      </div>
+
+      <div class="rowend" style="margin-top:14px">
+        <button class="btn">Send to everyone (34 people)</button>
+        <button class="btn ghost">Save draft</button>
+        <span class="foot" style="margin:0">The “request the bridge” button is added to the message automatically.</span>
+      </div>
+
+      <div class="note warn" style="margin-top:14px">
+        <b>Already sent on 02/03/2026.</b> Sending again will reach everyone a second time — only do it if
+        something changed. <button class="btn sm" style="margin-left:6px">Send anyway</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 4. What the team receives ═══ -->
+  <section class="screen">
+    <div class="cap">
+      <span class="n">4 · What lands in the team’s inbox</span>
+      <span class="why">English first, then Arabic, with one button</span>
+    </div>
+    <div class="frame">
+      <div class="mail">
+        <div class="mh">Forefront People
+          <span class="sj">Eid al-Fitr is coming — and there’s a bridge worth taking</span></div>
+        <div class="mb">
+          <p>Hi everyone,</p>
+          <p>Eid al-Fitr falls on <b>Saturday 20 – Tuesday 23 March</b>. With the weekend before it, that is
+            five days off already — and <b>Wednesday 24 March</b> is a single working day standing between
+            the holiday and the next weekend. Take that one day and you have <b>nine days straight</b>.</p>
+          <p>Please use it. Rest properly, travel if you have been meaning to, spend the time with your
+            family, and come back with your energy restored. You know your own commitments best — if
+            nothing critical or urgent is sitting on your plate, take the break. The work will still be here.</p>
+          <p>Eid Mubarak.</p>
+          <p><a class="cta-inline" href="#">Request 24 March off →</a></p>
+          <p style="font-size:12px;color:var(--muted);margin:0">Goes to your manager like any other request.</p>
+
+          <div class="rtl">
+            <p>مرحباً بالجميع،</p>
+            <p>يوافق عيد الفطر يومي <b>السبت ٢٠ حتى الثلاثاء ٢٣ مارس</b>. ومع عطلة نهاية الأسبوع التي تسبقه،
+              تصبح خمسة أيام إجازة متصلة — ويوم <b>الأربعاء ٢٤ مارس</b> هو يوم عمل واحد يفصل بين العيد وعطلة
+              نهاية الأسبوع التالية. خذ هذا اليوم وتصبح إجازتك <b>تسعة أيام متواصلة</b>.</p>
+            <p>نتمنى أن تستفيدوا منها: استريحوا جيداً، وسافروا إن كنتم تنوون ذلك، واقضوا الوقت مع عائلاتكم،
+              وعودوا وقد استعدتم طاقتكم. أنتم أدرى بالتزاماتكم — فإن لم يكن لديكم ما هو عاجل أو حرج، فخذوا
+              إجازتكم؛ العمل سيظل في انتظاركم.</p>
+            <p>عيد مبارك.</p>
+            <p><a class="cta-inline" href="#">اطلب إجازة ٢٤ مارس ←</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 5. Dashboard banner ═══ -->
+  <section class="screen">
+    <div class="cap">
+      <span class="n">5 · Employee dashboard</span>
+      <span class="why">the banner sits above the cards — nothing else on the dashboard changes</span>
+    </div>
+    <div class="frame">
+      <p class="eyebrow">Dashboard</p>
+      <h2 class="page">Welcome, Islam</h2>
+      <p class="lead">Your Forefront home.</p>
+
+      <div class="banner" style="margin-top:18px">
+        <div class="txt">
+          <p class="ttl">Eid al-Fitr — 20/03 → 23/03/2026</p>
+          <p class="sub">Five days off with the weekend. <b>Wednesday 24/03 is a bridge</b> — take it and
+            you’re off for nine days straight.</p>
+        </div>
+        <a class="cta-inline" href="#">Request 24/03 off →</a>
+      </div>
+
+      <div class="grid2" style="margin-top:18px">
+        <div class="card"><h3 style="font-family:var(--font-sans);font-size:14px;font-weight:600">Benefits</h3>
+          <p class="lead" style="margin-top:6px">Open — commit medical &amp; claim as you spend.</p></div>
+        <div class="card"><h3 style="font-family:var(--font-sans);font-size:14px;font-weight:600">Time-Off</h3>
+          <p class="lead" style="margin-top:6px">Request time off.</p></div>
+      </div>
+      <p class="foot">The banner reads live state: someone who joins after the email went out still sees it,
+        and it disappears on its own once the holiday has passed.</p>
+    </div>
+  </section>
+
+  <!-- ═══ 6. One-click request ═══ -->
+  <section class="screen">
+    <div class="cap">
+      <span class="n">6 · Following the button</span>
+      <span class="why">the normal request form, already filled in</span>
+    </div>
+    <div class="frame">
+      <div class="rowend" style="margin-bottom:14px">
+        <span class="seg">
+          <button class="on" onclick="reqState('new')">Free to book</button>
+          <button onclick="reqState('has')">Already requested those days</button>
+        </span>
+      </div>
+
+      <div id="r-new" class="card" style="max-width:560px">
+        <h3>Request time off</h3>
+        <div class="note info" style="margin-top:11px">Filled in from the Eid announcement — change the dates
+          if you want more.</div>
+        <div class="rowend" style="margin-top:13px">
+          <div style="min-width:140px;flex:1"><label for="r1">From</label><input id="r1" type="date" value="2026-03-24"></div>
+          <div style="min-width:140px;flex:1"><label for="r2">To</label><input id="r2" type="date" value="2026-03-24"></div>
+        </div>
+        <p class="lead" style="margin-top:10px"><b>1 working day</b> · Fri/Sat and public holidays don’t count.</p>
+        <div style="margin-top:11px"><label for="r3">Note (optional)</label><input id="r3" placeholder="Anything your manager should know"></div>
+        <button class="btn" style="margin-top:12px">Send to my manager</button>
+      </div>
+
+      <div id="r-has" class="card hide" style="max-width:560px">
+        <h3>You’ve already asked for these days</h3>
+        <div class="note good" style="margin-top:11px">
+          <b>24/03/2026 — approved.</b> Nothing more to do; enjoy the break.
+        </div>
+        <div class="kv"><span>1 working day</span><span>Approved 05/03/2026</span><span>Manager: Nour H.</span></div>
+        <p class="foot">If you wanted to extend it, request the extra days as a separate request.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ 7. Settings ═══ -->
+  <section class="screen">
+    <div class="cap">
+      <span class="n">7 · Admin → Notifications</span>
+      <span class="why">one new field on an existing screen</span>
+    </div>
+    <div class="frame">
+      <div class="card" style="max-width:520px">
+        <h3>Holiday reminders</h3>
+        <p class="lead" style="margin-top:6px">How far ahead we ask you to confirm a tentative holiday’s date.</p>
+        <div class="rowend" style="margin-top:12px">
+          <div style="max-width:140px"><label for="ld">Remind me</label><input id="ld" value="14"></div>
+          <span class="lead" style="margin:0 0 9px">days before the holiday</span>
+        </div>
+        <p class="foot">Reminders and announcements both respect the master email switch above — turn email
+          off and the flags still appear here in the app.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  function swap(ids, on, seg){
+    ids.forEach(function(id){ document.getElementById(id).classList.toggle('hide', id !== on); });
+    var btns = seg.parentElement.querySelectorAll('button');
+    btns.forEach(function(b){ b.classList.remove('on'); });
+    seg.classList.add('on');
+  }
+  function fetchState(w){ swap(['f-ok','f-err'], w === 'ok' ? 'f-ok' : 'f-err', event.target); }
+  function moveState(w){ swap(['m-ok','m-clash','m-past'], 'm-' + w, event.target); }
+  function reqState(w){ swap(['r-new','r-has'], 'r-' + w, event.target); }
+</script>
