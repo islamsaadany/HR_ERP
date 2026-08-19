@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-17
 
-**Status**: Built 2026-08-17 (migration 054)
+**Status**: Built 2026-08-17 (migration 054) — **amended 2026-08-18**: the popup's closing button is **Submit** (was Finish) and only closes once every listed field is confirmed/filled (a red message counts what's left; Later still dismisses); the tracker and campaign list **auto-refresh** (focus + 30s) so open pages never show stale Pending chips.
 
 **Input**: User description: "HR or Finance request profile data from the team; a popup appears on login / opening the platform showing the exact fields — empty ones to fill or prefilled ones to verify — and stays in the sidebar as a notification until filled. Everyone fills according to the field requirements, saves, and it lands on the user profile, the employee registry, and the CSV download."
 
