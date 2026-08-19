@@ -24,6 +24,24 @@ const PATHS = ["/admin/time-off/holidays", "/admin/time-off", "/time-off", "/das
 function back(q: string): never {
   redirect(`/admin/time-off/holidays?${q}`);
 }
+
+/**
+ * Return to the screen keeping the fetched suggestion list on show.
+ *
+ * Verifying or moving a holiday used to drop the `suggestions` param, so a fetch was thrown
+ * away every time HR acted on one row — they had to fetch the year again to carry on. These
+ * actions are also SILENT on success: the row's own chip and dates already say what happened,
+ * so a green banner is just noise. Failures still speak up.
+ */
+function backKeepingFetch(formData: FormData, extra = ""): never {
+  const params = new URLSearchParams();
+  const year = ((formData.get("year") as string) ?? "").trim();
+  const suggestions = ((formData.get("suggestions") as string) ?? "").trim();
+  if (year) params.set("year", year);
+  if (suggestions) params.set("suggestions", suggestions);
+  const q = params.toString();
+  back([q, extra].filter(Boolean).join("&"));
+}
 function ok(msg: string): never {
   back("ok=" + encodeURIComponent(msg));
 }
@@ -177,7 +195,10 @@ export async function confirmSuggestions(formData: FormData): Promise<void> {
   if (skipped.length) {
     fail(`Confirmed ${added}. Skipped: ${skipped.join("; ")}.`);
   }
-  ok(`Confirmed ${added} holiday${added === 1 ? "" : "s"} — they need verifying nearer the date.`);
+  backKeepingFetch(
+    formData,
+    "ok=" + encodeURIComponent(`Confirmed ${added} holiday${added === 1 ? "" : "s"} — they need verifying nearer the date.`)
+  );
 }
 
 /** Add a holiday by hand. Typed deliberately, so it starts VERIFIED (FR-005). */
@@ -260,7 +281,7 @@ export async function moveHoliday(formData: FormData): Promise<void> {
 
   PATHS.forEach((p) => revalidatePath(p));
   await notifyDaysReturned(newlyHoliday, holiday!.name);
-  ok(`${holiday!.name} moved — counts everywhere now use the new dates.`);
+  backKeepingFetch(formData);
 }
 
 /** Confirm a tentative holiday's date without changing it. */
@@ -279,7 +300,7 @@ export async function verifyHoliday(formData: FormData): Promise<void> {
     },
   });
   PATHS.forEach((p) => revalidatePath(p));
-  ok(`${holiday.name} verified — you can announce it now.`);
+  backKeepingFetch(formData);
 }
 
 export async function removeHoliday(formData: FormData): Promise<void> {
@@ -296,7 +317,7 @@ export async function removeHoliday(formData: FormData): Promise<void> {
   }
   await prisma.publicHoliday.delete({ where: { id } }).catch(() => {});
   PATHS.forEach((p) => revalidatePath(p));
-  ok("Holiday removed.");
+  backKeepingFetch(formData);
 }
 
 /**

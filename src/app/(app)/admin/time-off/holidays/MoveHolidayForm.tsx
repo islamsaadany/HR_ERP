@@ -18,6 +18,8 @@ export function MoveHolidayForm({
   endISO,
   isPast,
   label = "Move",
+  year,
+  suggestions,
 }: {
   id: string;
   name: string;
@@ -26,6 +28,9 @@ export function MoveHolidayForm({
   isPast: boolean;
   /** "Apply as move" when the suggestion list offers a fetched date. */
   label?: string;
+  /** Carried through the action so a move doesn't discard the fetched suggestion list. */
+  year?: string;
+  suggestions?: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -44,6 +49,8 @@ export function MoveHolidayForm({
   return (
     <form action={moveHoliday} className="mt-1 w-full rounded-lg border border-line bg-paper p-3">
       <input type="hidden" name="id" value={id} />
+      {year ? <input type="hidden" name="year" value={year} /> : null}
+      {suggestions ? <input type="hidden" name="suggestions" value={suggestions} /> : null}
       <p className="mb-2 text-[11.5px] text-muted">
         Set the days <b className="text-ink">{name}</b> will actually be observed — the announced
         dates stay on record.

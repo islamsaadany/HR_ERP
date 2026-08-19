@@ -38,6 +38,19 @@ function rangeLabel(start: Date, end: Date): string {
     : `${formatDate(start)} → ${formatDate(end)}`;
 }
 
+/**
+ * Hidden fields that carry the current fetch back through an action, so verifying or moving
+ * a holiday doesn't throw away the suggestion list HR just pulled.
+ */
+function KeepFetch({ year, suggestions }: { year?: string; suggestions?: string }) {
+  return (
+    <>
+      {year ? <input type="hidden" name="year" value={year} /> : null}
+      {suggestions ? <input type="hidden" name="suggestions" value={suggestions} /> : null}
+    </>
+  );
+}
+
 function StatusChip({ h }: { h: HolidayWithAnnouncement }) {
   if (h.status === "TENTATIVE") {
     return <span className={chip + " border border-gold-200 bg-gold-100 text-gold-800"}>● Tentative</span>;
@@ -165,6 +178,7 @@ export default async function HolidaysPage({
                           {h.status === "TENTATIVE" ? (
                             <form action={verifyHoliday}>
                               <input type="hidden" name="id" value={h.id} />
+                              <KeepFetch year={year} suggestions={suggestions} />
                               <button className="rounded-lg bg-navy-800 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-navy-700">
                                 Verify date
                               </button>
@@ -186,10 +200,13 @@ export default async function HolidaysPage({
                             startISO={h.actualStart.toISOString().slice(0, 10)}
                             endISO={h.actualEnd.toISOString().slice(0, 10)}
                             isPast={past}
+                            year={year}
+                            suggestions={suggestions}
                           />
 
                           <form action={removeHoliday}>
                             <input type="hidden" name="id" value={h.id} />
+                            <KeepFetch year={year} suggestions={suggestions} />
                             {past ? <input type="hidden" name="confirmPast" value="1" /> : null}
                             <ConfirmSubmitButton
                               message={
@@ -239,6 +256,7 @@ export default async function HolidaysPage({
 
             {fetched.length > 0 ? (
               <form action={confirmSuggestions} className="mt-4">
+                <KeepFetch year={year} suggestions={suggestions} />
                 <ul className="divide-y divide-dashed divide-line">
                   {fetched.map((s) => {
                     const existingSameStart = byStartISO.get(s.startISO);
@@ -284,6 +302,8 @@ export default async function HolidaysPage({
                             endISO={s.endISO}
                             isPast={!isUpcoming(recordedElsewhere, today)}
                             label="Apply as move"
+                            year={year}
+                            suggestions={suggestions}
                           />
                         ) : null}
                       </li>
