@@ -93,24 +93,6 @@ export default async function AdminNotificationsPage() {
           <input id={"notif-fromName"} name="fromName" defaultValue={settings.fromName ?? ""} placeholder="Forefront People" className={input} />
         </div>
 
-        {/* Holiday reminders (spec 037) — how far ahead HR is asked to confirm a date. */}
-        <div>
-          <label htmlFor={"notif-lead"} className={label}>Holiday reminders — days ahead</label>
-          <input
-            id={"notif-lead"}
-            name="verificationLeadDays"
-            type="number"
-            min={1}
-            max={60}
-            defaultValue={settings.verificationLeadDays}
-            className={input}
-          />
-          <p className="mt-1 text-xs text-muted">
-            How long before a holiday we ask you to confirm its date. Fixed holidays rarely move;
-            moon-dependent ones often do. Turning email off leaves the flags on the holidays screen.
-          </p>
-        </div>
-
         <button className="rounded-lg bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-700">
           Save settings
         </button>

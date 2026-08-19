@@ -19,7 +19,14 @@ export async function updateNotificationSettings(formData: FormData): Promise<No
   const hrInbox = ((formData.get("hrInbox") as string | null) ?? "").trim();
   const financeInbox = ((formData.get("financeInbox") as string | null) ?? "").trim();
   const fromName = ((formData.get("fromName") as string | null) ?? "").trim();
+  const leadRaw = ((formData.get("verificationLeadDays") as string | null) ?? "").trim();
 
+  // Spec 037: how far ahead HR is asked to confirm a tentative holiday's date. Bounded so a
+  // typo can't make the reminder useless (0 = the morning of) or perpetual (a whole year).
+  const verificationLeadDays = Number(leadRaw);
+  if (!Number.isInteger(verificationLeadDays) || verificationLeadDays < 1 || verificationLeadDays > 60) {
+    return err("Holiday reminders: enter a whole number of days between 1 and 60.");
+  }
   if (hrInbox && !EMAIL_RE.test(hrInbox)) return err("The HR inbox isn't a valid email address.");
   if (financeInbox && !EMAIL_RE.test(financeInbox)) return err("The Finance inbox isn't a valid email address.");
   // Guard: turning notifications on without the inboxes set would silently skip sends.
@@ -32,6 +39,7 @@ export async function updateNotificationSettings(formData: FormData): Promise<No
     hrInbox: hrInbox || null,
     financeInbox: financeInbox || null,
     fromName: fromName || null,
+    verificationLeadDays,
   };
   await prisma.notificationSettings.upsert({
     where: { id: "singleton" },
