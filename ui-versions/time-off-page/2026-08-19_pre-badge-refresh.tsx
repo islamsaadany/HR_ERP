@@ -98,21 +98,12 @@ export default async function TimeOffPage({
     (r) => (r.status === "APPROVED" || r.status === "DECLINED") && r.decisionSeenAt == null
   );
 
-  // What the nav badge counts, as this render sees it. Any submit/approve/decline/cancel
-  // revalidates this page, so a changed signature is the cue for the badge to re-check
-  // immediately instead of waiting out its 45s poll (stale-badge report, 2026-08-19).
-  const badgeSignature = [
-    approvals.length,
-    myRequests.filter((r) => r.status === "PENDING").length,
-    myRequests.filter((r) => (r.status === "APPROVED" || r.status === "DECLINED") && r.decisionSeenAt == null).length,
-  ].join(":");
-
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
   return (
     <div className="max-w-3xl">
-      <MarkLeaveSeen hasUnseen={hasUnseen} signature={badgeSignature} />
+      <MarkLeaveSeen hasUnseen={hasUnseen} />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Time-Off</p>
       <h1 className="mt-1 font-serif text-3xl text-ink">Time off</h1>
       <p className="mt-1 text-muted">Request time off; your manager approves it.</p>

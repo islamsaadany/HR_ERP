@@ -681,7 +681,6 @@ export default async function AdminBenefitsPage({
       queue={claimQueue}
       ledger={claimLedger}
       totals={claimTotals}
-      canOverride={isSuper}
       recordEntry={
         active ? (
           <ManualReleaseModal

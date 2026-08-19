@@ -5,7 +5,7 @@ import { reconcileMedicalCharges } from "@/lib/benefits/reconcile";
 import { redirect } from "next/navigation";
 import type { ClaimType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, requireSuperUser } from "@/lib/roles";
+import { requireAdmin } from "@/lib/roles";
 import { getMedicalRateBands, poolCeilingFor } from "@/lib/benefits/config";
 import { deriveTenureBand } from "@/lib/tenure";
 import { sumMedicalPremium, type PricedPerson } from "@/lib/benefits/rates";
@@ -444,7 +444,7 @@ export async function rejectClaim(formData: FormData): Promise<void> {
 }
 
 /**
- * Super User overturns HR's rejection — the claim goes BACK TO THE REVIEW QUEUE.
+ * Overturn a rejection (HR Admin or Super User) — the claim goes BACK TO THE REVIEW QUEUE.
  *
  * Deliberately not a jump straight to Approved: money never moves outside the normal
  * request → approve → pay path (the shortcut override that skipped it was shipped and
@@ -455,14 +455,23 @@ export async function rejectClaim(formData: FormData): Promise<void> {
  * The rejection reason is preserved inside the audit note rather than dropped: the ledger's
  * decision column would otherwise show the old "declined because…" against a later approval.
  *
- * The employee already received the decline email, so they are told it no longer stands —
- * fire-and-forget, never blocking the state change.
+ * The reason is REQUIRED and travels both ways: into the ledger's trail for HR, and into the
+ * email so the employee learns why the decline was lifted. The employee already received the
+ * decline email, so they are told it no longer stands — fire-and-forget, never blocking.
  */
 export async function reopenClaim(formData: FormData): Promise<void> {
-  const su = await requireSuperUser();
+  const admin = await requireAdmin();
   const id = formData.get("id") as string;
   const reason = (formData.get("reason") as string | null)?.trim() || null;
   if (!id) return;
+  // Required, not optional: overturning a decision the employee was already told about is
+  // exactly the moment a record of WHY is worth having — for the ledger and for them.
+  if (!reason) {
+    redirect(
+      "/admin/benefits?error=" +
+        encodeURIComponent("Give a reason for reopening the claim — it's recorded and sent to the employee.")
+    );
+  }
 
   const claim = await prisma.benefitClaim.findUnique({ where: { id }, include: CLAIM_WITH_PARTIES });
   // Only a rejection can be overturned. Anything else is already live in the flow (or paid),
@@ -471,8 +480,7 @@ export async function reopenClaim(formData: FormData): Promise<void> {
 
   const wasRejectedFor = claim.decisionNote?.trim();
   const trail =
-    `Reopened by ${su.name ?? "a Super User"}` +
-    (reason ? ` — ${reason}` : "") +
+    `Reopened by ${admin.name ?? "an admin"} — ${reason}` +
     (wasRejectedFor ? ` (originally declined: ${wasRejectedFor})` : "");
 
   await prisma.benefitClaim.update({
