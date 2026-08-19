@@ -443,6 +443,11 @@ model PublicHoliday {
   /// Stamped when the cron has asked HR to verify this occurrence, so the reminder is sent
   /// once per holiday rather than every day of its window.
   reminderSentAt DateTime?
+  /// HR's work-in-progress announcement text, saved without sending. Null until they save;
+  /// once set it is what the composer opens with, instead of the freshly generated draft.
+  draftSubject   String?
+  draftBodyEn    String?
+  draftBodyAr    String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @default(now()) @updatedAt
 

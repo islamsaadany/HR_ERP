@@ -413,6 +413,39 @@ export async function uploadHolidays(formData: FormData): Promise<void> {
   ok(summary);
 }
 
+/** Back to the composer itself — a test send or a save must not navigate away from it. */
+function backToComposer(id: string, q = ""): never {
+  redirect(`/admin/time-off/holidays/announce/${id}${q ? `?${q}` : ""}`);
+}
+function composerOk(id: string, msg: string): never {
+  backToComposer(id, "ok=" + encodeURIComponent(msg));
+}
+function composerFail(id: string, msg: string): never {
+  backToComposer(id, "error=" + encodeURIComponent(msg));
+}
+
+/**
+ * Keep HR's edits without sending anything (requested 2026-08-19).
+ *
+ * The wording gets worked on over several sittings, and until now the only way to keep an
+ * edit was to send it. Saved text becomes what the composer opens with; the send clears it,
+ * so a stale draft can't outlive the message it was for.
+ */
+export async function saveAnnouncementDraft(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = ((formData.get("id") as string) ?? "").trim();
+  if (!id) return;
+  const draftSubject = ((formData.get("subject") as string) ?? "").trim() || null;
+  const draftBodyEn = ((formData.get("bodyEn") as string) ?? "").trim() || null;
+  const draftBodyAr = ((formData.get("bodyAr") as string) ?? "").trim() || null;
+  await prisma.publicHoliday.update({
+    where: { id },
+    data: { draftSubject, draftBodyEn, draftBodyAr },
+  });
+  revalidatePath(`/admin/time-off/holidays/announce/${id}`);
+  composerOk(id, "Draft saved. Nothing was sent.");
+}
+
 /** Which script(s) to send. Anything unrecognised falls back to English only. */
 function readLanguage(formData: FormData): AnnouncementLanguage {
   const raw = ((formData.get("language") as string) ?? "").trim();
@@ -431,16 +464,18 @@ export async function sendTestAnnouncement(formData: FormData): Promise<void> {
   const id = ((formData.get("id") as string) ?? "").trim();
   const to = ((formData.get("testTo") as string) ?? "").trim();
   if (!id) return;
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) fail("Enter a valid email address to send the test to.");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+    composerFail(id, "Enter a valid email address to send the test to.");
+  }
 
   const holiday = await prisma.publicHoliday.findUnique({ where: { id } });
-  if (!holiday) fail("That holiday no longer exists.");
+  if (!holiday) composerFail(id, "That holiday no longer exists.");
 
   const subject = ((formData.get("subject") as string) ?? "").trim();
   const bodyEn = ((formData.get("bodyEn") as string) ?? "").trim();
   const bodyAr = ((formData.get("bodyAr") as string) ?? "").trim();
   const language = readLanguage(formData);
-  if (!subject) fail("Give the announcement a subject before testing it.");
+  if (!subject) composerFail(id, "Give the announcement a subject before testing it.");
 
   const draft = buildAnnouncementDraft(holiday!, await getHolidaySet());
   const rendered = renderHolidayAnnouncement({
@@ -450,11 +485,17 @@ export async function sendTestAnnouncement(formData: FormData): Promise<void> {
     language,
     suggested: draft.suggested,
   });
+  await prisma.publicHoliday
+    .update({ where: { id }, data: { draftSubject: null, draftBodyEn: null, draftBodyAr: null } })
+    .catch(() => {});
+
   const reached = await sendBulkEmail({ to: [to], subject: rendered.subject, html: rendered.html });
 
-  PATHS.forEach((p) => revalidatePath(p));
-  if (reached > 0) ok(`Test sent to ${to} — nothing was recorded and nobody else got it.`);
-  fail(`Nothing was sent to ${to}. Email is off or not configured — check Admin → Notifications.`);
+  revalidatePath(`/admin/time-off/holidays/announce/${id}`);
+  if (reached > 0) {
+    composerOk(id, `Test sent to ${to} — nothing was recorded and nobody else got it.`);
+  }
+  composerFail(id, `Nothing was sent to ${to}. Email is off or not configured — check Admin → Notifications.`);
 }
 
 /**
@@ -486,9 +527,9 @@ export async function sendAnnouncement(formData: FormData): Promise<void> {
   const bodyEn = ((formData.get("bodyEn") as string) ?? "").trim();
   const bodyAr = ((formData.get("bodyAr") as string) ?? "").trim();
   const language = readLanguage(formData);
-  if (!subject) fail("Give the announcement a subject.");
-  if ((language === "en" || language === "both") && !bodyEn) fail("The English message is empty.");
-  if ((language === "ar" || language === "both") && !bodyAr) fail("The Arabic message is empty.");
+  if (!subject) composerFail(id, "Give the announcement a subject.");
+  if ((language === "en" || language === "both") && !bodyEn) composerFail(id, "The English message is empty.");
+  if ((language === "ar" || language === "both") && !bodyAr) composerFail(id, "The Arabic message is empty.");
 
   // Re-sending at dates already announced needs an explicit second click (FR-010).
   const last = holiday!.announcements[0];
@@ -512,7 +553,7 @@ export async function sendAnnouncement(formData: FormData): Promise<void> {
   const picked = formData.getAll("recipient").map(String).filter(Boolean);
   const toSelected = formData.get("audience") === "selected";
   if (toSelected && picked.length === 0) {
-    fail("Tick at least one person, or switch back to sending to everyone.");
+    composerFail(id, "Pick at least one person, or use Send to everyone.");
   }
   const recipients = await prisma.user.findMany({
     where: { status: "ACTIVE", ...(toSelected ? { id: { in: picked } } : {}) },
