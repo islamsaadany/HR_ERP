@@ -14,7 +14,19 @@ const PAPER = "#f5f3ee";
 import { formatEGP as egp } from "@/lib/labels";
 const link = (path: string) => `${appBaseUrl}${path}`;
 
-function layout(heading: string, bodyHtml: string, cta?: { href: string; label: string }): string {
+/**
+ * The house email shell.
+ *
+ * `eyebrow` and `footer` are overridable because this shell was written for the benefit-claim
+ * workflow and its defaults say so. A team announcement is a human message from HR, not a
+ * benefits notification and not automated — it passes its own eyebrow and no footer at all.
+ */
+function layout(
+  heading: string,
+  bodyHtml: string,
+  cta?: { href: string; label: string },
+  opts?: { eyebrow?: string; footer?: string | null }
+): string {
   // Only render the CTA when it's an absolute URL — a relative link breaks in mail clients.
   const showButton = cta && /^https?:\/\//.test(cta.href);
   const button = showButton
@@ -24,16 +36,20 @@ function layout(heading: string, bodyHtml: string, cta?: { href: string; label: 
   <div style="background:${PAPER};padding:28px;font-family:Helvetica,Arial,sans-serif;color:${INK};">
     <table role="presentation" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fefdfb;border:1px solid ${LINE};border-radius:14px;overflow:hidden;">
       <tr><td style="background:${NAVY};padding:16px 24px;">
-        <span style="color:${GOLD};font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;">Forefront People · Benefits</span>
+        <span style="color:${GOLD};font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;">${opts?.eyebrow ?? "Forefront People · Benefits"}</span>
       </td></tr>
       <tr><td style="padding:24px;">
         <h1 style="margin:0 0 14px;font-size:19px;color:${INK};">${heading}</h1>
         ${bodyHtml}
         ${button}
       </td></tr>
-      <tr><td style="padding:14px 24px;border-top:1px solid ${LINE};color:${MUTED};font-size:11px;">
-        Automated notification from the Forefront People benefits workflow.
-      </td></tr>
+      ${
+        opts?.footer === null
+          ? ""
+          : `<tr><td style="padding:14px 24px;border-top:1px solid ${LINE};color:${MUTED};font-size:11px;">${
+              opts?.footer ?? "Automated notification from the Forefront People benefits workflow."
+            }</td></tr>`
+      }
     </table>
   </div>`;
 }
@@ -374,5 +390,13 @@ export function renderHolidayAnnouncement(d: {
       : arInner
     : "";
 
-  return { subject: d.subject, html: layout(escapeHtml(d.subject), enBlock + arBlock) };
+  // Not "· Benefits", and no automated-notification footer: a person wrote this and a person
+  // pressed send, so nothing in the frame should claim otherwise.
+  return {
+    subject: d.subject,
+    html: layout(escapeHtml(d.subject), enBlock + arBlock, undefined, {
+      eyebrow: "Forefront People",
+      footer: null,
+    }),
+  };
 }
