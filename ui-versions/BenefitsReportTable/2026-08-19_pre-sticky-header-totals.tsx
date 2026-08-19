@@ -136,7 +136,7 @@ export function BenefitsReportTable({
 
   const sortableTh = (key: SortKey, label: string, moneyCol = true) => (
     <th
-      className={`sticky top-0 z-20 cursor-pointer select-none bg-navy-800 px-3 py-2.5 font-semibold text-white ${moneyCol ? "text-right" : "text-left"}`}
+      className={`cursor-pointer select-none bg-navy-800 px-3 py-2.5 font-semibold text-white ${moneyCol ? "text-right" : "text-left"}`}
       onClick={() => setSort((s) => ({ key, dir: s.key === key ? ((-s.dir) as 1 | -1) : key === "name" ? 1 : -1 }))}
       title="Sort"
     >
@@ -228,10 +228,7 @@ export function BenefitsReportTable({
       </div>
 
       {/* ── The table ─────────────────────────────────────────────────── */}
-      {/* max-h + overflow-auto is what makes the sticky header and totals row work: with
-          `overflow-x-auto` alone the browser computes overflow-y to auto anyway, so the sticky
-          cells would anchor to a container that never scrolls and never actually stick. */}
-      <div className="mt-4 max-h-[70vh] overflow-auto rounded-xl border border-line bg-surface">
+      <div className="mt-4 overflow-x-auto rounded-xl border border-line bg-surface">
         <table className="w-full min-w-[860px] text-sm">
           <thead>
             <tr>
@@ -242,8 +239,8 @@ export function BenefitsReportTable({
               {sortableTh("pending", "Pending")}
               {sortableTh("remaining", "Remaining")}
               {sortableTh("guaranteed", "Guaranteed")}
-              <th className="sticky top-0 z-20 bg-navy-800 px-3 py-2.5 text-left font-semibold text-white">Utilization</th>
-              <th className="sticky top-0 z-20 bg-navy-800 px-3 py-2.5 text-left font-semibold text-white">Status</th>
+              <th className="bg-navy-800 px-3 py-2.5 text-left font-semibold text-white">Utilization</th>
+              <th className="bg-navy-800 px-3 py-2.5 text-left font-semibold text-white">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -301,27 +298,6 @@ export function BenefitsReportTable({
               ))
             )}
           </tbody>
-          {visible.length > 0 ? (
-            <tfoot>
-              {/* Totals for the rows currently shown — the same figures as the tiles above, so
-                  filtering the table moves both together. */}
-              <tr className="sticky bottom-0 z-10 border-t-2 border-navy-200 bg-paper font-bold text-ink">
-                <td className="px-3 py-3">
-                  Total · {visible.length} {visible.length === 1 ? "person" : "people"}
-                </td>
-                <td className="px-3 py-3 text-right tabular-nums">{formatNumber(tiles.ceilings)}</td>
-                <td className="px-3 py-3 text-right tabular-nums">{money(tiles.medical)}</td>
-                <td className="px-3 py-3 text-right tabular-nums">{money(tiles.flexUsed)}</td>
-                <td className="px-3 py-3 text-right tabular-nums">{money(tiles.pending)}</td>
-                <td className="px-3 py-3 text-right tabular-nums">{formatNumber(tiles.remaining)}</td>
-                <td className="px-3 py-3 text-right tabular-nums">{money(tiles.guaranteed)}</td>
-                <td className="px-3 py-3 text-[11px] font-semibold text-muted">
-                  {tiles.remainingPct != null ? `${100 - tiles.remainingPct}% used` : ""}
-                </td>
-                <td className="px-3 py-3" />
-              </tr>
-            </tfoot>
-          ) : null}
         </table>
       </div>
       <p className="mt-2 text-xs text-muted">
