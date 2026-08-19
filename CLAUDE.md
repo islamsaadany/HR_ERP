@@ -86,6 +86,16 @@ four steering files (same commit).
 - **Fix type errors across the outcome** — don't leave TypeScript errors unresolved.
 - **Test implications of changes** — ensure changes don't break existing functionality.
 
+### 2b. CRITICAL: No Unneeded Complications
+- **Answer the question that was asked, at the size it was asked.** A small request gets a small
+  answer — one script, not four; one file, not a set; one paragraph, not a briefing.
+- **Deliver ONE thing.** Never hand over alternatives, variants, or a "quick version and a full
+  version" and leave the user to choose. Pick the best one and give that.
+- **A check must answer in words**, not leave the user to interpret a blank result.
+- **Don't expand scope mid-answer.** Extra options, extra tooling, extra explanation the user
+  didn't ask for are noise — flag a genuine concern in one sentence and move on.
+- **Prefer the shortest thing that works**, and only add detail when the user asks for it.
+
 ### 3a. CRITICAL: Audit Fixes Before Asking the User to Test
 - **Never hand over a fix and ask the user to test it without auditing it yourself first.** The user's time is not a substitute for verification.
 - **Prove the fix works with the tools available**, not by reasoning alone:
@@ -196,23 +206,20 @@ HR_ERP/
 ## Configuration
 
 ### Database operations (Neon)
-Claude Code sessions **do not** have production `DATABASE_URL` and **cannot** push schema changes to the user's DB directly. Two handoff surfaces:
+**Migrations are Claude's job, not the user's.** The user should never be asked to paste SQL into
+Neon as the normal path. Whenever `prisma/schema.prisma` or `prisma/seed.ts` changes:
 
-- **Deploy applies them automatically (the normal path).** `scripts/apply-sql.mjs` runs inside the
-  Vercel build (`package.json` → `build`): it applies every not-yet-applied `prisma/sql/*.sql` in
-  numeric order and records each in a `_sql_migrations` table, so a file runs exactly once and a
-  redeploy is a no-op. It is deliberately **non-fatal** — a migration or connection failure logs
-  loudly and lets the deploy continue, so an un-applied file is retried next deploy rather than
-  taking the site down. **Check the Vercel build log for `[apply-sql]` after any schema change**;
-  a file that failed there still needs pasting by hand.
-- **`prisma/sql/` numbered files** — also hand-runnable in Neon's SQL editor, which is the fallback
-  when the deploy-time run fails. Whenever `prisma/schema.prisma` or `prisma/seed.ts` changes,
-  regenerate the corresponding `prisma/sql/0NN_*.sql` file and commit it **in the same commit**,
-  and keep it **idempotent** (the runner may retry it).
-- **`npm run db:apply` / other `npm run db:*` scripts** — the same runner, if a local terminal with
-  the connection string is available.
+1. Write the matching `prisma/sql/0NN_*.sql` and commit it **in the same commit**. Keep it
+   **idempotent** — it may be retried.
+2. The Vercel build applies it: `scripts/apply-sql.mjs` runs every not-yet-applied file in order
+   and records it in `_sql_migrations`, so each runs once and a redeploy is a no-op. It is
+   deliberately non-fatal, so a failed file lets the deploy succeed — check the build log's
+   `[apply-sql]` lines.
+3. Verify it landed, and tell the user the result in one line. Hand over a paste-it-yourself file
+   only if the deploy-time run actually failed.
 
-**Never** run `prisma db push` against the user's DB from a session, and **never** ask the user to paste their `DATABASE_URL` into chat.
+**Never** run `prisma db push` against the user's DB from a session, and **never** ask the user to
+paste their `DATABASE_URL` into chat.
 
 ### Required env vars (target)
 | Variable | Purpose |
@@ -261,4 +268,4 @@ prior sessions have accidentally reverted agreed-upon designs.
 
 ---
 
-*Last Updated: 2026-08-19 (Added: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. Neon migration `057` applies itself on deploy — verified through `scripts/apply-sql.mjs`.)*
+*Last Updated: 2026-08-19 (Added: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.)*
