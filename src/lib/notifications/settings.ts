@@ -9,6 +9,8 @@ export type NotificationSettingsData = {
   hrInbox: string | null;
   financeInbox: string | null;
   fromName: string | null;
+  /** Days before a holiday that HR is asked to confirm its date (spec 037 FR-015). */
+  verificationLeadDays: number;
 };
 
 export const NOTIFICATION_DEFAULTS: NotificationSettingsData = {
@@ -16,6 +18,7 @@ export const NOTIFICATION_DEFAULTS: NotificationSettingsData = {
   hrInbox: null,
   financeInbox: null,
   fromName: null,
+  verificationLeadDays: 14,
 };
 
 /** The singleton notification settings, or safe defaults (also when the table doesn't exist yet). */
@@ -31,6 +34,7 @@ export const getNotificationSettings = cache(
         hrInbox: row.hrInbox,
         financeInbox: row.financeInbox,
         fromName: row.fromName,
+        verificationLeadDays: row.verificationLeadDays,
       };
     } catch {
       // Pre-migration DB (no NotificationSettings table) → inert, never throws.

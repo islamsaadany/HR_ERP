@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/labels";
 import { LEAVE_STATUS_LABEL, LEAVE_STATUS_CLASS, overlaps } from "@/lib/leave";
 import { countWorkingDays, dayKey, takenInYear } from "@/lib/workdays";
-import { getHolidaySet } from "@/lib/holidays";
+import { getHolidaySet, expandRange } from "@/lib/holidays";
 import { pendingApprovalWhere, closeLeaverPending } from "@/lib/leave-queries";
 import { MarkLeaveSeen } from "@/components/MarkLeaveSeen";
 import { TimeOffRequestForm, type ExistingRange } from "@/components/TimeOffRequestForm";
@@ -28,7 +28,7 @@ export default async function TimeOffPage({
   const year = new Date().getUTCFullYear();
   const [holidaySet, holidayRows, myRequests, approvals] = await Promise.all([
     getHolidaySet(),
-    prisma.publicHoliday.findMany({ orderBy: { date: "asc" } }).catch(() => []),
+    prisma.publicHoliday.findMany({ orderBy: { actualStart: "asc" } }).catch(() => []),
     prisma.leaveRequest.findMany({
       where: { userId: me.id },
       orderBy: { createdAt: "desc" },
@@ -84,7 +84,11 @@ export default async function TimeOffPage({
 
   // The form's client-side inputs: holidays (for the live preview) and my open ranges
   // (for the self-overlap warning, FR-005).
-  const formHolidays = holidayRows.map((h) => ({ iso: dayKey(h.date), name: h.name }));
+  // Every day of every holiday's ACTUAL range, so the client preview greys out the same days
+  // the server counts (spec 037: a multi-day holiday is one row covering several days).
+  const formHolidays = holidayRows.flatMap((h) =>
+    expandRange(h.actualStart, h.actualEnd).map((iso) => ({ iso, name: h.name }))
+  );
   const myOpenRanges: ExistingRange[] = myRequests
     .filter((r) => r.status === "PENDING" || r.status === "APPROVED")
     .map((r) => ({

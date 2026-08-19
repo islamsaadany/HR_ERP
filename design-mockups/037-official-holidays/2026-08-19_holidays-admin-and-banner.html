@@ -138,8 +138,8 @@
         Counts are always live: moving a holiday immediately re-counts every request it touches.</p>
 
       <div class="note warn" style="margin-top:16px">
-        <b>2 holidays need verifying.</b> Eid al-Fitr (20/03/2026) and Sham El-Nessim (13/04/2026) are
-        inside the 14-day check window — confirm the date or move it.
+        <b>1 holiday needs verifying.</b> Eid al-Fitr (20/03/2026) is inside the 14-day check
+        window — confirm the date or move it.
       </div>
 
       <div class="grid2" style="margin-top:16px">
@@ -155,29 +155,29 @@
               <span class="acts"><button class="btn ghost sm">Move</button><button class="btn danger sm">Remove</button></span>
             </li>
             <li>
-              <span class="dt">20/03 → 23/03/2026<span class="was">4 days · Eid al-Fitr</span></span>
+              <span class="dt">20/03 → 22/03/2026<span class="was">Fri–Sun · 3 days</span></span>
               <span class="nm">Eid al-Fitr</span>
               <span class="chip tent">● Tentative — verify</span>
               <span class="acts"><button class="btn sm">Verify</button><button class="btn ghost sm">Move</button></span>
             </li>
             <li>
-              <span class="dt">14/04/2026<span class="was">announced 13/04/2026</span></span>
+              <span class="dt">13/04/2026<span class="was">Mon · bridge on Sun 12/04</span></span>
               <span class="nm">Sham El-Nessim</span>
-              <span class="chip moved">⇄ Moved</span>
-              <span class="acts"><button class="btn ghost sm">Move</button><button class="btn danger sm">Remove</button></span>
-            </li>
-            <li>
-              <span class="dt">25/04/2026</span>
-              <span class="nm">Sinai Liberation Day</span>
               <span class="chip ver">✓ Verified</span>
-              <span class="chip warn">⚠ Announced with an outdated date</span>
-              <span class="acts"><button class="btn sm">Send correction</button></span>
+              <span class="acts"><button class="btn sm">Prepare announcement</button></span>
             </li>
             <li>
               <span class="dt">01/05/2026</span>
               <span class="nm">Labour Day</span>
               <span class="chip ver">✓ Verified</span>
-              <span class="acts"><button class="btn sm">Prepare announcement</button></span>
+              <span class="acts"><button class="btn ghost sm">Move</button><button class="btn danger sm">Remove</button></span>
+            </li>
+            <li>
+              <span class="dt">27/05 → 29/05/2026<span class="was">announced 26/05 → 28/05/2026</span></span>
+              <span class="nm">Eid al-Adha</span>
+              <span class="chip moved">⇄ Moved</span>
+              <span class="chip warn">⚠ Announced with an outdated date</span>
+              <span class="acts"><button class="btn sm">Send correction</button></span>
             </li>
           </ul>
           <p class="foot">Original vs. actual: a moved holiday shows the announced date underneath, so the
@@ -202,8 +202,8 @@
             <div id="f-ok">
               <ul class="hlist" style="margin-top:14px">
                 <li>
-                  <span class="dt">18/06 → 21/06/2026</span>
-                  <span class="nm">Eid al-Adha</span>
+                  <span class="dt">23/07/2026</span>
+                  <span class="nm">Revolution Day (July 23)</span>
                   <span class="chip new">New</span>
                   <span class="acts"><button class="btn sm">Confirm</button></span>
                 </li>
@@ -213,13 +213,13 @@
                   <span class="chip rec">Already recorded</span>
                 </li>
                 <li>
-                  <span class="dt">13/04/2026<span class="was">you recorded 14/04/2026</span></span>
-                  <span class="nm">Sham El-Nessim</span>
+                  <span class="dt">26/05 → 28/05/2026<span class="was">you recorded 27/05 → 29/05/2026</span></span>
+                  <span class="nm">Eid al-Adha</span>
                   <span class="chip diff">Different date</span>
                   <span class="acts"><button class="btn ghost sm">Apply as move</button></span>
                 </li>
               </ul>
-              <p class="foot">Eid arrives as <b>one entry</b> covering its four days — verify or move it as a
+              <p class="foot">Eid arrives as <b>one entry</b> covering all its days — verify or move it as a
                 whole. “Different date” means the source now predicts something else than you recorded.</p>
             </div>
 
@@ -263,11 +263,11 @@
 
       <div class="card" style="max-width:560px">
         <h3>Move Eid al-Fitr</h3>
-        <p class="lead">Announced <b>20/03 → 23/03/2026</b>. Set the days it will actually be observed —
+        <p class="lead">Announced <b>20/03 → 22/03/2026</b>. Set the days it will actually be observed —
           the announced dates stay on record.</p>
         <div class="rowend" style="margin-top:13px">
           <div style="min-width:140px;flex:1"><label for="m1">First day</label><input id="m1" type="date" value="2026-03-21"></div>
-          <div style="min-width:140px;flex:1"><label for="m2">Last day</label><input id="m2" type="date" value="2026-03-24"></div>
+          <div style="min-width:140px;flex:1"><label for="m2">Last day</label><input id="m2" type="date" value="2026-03-23"></div>
         </div>
 
         <div id="m-ok" style="margin-top:13px">
@@ -277,7 +277,7 @@
         </div>
 
         <div id="m-clash" class="hide" style="margin-top:13px">
-          <div class="note bad"><b>Those dates overlap Sham El-Nessim (14/04/2026).</b> Two holidays can’t
+          <div class="note bad"><b>Those dates overlap Sham El-Nessim (13/04/2026).</b> Two holidays can’t
             cover the same day — move or remove that one first, then try again.</div>
           <button class="btn" style="margin-top:12px" disabled>Save new dates</button>
         </div>
@@ -308,50 +308,49 @@
     </div>
     <div class="frame">
       <p class="eyebrow">Admin · Time-Off · Announcement</p>
-      <h2 class="page">Eid al-Fitr — tell the team</h2>
+      <h2 class="page">Sham El-Nessim — tell the team</h2>
       <p class="lead">Drafted from the calendar. Edit anything before sending; what you send is what people read.</p>
 
       <div class="bridge" style="margin-top:16px">
         <div class="h">What the calendar gives us</div>
         <div style="font-size:13.5px;line-height:1.6">
-          <b>4 holiday days</b> (20–23 March) sit right after the weekend, and <b>Tuesday 24 March is a
-          bridge</b> — one working day before the next weekend. Taking it turns this into <b>9 days off in a row</b>.
+          Sham El-Nessim falls on <b>Monday 13 April</b>, and <b>Sunday 12 April is a bridge</b> — the one
+          working day between the weekend and the holiday. Taking it turns Friday to Monday into
+          <b>4 days off for a single day of leave</b>.
         </div>
         <div class="strip">
-          <div class="day wknd"><div class="dow">Fri</div><div class="num">19</div><div class="tag">weekend</div></div>
-          <div class="day off"><div class="dow">Sat</div><div class="num">20</div><div class="tag">Eid</div></div>
-          <div class="day off"><div class="dow">Sun</div><div class="num">21</div><div class="tag">Eid</div></div>
-          <div class="day off"><div class="dow">Mon</div><div class="num">22</div><div class="tag">Eid</div></div>
-          <div class="day off"><div class="dow">Tue</div><div class="num">23</div><div class="tag">Eid</div></div>
-          <div class="day brdg"><div class="dow">Wed</div><div class="num">24</div><div class="tag">bridge</div></div>
-          <div class="day wknd"><div class="dow">Thu</div><div class="num">25</div><div class="tag">weekend</div></div>
-          <div class="day wknd"><div class="dow">Fri</div><div class="num">26</div><div class="tag">weekend</div></div>
+          <div class="day"><div class="dow">Thu</div><div class="num">9</div><div class="tag">work</div></div>
+          <div class="day wknd"><div class="dow">Fri</div><div class="num">10</div><div class="tag">weekend</div></div>
+          <div class="day wknd"><div class="dow">Sat</div><div class="num">11</div><div class="tag">weekend</div></div>
+          <div class="day brdg"><div class="dow">Sun</div><div class="num">12</div><div class="tag">bridge</div></div>
+          <div class="day off"><div class="dow">Mon</div><div class="num">13</div><div class="tag">holiday</div></div>
+          <div class="day"><div class="dow">Tue</div><div class="num">14</div><div class="tag">work</div></div>
         </div>
       </div>
 
       <div style="margin-top:16px"><label for="s1">Subject</label>
-        <input id="s1" value="Eid al-Fitr is coming — and there's a bridge worth taking"></div>
+        <input id="s1" value="Sham El-Nessim is coming — and there's a bridge worth taking"></div>
 
       <div class="grid2" style="margin-top:14px">
         <div>
           <label for="be">Message · English</label>
           <textarea id="be" rows="12">Hi everyone,
 
-Eid al-Fitr falls on Saturday 20 – Tuesday 23 March. With the weekend before it, that is five days off already — and Wednesday 24 March is a single working day standing between the holiday and the next weekend. Take that one day and you have nine days straight.
+Sham El-Nessim falls on Monday 13 April. Sunday the 12th is the only working day standing between our weekend and the holiday — take that one day off and you are away from Friday the 10th through Monday the 13th. Four days for one day of leave.
 
 Please use it. Rest properly, travel if you have been meaning to, spend the time with your family, and come back with your energy restored. You know your own commitments best — if nothing critical or urgent is sitting on your plate, take the break. The work will still be here.
 
-Eid Mubarak.</textarea>
+Happy Sham El-Nessim.</textarea>
         </div>
         <div>
           <label for="ba">Message · Arabic</label>
           <textarea id="ba" dir="rtl" rows="12">مرحباً بالجميع،
 
-يوافق عيد الفطر يومي السبت ٢٠ حتى الثلاثاء ٢٣ مارس. ومع عطلة نهاية الأسبوع التي تسبقه، تصبح خمسة أيام إجازة متصلة — ويوم الأربعاء ٢٤ مارس هو يوم عمل واحد يفصل بين العيد وعطلة نهاية الأسبوع التالية. خذ هذا اليوم وتصبح إجازتك تسعة أيام متواصلة.
+يوافق شم النسيم يوم الإثنين ١٣ أبريل. ويوم الأحد ١٢ أبريل هو يوم العمل الوحيد الذي يفصل بين عطلة نهاية الأسبوع والإجازة — خذ هذا اليوم إجازةً وتكون عطلتك من الجمعة ١٠ حتى الإثنين ١٣: أربعة أيام مقابل يوم إجازة واحد.
 
 نتمنى أن تستفيدوا منها: استريحوا جيداً، وسافروا إن كنتم تنوون ذلك، واقضوا الوقت مع عائلاتكم، وعودوا وقد استعدتم طاقتكم. أنتم أدرى بالتزاماتكم — فإن لم يكن لديكم ما هو عاجل أو حرج، فخذوا إجازتكم؛ العمل سيظل في انتظاركم.
 
-عيد مبارك.</textarea>
+كل عام وأنتم بخير.</textarea>
         </div>
       </div>
 
@@ -377,29 +376,29 @@ Eid Mubarak.</textarea>
     <div class="frame">
       <div class="mail">
         <div class="mh">Forefront People
-          <span class="sj">Eid al-Fitr is coming — and there’s a bridge worth taking</span></div>
+          <span class="sj">Sham El-Nessim is coming — and there’s a bridge worth taking</span></div>
         <div class="mb">
           <p>Hi everyone,</p>
-          <p>Eid al-Fitr falls on <b>Saturday 20 – Tuesday 23 March</b>. With the weekend before it, that is
-            five days off already — and <b>Wednesday 24 March</b> is a single working day standing between
-            the holiday and the next weekend. Take that one day and you have <b>nine days straight</b>.</p>
+          <p>Sham El-Nessim falls on <b>Monday 13 April</b>. <b>Sunday the 12th</b> is the only working day
+            standing between our weekend and the holiday — take that one day off and you are away from
+            <b>Friday the 10th through Monday the 13th</b>. Four days for one day of leave.</p>
           <p>Please use it. Rest properly, travel if you have been meaning to, spend the time with your
             family, and come back with your energy restored. You know your own commitments best — if
             nothing critical or urgent is sitting on your plate, take the break. The work will still be here.</p>
-          <p>Eid Mubarak.</p>
-          <p><a class="cta-inline" href="#">Request 24 March off →</a></p>
+          <p>Happy Sham El-Nessim.</p>
+          <p><a class="cta-inline" href="#">Request 12 April off →</a></p>
           <p style="font-size:12px;color:var(--muted);margin:0">Goes to your manager like any other request.</p>
 
           <div class="rtl">
             <p>مرحباً بالجميع،</p>
-            <p>يوافق عيد الفطر يومي <b>السبت ٢٠ حتى الثلاثاء ٢٣ مارس</b>. ومع عطلة نهاية الأسبوع التي تسبقه،
-              تصبح خمسة أيام إجازة متصلة — ويوم <b>الأربعاء ٢٤ مارس</b> هو يوم عمل واحد يفصل بين العيد وعطلة
-              نهاية الأسبوع التالية. خذ هذا اليوم وتصبح إجازتك <b>تسعة أيام متواصلة</b>.</p>
+            <p>يوافق شم النسيم يوم <b>الإثنين ١٣ أبريل</b>. ويوم <b>الأحد ١٢ أبريل</b> هو يوم العمل الوحيد الذي
+              يفصل بين عطلة نهاية الأسبوع والإجازة — خذ هذا اليوم إجازةً وتكون عطلتك من
+              <b>الجمعة ١٠ حتى الإثنين ١٣</b>: أربعة أيام مقابل يوم إجازة واحد.</p>
             <p>نتمنى أن تستفيدوا منها: استريحوا جيداً، وسافروا إن كنتم تنوون ذلك، واقضوا الوقت مع عائلاتكم،
               وعودوا وقد استعدتم طاقتكم. أنتم أدرى بالتزاماتكم — فإن لم يكن لديكم ما هو عاجل أو حرج، فخذوا
               إجازتكم؛ العمل سيظل في انتظاركم.</p>
-            <p>عيد مبارك.</p>
-            <p><a class="cta-inline" href="#">اطلب إجازة ٢٤ مارس ←</a></p>
+            <p>كل عام وأنتم بخير.</p>
+            <p><a class="cta-inline" href="#">اطلب إجازة ١٢ أبريل ←</a></p>
           </div>
         </div>
       </div>
@@ -419,11 +418,11 @@ Eid Mubarak.</textarea>
 
       <div class="banner" style="margin-top:18px">
         <div class="txt">
-          <p class="ttl">Eid al-Fitr — 20/03 → 23/03/2026</p>
-          <p class="sub">Five days off with the weekend. <b>Wednesday 24/03 is a bridge</b> — take it and
-            you’re off for nine days straight.</p>
+          <p class="ttl">Sham El-Nessim — Monday 13/04/2026</p>
+          <p class="sub"><b>Sunday 12/04 is a bridge</b> — take that one day and you’re off from
+            Friday 10/04 through Monday 13/04.</p>
         </div>
-        <a class="cta-inline" href="#">Request 24/03 off →</a>
+        <a class="cta-inline" href="#">Request 12/04 off →</a>
       </div>
 
       <div class="grid2" style="margin-top:18px">
@@ -453,11 +452,11 @@ Eid Mubarak.</textarea>
 
       <div id="r-new" class="card" style="max-width:560px">
         <h3>Request time off</h3>
-        <div class="note info" style="margin-top:11px">Filled in from the Eid announcement — change the dates
-          if you want more.</div>
+        <div class="note info" style="margin-top:11px">Filled in from the Sham El-Nessim announcement —
+          change the dates if you want more.</div>
         <div class="rowend" style="margin-top:13px">
-          <div style="min-width:140px;flex:1"><label for="r1">From</label><input id="r1" type="date" value="2026-03-24"></div>
-          <div style="min-width:140px;flex:1"><label for="r2">To</label><input id="r2" type="date" value="2026-03-24"></div>
+          <div style="min-width:140px;flex:1"><label for="r1">From</label><input id="r1" type="date" value="2026-04-12"></div>
+          <div style="min-width:140px;flex:1"><label for="r2">To</label><input id="r2" type="date" value="2026-04-12"></div>
         </div>
         <p class="lead" style="margin-top:10px"><b>1 working day</b> · Fri/Sat and public holidays don’t count.</p>
         <div style="margin-top:11px"><label for="r3">Note (optional)</label><input id="r3" placeholder="Anything your manager should know"></div>
@@ -467,9 +466,9 @@ Eid Mubarak.</textarea>
       <div id="r-has" class="card hide" style="max-width:560px">
         <h3>You’ve already asked for these days</h3>
         <div class="note good" style="margin-top:11px">
-          <b>24/03/2026 — approved.</b> Nothing more to do; enjoy the break.
+          <b>12/04/2026 — approved.</b> Nothing more to do; enjoy the break.
         </div>
-        <div class="kv"><span>1 working day</span><span>Approved 05/03/2026</span><span>Manager: Nour H.</span></div>
+        <div class="kv"><span>1 working day</span><span>Approved 22/03/2026</span><span>Manager: Nour H.</span></div>
         <p class="foot">If you wanted to extend it, request the extra days as a separate request.</p>
       </div>
     </div>

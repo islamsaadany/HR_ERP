@@ -5,9 +5,30 @@ import { redirect } from "next/navigation";
 import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
+import { formatDate } from "@/lib/labels";
+import { expandRange } from "@/lib/holidays";
+import { sendEmail } from "@/lib/email/client";
+import { holidayDayReturned } from "@/lib/email/templates";
+import { fetchHolidaySuggestions } from "@/lib/timeoff/holiday-source";
 
-const PATHS = ["/admin/time-off/holidays", "/admin/time-off", "/time-off"];
-const back = (q: string): never => redirect(`/admin/time-off/holidays?${q}`);
+// Holiday administration (spec 035, evolved by spec 037). Every rule lives here because these
+// actions are the ONLY write path to the holidays log — including the non-overlap invariant,
+// which Prisma cannot express as a constraint.
+
+const PATHS = ["/admin/time-off/holidays", "/admin/time-off", "/time-off", "/dashboard"];
+
+// Function declarations, not const arrows: TypeScript only narrows control flow after a
+// `never`-returning call when the callee is declared this way, and these are what let the
+// guards below read as `if (bad) fail(...)` without an else on every branch.
+function back(q: string): never {
+  redirect(`/admin/time-off/holidays?${q}`);
+}
+function ok(msg: string): never {
+  back("ok=" + encodeURIComponent(msg));
+}
+function fail(msg: string): never {
+  back("error=" + encodeURIComponent(msg));
+}
 
 /** Normalise any parsed day to UTC midnight — the storage shape (see lib/workdays). */
 function utcDay(y: number, m: number, d: number): Date | null {
@@ -26,82 +47,342 @@ function parseDay(value: string): Date | null {
   return null;
 }
 
+function todayUtc(): Date {
+  const n = new Date();
+  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()));
+}
+
+/**
+ * The holiday whose ACTUAL range overlaps [start, end], if any — the non-overlap guard
+ * (FR-003). Two entries covering one day would double-describe the same day off and make
+ * "which holiday is this?" unanswerable in an announcement.
+ */
+async function findOverlap(start: Date, end: Date, exceptId?: string) {
+  return prisma.publicHoliday.findFirst({
+    where: {
+      ...(exceptId ? { NOT: { id: exceptId } } : {}),
+      actualStart: { lte: end },
+      actualEnd: { gte: start },
+    },
+    select: { id: true, name: true, actualStart: true, actualEnd: true },
+  });
+}
+
+/** Read a start/end pair from the form; end defaults to start (a one-day holiday). */
+function readRange(formData: FormData): { start: Date; end: Date } | null {
+  const start = parseDay((formData.get("start") as string) ?? "");
+  if (!start) return null;
+  const rawEnd = ((formData.get("end") as string) ?? "").trim();
+  const end = rawEnd ? parseDay(rawEnd) : start;
+  if (!end || end.getTime() < start.getTime()) return null;
+  return { start, end };
+}
+
+/**
+ * Tell anyone whose booked time off just became an official holiday (FR-017).
+ *
+ * Their taken count fixes itself — counting is always live — but they were never told, and a
+ * returned day is worth knowing about. Fire-and-forget, after the write, so a mail failure
+ * cannot undo the move. Only days that are newly holidays are considered, so a move that
+ * merely shifts within the same days emails nobody.
+ */
+async function notifyDaysReturned(newlyHoliday: string[], holidayName: string): Promise<void> {
+  if (newlyHoliday.length === 0) return;
+  const days = newlyHoliday.map((iso) => new Date(iso + "T00:00:00Z")).sort((a, b) => a.getTime() - b.getTime());
+  const first = days[0];
+  const last = days[days.length - 1];
+  const affected = await prisma.leaveRequest.findMany({
+    where: {
+      status: { in: ["PENDING", "APPROVED"] },
+      startDate: { lte: last },
+      endDate: { gte: first },
+    },
+    include: { user: { select: { name: true, email: true } } },
+  });
+  for (const req of affected) {
+    // Only if one of the newly-holiday days actually falls inside their range.
+    const covered = newlyHoliday.filter((iso) => {
+      const d = new Date(iso + "T00:00:00Z").getTime();
+      return d >= req.startDate.getTime() && d <= req.endDate.getTime();
+    });
+    if (covered.length === 0) continue;
+    await sendEmail({
+      to: req.user.email,
+      ...holidayDayReturned({
+        employeeName: req.user.name,
+        holidayName,
+        days: covered.map((iso) => formatDate(new Date(iso + "T00:00:00Z"))),
+      }),
+    });
+  }
+}
+
+/**
+ * Fetch a year's holidays from the online source and hand them back as SUGGESTIONS.
+ *
+ * Nothing is written. The result travels back through the URL because the screen is a server
+ * component — the suggestions are small (a dozen rows) and this keeps the page the single
+ * source of truth rather than introducing client state that could drift from the log.
+ */
+export async function fetchHolidayYear(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const year = Number(((formData.get("year") as string) ?? "").trim());
+  const result = await fetchHolidaySuggestions(year);
+  if (!result.ok) fail(result.error);
+  const payload = encodeURIComponent(JSON.stringify(result.suggestions));
+  back(`year=${year}&suggestions=${payload}`);
+}
+
+/**
+ * Store the suggestions HR ticked. Fetched entries land TENTATIVE — the source predicts
+ * moon-dependent dates, and the verification window is what settles them (FR-005).
+ */
+export async function confirmSuggestions(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const picked = formData.getAll("pick").map(String).filter(Boolean);
+  if (picked.length === 0) fail("Tick at least one holiday to confirm.");
+
+  let added = 0;
+  const skipped: string[] = [];
+  for (const raw of picked) {
+    // Each value is "startISO|endISO|name|localName" — assembled by the page from one fetch.
+    const [startISO, endISO, name, localName] = raw.split("|");
+    const start = parseDay(startISO ?? "");
+    const end = parseDay(endISO ?? "");
+    if (!start || !end || !name) {
+      skipped.push(name || "an entry");
+      continue;
+    }
+    const clash = await findOverlap(start, end);
+    if (clash) {
+      skipped.push(`${name} (overlaps ${clash.name})`);
+      continue;
+    }
+    await prisma.publicHoliday.create({
+      data: {
+        name,
+        localName: localName || null,
+        originalStart: start,
+        originalEnd: end,
+        actualStart: start,
+        actualEnd: end,
+        status: "TENTATIVE",
+        source: "FETCHED",
+      },
+    });
+    added += 1;
+  }
+  PATHS.forEach((p) => revalidatePath(p));
+  if (skipped.length) {
+    fail(`Confirmed ${added}. Skipped: ${skipped.join("; ")}.`);
+  }
+  ok(`Confirmed ${added} holiday${added === 1 ? "" : "s"} — they need verifying nearer the date.`);
+}
+
+/** Add a holiday by hand. Typed deliberately, so it starts VERIFIED (FR-005). */
 export async function addHoliday(formData: FormData): Promise<void> {
   await requireAdmin();
   const name = ((formData.get("name") as string) ?? "").trim();
-  const date = parseDay((formData.get("date") as string) ?? "");
-  if (!date) back("error=" + encodeURIComponent("Enter a valid date."));
-  if (!name) back("error=" + encodeURIComponent("Give the holiday a name."));
-  await prisma.publicHoliday.upsert({
-    where: { date: date! },
-    update: { name },
-    create: { date: date!, name },
+  const range = readRange(formData);
+  if (!range) fail("Enter a valid first day, and a last day on or after it.");
+  if (!name) fail("Give the holiday a name.");
+
+  const clash = await findOverlap(range!.start, range!.end);
+  if (clash) {
+    fail(
+      `Those dates overlap ${clash.name} (${formatDate(clash.actualStart)}` +
+        `${clash.actualEnd.getTime() !== clash.actualStart.getTime() ? ` → ${formatDate(clash.actualEnd)}` : ""}). ` +
+        `Move or remove that one first.`
+    );
+  }
+  await prisma.publicHoliday.create({
+    data: {
+      name,
+      originalStart: range!.start,
+      originalEnd: range!.end,
+      actualStart: range!.start,
+      actualEnd: range!.end,
+      status: "VERIFIED",
+      source: "MANUAL",
+      verifiedAt: new Date(),
+    },
   });
   PATHS.forEach((p) => revalidatePath(p));
-  back("ok=" + encodeURIComponent("Holiday added."));
+  ok("Holiday added.");
+}
+
+/**
+ * Move a holiday to the days it will actually be observed. The ANNOUNCED range is never
+ * touched — that history is what lets the screen show "announced 13/04, observed 14/04".
+ */
+export async function moveHoliday(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = ((formData.get("id") as string) ?? "").trim();
+  const range = readRange(formData);
+  if (!id) return;
+  if (!range) fail("Enter a valid first day, and a last day on or after it.");
+
+  const holiday = await prisma.publicHoliday.findUnique({ where: { id } });
+  if (!holiday) fail("That holiday no longer exists.");
+
+  const wasPast = holiday!.actualEnd.getTime() < todayUtc().getTime();
+  if (wasPast && !formData.get("confirmPast")) {
+    fail(
+      "That holiday has already passed — changing it changes how many days off everyone is " +
+        "recorded as having taken. Tick the confirmation to go ahead."
+    );
+  }
+
+  const clash = await findOverlap(range!.start, range!.end, id);
+  if (clash) {
+    fail(
+      `Those dates overlap ${clash.name} (${formatDate(clash.actualStart)}). ` +
+        `Two holidays can't cover the same day — move or remove that one first.`
+    );
+  }
+
+  // Days that are holidays now but weren't before — the only ones that free up booked leave.
+  const wasHoliday = new Set(expandRange(holiday!.actualStart, holiday!.actualEnd));
+  const newlyHoliday = expandRange(range!.start, range!.end).filter((d) => !wasHoliday.has(d));
+
+  await prisma.publicHoliday.update({
+    where: { id },
+    data: {
+      actualStart: range!.start,
+      actualEnd: range!.end,
+      status: "MOVED",
+      verifiedAt: new Date(),
+      // The date is settled, so this occurrence stops being chased for verification.
+      reminderSentAt: holiday!.reminderSentAt ?? new Date(),
+    },
+  });
+
+  PATHS.forEach((p) => revalidatePath(p));
+  await notifyDaysReturned(newlyHoliday, holiday!.name);
+  ok(`${holiday!.name} moved — counts everywhere now use the new dates.`);
+}
+
+/** Confirm a tentative holiday's date without changing it. */
+export async function verifyHoliday(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const id = ((formData.get("id") as string) ?? "").trim();
+  if (!id) return;
+  const holiday = await prisma.publicHoliday.findUnique({ where: { id } });
+  if (!holiday) return;
+  await prisma.publicHoliday.update({
+    where: { id },
+    data: {
+      status: "VERIFIED",
+      verifiedAt: new Date(),
+      reminderSentAt: holiday.reminderSentAt ?? new Date(),
+    },
+  });
+  PATHS.forEach((p) => revalidatePath(p));
+  ok(`${holiday.name} verified — you can announce it now.`);
 }
 
 export async function removeHoliday(formData: FormData): Promise<void> {
   await requireAdmin();
-  const id = (formData.get("id") as string) ?? "";
-  if (id) await prisma.publicHoliday.delete({ where: { id } }).catch(() => {});
+  const id = ((formData.get("id") as string) ?? "").trim();
+  if (!id) return;
+  const holiday = await prisma.publicHoliday.findUnique({ where: { id } });
+  if (!holiday) return;
+  if (holiday.actualEnd.getTime() < todayUtc().getTime() && !formData.get("confirmPast")) {
+    fail(
+      "That holiday has already passed — removing it changes past working-day counts. " +
+        "Tick the confirmation to go ahead."
+    );
+  }
+  await prisma.publicHoliday.delete({ where: { id } }).catch(() => {});
   PATHS.forEach((p) => revalidatePath(p));
-  back("ok=" + encodeURIComponent("Holiday removed."));
+  ok("Holiday removed.");
 }
 
 /**
- * Bulk import from the Excel template (spec 035, per request 2026-08-18): first sheet,
- * header row then one holiday per row — Date | Holiday name. Date cells may be real
- * Excel dates or dd/mm/yyyy text (house standard). Existing dates are updated, new ones
- * created; bad rows are counted and reported, never silently dropped.
+ * Bulk import from the Excel template (spec 035, made range-aware by spec 037): first sheet,
+ * header row then one holiday per row — First day | Last day | Name. Date cells may be real
+ * Excel dates or dd/mm/yyyy text (house standard). A holiday already starting on that day is
+ * updated; new ones are created. Bad and overlapping rows are counted and reported, never
+ * silently dropped.
  */
 export async function uploadHolidays(formData: FormData): Promise<void> {
   await requireAdmin();
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
-    back("error=" + encodeURIComponent("Choose the filled-in Excel file first."));
+    fail("Choose the filled-in Excel file first.");
   }
   const wb = new ExcelJS.Workbook();
   try {
     await wb.xlsx.load(await (file as File).arrayBuffer());
   } catch {
-    back("error=" + encodeURIComponent("That file isn't a readable Excel workbook (.xlsx)."));
+    fail("That file isn't a readable Excel workbook (.xlsx).");
   }
   const ws = wb.worksheets[0];
-  if (!ws) back("error=" + encodeURIComponent("The workbook has no sheets."));
+  if (!ws) fail("The workbook has no sheets.");
+
+  const cellDate = (raw: unknown): Date | null => {
+    if (raw instanceof Date) {
+      return utcDay(raw.getUTCFullYear(), raw.getUTCMonth() + 1, raw.getUTCDate());
+    }
+    return raw == null ? null : parseDay(String(raw));
+  };
 
   let added = 0;
   let updated = 0;
   const badRows: number[] = [];
   for (let n = 2; n <= ws!.rowCount; n++) {
     const row = ws!.getRow(n);
-    const rawDate = row.getCell(1).value;
-    const rawName = row.getCell(2).value;
+    const start = cellDate(row.getCell(1).value);
+    const endCell = row.getCell(2).value;
+    const rawName = row.getCell(3).value;
     const name = (typeof rawName === "string" ? rawName : rawName?.toString() ?? "").trim();
-    if (rawDate == null && !name) continue; // blank row — fine
-    let date: Date | null = null;
-    if (rawDate instanceof Date) {
-      date = utcDay(rawDate.getUTCFullYear(), rawDate.getUTCMonth() + 1, rawDate.getUTCDate());
-    } else if (rawDate != null) {
-      date = parseDay(String(rawDate));
-    }
-    if (!date || !name) {
+    if (start == null && !name) continue; // blank row — fine
+    const end = endCell == null ? start : cellDate(endCell);
+    if (!start || !end || !name || end.getTime() < start.getTime()) {
       badRows.push(n);
       continue;
     }
-    const existing = await prisma.publicHoliday.findUnique({ where: { date } });
+    const existing = await prisma.publicHoliday.findFirst({ where: { actualStart: start } });
     if (existing) {
-      if (existing.name !== name) await prisma.publicHoliday.update({ where: { date }, data: { name } });
+      const clash = await findOverlap(start, end, existing.id);
+      if (clash) {
+        badRows.push(n);
+        continue;
+      }
+      await prisma.publicHoliday.update({
+        where: { id: existing.id },
+        data: { name, actualEnd: end },
+      });
       updated += 1;
     } else {
-      await prisma.publicHoliday.create({ data: { date, name } });
+      if (await findOverlap(start, end)) {
+        badRows.push(n);
+        continue;
+      }
+      await prisma.publicHoliday.create({
+        data: {
+          name,
+          originalStart: start,
+          originalEnd: end,
+          actualStart: start,
+          actualEnd: end,
+          status: "VERIFIED",
+          source: "MANUAL",
+          verifiedAt: new Date(),
+        },
+      });
       added += 1;
     }
   }
 
   PATHS.forEach((p) => revalidatePath(p));
   const summary = `Imported ${added} new, ${updated} existing${
-    badRows.length ? ` · ${badRows.length} row(s) skipped (bad date or missing name): ${badRows.slice(0, 6).join(", ")}${badRows.length > 6 ? "…" : ""}` : ""
+    badRows.length
+      ? ` · ${badRows.length} row(s) skipped (bad dates, missing name, or overlapping another holiday): ${badRows
+          .slice(0, 6)
+          .join(", ")}${badRows.length > 6 ? "…" : ""}`
+      : ""
   }`;
-  back((badRows.length ? "error=" : "ok=") + encodeURIComponent(summary));
+  if (badRows.length) fail(summary);
+  ok(summary);
 }

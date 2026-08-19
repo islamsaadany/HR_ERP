@@ -144,3 +144,67 @@ export function claimReopenedToEmployee(d: {
     ),
   };
 }
+
+// ── Official holidays (spec 037) ───────────────────────────────────────────
+
+/**
+ * H1 — a date change turned someone's booked day off into an official holiday.
+ *
+ * Their taken count corrects itself (counting is always live), but nobody would have told
+ * them, and a returned day is worth knowing about before they plan around it. Deliberately
+ * short and good-news: no action is required and their request is untouched.
+ */
+export function holidayDayReturned(d: {
+  employeeName?: string | null;
+  holidayName: string;
+  /** Display-formatted (dd/mm/yyyy) days of theirs that became holidays. */
+  days: string[];
+}) {
+  const list = d.days.join(", ");
+  const plural = d.days.length === 1 ? "day" : "days";
+  return {
+    subject: `Good news — your time off on ${d.days[0]} is now a public holiday`,
+    html: layout(
+      "You got a day back",
+      para(`${d.employeeName ? `Hi ${d.employeeName.split(" ")[0]},` : "Hi,"}`) +
+        para(
+          `<strong>${d.holidayName}</strong> now falls on ${list}, which you had already booked as ` +
+            `time off. That ${plural} no longer counts against your days taken — you have it back.`
+        ) +
+        para("Your request stays exactly as it is; there's nothing for you to do."),
+      { href: link("/time-off"), label: "View my time off" }
+    ),
+  };
+}
+
+/**
+ * H2 — the daily check asks HR to confirm a tentative holiday's date.
+ *
+ * Sent once per holiday per window (the send is stamped on the row), so a date that stays
+ * unverified does not nag every morning.
+ */
+export function holidayVerificationReminder(d: {
+  holidayName: string;
+  /** Display-formatted dates. */
+  announced: string;
+  observed: string;
+  daysAway: number;
+}) {
+  return {
+    subject: `Confirm the date: ${d.holidayName} is ${d.daysAway} day${d.daysAway === 1 ? "" : "s"} away`,
+    html: layout(
+      `Is ${d.holidayName} still on this date?`,
+      para(
+        `<strong>${d.holidayName}</strong> is coming up and its date has not been confirmed yet. ` +
+          `Fixed holidays rarely move; moon-dependent ones often do.`
+      ) +
+        row("Announced", d.announced) +
+        row("Currently recorded", d.observed) +
+        para(
+          "Confirm it, or move it to the day it will actually be observed. Working-day counts " +
+            "follow the change straight away, and the team can only be told once the date is settled."
+        ),
+      { href: link("/admin/time-off/holidays"), label: "Review holidays" }
+    ),
+  };
+}

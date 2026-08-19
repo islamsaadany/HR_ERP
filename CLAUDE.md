@@ -213,6 +213,7 @@ Claude Code sessions **do not** have production `DATABASE_URL` and **cannot** pu
 | `ALLOWED_EMAIL_DOMAIN` | Domain allowed to sign in (e.g. `forefront.consulting`) |
 | `ADMIN_EMAILS` | Comma-separated bootstrap admin allowlist |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob token for document storage |
+| `CRON_SECRET` | Authenticates the daily holidays cron route (`/api/cron/holidays`, spec 037) |
 
 ### Build Commands
 ```bash
