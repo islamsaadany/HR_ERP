@@ -117,3 +117,30 @@ export function claimReimbursedToEmployee(d: {
     ),
   };
 }
+
+/**
+ * T5 — a rejected claim is reopened by a Super User → employee.
+ *
+ * The employee already received the "declined" email (T3), so overturning that decision
+ * silently would leave them holding a message that is no longer true. This is the correction:
+ * it says the decline no longer stands and the claim is back under review — deliberately NOT
+ * promising an approval, because it returns to the normal queue and is decided there.
+ */
+export function claimReopenedToEmployee(d: {
+  benefitName: string;
+  reason?: string | null;
+}) {
+  return {
+    subject: `Your benefit claim is being reviewed again`,
+    html: layout(
+      "Good news — your claim is back under review",
+      para(
+        `The decision to decline your claim for <strong>${d.benefitName}</strong> has been reversed. ` +
+          `It is back with HR to be reviewed again — please ignore the earlier decline email.`
+      ) +
+        (d.reason ? row("Why it was reopened", d.reason) : "") +
+        para("You'll hear from us once it has been reviewed. No action is needed from you."),
+      { href: link("/benefits"), label: "View my benefits" }
+    ),
+  };
+}

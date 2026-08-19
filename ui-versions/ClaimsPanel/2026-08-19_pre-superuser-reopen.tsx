@@ -4,8 +4,7 @@ import React, { useMemo, useState } from "react";
 import { formatEGP as egp } from "@/lib/labels";
 import { CLAIM_STATUS_LABEL, CLAIM_STATUS_CLASS } from "@/lib/benefits/claims";
 import type { ClaimStatus } from "@prisma/client";
-import { approveClaim, approveClaims, rejectClaim, reopenClaim } from "@/app/(app)/admin/benefits/actions";
-import { ConfirmSubmitButton } from "@/components/admin/ConfirmSubmitButton";
+import { approveClaim, approveClaims, rejectClaim } from "@/app/(app)/admin/benefits/actions";
 
 /**
  * Claims — review queue + ledger (mockup signed off 2026-08-16,
@@ -79,15 +78,12 @@ export function ClaimsPanel({
   ledger,
   totals,
   recordEntry,
-  canOverride = false,
 }: {
   queue: QueueRow[];
   ledger: LedgerRow[];
   totals: ClaimsTotals;
   /** The "Record entry…" modal, rendered on the server and slotted in. */
   recordEntry: React.ReactNode;
-  /** Super User only: lets a rejected claim be sent back to the review queue. */
-  canOverride?: boolean;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<string | null>(null);
@@ -371,13 +367,12 @@ export function ClaimsPanel({
                   <th className={TH + " text-right"}>Claim</th>
                   <th className={TH}>Status</th>
                   <th className={TH}>By</th>
-                  {canOverride ? <th className={TH} /> : null}
                 </tr>
               </thead>
               <tbody>
                 {visibleLedger.length === 0 ? (
                   <tr>
-                    <td colSpan={canOverride ? 7 : 6} className="px-3 py-8 text-center text-sm text-muted">
+                    <td colSpan={6} className="px-3 py-8 text-center text-sm text-muted">
                       No claims match this filter.
                     </td>
                   </tr>
@@ -408,21 +403,6 @@ export function ClaimsPanel({
                         ) : null}
                       </td>
                       <td className={TD + " text-muted"}>{r.byName}</td>
-                      {canOverride ? (
-                        <td className={TD + " text-right"}>
-                          {r.status === "REJECTED" ? (
-                            <form action={reopenClaim}>
-                              <input type="hidden" name="id" value={r.id} />
-                              <ConfirmSubmitButton
-                                message={`Send ${r.userName}'s ${r.benefitName} claim back to the review queue? The decline is undone, they are emailed that it no longer stands, and the claim must still be approved as normal.`}
-                                className="rounded-lg border border-navy-200 px-2.5 py-1 text-[11px] font-semibold text-navy-700 hover:bg-navy-50"
-                              >
-                                Reopen
-                              </ConfirmSubmitButton>
-                            </form>
-                          ) : null}
-                        </td>
-                      ) : null}
                     </tr>
                   ))
                 )}
@@ -433,7 +413,7 @@ export function ClaimsPanel({
                     {visibleLedger.length} claim{visibleLedger.length === 1 ? "" : "s"} · filtered total
                   </td>
                   <td className={TD + " text-right tabular-nums text-ink"}>{egp(ledgerTotal)}</td>
-                  <td className={TD} colSpan={canOverride ? 3 : 2} />
+                  <td className={TD} colSpan={2} />
                 </tr>
               </tfoot>
             </table>
