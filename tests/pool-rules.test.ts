@@ -66,7 +66,7 @@ describe("poolCeiling — one derivation, used by the report AND every write", (
 describe("spendable — an overdrawn pool offers nothing, and is not mistaken for an empty one", () => {
   const base: PoolState = {
     ceiling: 10000, reason: null, band: "BAND_2_4Y", proratedFrom: null,
-    medical: 0, flex: 0, used: 0, remaining: 10000, over: false,
+    medical: 0, flex: 0, used: 0, remaining: 10000, over: false, exception: null,
   };
   test("normal pool", () => assert.equal(spendable(base), 10000));
   test("exactly spent", () => assert.equal(spendable({ ...base, used: 10000, remaining: 0 }), 0));

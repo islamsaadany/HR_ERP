@@ -374,7 +374,24 @@ the same employee.
 **What deliberately still creates overruns:** the ceiling *shrinking* under existing spend — lowering
 a configured ceiling, changing employment type or start date, re-dating a cycle. HR must be able to
 correct records, so these are surfaced (signed `remaining`, `OVER_POOL` chip naming the amount) rather
-than blocked.
+than blocked, and resolved in-app.
+
+**Resolving one (migration `059`, `PoolCeilingException`).** From the report row's popup, filtered by
+the **Over pool** status. Four routes, each requiring a typed reason — the record is the point:
+1. **Reduce a flexible claim** (HR Admin) — `reduceFlexibleClaim`. Reduce ONLY; nothing else in the
+   app edits a claim amount after creation, and an increase here would be a way to spend past the
+   ceiling through the screen built to stop that. A **REIMBURSED** claim is refused and sent to
+   Finance: the money is already paid, so reducing the record would make the books disagree with the bank.
+2. **Raise their ceiling for this cycle** — **SUPER USER ONLY** (`raisePoolCeiling`). Writes a `RAISED`
+   exception whose `amount` becomes that person's ceiling; `poolCeiling` reads it, so every write path
+   then measures against the new figure. Refused if the new ceiling is below what they have already used.
+3. **Remove or re-price the medical commitment** — the existing Medical commitments tab.
+4. **Accept it and note why** (HR Admin) — `acceptPoolOverrun`. Changes no money: `remaining` stays
+   negative and keeps telling the truth; only the flag clears. `clearPoolException` undoes either
+   decision (undoing a `RAISED` one is Super-User-only, since it can put someone back over).
+
+One row per person per cycle; a later decision replaces the earlier. An exception can never *conjure*
+a pool for someone who has none — it is applied only when a ceiling was derivable in the first place.
 
 ## Data-table scroll treatments
 

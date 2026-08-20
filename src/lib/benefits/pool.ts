@@ -55,7 +55,15 @@ export type CeilingResult =
 export function poolCeiling(
   employee: { employmentType: EmploymentType | null; startDate: Date | null },
   ceilingFor: (t: EmploymentType, band: TenureBand) => number | null,
-  window: PlanYearWindow
+  window: PlanYearWindow,
+  /**
+   * A Super User's RAISED exception for this person and cycle (`PoolCeilingException`), which
+   * REPLACES the derived ceiling — it authorises spend that has already happened instead of
+   * reversing it. Applied only when the person has a derivable pool in the first place: an
+   * exception must not conjure one for someone with no employment type or start date on file,
+   * or removing those would silently hand them an allowance.
+   */
+  raisedTo?: number | null
 ): CeilingResult {
   const band = deriveTenureBand(employee.startDate).band;
   const none = (reason: NoPoolReason): CeilingResult => ({
@@ -73,9 +81,10 @@ export function poolCeiling(
     if (annual == null) return none("no pool ceiling configured");
     const fraction = poolCycleFraction(classifyEligibility(employee.startDate, 6, window), window);
     if (fraction <= 0) return none("not yet benefits-eligible");
+    const derived = prorate(annual, fraction);
     return {
-      ceiling: prorate(annual, fraction),
-      proratedFrom: fraction < 1 ? annual : null,
+      ceiling: raisedTo ?? derived,
+      proratedFrom: raisedTo != null ? derived : fraction < 1 ? annual : null,
       band,
       reason: null,
     };
@@ -85,9 +94,10 @@ export function poolCeiling(
   if (entry == null) return none("no pool ceiling configured");
   const medical = classifyEligibility(employee.startDate, 3, window);
   if (medical.status === "NOT_YET") return none("under 3 months — nothing unlocked yet");
+  const derivedEntry = prorate(entry, medical.fraction);
   return {
-    ceiling: prorate(entry, medical.fraction),
-    proratedFrom: medical.fraction < 1 ? entry : null,
+    ceiling: raisedTo ?? derivedEntry,
+    proratedFrom: raisedTo != null ? derivedEntry : medical.fraction < 1 ? entry : null,
     band,
     reason: null,
   };
@@ -113,6 +123,12 @@ export type PoolState = {
   remaining: number | null;
   /** True when this person is currently past their ceiling. */
   over: boolean;
+  /**
+   * The Super User / HR decision recorded for this person and cycle, if any. RAISED means the
+   * ceiling above IS the exception's amount; ACCEPTED means the numbers stand as they are and the
+   * report should stop flagging the row.
+   */
+  exception: { kind: "RAISED" | "ACCEPTED"; amount: number | null; reason: string } | null;
 };
 
 /** How much of the pool a write may still consume — 0 when overdrawn or unmeasurable. */
@@ -169,7 +185,7 @@ export async function poolStateFor(
   } = {}
 ): Promise<PoolState> {
   const db = opts.db ?? prisma;
-  const [user, ceilings, claims, commitments] = await Promise.all([
+  const [user, ceilings, claims, commitments, exception] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
       select: { employmentType: true, startDate: true },
@@ -194,6 +210,11 @@ export async function poolStateFor(
       include: { cycleCharges: true },
       orderBy: { committedAt: "desc" },
     }),
+    // Guarded for a database that predates migration 059 — a missing table must not take the
+    // whole benefits module down, it just means nobody has an exception yet.
+    db.poolCeilingException
+      .findUnique({ where: { userId_planYearId: { userId, planYearId: planYear.id } } })
+      .catch(() => null),
   ]);
 
   const empty: PoolState = {
@@ -206,12 +227,14 @@ export async function poolStateFor(
     used: 0,
     remaining: null,
     over: false,
+    exception: null,
   };
   if (!user) return empty;
 
   const ceilingFor = (t: EmploymentType, band: TenureBand): number | null =>
     ceilings.find((c) => c.employmentType === t && c.tenureBand === band)?.amount ?? null;
-  const derived = poolCeiling(user, ceilingFor, planYearWindow(planYear));
+  const raisedTo = exception?.kind === "RAISED" ? exception.amount : null;
+  const derived = poolCeiling(user, ceilingFor, planYearWindow(planYear), raisedTo);
 
   const counted = opts.excludeMedicalCommitmentId
     ? commitments.filter((c) => c.id !== opts.excludeMedicalCommitmentId)
@@ -232,6 +255,11 @@ export async function poolStateFor(
     flex,
     used,
     remaining,
-    over: remaining != null && remaining < 0,
+    // An ACCEPTED decision does not change the arithmetic — the pool really is overdrawn — but it
+    // is a decision someone made on the record, so the row stops being flagged for action.
+    over: remaining != null && remaining < 0 && exception?.kind !== "ACCEPTED",
+    exception: exception
+      ? { kind: exception.kind, amount: exception.amount, reason: exception.reason }
+      : null,
   };
 }

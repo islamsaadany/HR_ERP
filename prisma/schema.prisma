@@ -154,8 +154,10 @@ model User {
   campaignsCreated DataRequestCampaign[] @relation("CampaignCreator")
   campaignTargets  DataRequestTarget[]   @relation("CampaignTarget")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  poolExceptions        PoolCeilingException[] @relation("PoolExceptionSubject")
+  poolExceptionsGranted PoolCeilingException[] @relation("PoolExceptionActor")
 
   @@index([department])
   @@index([status])
@@ -541,6 +543,7 @@ model PlanYear {
   claims             BenefitClaim[]
   releases           BenefitRelease[]
   benefitGrants      GuaranteedBenefitGrant[]
+  poolExceptions     PoolCeilingException[]
 }
 
 /// Pool ceiling per (employment type × tenure band). Max claimable for the year.
@@ -1132,4 +1135,42 @@ model ProfileChangeField {
   /// for the same column.
   @@unique([requestId, field])
   @@index([status])
+}
+
+/// A per-person decision about ONE cycle's pool ceiling (2026-08-20).
+///
+/// Exists because a ceiling can shrink under money already spent — HR lowers a configured amount,
+/// corrects an employment type or start date, or re-dates a cycle — and those must stay possible.
+/// The resulting overrun is surfaced on the Benefits report, and resolved here.
+///
+/// RAISED   `amount` becomes this person's ceiling for this cycle, authorising the spend instead of
+///          reversing it. SUPER USER ONLY: it permits spending past a money rule, so it sits with
+///          governance rather than with HR Admin.
+/// ACCEPTED the numbers are left exactly as they are and the report stops flagging the row. A record
+///          of the decision, not a change to it.
+///
+/// One row per person per cycle — a later decision replaces the earlier one, and `reason` is
+/// required either way, because the point is the record.
+model PoolCeilingException {
+  id          String            @id @default(cuid())
+  userId      String
+  user        User              @relation("PoolExceptionSubject", fields: [userId], references: [id], onDelete: Cascade)
+  planYearId  String
+  planYear    PlanYear          @relation(fields: [planYearId], references: [id], onDelete: Cascade)
+  kind        PoolExceptionKind
+  /// The ceiling for this person this cycle. Set for RAISED, null for ACCEPTED.
+  amount      Int?
+  reason      String
+  createdById String?
+  createdBy   User?             @relation("PoolExceptionActor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([userId, planYearId])
+  @@index([planYearId])
+}
+
+enum PoolExceptionKind {
+  RAISED
+  ACCEPTED
 }

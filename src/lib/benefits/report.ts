@@ -92,6 +92,8 @@ export type ReportRow = {
   chip: ReportChip;
   /** Why there is no pool, when chip is NO_POOL. */
   noPoolReason: string | null;
+  /** The recorded decision about this person's ceiling for this cycle (migration 059), if any. */
+  exception: { kind: "RAISED" | "ACCEPTED"; amount: number | null; reason: string } | null;
   detail: {
     bandLabel: string | null;
     employmentTypeLabel: string | null;
@@ -136,7 +138,7 @@ export async function cycleReport(planYearId: string): Promise<CycleReport | nul
 
   const window = planYearWindow(planYear);
 
-  const [users, ceilings, claims, commitments, releases, policyYears] = await Promise.all([
+  const [users, ceilings, claims, commitments, releases, policyYears, exceptions] = await Promise.all([
     prisma.user.findMany({
       orderBy: { name: "asc" },
       select: {
@@ -175,7 +177,10 @@ export async function cycleReport(planYearId: string): Promise<CycleReport | nul
     prisma.medicalPolicyYear.findMany({
       select: { id: true, startDate: true, endDate: true },
     }),
+    // Guarded for a database that predates migration 059.
+    prisma.poolCeilingException.findMany({ where: { planYearId } }).catch(() => []),
   ]);
+  const exceptionByUser = new Map(exceptions.map((e) => [e.userId, e]));
 
   const ceilingFor = (t: EmploymentType, band: TenureBand): number | null =>
     ceilings.find((c) => c.employmentType === t && c.tenureBand === band)?.amount ?? null;
@@ -216,7 +221,13 @@ export async function cycleReport(planYearId: string): Promise<CycleReport | nul
     // write now call (2026-08-20). It used to be re-derived here, and the copies had
     // drifted — which is how an employee could be paid more than the report said they
     // had. The contract label is presentation, so it stays here.
-    const derived = poolCeiling(u, ceilingFor, window);
+    const exception = exceptionByUser.get(u.id) ?? null;
+    const derived = poolCeiling(
+      u,
+      ceilingFor,
+      window,
+      exception?.kind === "RAISED" ? exception.amount : null
+    );
     const ceiling = derived.ceiling;
     const proratedFrom = derived.proratedFrom;
     const noPoolReason: string | null = derived.reason;
@@ -260,8 +271,9 @@ export async function cycleReport(planYearId: string): Promise<CycleReport | nul
       ceiling == null
         ? "NO_POOL"
         : // Over the ceiling outranks a pending claim: it is a number someone has to act on,
-          // not a queue state that will resolve itself.
-          remaining != null && remaining < 0
+          // not a queue state that will resolve itself. An ACCEPTED decision has already been
+          // made on the record, so that row goes back to reading normally.
+          remaining != null && remaining < 0 && exception?.kind !== "ACCEPTED"
           ? "OVER_POOL"
           : pendingCount > 0
             ? "PENDING"
@@ -344,6 +356,9 @@ export async function cycleReport(planYearId: string): Promise<CycleReport | nul
       utilization,
       chip,
       noPoolReason,
+      exception: exception
+        ? { kind: exception.kind, amount: exception.amount, reason: exception.reason }
+        : null,
       detail: {
         bandLabel: band ? TENURE_BAND_LABEL[band] : null,
         employmentTypeLabel: u.employmentType ? EMPLOYMENT_TYPE_LABEL[u.employmentType] : null,

@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --import ./tests/setup.ts --test tests/pool-rules.test.ts tests/pool-invariant.test.ts",
+    "test": "node --import tsx --import ./tests/setup.ts --test --test-concurrency=1 tests/pool-rules.test.ts tests/pool-invariant.test.ts tests/pool-resolve.test.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",

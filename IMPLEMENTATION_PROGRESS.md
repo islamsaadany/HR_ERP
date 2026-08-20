@@ -1067,10 +1067,13 @@ fault at once.
 (offset measured at runtime). Boxed below `xl` so the frozen first column every other table has is
 kept at widths where the 860px table does not fit beside the sidebar.
 
-**Decided 2026-08-20, not yet built**
-- HR resolve action for an over-drawn row — mockup approved. Four routes; **"raise this person's
-  ceiling for the cycle" is SUPER USER ONLY** (it authorises spend past a money rule), the other
-  three are open to HR Admin.
+**Over-pool resolve action — built 2026-08-20 (migration `059`)**
+Four routes from the report row's popup, plus an **Over pool** status filter to find every affected
+person. Reduce a flexible claim (reduce-only; a reimbursed claim is refused and sent to Finance),
+**raise the ceiling for the cycle — Super User only**, re-price/remove medical (existing tab), or
+accept and note why. Every route needs a reason; both decisions are undoable. Gates are server-side,
+not just hidden buttons. New table `PoolCeilingException`, migration `059` verified idempotent by
+applying it twice from scratch. 6 new tests (33 total, all passing).
 
 **Decided 2026-08-20, no work needed**
 - Registry + catalogue keep today's boxed treatment (frozen first column). The scroll-away header

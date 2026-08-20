@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ReportRow, ReportChip } from "@/lib/benefits/report";
 import { formatNumber } from "@/lib/labels";
-import { OverrunResolvePanel } from "@/components/admin/OverrunResolvePanel";
 
 /**
  * The benefits reporting table (spec 034; mockup signed off 2026-08-18): summary tiles
@@ -68,7 +67,6 @@ const STATUS_FILTERS: { value: string; label: string }[] = [
   { value: "", label: "All statuses" },
   { value: "PENDING", label: "Pending review" },
   { value: "ACTIVE", label: "Active" },
-  { value: "OVER_POOL", label: "Over pool" },
   { value: "EXHAUSTED", label: "Pool exhausted" },
   { value: "NO_ACTIVITY", label: "No activity" },
   { value: "NO_POOL", label: "No pool" },
@@ -80,15 +78,12 @@ export function BenefitsReportTable({
   departments,
   cycles,
   selectedCycleId,
-  canRaiseCeiling = false,
 }: {
   rows: ReportRow[];
   cycleName: string;
   departments: string[];
   cycles: { id: string; label: string }[];
   selectedCycleId: string;
-  /** Super User — raising a ceiling authorises spend past a money rule, so it is gated. */
-  canRaiseCeiling?: boolean;
 }) {
   const router = useRouter();
   const [department, setDepartment] = useState("");
@@ -353,30 +348,12 @@ export function BenefitsReportTable({
       </p>
 
       {/* ── The person popup (FR-006) ─────────────────────────────────── */}
-      {openRow ? (
-        <PersonPopup
-          row={openRow}
-          cycleName={cycleName}
-          planYearId={selectedCycleId}
-          canRaiseCeiling={canRaiseCeiling}
-          onClose={() => setOpenRow(null)}
-          onResolved={() => { setOpenRow(null); router.refresh(); }}
-        />
-      ) : null}
+      {openRow ? <PersonPopup row={openRow} cycleName={cycleName} onClose={() => setOpenRow(null)} /> : null}
     </div>
   );
 }
 
-function PersonPopup({
-  row, cycleName, planYearId, canRaiseCeiling, onClose, onResolved,
-}: {
-  row: ReportRow;
-  cycleName: string;
-  planYearId: string;
-  canRaiseCeiling: boolean;
-  onClose: () => void;
-  onResolved: () => void;
-}) {
+function PersonPopup({ row, cycleName, onClose }: { row: ReportRow; cycleName: string; onClose: () => void }) {
   const d = row.detail;
   const flexClaims = d.claims.filter((c) => c.kind === "flex");
   return (
@@ -430,13 +407,6 @@ function PersonPopup({
         ) : (
           <p className="mt-1 text-sm text-muted">No pool{row.noPoolReason ? ` — ${row.noPoolReason}` : ""}.</p>
         )}
-
-        <OverrunResolvePanel
-          row={row}
-          planYearId={planYearId}
-          canRaiseCeiling={canRaiseCeiling}
-          onDone={onResolved}
-        />
 
         {/* Medical */}
         <p className="mt-5 text-[11px] font-semibold uppercase tracking-wide text-gold-700">Medical</p>

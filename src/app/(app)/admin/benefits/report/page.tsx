@@ -1,4 +1,4 @@
-import { requireBenefitsReporting, isAdmin } from "@/lib/roles";
+import { requireBenefitsReporting, isAdmin, isSuperUser } from "@/lib/roles";
 import { listCycles, defaultCycleId, cycleReport } from "@/lib/benefits/report";
 import { BackLink } from "@/components/admin/BackLink";
 import { StickyHeaderOffset } from "@/components/StickyHeaderOffset";
@@ -69,6 +69,7 @@ export default async function BenefitsReportPage({
             label: `${c.name}${c.status === "OPEN" ? " (open)" : ""}`,
           }))}
           selectedCycleId={report.planYear.id}
+          canRaiseCeiling={isSuperUser(me.role)}
         />
       )}
     </div>
