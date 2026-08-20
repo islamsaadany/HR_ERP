@@ -143,6 +143,37 @@ body {
 }
 
 /*
+  Scroll-away page header (approved 2026-08-20, Benefits Reporting).
+
+  The alternative — pinning the whole page and letting only the table scroll — kept the title,
+  the filters AND five stat cards on screen permanently, eating half the viewport. Here the PAGE
+  scrolls: only the identity block (back link + eyebrow + title) stays, and the table's navy
+  header parks directly beneath it.
+
+  `ff-sticky-id` is that block; `ff-parked-header` goes on the table so its header row sticks
+  BELOW the block instead of at the very top. The offset is measured at runtime by
+  <StickyHeaderOffset> — see that component for why it can't be a constant. The 0px fallback
+  keeps the header sensibly stuck if the script hasn't run yet.
+
+  A table using this must NOT be inside an overflow container: a scroll box would make its header
+  stick to the box rather than to the page. That is also why the wide tables (registry, catalogue)
+  can't use this — they need horizontal scroll, and a box cannot scroll sideways while its header
+  sticks to the page.
+*/
+.ff-sticky-id {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--color-paper);
+}
+/* Two class selectors so this always beats `.ff-data-table thead th { top: 0 }` on
+   specificity rather than on source order — equal-specificity rules are a trap the next
+   person reordering this file would spring without noticing. */
+.ff-data-table.ff-parked-header thead th {
+  top: var(--ff-stickyhead, 0px);
+}
+
+/*
   Benefits catalogue: freeze BOTH the row-number (1st) and Benefit (2nd) columns.
   The 1st column is a narrow, fixed-width index; the shadow that marks the frozen
   edge moves to the 2nd column so the pair reads as one frozen block.

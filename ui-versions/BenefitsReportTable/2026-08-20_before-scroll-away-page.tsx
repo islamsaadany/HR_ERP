@@ -1,7 +1,6 @@
 import { requireBenefitsReporting, isAdmin } from "@/lib/roles";
 import { listCycles, defaultCycleId, cycleReport } from "@/lib/benefits/report";
 import { BackLink } from "@/components/admin/BackLink";
-import { StickyHeaderOffset } from "@/components/StickyHeaderOffset";
 import { BenefitsReportTable } from "@/components/admin/BenefitsReportTable";
 
 export const dynamic = "force-dynamic";
@@ -24,25 +23,17 @@ export default async function BenefitsReportPage({
   const report = selectedId ? await cycleReport(selectedId) : null;
 
   return (
-    <div>
-      {/* The identity block STAYS while the page scrolls (approved 2026-08-20) — you can always
-          see where you are and always get out. Everything below it scrolls away, and the table's
-          navy header parks underneath; <StickyHeaderOffset> measures this block's height so the
-          two meet flush. */}
-      <div id="report-id-block" className="ff-sticky-id pb-3">
-        {/* Finance can't open Benefits Management — send them back where they came from. */}
-        {isAdmin(me.role) ? (
-          <BackLink href="/admin/benefits" label="Benefits Management" />
-        ) : (
-          <BackLink href="/finance" label="Payments" />
-        )}
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
-          Admin · Benefits
-        </p>
-        <h1 className="mt-1 font-serif text-3xl text-ink">Benefits Reporting</h1>
-      </div>
-      <StickyHeaderOffset targetId="report-id-block" />
-
+    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
+      {/* Finance can't open Benefits Management — send them back where they came from. */}
+      {isAdmin(me.role) ? (
+        <BackLink href="/admin/benefits" label="Benefits Management" />
+      ) : (
+        <BackLink href="/finance" label="Payments" />
+      )}
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
+        Admin · Benefits
+      </p>
+      <h1 className="mt-1 font-serif text-3xl text-ink">Benefits Reporting</h1>
       <p className="mt-1 max-w-3xl text-sm text-muted">
         Where the whole company stands this cycle — computed by the same engine that enforces
         claims, so every row matches the employee&apos;s own Benefits page. Read-only.

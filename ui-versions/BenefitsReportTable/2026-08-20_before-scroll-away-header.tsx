@@ -168,7 +168,7 @@ export function BenefitsReportTable({
   }, [selectedCycleId, department, status, search, includeLeavers]);
 
   return (
-    <div>
+    <div className="md:flex md:min-h-0 md:flex-1 md:flex-col">
       {/* ── Filter row ─────────────────────────────────────────────────── */}
       <div className="mt-4 flex flex-wrap items-center gap-2.5">
         <select
@@ -234,19 +234,12 @@ export function BenefitsReportTable({
       </div>
 
       {/* ── The table ─────────────────────────────────────────────────── */}
-      {/* Deliberately NOT a scroll container (2026-08-20). The page is the scroller, which is
-          what lets the navy header stick to the viewport and park under the pinned title
-          (`ff-parked-header`) instead of scrolling inside a box. Nine columns fit, so nothing
-          is lost by giving up horizontal scroll on desktop.
-
-          `overflow-x-auto md:overflow-x-visible` is load-bearing and easy to get wrong: ANY
-          non-visible overflow makes the box a scroll container (CSS computes overflow-y to auto
-          when overflow-x is not visible), and a sticky header then sticks to the BOX instead of
-          the page. Measured: with overflow-x-auto left on at desktop the header scrolled clean
-          off the top. Mobile keeps the scroll box — there is no pinned title to park under
-          there, and 860px of table has to go somewhere. */}
-      <div className="mt-4 overflow-x-auto md:overflow-x-visible rounded-xl border border-line bg-surface">
-        <table className="ff-data-table ff-parked-header w-full min-w-[860px] text-sm">
+      {/* The ONE scroller on this page (house pattern, same as the registry and catalogue):
+          `ff-data-scroll` + `ff-data-table` give the sticky navy header and frozen first
+          column, and md:flex-1/!max-h-none hand the height to the flex column so the table
+          fills the viewport instead of a guessed 70vh. */}
+      <div className="mt-4 ff-data-scroll rounded-xl border border-line bg-surface md:flex-1 md:min-h-0 md:!max-h-none">
+        <table className="ff-data-table w-full min-w-[860px] text-sm">
           <thead>
             <tr>
               {sortableTh("name", "Employee", false)}

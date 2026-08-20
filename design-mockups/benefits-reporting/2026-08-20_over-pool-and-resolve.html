@@ -1,0 +1,281 @@
+<title>Over Pool Resolution</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#dae0ec;--navy-200:#b9c4d8;--navy-300:#93a3c0;--navy-700:#1b3a63;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6edd4;--gold-300:#e3c76b;--gold-600:#a8821e;--gold-800:#6b5210;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --red-100:#fbdada;--red-200:#f3c4c4;--red-300:#e9a3a3;--red-700:#a62828;--red-800:#8c1f1f;--red-50:#fdeaea;
+    --green-50:#e8f3ec;--green-200:#bcdcc8;--green-700:#256b41;
+    --serif:"Fraunces","Iowan Old Style",Palatino,Georgia,serif;
+    --sans:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans)}
+  .wrap{max-width:1180px;margin:0 auto;padding:30px 24px 70px}
+  h2.sec{font-family:var(--serif);font-size:23px;font-weight:600;margin:38px 0 6px}
+  h2.sec:first-of-type{margin-top:8px}
+  p.lede{font-size:14px;color:var(--muted);line-height:1.65;margin:0 0 16px;max-width:760px}
+  p.lede b{color:var(--ink);font-weight:600}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-600)}
+
+  .card{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  thead th{background:var(--navy-800);color:#fff;font-weight:700;text-align:left;padding:12px 14px;white-space:nowrap}
+  th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tbody td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  .emp{font-weight:600}
+  .dept{font-size:12px;color:var(--muted);margin-top:2px}
+  .tag{font-size:9px;font-weight:700;background:var(--gold-100);color:var(--gold-800);padding:2px 6px;border-radius:999px;margin-left:6px;vertical-align:middle}
+  .dash{color:var(--muted)}
+  .bar{width:96px;height:8px;border-radius:999px;background:var(--navy-50);overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--navy-800)}
+  .bar.over>i{background:var(--red-700)}
+  .chip{display:inline-block;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;white-space:nowrap}
+  .chip.act{background:var(--green-50);color:var(--green-700);border:1px solid var(--green-200)}
+  .chip.ex{background:var(--red-50);color:var(--red-700);border:1px solid var(--red-200)}
+  .chip.over{background:var(--red-100);color:var(--red-800);border:1px solid var(--red-300);font-weight:700}
+  .chip.carry{background:var(--gold-100);color:var(--gold-800);border:1px solid var(--gold-300)}
+  tr.overrow td{background:#fdf5f5}
+  td.num.neg{color:var(--red-800);font-weight:700}
+
+  .callout{border-left:3px solid var(--gold-600);background:#faf7ef;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13.5px;color:var(--ink);line-height:1.6;margin:0 0 18px;max-width:860px}
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:8px}
+  .cmp h3{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin:0 0 8px}
+  .cmp .before h3{color:var(--muted)}
+  .cmp .after h3{color:var(--green-700)}
+
+  /* Resolve panel */
+  .panel{border:1px solid var(--line);border-radius:12px;background:var(--surface);max-width:640px;overflow:hidden}
+  .panel header{background:var(--navy-800);color:#fff;padding:14px 18px}
+  .panel header .t{font-family:var(--serif);font-size:18px;font-weight:600}
+  .panel header .s{font-size:12px;color:var(--navy-200);margin-top:2px}
+  .panel .body{padding:18px}
+  .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+  .sum div{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--paper)}
+  .sum .k{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+  .sum .v{font-family:var(--serif);font-size:20px;font-weight:600;margin-top:3px}
+  .sum .v.neg{color:var(--red-800)}
+  .opt{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:9px;padding:12px 14px;margin-bottom:9px;background:var(--surface)}
+  .opt.sel{border-color:var(--navy-700);background:var(--navy-50)}
+  .opt .radio{width:15px;height:15px;border-radius:50%;border:2px solid var(--navy-300);margin-top:2px;flex:0 0 auto}
+  .opt.sel .radio{border-color:var(--navy-800);box-shadow:inset 0 0 0 3px var(--surface);background:var(--navy-800)}
+  .opt .l{font-weight:600;font-size:13.5px}
+  .opt .d{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.55}
+  .fieldrow{display:flex;align-items:center;gap:9px;margin-top:9px}
+  .fieldrow input{border:1px solid var(--line);border-radius:8px;padding:7px 11px;font:inherit;font-size:13px;width:130px;background:var(--surface)}
+  .fieldrow .hint{font-size:12px;color:var(--muted)}
+  .acts{display:flex;gap:10px;align-items:center;margin-top:16px;padding-top:15px;border-top:1px solid var(--line)}
+  .btn{border-radius:9px;padding:9px 17px;font-size:13.5px;font-weight:700;border:1px solid transparent;cursor:default}
+  .btn.primary{background:var(--navy-800);color:#fff}
+  .btn.ghost{background:transparent;color:var(--muted)}
+  .note{font-size:12px;color:var(--muted);margin-top:11px;line-height:1.55}
+
+  .filters{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:13px}
+  .ctl{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 12px;font-size:13px}
+  .ctl.on{border-color:var(--red-300);background:var(--red-50);color:var(--red-800);font-weight:700}
+  .count{font-size:12.5px;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Admin · Benefits · Reporting</p>
+  <h2 class="sec">Finding and fixing an over-drawn pool</h2>
+  <p class="lede">
+    Three things to sign off here: <b>how an over-drawn row reads</b>, <b>how you find them all</b>,
+    and <b>what HR does about one</b>. The server now refuses to create a new overrun — this is for
+    the ones already in the data, and for the ones a future ceiling change creates.
+  </p>
+
+  <div class="callout">
+    <b>Why any exist at all.</b> The ceiling can still <i>shrink</i> under money already spent —
+    lowering a configured ceiling, changing someone's employment type or start date, or re-dating a
+    cycle. Those have to stay possible for HR, so they are surfaced here rather than blocked.
+  </div>
+
+  <h2 class="sec">1 · The row</h2>
+  <p class="lede">
+    Today the Remaining column floors at zero, so Yosra reads as merely <i>exhausted</i> — the same
+    as somebody who spent their pool to the penny. The overrun is invisible on the one page that
+    exists to find it.
+  </p>
+
+  <div class="cmp">
+    <div class="before">
+      <h3>Before — the overrun is hidden</h3>
+      <div class="card">
+        <table>
+          <thead><tr><th>Employee</th><th class="num">Pool</th><th class="num">Remaining</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><div class="emp">Yosra El-Tobgy</div><div class="dept">Marketing &amp; Community</div></td>
+              <td class="num">10,000<span class="tag">prorated</span></td>
+              <td class="num">0</td>
+              <td><span class="chip ex">Pool exhausted</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="after">
+      <h3>After — the number and the size of the hole</h3>
+      <div class="card">
+        <table>
+          <thead><tr><th>Employee</th><th class="num">Pool</th><th class="num">Remaining</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr class="overrow">
+              <td><div class="emp">Yosra El-Tobgy</div><div class="dept">Marketing &amp; Community</div></td>
+              <td class="num">10,000<span class="tag">prorated</span></td>
+              <td class="num neg">−2,093</td>
+              <td><span class="chip over">Over pool by 2,093</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <p class="lede" style="margin-top:12px">
+    Nothing else about the row changes: same columns, same order, same styling. Remaining simply
+    stops lying, the row takes the faintest red wash, and the status chip names the amount so you
+    do not have to go hunting for it.
+  </p>
+
+  <h2 class="sec">2 · Finding them</h2>
+  <p class="lede">
+    A new <b>Over pool</b> entry in the existing status filter, and a second chip for the other
+    thing the fix produces: a medical charge held back because it no longer fits. That money is
+    still owed to the insurer, so it needs its own state — not silence.
+  </p>
+
+  <div class="filters">
+    <span class="ctl">2026 (open) ⌄</span>
+    <span class="ctl">All departments ⌄</span>
+    <span class="ctl on">Over pool ⌄</span>
+    <span class="ctl">Search name…</span>
+    <span class="count">3 of 25 people shown</span>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Employee</th><th class="num">Pool ceiling</th><th class="num">Medical</th>
+          <th class="num">Flex used</th><th class="num">Remaining</th><th>Utilization</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="overrow">
+          <td><div class="emp">Yosra El-Tobgy</div><div class="dept">Marketing &amp; Community</div></td>
+          <td class="num">10,000<span class="tag">prorated</span></td>
+          <td class="num">6,093</td><td class="num">6,000</td>
+          <td class="num neg">−2,093</td>
+          <td><div class="bar over"><i style="width:100%"></i></div></td>
+          <td><span class="chip over">Over pool by 2,093</span></td>
+        </tr>
+        <tr class="overrow">
+          <td><div class="emp">Omar Sherif</div><div class="dept">Consulting Department</div></td>
+          <td class="num">15,000<span class="tag">prorated</span></td>
+          <td class="num">9,400</td><td class="num">6,500</td>
+          <td class="num neg">−900</td>
+          <td><div class="bar over"><i style="width:100%"></i></div></td>
+          <td><span class="chip over">Over pool by 900</span></td>
+        </tr>
+        <tr>
+          <td><div class="emp">Nadia Kamal</div><div class="dept">Data Management Unit</div></td>
+          <td class="num">22,500<span class="tag">prorated</span></td>
+          <td class="num dash">—</td><td class="num">18,000</td>
+          <td class="num">4,500</td>
+          <td><div class="bar"><i style="width:80%"></i></div></td>
+          <td><span class="chip carry">Medical carry held · 5,223</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="lede" style="margin-top:12px">
+    <b>Medical carry held</b> is not an overrun — the pool is fine. It means a carried-forward
+    premium share could not be charged without breaking the ceiling, so it is waiting instead of
+    silently drawing. It clears itself the moment there is room, or when you resolve it below.
+  </p>
+
+  <h2 class="sec">3 · Resolving one</h2>
+  <p class="lede">
+    Opens from the row, in the same popup the row already opens today. HR picks one route; every
+    option is reversible except the last, and nothing happens until Apply.
+  </p>
+
+  <div class="panel">
+    <header>
+      <div class="t">Yosra El-Tobgy — over pool by 2,093</div>
+      <div class="s">Marketing &amp; Community · Part-time · 2–4 years · cycle 2026 (open)</div>
+    </header>
+    <div class="body">
+      <div class="sum">
+        <div><div class="k">Pool ceiling</div><div class="v">10,000</div></div>
+        <div><div class="k">Used</div><div class="v">12,093</div></div>
+        <div><div class="k">Remaining</div><div class="v neg">−2,093</div></div>
+      </div>
+
+      <div class="opt sel">
+        <div class="radio"></div>
+        <div>
+          <div class="l">Reduce a flexible claim</div>
+          <div class="d">Lower a claim she has made so the pool balances. Use when the overrun came
+            from a claim that should not have been paid in full.</div>
+          <div class="fieldrow">
+            <span class="hint">Gym &amp; wellness · 6,000 →</span>
+            <input value="3,907">
+            <span class="hint">leaves 0 remaining</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="opt">
+        <div class="radio"></div>
+        <div>
+          <div class="l">Raise her ceiling for this cycle</div>
+          <div class="d">Record an exception at a typed amount, so the spend is authorised rather
+            than reversed. Use when both the medical and the claim were correct and she should
+            simply have had a larger pool.</div>
+        </div>
+      </div>
+
+      <div class="opt">
+        <div class="radio"></div>
+        <div>
+          <div class="l">Remove or re-price the medical commitment</div>
+          <div class="d">Only when the cover itself was wrong. Re-pricing recalculates from the
+            people actually covered.</div>
+        </div>
+      </div>
+
+      <div class="opt">
+        <div class="radio"></div>
+        <div>
+          <div class="l">Accept it and note why</div>
+          <div class="d">Leaves the numbers alone and records a reason on the row, so the report
+            stops flagging it and the decision is on the record. Requires a note.</div>
+        </div>
+      </div>
+
+      <div class="acts">
+        <span class="btn primary">Apply</span>
+        <span class="btn ghost">Cancel</span>
+      </div>
+      <p class="note">
+        Every route is written to the claim/commitment history with who did it and when. Money is
+        never moved silently — if Finance has already reimbursed a claim you reduce here, the
+        difference shows in the Payments queue as a recovery.
+      </p>
+    </div>
+  </div>
+
+  <h2 class="sec">One thing to confirm</h2>
+  <p class="lede">
+    Option 2 (<b>raise her ceiling for this cycle</b>) is a per-person exception, which the codebase
+    already has a home for — the Super-User grants used for exceptional releases (spec 036). I would
+    reuse that rather than invent a second exception mechanism, which means <b>Super User only</b>,
+    while the other three routes stay open to HR Admin. Say if you would rather all four were HR.
+  </p>
+</div>

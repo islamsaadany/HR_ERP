@@ -52,9 +52,7 @@ const isSingleScrollRoute = (path: string) =>
   path === "/directory" ||
   path === "/admin/time-off" ||
   path === "/admin/benefits" ||
-  // NOT /admin/benefits/report (2026-08-20): pinning the page kept its title, filters and five
-  // stat cards on screen permanently. It now scrolls normally, with only the title block and the
-  // table header sticking — see `ff-sticky-id` / `ff-parked-header` in globals.css.
+  path === "/admin/benefits/report" ||
   path === "/admin/employees/import" ||
   // One campaign tracker per page; the list page above it is not a table.
   (path.startsWith("/admin/data-requests/") && path !== "/admin/data-requests");
