@@ -1,0 +1,218 @@
+<title>Registry Scroll Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --serif:"Fraunces","Iowan Old Style",Palatino,Georgia,serif;
+    --sans:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --stickyhead:112px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans)}
+  .wrap{max-width:1180px;margin:0 auto;padding:30px 24px 70px}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-600)}
+  h1{font-family:var(--serif);font-size:30px;font-weight:600;margin:5px 0 8px}
+  h2{font-family:var(--serif);font-size:21px;font-weight:600;margin:34px 0 6px}
+  p.lede{font-size:14px;color:var(--muted);line-height:1.65;margin:0 0 14px;max-width:790px}
+  p.lede b{color:var(--ink);font-weight:600}
+  .callout{border-left:3px solid var(--gold-600);background:#faf7ef;padding:12px 16px;border-radius:0 8px 8px 0;font-size:13.5px;line-height:1.6;margin:0 0 20px;max-width:860px;color:var(--ink)}
+
+  .verdict{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:5px 11px;border-radius:999px;margin-bottom:9px}
+  .verdict.keep{background:#e8f3ec;color:#256b41;border:1px solid #bcdcc8}
+  .verdict.cost{background:#fdeaea;color:#a62828;border:1px solid #f3c4c4}
+
+  /* demo frame */
+  .frame{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--surface);box-shadow:0 16px 36px -28px rgba(15,36,68,.5);margin-bottom:8px}
+  .bar{display:flex;align-items:center;gap:8px;padding:8px 13px;background:var(--navy-900);color:#fff;font-size:12px;font-weight:600}
+  .bar i{width:8px;height:8px;border-radius:50%;background:#3c527a;display:inline-block}
+  .page{height:340px;overflow:auto;background:var(--paper);padding:0 20px}
+
+  .idblock{position:sticky;top:0;z-index:20;background:var(--paper);padding:18px 0 10px}
+  .idblock .b{font-size:12.5px;color:var(--muted)}
+  .idblock .e{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-600);margin-top:6px}
+  .idblock .t{font-family:var(--serif);font-size:26px;font-weight:600;margin-top:3px}
+  .toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:11px}
+  .ctl{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--muted)}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  thead th{background:var(--navy-800);color:#fff;font-weight:700;text-align:left;padding:10px 12px;white-space:nowrap;position:sticky;z-index:2}
+  tbody td{padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0}
+  .nm{font-weight:600}
+
+  /* ── Option A: scroll-away header, no frozen column ───────────── */
+  /* No overflow here on purpose: a scroll box would make the header stick to the box
+     instead of the page, which is exactly what Option A is trading away the frozen column
+     for. The consequence is that the PAGE itself scrolls sideways. */
+  .optA .tablebox{border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+  .optA thead th{top:var(--stickyhead)}
+  .optA table{min-width:1500px}
+
+  /* ── Option B: today — frozen column, header sticks inside the box ─ */
+  .optB .page{padding:0}
+  .optB .inner{padding:0 20px}
+  .optB .tablebox{border:1px solid var(--line);border-radius:11px;background:var(--surface);overflow:auto;max-height:210px}
+  .optB thead th{top:0}
+  .optB table{min-width:1500px}
+  .optB tr>:first-child{position:sticky;left:0;background:var(--surface);z-index:1;box-shadow:1px 0 0 var(--line),6px 0 8px -6px rgba(15,36,68,.16)}
+  .optB thead tr>:first-child{z-index:3;background:var(--navy-800)}
+
+  .hint{font-size:12.5px;color:var(--muted);margin:8px 0 0;line-height:1.55}
+  .hint b{color:var(--ink)}
+  .pros{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+  .pros div{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+  .pros h4{margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+  .pros .good h4{color:#256b41}.pros .bad h4{color:#a62828}
+  .pros ul{margin:0;padding-left:17px;font-size:13px;color:var(--muted);line-height:1.65}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Admin · Registry</p>
+  <h1>Employees registry — two ways it can scroll</h1>
+  <p class="lede">
+    Benefits Reporting now has the scroll-away header you approved. The registry
+    <b>cannot have both that and its frozen Name column</b> — CSS will not let a box scroll
+    sideways while its header sticks to the page. Scroll inside each frame; the choice is which
+    one the registry (and the benefits catalogue, which has the same shape) should use.
+  </p>
+
+  <div class="callout">
+    <b>Why it's either/or.</b> Freezing the Name column needs the table to sit in a horizontally
+    scrollable box. The moment a box scrolls in any direction the browser makes it a scroll
+    container, and a sticky header inside it sticks to <i>the box</i>, not to the window — so the
+    page title can no longer be what it parks under. Reporting escapes this only because its nine
+    columns fit without sideways scrolling; the registry has twenty-two.
+  </div>
+
+  <h2>Option A — scroll-away header, no frozen Name column</h2>
+  <span class="verdict cost">Costs the frozen Name column</span>
+  <div class="frame optA">
+    <div class="bar"><i></i><i></i><i></i><span>Admin · Employees</span></div>
+    <div class="page">
+      <div class="idblock">
+        <div class="b">← Admin</div>
+        <div class="e">Admin · Registry</div>
+        <div class="t">Employees</div>
+      </div>
+      <div class="toolbar">
+        <span class="ctl">Search name, email, title…</span><span class="ctl">All departments ⌄</span>
+        <span class="ctl">All types ⌄</span><span class="ctl">All statuses ⌄</span><span class="ctl">Columns ▾</span>
+      </div>
+      <div class="tablebox">
+        <table>
+          <thead><tr>
+            <th>Name</th><th>Email</th><th>Title</th><th>Department</th><th>Type</th>
+            <th>Status</th><th>Role</th><th>Manager</th><th>Start date</th><th>National ID</th>
+          </tr></thead>
+          <tbody id="a"></tbody>
+        </table>
+      </div>
+      <p class="hint" style="padding-bottom:20px">Scroll down: the title stays, the toolbar goes, the navy header parks under the title.
+        Now scroll <b>sideways</b> — the Name column slides away, and so do the title and toolbar,
+        because the page itself is what moves.</p>
+    </div>
+  </div>
+  <div class="pros">
+    <div class="good"><h4>What you gain</h4><ul>
+      <li>Same behaviour as Benefits Reporting — one rule across the app</li>
+      <li>The toolbar and filters stop eating permanent screen height</li>
+      <li>The whole page scrolls, so there is never a second scrollbar to hunt for</li>
+    </ul></div>
+    <div class="bad"><h4>What you lose</h4><ul>
+      <li><b>The Name column scrolls out of sight</b> when you go sideways</li>
+      <li>With 22 columns on, you lose track of whose row you are editing</li>
+      <li>Inline editing a far-right cell means scrolling back to check the person</li>
+      <li><b>The whole page scrolls sideways</b> — the title and toolbar slide off to the left too</li>
+    </ul></div>
+  </div>
+
+  <h2>Option B — keep today's frozen Name column</h2>
+  <span class="verdict keep">Keeps the frozen Name column</span>
+  <div class="frame optB">
+    <div class="bar"><i></i><i></i><i></i><span>Admin · Employees</span></div>
+    <div class="page">
+      <div class="inner">
+        <div class="idblock" style="position:static">
+          <div class="b">← Admin</div>
+          <div class="e">Admin · Registry</div>
+          <div class="t">Employees</div>
+        </div>
+        <div class="toolbar">
+          <span class="ctl">Search name, email, title…</span><span class="ctl">All departments ⌄</span>
+          <span class="ctl">All types ⌄</span><span class="ctl">All statuses ⌄</span><span class="ctl">Columns ▾</span>
+        </div>
+        <div class="tablebox">
+          <table>
+            <thead><tr>
+              <th>Name</th><th>Email</th><th>Title</th><th>Department</th><th>Type</th>
+              <th>Status</th><th>Role</th><th>Manager</th><th>Start date</th><th>National ID</th>
+            </tr></thead>
+            <tbody id="b"></tbody>
+          </table>
+        </div>
+        <p class="hint" style="padding-bottom:20px">Scroll <b>sideways inside the table</b> — the Name column stays put, so you always
+          know whose row you are on. The header sticks to the table box rather than to the title.</p>
+      </div>
+    </div>
+  </div>
+  <div class="pros">
+    <div class="good"><h4>What you keep</h4><ul>
+      <li><b>Name always visible</b>, however far right you scroll</li>
+      <li>Safe inline editing across 22 columns</li>
+      <li>Zero change — nothing to re-learn, nothing to regress</li>
+    </ul></div>
+    <div class="bad"><h4>What stays imperfect</h4><ul>
+      <li>The title and toolbar keep their permanent screen height</li>
+      <li>Two scroll regions on the page rather than one</li>
+      <li>Registry and Reporting behave differently</li>
+    </ul></div>
+  </div>
+
+  <h2>My recommendation</h2>
+  <p class="lede">
+    <b>Option B — leave the registry and the catalogue exactly as they are.</b> The frozen Name
+    column is worth more than scroll consistency on a table you inline-edit: losing track of whose
+    row you are on is a data-entry error, while a slightly tall header is only an annoyance. The
+    scroll-away treatment then applies to the tables that genuinely fit — Reporting today, and any
+    narrow table we add later.
+  </p>
+  <p class="lede">
+    If you would rather have the consistency, say so and I will apply Option A to both. There is a
+    third possibility if neither feels right: keep the frozen column and make the box taller by
+    letting the toolbar scroll away above it — more work, and it still leaves two scrollbars, so I
+    would not start there.
+  </p>
+</div>
+
+<script>
+  const people = [
+    ["Ahmed Ali","ahmed.ali@forefront.consulting","Consultant","Consulting","Full-time","Active","Employee","Alaa Allam","01/03/2022"],
+    ["Ahmed Galal","ahmed.galal@forefront.consulting","Senior Consultant","Consulting Department","Full-time","Active","Employee","Alaa Allam","15/06/2021"],
+    ["Alaa Allam","alaa.allam@forefront.consulting","Director","Consulting Department","Full-time","Active","HR Admin","—","01/02/2019"],
+    ["Aley eldeen Mahmoud","aley@forefront.consulting","Data Lead","Data Management Unit","Full-time","Active","Employee","Alaa Allam","10/09/2020"],
+    ["Dina Farouk","dina.farouk@forefront.consulting","Consultant","Consulting Department","Part-time","Active","Employee","Ahmed Galal","03/04/2023"],
+    ["Hana Mostafa","hana@forefront.consulting","Marketing Lead","Marketing & Community","Full-time","Active","Employee","Alaa Allam","22/08/2022"],
+    ["Karim Nabil","karim.nabil@forefront.consulting","Analyst","Data Management Unit","Full-time","Active","Employee","Aley eldeen Mahmoud","05/01/2024"],
+    ["Mona Adel","mona.adel@forefront.consulting","Consultant","Consulting","Full-time","Active","Employee","Ahmed Galal","19/11/2021"],
+    ["Nadia Kamal","nadia@forefront.consulting","Data Analyst","Data Management Unit","Full-time","Active","Employee","Aley eldeen Mahmoud","07/07/2023"],
+    ["Omar Sherif","omar.sherif@forefront.consulting","Consultant","Consulting Department","Full-time","Active","Employee","Alaa Allam","14/05/2022"],
+    ["Yosra El-Tobgy","yosra@forefront.consulting","Community Manager","Marketing & Community","Part-time","Active","Employee","Hana Mostafa","01/02/2023"],
+  ];
+  const row = (p, i) =>
+    `<tr><td class="nm">${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td><td>${p[3]}</td><td>${p[4]}</td>` +
+    `<td>${p[5]}</td><td>${p[6]}</td><td>${p[7]}</td><td>${p[8]}</td><td>2900101${String(1234567 + i)}</td></tr>`;
+  const many = [...people, ...people];
+  document.getElementById("a").innerHTML = many.map(row).join("");
+  // Measure the pinned block, exactly as <StickyHeaderOffset> does in the real page,
+  // so the parked header sits flush rather than a couple of pixels low.
+  const idA = document.querySelector(".optA .idblock");
+  const setOffset = () =>
+    document.documentElement.style.setProperty("--stickyhead", `${Math.round(idA.offsetHeight)}px`);
+  setOffset();
+  new ResizeObserver(setOffset).observe(idA);
+  document.getElementById("b").innerHTML = many.map(row).join("");
+</script>
