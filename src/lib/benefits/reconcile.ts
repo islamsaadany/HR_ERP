@@ -18,6 +18,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { splitPremium, overlapWholeMonths } from "@/lib/benefits/policy-year";
+import { poolStateFor, spendable } from "@/lib/benefits/pool";
 
 /**
  * Recalculate every commitment's cycle charges against the cycles and terms as they stand now.
@@ -47,6 +48,7 @@ export async function reconcileMedicalCharges(planYearId?: string): Promise<void
       premium: true,
       planYearId: true,
       policyYearId: true,
+      userId: true,
       policyYear: { select: { startDate: true, endDate: true } },
       user: { select: { status: true } },
       cycleCharges: {
@@ -111,12 +113,36 @@ export async function reconcileMedicalCharges(planYearId?: string): Promise<void
     for (const share of shares) {
       const existing = c.cycleCharges.find((ch) => ch.planYearId === share.cycle.id);
       const cycleStatus = statusById.get(share.cycle.id);
+
+      // THE POOL CEILING BINDS HERE TOO (2026-08-20).
+      //
+      // This is how the reported overrun actually happened. A commitment made in an EARLIER
+      // cycle leaves no charge row for a cycle that was undated (or didn't exist) at commit
+      // time, so `medicalCycleCharge` reports ZERO consumption for it and the employee's pool
+      // reads as untouched — their flexible claim is then allowed in full, correctly, on the
+      // information available. When HR later dates the cycle or edits the commitment, THIS loop
+      // creates the missing row and, because the cycle is OPEN, wrote it straight to APPLIED —
+      // dropping a premium into a pool that had already been spent. Reproduced: 5,223 medical
+      // landing on top of a 6,000 claim in a 10,000 pool, 1,223 over, rendered as "Remaining 0".
+      //
+      // A share that no longer fits is held as SCHEDULED instead: the money is neither lost nor
+      // silently drawn, and the unapplied carry is visible for HR to resolve.
+      let fits = true;
+      if (c.user.status === "ACTIVE" && cycleStatus === "OPEN") {
+        const pool = await poolStateFor(
+          c.userId,
+          { id: share.cycle.id, startDate: share.cycle.start, endDate: share.cycle.end },
+          { excludeMedicalCommitmentId: c.id }
+        );
+        fits = pool.ceiling == null || share.amount <= spendable(pool);
+      }
+
       // An employee who has left never draws: the advance premium comes back from the insurer,
       // so charging a pool they no longer hold would be meaningless (matches the open path).
       const nextStatus =
         c.user.status !== "ACTIVE"
           ? ("CANCELLED" as const)
-          : cycleStatus === "OPEN"
+          : cycleStatus === "OPEN" && fits
             ? ("APPLIED" as const)
             : ("SCHEDULED" as const);
 
