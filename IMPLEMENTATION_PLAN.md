@@ -59,8 +59,10 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   Verified against throwaway Postgres: the exact reproduction, plus seven sequences (both orders,
   HR back-fill, reject→spend→reopen, walking to the ceiling, ten concurrent claims, reconcile onto a
   spent pool) all holding.
-  **Still open:** the HR *resolve* action for an over-drawn row (mockup published, awaiting sign-off,
-  including whether "raise this person's ceiling" should be Super-User-only via the spec-036 grant).
+  **Resolve action decided 2026-08-20:** the mockup's four routes are approved, and **"raise this
+  person's ceiling for the cycle" is SUPER USER ONLY** — it authorises spend past a money rule, so it
+  sits with governance, not with HR Admin. The other three routes (reduce a flexible claim,
+  remove/re-price the medical commitment, accept-and-note) stay open to HR Admin. Not yet built.
 
 - **2026-08-20 — An all-or-nothing form must show its rejection (fix, no migration).** Reported issue:
   employee edits — "specially the part time and full time thing" — silently did nothing. The edit form
@@ -79,8 +81,9 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   and the table header parks beneath them (offset measured at runtime — it changes with the
   impersonation banner and a wrapped heading). Applied to Reporting only. The registry and catalogue
   **cannot** have this: freezing their first column needs a scrollable box, and a sticky header inside
-  a box sticks to the box, not the page — comparison mockup published, recommendation is to leave them
-  as they are, **awaiting the user's choice**. A follow-up caught in review: Reporting's 860px table
+  a box sticks to the box, not the page — comparison mockup published. **Decided 2026-08-20: leave the
+  registry and the catalogue exactly as they are** (Option B); the scroll-away treatment stays limited
+  to tables that genuinely fit. A follow-up caught in review: Reporting's 860px table
   does not fit beside the sidebar below ~1180px, so it is **boxed below `xl`** (keeping the frozen
   first column every other table has) and page-scrolled from `xl` up.
 

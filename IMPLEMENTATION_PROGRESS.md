@@ -1067,13 +1067,18 @@ fault at once.
 (offset measured at runtime). Boxed below `xl` so the frozen first column every other table has is
 kept at widths where the 860px table does not fit beside the sidebar.
 
-**Open / awaiting sign-off**
-- HR resolve action for an over-drawn row — mockup published; includes whether "raise this person's
-  ceiling" should be Super-User-only via the spec-036 grant.
-- Registry + catalogue scroll treatment — comparison mockup published; recommendation is to leave
-  both as they are.
-- No test runner in the project, so all of the above was proven by scripts run and discarded. A
-  permanent regression guard around the pool rules was offered and is not yet built.
+**Decided 2026-08-20, not yet built**
+- HR resolve action for an over-drawn row — mockup approved. Four routes; **"raise this person's
+  ceiling for the cycle" is SUPER USER ONLY** (it authorises spend past a money rule), the other
+  three are open to HR Admin.
+
+**Decided 2026-08-20, no work needed**
+- Registry + catalogue keep today's boxed treatment (frozen first column). The scroll-away header
+  stays limited to tables that genuinely fit.
+
+**Still open**
+- No test runner in the project, so the pool-invariant proofs were scripts run and discarded — the
+  rule is protected by care, not by the build. A permanent regression guard has been offered.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
