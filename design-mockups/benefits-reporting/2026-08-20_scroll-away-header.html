@@ -1,0 +1,222 @@
+<title>Reporting Scroll Behaviour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy-50:#eceff5; --navy-200:#b9c4d8; --navy-500:#2f4d78; --navy-800:#0f2444; --navy-900:#0a1a30;
+    --gold-300:#e3c76b; --gold-600:#a8821e;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --serif:"Fraunces","Iowan Old Style",Palatino,Georgia,serif;
+    --sans:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); }
+
+  .note { max-width:960px; margin:0 auto; padding:28px 24px 4px; }
+  .note h2 { font-family:var(--serif); font-size:22px; margin:0 0 8px; font-weight:600; }
+  .note p { margin:0 0 14px; font-size:14px; color:var(--muted); line-height:1.6; }
+  .legend { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+  .tag { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+         padding:5px 10px; border-radius:999px; }
+  .tag.go { background:#e8f3ec; color:#256b41; border:1px solid #bcdcc8; }
+  .tag.stay { background:var(--navy-50); color:var(--navy-800); border:1px solid var(--navy-200); }
+
+  /* ── The demo frame: stands in for the browser viewport ─────────────── */
+  .frame { max-width:960px; margin:16px auto 60px; border:1px solid var(--line);
+           border-radius:14px; overflow:hidden; background:var(--surface);
+           box-shadow:0 18px 40px -28px rgba(15,36,68,.5); }
+  .framebar { display:flex; align-items:center; gap:8px; padding:9px 14px;
+              background:var(--navy-900); color:#fff; font-size:12px; font-weight:600; }
+  .framebar .dots { display:flex; gap:5px; }
+  .framebar .dots i { width:9px; height:9px; border-radius:50%; background:#3c527a; }
+
+  /* THE POINT OF THE MOCKUP: the page itself is the scroller. Nothing above
+     the table is pinned; only the table's own header row is sticky. */
+  .page { height:520px; overflow-y:auto; padding:26px 28px 0; background:var(--paper); }
+
+  .scrollaway { outline:2px dashed #6fae86; outline-offset:6px; border-radius:8px; }
+
+  .back { font-size:13px; color:var(--muted); margin-bottom:14px; }
+  .eyebrow { font-size:11px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--gold-600); }
+  h1.title { font-family:var(--serif); font-size:34px; font-weight:600; margin:4px 0 6px; }
+  .lede { font-size:14px; color:var(--muted); max-width:640px; line-height:1.6; margin:0 0 18px; }
+  .lede b { color:var(--ink); font-weight:600; }
+
+  .filters { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px; }
+  .ctl { border:1px solid var(--line); background:var(--surface); border-radius:9px;
+         padding:9px 13px; font-size:13px; color:var(--ink); }
+  .ctl.muted { color:var(--muted); }
+  .spacer { flex:1; }
+  .dl { border:1px solid var(--navy-200); border-radius:9px; padding:9px 15px;
+        font-size:13px; font-weight:700; color:var(--navy-800); background:var(--surface); }
+
+  .cards { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:20px; }
+  .card { border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 15px; }
+  .card .k { font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .card .v { font-family:var(--serif); font-size:26px; font-weight:600; margin:6px 0 4px; }
+  .card .s { font-size:11.5px; color:var(--muted); }
+
+  /* The table wrapper is NOT a scroll container — that is what lets the
+     header row stick to the page viewport instead of to an inner box. */
+  .tablewrap { border:1px solid var(--line); border-radius:12px; background:var(--surface);
+               overflow:visible; margin-bottom:0; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  thead th { position:sticky; top:0; z-index:2; background:var(--navy-800); color:#fff;
+             font-weight:700; text-align:left; padding:13px 14px; white-space:nowrap; }
+  thead th:first-child { border-top-left-radius:11px; }
+  thead th:last-child { border-top-right-radius:11px; }
+  th.num, td.num { text-align:right; }
+  tbody td { padding:13px 14px; border-bottom:1px solid var(--line); }
+  tbody tr:last-child td { border-bottom:0; }
+  .emp { font-weight:600; }
+  .dept { font-size:12px; color:var(--muted); margin-top:2px; }
+  .prorated { font-size:10px; font-weight:700; background:#f6edd4; color:#7a5f14;
+              padding:2px 7px; border-radius:999px; margin-left:7px; vertical-align:middle; }
+  .dash { color:var(--muted); }
+  .bar { width:105px; height:8px; border-radius:999px; background:var(--navy-50); overflow:hidden; }
+  .bar > i { display:block; height:100%; background:var(--navy-800); }
+  .chip { font-size:11.5px; font-weight:600; padding:4px 11px; border-radius:999px; white-space:nowrap; }
+  .chip.act { background:#e8f3ec; color:#256b41; }
+  .chip.no  { background:#eeeeea; color:var(--muted); }
+  .chip.ex  { background:#fdeaea; color:#a62828; border:1px solid #f3c4c4; }
+  tfoot td { padding:13px 14px; font-weight:700; background:var(--navy-50); }
+  .foot { font-size:12px; color:var(--muted); padding:14px 2px 30px; }
+</style>
+
+<div class="note">
+  <h2>Benefits Reporting — proposed scroll behaviour</h2>
+  <p>
+    Right now the whole page is pinned to the viewport and only the table scrolls, so the title,
+    filters and the five stat cards sit there permanently and eat roughly half the screen.
+    This mockup shows the change you asked for: <b>the page scrolls normally</b>, everything above
+    the table scrolls away, and <b>only the navy header row stays</b> — it sticks to the top of the
+    window the moment it gets there.
+  </p>
+  <div class="legend">
+    <span class="tag go">Green dashes = scrolls away</span>
+    <span class="tag stay">Navy header row = stays put</span>
+  </div>
+  <p><b>Scroll inside the frame below to see it.</b></p>
+</div>
+
+<div class="frame">
+  <div class="framebar"><span class="dots"><i></i><i></i><i></i></span><span>Benefits Reporting</span></div>
+  <div class="page">
+
+    <div class="scrollaway">
+      <div class="back">← Benefits Management</div>
+      <div class="eyebrow">Admin · Benefits</div>
+      <h1 class="title">Benefits Reporting</h1>
+      <p class="lede">
+        Where the whole company stands this cycle — computed by the same engine that enforces
+        claims, so every row matches the employee's own Benefits page. Read-only.
+        Cycle window: <b>01/07/2026 → 31/12/2026</b>.
+      </p>
+
+      <div class="filters">
+        <span class="ctl">2026 (open) ⌄</span>
+        <span class="ctl">All departments ⌄</span>
+        <span class="ctl">All statuses ⌄</span>
+        <span class="ctl muted">Search name…</span>
+        <span class="ctl muted">☐ Include leavers</span>
+        <span class="spacer"></span>
+        <span class="dl">Download Excel</span>
+      </div>
+
+      <div class="cards">
+        <div class="card"><div class="k">Pool ceilings</div><div class="v">330,500</div><div class="s">21 employees with a pool</div></div>
+        <div class="card"><div class="k">Medical charged</div><div class="v">50,950</div><div class="s">this cycle's share</div></div>
+        <div class="card"><div class="k">Flexible used</div><div class="v">6,000</div><div class="s">nothing pending</div></div>
+        <div class="card"><div class="k">Remaining</div><div class="v">275,643</div><div class="s">83% of ceilings</div></div>
+        <div class="card"><div class="k">Guaranteed paid</div><div class="v">64,500</div><div class="s">own budget — not pool</div></div>
+      </div>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Employee ▲</th><th class="num">Pool ceiling</th><th class="num">Medical</th>
+            <th class="num">Flex used</th><th class="num">Pending</th><th class="num">Remaining</th>
+            <th class="num">Guaranteed</th><th>Utilization</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><div class="emp">Ahmed Ali</div><div class="dept">Consulting</div></td>
+            <td class="num">15,000<span class="prorated">prorated</span></td><td class="num dash">—</td>
+            <td class="num dash">—</td><td class="num dash">—</td><td class="num">15,000</td>
+            <td class="num dash">—</td><td><div class="bar"><i style="width:0"></i></div></td>
+            <td><span class="chip no">No activity</span></td></tr>
+          <tr><td><div class="emp">Ahmed Galal</div><div class="dept">Consulting Department</div></td>
+            <td class="num">10,000<span class="prorated">prorated</span></td><td class="num">5,390</td>
+            <td class="num dash">—</td><td class="num dash">—</td><td class="num">4,610</td>
+            <td class="num">2,500</td><td><div class="bar"><i style="width:54%"></i></div></td>
+            <td><span class="chip act">Active</span></td></tr>
+          <tr><td><div class="emp">Alaa Allam</div><div class="dept">Consulting Department</div></td>
+            <td class="num">22,500<span class="prorated">prorated</span></td><td class="num dash">—</td>
+            <td class="num dash">—</td><td class="num dash">—</td><td class="num">22,500</td>
+            <td class="num">5,000</td><td><div class="bar"><i style="width:0"></i></div></td>
+            <td><span class="chip act">Active</span></td></tr>
+          <tr><td><div class="emp">Alaa Allam</div><div class="dept">Marketing &amp; Community</div></td>
+            <td class="num">15,000<span class="prorated">prorated</span></td><td class="num dash">—</td>
+            <td class="num dash">—</td><td class="num dash">—</td><td class="num">15,000</td>
+            <td class="num dash">—</td><td><div class="bar"><i style="width:0"></i></div></td>
+            <td><span class="chip no">No activity</span></td></tr>
+          <tr><td><div class="emp">Aley eldeen Mahmoud</div><div class="dept">Data Management Unit</div></td>
+            <td class="num">22,500<span class="prorated">prorated</span></td><td class="num">7,567</td>
+            <td class="num dash">—</td><td class="num dash">—</td><td class="num">14,933</td>
+            <td class="num">5,000</td><td><div class="bar"><i style="width:34%"></i></div></td>
+            <td><span class="chip act">Active</span></td></tr>
+          <tr><td><div class="emp">Dina Farouk</div><div class="dept">Consulting Department</div></td>
+            <td class="num">15,000<span class="prorated">prorated</span></td><td class="num">4,120</td>
+            <td class="num dash">—</td><td class="num dash">—</td><td class="num">10,880</td>
+            <td class="num">2,500</td><td><div class="bar"><i style="width:27%"></i></div></td>
+            <td><span class="chip act">Active</span></td></tr>
+          <tr><td><div class="emp">Hana Mostafa</div><div class="dept">Marketing &amp; Community</div></td>
+            <td class="num">10,000<span class="prorated">prorated</span></td><td class="num dash">—</td>
+            <td class="num dash">—</td><td class="num dash">—</td><td class="num">10,000</td>
+            <td class="num dash">—</td><td><div class="bar"><i style="width:0"></i></div></td>
+            <td><span class="chip no">No activity</span></td></tr>
+          <tr><td><div class="emp">Karim Nabil</div><div class="dept">Data Management Unit</div></td>
+            <td class="num">22,500<span class="prorated">prorated</span></td><td class="num">8,940</td>
+            <td class="num dash">—</td><td class="num dash">—</td><td class="num">13,560</td>
+            <td class="num">5,000</td><td><div class="bar"><i style="width:40%"></i></div></td>
+            <td><span class="chip act">Active</span></td></tr>
+          <tr><td><div class="emp">Mona Adel</div><div class="dept">Consulting</div></td>
+            <td class="num">15,000<span class="prorated">prorated</span></td><td class="num">6,300</td>
+            <td class="num dash">—</td><td class="num dash">—</td><td class="num">8,700</td>
+            <td class="num">2,500</td><td><div class="bar"><i style="width:42%"></i></div></td>
+            <td><span class="chip act">Active</span></td></tr>
+          <tr><td><div class="emp">Yosra El-Tobgy</div><div class="dept">Marketing &amp; Community</div></td>
+            <td class="num">10,000<span class="prorated">prorated</span></td><td class="num">6,093</td>
+            <td class="num">6,000</td><td class="num dash">—</td><td class="num">0</td>
+            <td class="num">2,500</td><td><div class="bar"><i style="width:100%"></i></div></td>
+            <td><span class="chip ex">Pool exhausted</span></td></tr>
+        </tbody>
+        <tfoot>
+          <tr><td>Total · 25 people</td><td class="num">330,500</td><td class="num">50,950</td>
+            <td class="num">6,000</td><td class="num dash">—</td><td class="num">275,643</td>
+            <td class="num">64,500</td><td>17% used</td><td></td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <p class="foot">
+      25 of 25 people shown · figures match each employee's own Benefits page (pending claims
+      already reserve pool money; guaranteed benefits never draw from the pool). Click a row for
+      the full story.
+    </p>
+  </div>
+</div>
+
+<div class="note">
+  <h2>One thing to decide for the wide tables</h2>
+  <p>
+    This works cleanly here because the nine columns fit the screen. The <b>Employees registry</b>
+    and the <b>Benefits catalogue</b> have far more columns and need to scroll sideways with a
+    frozen first column — and CSS will not let a box scroll sideways while its header sticks to
+    the <i>page</i>. Those two can have one or the other, not both. Everything above is unaffected
+    by that choice.
+  </p>
+</div>
