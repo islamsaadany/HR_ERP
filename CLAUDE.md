@@ -270,6 +270,22 @@ Before editing any UI component file, copy it to
 is the rollback point; the live file is the new version. This exists because
 prior sessions have accidentally reverted agreed-upon designs.
 
+### Running the tests
+`npm test` — the money rules. Pure-rule checks always run; the database-backed pool-invariant
+scenarios SKIP unless `TEST_DATABASE_URL` points at a disposable database whose name contains
+`test` (they TRUNCATE, and `tests/setup.ts` refuses Neon or any non-"test" database outright):
+
+```bash
+createdb hrerp_test
+TEST_DATABASE_URL="postgresql://…/hrerp_test" npx prisma db push
+TEST_DATABASE_URL="postgresql://…/hrerp_test" npm test
+```
+
+**When you touch anything in `src/lib/benefits/`, run the DB layer too**, not just the pure one —
+the ceiling bug that cost us a 2,093 overrun lived in the write paths, not the arithmetic. The
+suite is verified by sabotage: flooring `remaining`, dropping medical from `used`, and removing the
+pool limit from claim clamping each make it fail.
+
 ### Before Committing
 1. `npx tsc --noEmit` — no TypeScript errors.
 2. Review all changed files.

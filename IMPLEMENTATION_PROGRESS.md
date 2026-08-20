@@ -1076,9 +1076,14 @@ kept at widths where the 860px table does not fit beside the sidebar.
 - Registry + catalogue keep today's boxed treatment (frozen first column). The scroll-away header
   stays limited to tables that genuinely fit.
 
-**Still open**
-- No test runner in the project, so the pool-invariant proofs were scripts run and discarded — the
-  rule is protected by care, not by the build. A permanent regression guard has been offered.
+**Regression guard — built 2026-08-20**
+`npm test` (`tests/`, node:test + tsx, no new dependencies). 20 pure money-rule checks always run;
+7 database-backed invariant scenarios run when `TEST_DATABASE_URL` points at a disposable database.
+`tests/setup.ts` refuses Neon or any database whose name lacks "test", because the suite truncates.
+Verified by sabotage — flooring `remaining`, dropping medical from `used`, and removing the pool
+limit from claim clamping each make it fail. The first attempt did NOT catch the flooring bug
+(the assertion relied on `over`, which that bug neuters); assertions now compute the overrun from
+`medical + flex` against the ceiling instead.
 
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
