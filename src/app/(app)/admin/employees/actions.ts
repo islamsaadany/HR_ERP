@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, isSuperUser, canSeeSalary } from "@/lib/roles";
-import { employeeSchema } from "@/lib/validation";
+import { employeeSchema, employeeFormSchema } from "@/lib/validation";
 import { deriveTenureBand, statusFromEndDate } from "@/lib/tenure";
 
 function parseForm(formData: FormData) {
@@ -73,22 +73,28 @@ async function employeeIdLinkGuard(
 }
 
 /**
- * Turn a Zod failure into an operator-friendly message. The common trap is a
- * dependant added without a date of birth (required by the schema) — that would
- * otherwise surface as a bare "Invalid input". Falls back to the first issue's
- * own message, then a generic default.
+ * Turn a Zod failure into operator-friendly text. The common trap is a dependant added
+ * without a date of birth (required by the schema) — that would otherwise surface as a
+ * bare "Invalid input". Falls back to each issue's own message, then a generic default.
+ *
+ * Reports EVERY problem, not just the first: the form saves all-or-nothing, so naming one
+ * field at a time makes the operator re-submit once per fault to discover the next.
  */
 function friendlyError(error: import("zod").ZodError): string {
-  const depDob = error.issues.find(
-    (i) => i.path.includes("dependants") && i.path.includes("dateOfBirth")
-  );
-  if (depDob) return "Each dependant needs a date of birth.";
-  const first = error.issues[0];
-  return first?.message && first.message !== "Invalid input"
-    ? first.message
-    : first?.path.length
-    ? `Check the "${String(first.path[first.path.length - 1])}" field.`
-    : "Invalid input";
+  const messages: string[] = [];
+  const add = (m: string) => {
+    if (!messages.includes(m)) messages.push(m);
+  };
+  for (const issue of error.issues) {
+    if (issue.path.includes("dependants") && issue.path.includes("dateOfBirth")) {
+      add("Each dependant needs a date of birth.");
+    } else if (issue.message && issue.message !== "Invalid input") {
+      add(issue.message);
+    } else if (issue.path.length) {
+      add(`Check the "${String(issue.path[issue.path.length - 1])}" field.`);
+    }
+  }
+  return messages.length ? messages.join(" ") : "Invalid input";
 }
 
 export async function createEmployee(
@@ -168,7 +174,18 @@ export async function updateEmployee(
   formData: FormData
 ): Promise<ActionState> {
   const actor = await requireAdmin();
-  const parsed = employeeSchema.safeParse(parseForm(formData));
+
+  // Read the record BEFORE validating: its stored phone / national ID are passed to the
+  // schema so a legacy value the operator never touched can't block an unrelated edit
+  // (see `StoredIdentityValues` in lib/validation.ts). Changed values stay strict.
+  const current = await prisma.user.findUnique({ where: { id } });
+  if (!current) return { error: "Employee not found." };
+
+  const parsed = employeeFormSchema({
+    nationalId: current.nationalId,
+    phone: current.phone,
+    emergencyContactPhone: current.emergencyContactPhone,
+  }).safeParse(parseForm(formData));
   if (!parsed.success) {
     return { error: friendlyError(parsed.error) };
   }
@@ -178,9 +195,6 @@ export async function updateEmployee(
   if (data.dependants.filter((d) => d.kind === "SPOUSE").length > 1) {
     return { error: "Only one dependant can be the spouse." };
   }
-
-  const current = await prisma.user.findUnique({ where: { id } });
-  if (!current) return { error: "Employee not found." };
 
   // Reporting-line integrity
   if (data.reportsToId) {

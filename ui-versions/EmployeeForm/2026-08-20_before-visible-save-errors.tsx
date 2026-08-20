@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useState } from "react";
 import type { ActionState } from "@/app/(app)/admin/employees/actions";
 import { statusFromEndDate, formatYearsOfService } from "@/lib/tenure";
 import { tenureBandDisplay, STATUS_LABEL } from "@/lib/labels";
@@ -89,17 +89,6 @@ export function EmployeeForm({
   );
   const [deps, setDeps] = useState<Dep[]>(values.dependants);
   const [email, setEmail] = useState(values.email);
-
-  // A rejected save renders its reason at the TOP of a four-section form while the Save
-  // button sits at the bottom — so the operator saw the button flicker and nothing else,
-  // and read it as "the save did nothing" (reported 2026-08-20). Bring the message to
-  // them: scroll it into view and move focus to it, and let screen readers announce it.
-  const errorRef = useRef<HTMLParagraphElement>(null);
-  useEffect(() => {
-    if (!state?.error) return;
-    errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    errorRef.current?.focus();
-  }, [state]);
   const offDomain =
     email.trim() !== "" && !email.trim().toLowerCase().endsWith(`@${companyDomain.toLowerCase()}`);
 
@@ -108,12 +97,7 @@ export function EmployeeForm({
       <input type="hidden" name="dependants" value={JSON.stringify(deps)} />
 
       {state?.error ? (
-        <p
-          ref={errorRef}
-          role="alert"
-          tabIndex={-1}
-          className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 focus:outline-none"
-        >
+        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
           {state.error}
         </p>
       ) : null}
