@@ -166,11 +166,33 @@ body {
   z-index: 20;
   background: var(--color-paper);
 }
+/*
+  BELOW the width where the table fits, fall back to the boxed treatment.
+
+  Measured 2026-08-20: Reporting's table has a 860px min-width, and the content area is the
+  viewport minus the 240px sidebar and 80px of padding — so it only fits from about 1180px up.
+  Under that the page scrolled sideways and the frozen Employee column went with it (at 1024px:
+  the page scrolls 159px and the first cell moves 281 -> 122). Every other data table in the app
+  keeps its first column frozen, and Reporting should not be the exception on a smaller laptop.
+
+  So: boxed below xl (frozen column + header sticky inside the box, today's behaviour), and the
+  page-scrolled parked header from xl up, where nothing scrolls sideways and there is nothing to
+  freeze. Neither width loses anything.
+*/
+@media (max-width: 79.99rem) {
+  .ff-scroll-below-xl {
+    max-height: calc(100vh - 11rem);
+    overflow: auto;
+  }
+}
 /* Two class selectors so this always beats `.ff-data-table thead th { top: 0 }` on
    specificity rather than on source order — equal-specificity rules are a trap the next
-   person reordering this file would spring without noticing. */
-.ff-data-table.ff-parked-header thead th {
-  top: var(--ff-stickyhead, 0px);
+   person reordering this file would spring without noticing. Scoped to xl because below it
+   the header sticks inside the box, where an offset would push it down over the first row. */
+@media (min-width: 80rem) {
+  .ff-data-table.ff-parked-header thead th {
+    top: var(--ff-stickyhead, 0px);
+  }
 }
 
 /*

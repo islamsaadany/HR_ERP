@@ -239,13 +239,16 @@ export function BenefitsReportTable({
           (`ff-parked-header`) instead of scrolling inside a box. Nine columns fit, so nothing
           is lost by giving up horizontal scroll on desktop.
 
-          `overflow-x-auto md:overflow-x-visible` is load-bearing and easy to get wrong: ANY
-          non-visible overflow makes the box a scroll container (CSS computes overflow-y to auto
-          when overflow-x is not visible), and a sticky header then sticks to the BOX instead of
-          the page. Measured: with overflow-x-auto left on at desktop the header scrolled clean
-          off the top. Mobile keeps the scroll box — there is no pinned title to park under
-          there, and 860px of table has to go somewhere. */}
-      <div className="mt-4 overflow-x-auto md:overflow-x-visible rounded-xl border border-line bg-surface">
+          The overflow rule is load-bearing and easy to get wrong: ANY non-visible overflow makes
+          the box a scroll container (CSS computes overflow-y to auto when overflow-x is not
+          visible), and a sticky header then sticks to the BOX instead of the page.
+
+          `ff-scroll-below-xl` (globals.css) keeps the boxed treatment — and with it the frozen
+          Employee column — under 1280px, where this 860px-wide table does not fit beside the
+          sidebar and the page would otherwise scroll sideways with the first column in tow.
+          From xl up the table fits, nothing scrolls sideways, and the header parks under the
+          pinned title. */}
+      <div className="mt-4 ff-scroll-below-xl rounded-xl border border-line bg-surface">
         <table className="ff-data-table ff-parked-header w-full min-w-[860px] text-sm">
           <thead>
             <tr>
