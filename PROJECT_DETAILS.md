@@ -346,3 +346,47 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - **Medical premium recoveries (spec `030`, migration `048`)** — when an employee stops being active before their policy term ends, the company has already paid the insurer for cover it won't use. A `MedicalRecovery` (one per commitment, unique) becomes **Finance's to-do** at **/finance**, beneath the payments queue: the expected amount is **computed from the leave date** — `wholeMonths(dayAfter(leave) → term end) ÷ termMonths × premium` — and explicitly **NOT** the cancelled cycle charge, which understates it by any month sitting inside an already-applied charge (26,000 premium, left 30 Nov → **13,000** recoverable, not the 10,834 cancelled). Finance settles by recording what actually came back (`RECOVERED`) or writing it off with a reason (`WRITTEN_OFF`); the **shortfall** is stored so a systematically short-paying insurer becomes visible. `premiumAtCreation`/`expectedAmount` are **frozen at creation** — a later premium edit never restates a claimed figure. A missing leave date yields a row reading **"needs leave date"** rather than a computed figure. Created when a charge is cancelled at cycle open, plus an **idempotent reconcile** on Finance page load (leave dates are often recorded later). **No backfill** of pre-ship leavers.
 - **Medical policy year — per-cycle charging (spec `027`, migration `047`)** — the insurance term (**1 Jun → 31 May**) runs independently of the benefits cycle (**always Jan–Dec**), so every term straddles two cycles: 7 months (Jun–Dec) and 5 (Jan–May). A `MedicalPolicyYear` holds the term; `MedicalCommitment` is keyed to it (`(userId, policyYearId)`) rather than the plan year, so a mid-cycle renewal is a distinct commitment instead of a collision. The employee still commits **once to the whole premium**, but a `MedicalCycleCharge` per overlapping cycle is what **draws against that cycle's pool** — `floor(premium × itsMonths ÷ termMonths)`, remainder to the last cycle, so the charges sum to the premium exactly. Opening a cycle **applies** its scheduled charges automatically (`APPLIED`), or **cancels** them for a non-ACTIVE employee (`CANCELLED` — the advance premium is recovered from the insurer, so nothing is owed). A commitment with **no charges** falls back to its full premium, so pre-migration rows and an unconfigured installation behave exactly as before. Month counting for terms uses the **uncapped** `wholeMonthsBetween`; `remainingWholeMonths` stays capped at 12 and `cycleFraction` clamps to 1, because a >12-month window would otherwise hand every employee more than their ceiling.
 
+---
+
+## Pool-ceiling enforcement (2026-08-20)
+
+`src/lib/benefits/pool.ts` is the ONE place a person's cycle pool is derived: `poolCeiling` (pure —
+derived tenure band, the 6-month gate with cycle proration for banded employees and the 3-month
+medical gate for sub-6-month ones) and `poolStateFor` (ceiling, this cycle's medical charge,
+non-rejected flexible claims, and a **signed** `remaining`). The report, the claim path and every
+medical write call it; before this the ceiling was derived in three places that disagreed, and the
+loosest path is the one that pays.
+
+**The invariant:** `medical + flexible ≤ prorated ceiling`, on every write path, in every order. Nine
+paths enforce it — `commitMedical`, `recordMedicalBackfill` (and the HR amount override),
+`repriceCommitment`, `applyScheduledMedicalCharges`, `reconcileMedicalCharges`, HR Record entry
+(flexible), `flatAllocation`, `reopenClaim`, `createClaim`. **Medical is refused, never clamped** —
+you cannot part-buy insurance. **There is no HR override:** exceeding a pool is impossible through any
+path; if someone needs more, the ceiling or the grant is what changes. A carried medical charge that
+no longer fits is held **SCHEDULED** (never applied, never cancelled) so the money is neither lost nor
+silently drawn, and shows on the report as an unapplied carry.
+
+**Concurrency:** `withPoolLock(userId, fn)` — a `SELECT … FOR UPDATE` on the employee's own row inside
+a normal-isolation transaction. Serializable also stops the race but, measured, aborts writes between
+unrelated employees (1 of 6 concurrent succeeded); the row lock gives 6/6 unrelated while serialising
+the same employee.
+
+**What deliberately still creates overruns:** the ceiling *shrinking* under existing spend — lowering
+a configured ceiling, changing employment type or start date, re-dating a cycle. HR must be able to
+correct records, so these are surfaced (signed `remaining`, `OVER_POOL` chip naming the amount) rather
+than blocked.
+
+## Data-table scroll treatments
+
+Two patterns, and the choice is forced by CSS rather than taste. Freezing a first column
+(`position: sticky; left: 0`) needs the table inside a scrollable box; but a sticky header inside a
+box sticks to **the box**, not the page — so a table cannot both freeze its first column and park its
+header under a pinned page title.
+
+- **Boxed (`ff-data-scroll`)** — every wide table: registry, catalogue, directory, time-off, payments,
+  release sheet, campaign tracker, import preview. Frozen first column, header sticky within the box.
+- **Page-scrolled (`ff-sticky-id` + `ff-parked-header`)** — Benefits Reporting only, and only from
+  `xl` up, where its 860px table fits beside the sidebar. Below `xl` it falls back to boxed
+  (`ff-scroll-below-xl`) so it keeps the frozen first column like everything else. The parked offset
+  is measured at runtime by `<StickyHeaderOffset>` because it changes with the impersonation banner
+  and a wrapped heading.

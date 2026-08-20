@@ -111,6 +111,23 @@ four steering files (same commit).
 - **Aim for "engineered enough"** — not fragile, not over-abstracted. When in doubt, ask.
 - **Explicit over clever** — readable, obvious code over compact/clever solutions.
 - **Server pages people MONITOR must keep themselves live** — layouts and server pages never re-render on client-side navigation or while sitting open, so a badge/queue/tracker painted once goes stale (cost us the dead campaign badge AND the tracker showing "Pending" while the fresh Excel said "Complete"). Pattern: a poller (mount + focus + interval) hitting a small API and broadcasting a `hrerp:*` event (`DataRequestLayer`, `TimeOffBadgeSync`), or `AutoRefresh` (router.refresh on focus + 30s) for whole pages. Apply it to any new surface whose data other people change.
+- **A money ceiling must be enforced on EVERY write path, in every order** — the benefits pool was
+  guarded only on the flexible-claim path, so whether it held depended on which write happened first;
+  everything that changed the numbers afterwards (applying a carried medical charge, re-pricing,
+  back-filling, reopening a rejected claim, re-banding) wrote freely, and the report floored the
+  overdraft to zero so nobody could see it (cost us a 2,093 overrun; found 2026-08-20). Rules: derive
+  the limit in **one** place (`src/lib/benefits/pool.ts`) — three copies of one money rule means the
+  loosest one pays; keep the remaining figure **signed** so an overdraft is distinguishable from an
+  exactly-spent pool; refuse rather than clamp when a thing cannot be part-bought; hold money that no
+  longer fits (never drop it, never silently draw it); and lock **per subject** — a Serializable
+  transaction aborted unrelated employees' writes (1 of 6), a `SELECT … FOR UPDATE` on the employee's
+  own row gives 6/6 while still serialising that one person.
+- **A table cannot both freeze its first column and park its header under a pinned title** — freezing
+  needs a scrollable box, and a sticky header inside a box sticks to the box, not the page. Wide
+  tables stay boxed (`ff-data-scroll`); only a table that genuinely fits gets the page-scrolled
+  treatment, and then only at the widths where it fits (`ff-scroll-below-xl` covers the rest).
+  Any non-visible overflow makes a box a scroll container — `overflow-x: auto` alone is enough to
+  break a page-level sticky header.
 - **An all-or-nothing form must put its rejection where the eyes are** — the employee edit form validated the WHOLE record on save and rendered the reason at the top of a four-section form while Save sat at the bottom, so a legacy phone silently killed every unrelated edit and read as a dead button (cost us "part-time won't save"; found 2026-08-20). Two rules: (a) a whole-record validator must never reject over a stored value the operator didn't touch — pass the current values in and exempt unchanged ones; (b) an error banner needs `role="alert"`, `tabIndex={-1}`, and a `scrollIntoView` + `focus` effect, and must report **every** fault at once, not just the first.
 - **Never close a menu/modal from a submit button's `onClick`** — React flushes click updates synchronously, so the `<form>` unmounts before the browser dispatches `submit`; the action silently never runs ("Form submission canceled because the form is not connected" is the only clue). Dispatch first, then close — wrap the action: `action={(fd) => { dispatch(fd); setOpen(false); }}`. Cost us a shipped-but-dead bulk password action; found 2026-08-16.
 - **Benefits money & rules are server-authoritative** — every pool ceiling, 50%-per-benefit cap, and medical rule is enforced on the server at claim/commit time, never trusted from the client. (The benefit-count limit is retained but off by default — spec 018.)
@@ -269,4 +286,4 @@ prior sessions have accidentally reverted agreed-upon designs.
 
 ---
 
-*Last Updated: 2026-08-20 (Added: unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.)*
+*Last Updated: 2026-08-20 (Added: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.)*

@@ -27,6 +27,63 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ## Decisions log
 
+- **2026-08-20 — The pool ceiling is an invariant, not an ordering accident (fix, no migration).**
+  Reported issue: an employee (Yosra) ended a cycle **2,093 over** a 10,000 pool — 6,093 medical +
+  6,000 flexible — while the report showed "Remaining 0 · Pool exhausted". Two wrong diagnoses were
+  offered before the real one; the traced and **reproduced** cause is
+  `reconcileMedicalCharges`. `medicalCycleCharge` counts only charges whose status is **APPLIED for
+  this cycle**, so a commitment made in an EARLIER cycle — under a policy term reaching into this
+  one, for a cycle that had no dates at commit time and therefore got no charge row — reports **zero
+  consumption**. Her pool read as untouched and the 6,000 claim was allowed *correctly*. When HR later
+  dated the cycle, reconcile created the missing row and, because the cycle was OPEN, wrote it
+  **straight to APPLIED** — dropping a premium onto money already spent. So the medical genuinely came
+  first; only its *charge for that cycle* arrived after the claim.
+  Underneath it, one rule had **three** implementations (`report.ts`, `claim-actions.ts`,
+  `flatAllocation`) that disagreed — and the loosest one is the one that pays.
+  **Decisions taken with the user:** (a) the ceiling is enforced on **every** write path, in every
+  order; (b) medical is **refused, never clamped**, because you cannot part-buy insurance and a
+  trimmed premium would record cover nobody purchased; (c) **no HR override** — Record entry,
+  back-fill, re-price and the scheduled-charge run all refuse alike, so exceeding a pool is
+  impossible through any path (if someone needs more, the ceiling or the grant is what changes);
+  (d) existing overruns are **surfaced and resolved in-app**, not silently corrected.
+  Nine paths closed; a carried charge that no longer fits is held **SCHEDULED** rather than applied or
+  cancelled, so the money is neither lost nor silently drawn. One derivation now lives in
+  `src/lib/benefits/pool.ts`, and `remaining` is **signed** — the report used to floor it at zero,
+  which is precisely what hid the overrun.
+  **Locking:** a Serializable transaction stopped the race but, measured, also aborted writes between
+  unrelated employees (**1 of 6** succeeded concurrently). Replaced with a per-employee row lock
+  (`withPoolLock`): 6/6 unrelated employees pass, the same employee serialises to 1.
+  What deliberately stays possible is the ceiling **shrinking** under existing spend (lowering a
+  ceiling, changing employment type / start date, re-dating a cycle) — HR must be able to correct
+  records, so those are surfaced on the report rather than blocked.
+  Verified against throwaway Postgres: the exact reproduction, plus seven sequences (both orders,
+  HR back-fill, reject→spend→reopen, walking to the ceiling, ten concurrent claims, reconcile onto a
+  spent pool) all holding.
+  **Still open:** the HR *resolve* action for an over-drawn row (mockup published, awaiting sign-off,
+  including whether "raise this person's ceiling" should be Super-User-only via the spec-036 grant).
+
+- **2026-08-20 — An all-or-nothing form must show its rejection (fix, no migration).** Reported issue:
+  employee edits — "specially the part time and full time thing" — silently did nothing. The edit form
+  validates the **whole** record on save, and the strict identity rules added 2026-08-17 reject values
+  **already stored**: migration `053` deliberately left un-parseable legacy phones in place and
+  `PhoneInput` re-submits a stored value verbatim, so the form re-sent it and was rejected every time,
+  permanently unsavable. The reason rendered at the top of a four-section form while Save sat at the
+  bottom, with no scroll, focus or `aria-live` — it read as a dead button. **Decision (user's choice of
+  two):** a value **identical to what is already stored** passes; anything actually changed stays
+  strict, as do create, the inline grid edits, the importer and the self-service fields. The banner is
+  now `role="alert"`, scrolled to and focused, and reports **every** fault at once.
+
+- **2026-08-20 — Benefits Reporting scrolls; the registry does not (UI, mockup-approved).** The
+  single-scroll shell pinned the whole page, so the title, filters and five stat cards ate half the
+  viewport permanently. **Decision:** the page scrolls, the **back link + eyebrow + title stay pinned**,
+  and the table header parks beneath them (offset measured at runtime — it changes with the
+  impersonation banner and a wrapped heading). Applied to Reporting only. The registry and catalogue
+  **cannot** have this: freezing their first column needs a scrollable box, and a sticky header inside
+  a box sticks to the box, not the page — comparison mockup published, recommendation is to leave them
+  as they are, **awaiting the user's choice**. A follow-up caught in review: Reporting's 860px table
+  does not fit beside the sidebar below ~1180px, so it is **boxed below `xl`** (keeping the frozen
+  first column every other table has) and page-scrolled from `xl` up.
+
 ### Spec 037 — Official holidays & vacation notifications (aligned 2026-08-19)
 - **Fetch source**: Nager.Date, **suggestion-only** — nothing stored without HR confirming, so a
   wrong prediction can never reach working-day counting. (The source does **not** list Eid al-Fitr

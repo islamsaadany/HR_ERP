@@ -1036,10 +1036,49 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     answer wins; tracker shows Corrected; Cancel restores the chip). 14/14 production checks
     including the exact reported scenario.
 
+## 2026-08-20 — Pool-ceiling invariant + employee-form save fix (shipped, no migration)
+
+**Pool ceiling — nine write paths closed.** An employee finished a cycle 2,093 over a 10,000 pool
+and the report rendered it as "Remaining 0 · Pool exhausted". Traced and reproduced: a medical
+commitment made in an earlier cycle leaves no charge row for a cycle that was undated at commit
+time, `medicalCycleCharge` counts only APPLIED rows, so the pool read as untouched and the claim was
+allowed correctly — then `reconcileMedicalCharges` created the missing row straight to APPLIED.
+- ONE derivation of the ceiling and the balance, `src/lib/benefits/pool.ts`, used by the report, the
+  claim path and every medical write. Previously three, and they disagreed. Proven equivalent to the
+  report's previous maths across 162 employee/window/config combinations.
+- Guarded: `commitMedical`, `recordMedicalBackfill` (+ HR amount override), `repriceCommitment`,
+  `applyScheduledMedicalCharges`, `reconcileMedicalCharges`, HR Record entry (flexible),
+  `flatAllocation`, `reopenClaim`, `createClaim`. Medical is refused, never clamped; a carried charge
+  that no longer fits stays SCHEDULED rather than being applied or cancelled.
+- `remaining` is now **signed**; the report gained an `OVER_POOL` chip naming the amount.
+- Concurrency: per-employee row lock (`withPoolLock`). A Serializable transaction also worked but
+  aborted unrelated employees' writes (1 of 6 concurrent); the row lock gives 6/6 unrelated and
+  serialises the same employee to 1.
+- Verified against throwaway Postgres: the exact reproduction (before 11,223/10,000 — after held),
+  plus seven sequences covering both orders, HR back-fill, reject→spend→reopen, walking to the
+  ceiling, ten concurrent claims and reconcile onto a spent pool.
+
+**Employee form.** A legacy phone or national ID nobody had touched made the whole record unsavable
+(employment type included) with the reason rendered off-screen. An unchanged stored value now passes;
+changed values stay strict everywhere; the banner is announced, scrolled to, focused, and lists every
+fault at once.
+
+**Benefits Reporting scroll.** Page scrolls, title stays pinned, table header parks beneath it
+(offset measured at runtime). Boxed below `xl` so the frozen first column every other table has is
+kept at widths where the 860px table does not fit beside the sidebar.
+
+**Open / awaiting sign-off**
+- HR resolve action for an over-drawn row — mockup published; includes whether "raise this person's
+  ceiling" should be Super-User-only via the spec-036 grant.
+- Registry + catalogue scroll treatment — comparison mockup published; recommendation is to leave
+  both as they are.
+- No test runner in the project, so all of the above was proven by scripts run and discarded. A
+  permanent regression guard around the pool rules was offered and is not yet built.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-08-19 — Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*
+*Last Updated: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*
