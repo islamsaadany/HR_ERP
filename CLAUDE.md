@@ -270,21 +270,22 @@ Before editing any UI component file, copy it to
 is the rollback point; the live file is the new version. This exists because
 prior sessions have accidentally reverted agreed-upon designs.
 
-### Running the tests
-`npm test` — the money rules. Pure-rule checks always run; the database-backed pool-invariant
-scenarios SKIP unless `TEST_DATABASE_URL` points at a disposable database whose name contains
-`test` (they TRUNCATE, and `tests/setup.ts` refuses Neon or any non-"test" database outright):
+### `npm test` — a tool, not a routine
+There is **no testing regime here and none is wanted**: nothing runs on a schedule, nothing gates a
+deploy, and no session is obliged to run anything. What protects the money rules is structural —
+ONE derivation of the pool ceiling (`src/lib/benefits/pool.ts`), the guards on each write path, and
+the per-employee lock. Those hold without anybody remembering anything, which is the point.
+
+`npm test` exists for the one moment it earns its keep: you are changing benefits code and want to
+know whether the ceiling still holds. Reach for it then; ignore it otherwise. The database-backed
+half skips unless `TEST_DATABASE_URL` points at a disposable database whose name contains `test`
+(it TRUNCATEs, and `tests/setup.ts` refuses Neon outright):
 
 ```bash
 createdb hrerp_test
 TEST_DATABASE_URL="postgresql://…/hrerp_test" npx prisma db push
 TEST_DATABASE_URL="postgresql://…/hrerp_test" npm test
 ```
-
-**When you touch anything in `src/lib/benefits/`, run the DB layer too**, not just the pure one —
-the ceiling bug that cost us a 2,093 overrun lived in the write paths, not the arithmetic. The
-suite is verified by sabotage: flooring `remaining`, dropping medical from `used`, and removing the
-pool limit from claim clamping each make it fail.
 
 ### Before Committing
 1. `npx tsc --noEmit` — no TypeScript errors.
@@ -302,4 +303,4 @@ pool limit from claim clamping each make it fail.
 
 ---
 
-*Last Updated: 2026-08-20 (Added: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.)*
+*Last Updated: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.)*

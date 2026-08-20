@@ -1079,7 +1079,11 @@ applying it twice from scratch. 6 new tests (33 total, all passing).
 - Registry + catalogue keep today's boxed treatment (frozen first column). The scroll-away header
   stays limited to tables that genuinely fit.
 
-**Regression guard — built 2026-08-20**
+**Regression guard — built 2026-08-20 (a tool, not a routine)**
+No testing regime: nothing scheduled, nothing gating a deploy, no standing obligation on any session.
+What prevents recurrence is structural — one derivation of the ceiling, the guards on each write
+path, the per-employee lock. `npm test` is there for the moment someone is editing benefits code.
+
 `npm test` (`tests/`, node:test + tsx, no new dependencies). 20 pure money-rule checks always run;
 7 database-backed invariant scenarios run when `TEST_DATABASE_URL` points at a disposable database.
 `tests/setup.ts` refuses Neon or any database whose name lacks "test", because the suite truncates.
