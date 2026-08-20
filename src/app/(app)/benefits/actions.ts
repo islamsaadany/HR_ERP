@@ -9,7 +9,7 @@ import { classifyEligibility, prorate } from "@/lib/benefits/proration";
 import { splitPremium } from "@/lib/benefits/policy-year";
 import { sumMedicalPremium, proratedPremiumEGP, type PricedPerson } from "@/lib/benefits/rates";
 import { deriveTenureBand } from "@/lib/tenure";
-import { poolStateFor, spendable } from "@/lib/benefits/pool";
+import { poolStateFor, spendable, withPoolLock } from "@/lib/benefits/pool";
 
 /** Medical insurance unlocks at 3 months of service (spec 019), before the 6-month basket. */
 const MEDICAL_THRESHOLD_MONTHS = 3;
@@ -134,6 +134,8 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
   // every time, silently, and the report floored the overdraft to zero so nobody saw it.
   // Medical is refused rather than clamped because you cannot part-buy insurance — a premium
   // trimmed to fit would record cover that was never purchased.
+  // Read the pool for the message below; the AUTHORITATIVE check is re-run inside the lock
+  // with the write, so a claim landing in between cannot slip past it.
   const pool = await poolStateFor(me.id, planYear);
   const free = spendable(pool);
   if (pool.ceiling != null && premium > free) {
@@ -196,7 +198,16 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
         }))
       : [{ planYearId: planYear.id, amount: premium, overlapMonths: 0 }];
 
-  await prisma.medicalCommitment.create({
+  let raced = false;
+  await withPoolLock(me.id, async (tx) => {
+    // Same reason as the claim path: a flexible claim submitted while this modal was open
+    // would otherwise be invisible to the check above.
+    const live = await poolStateFor(me.id, planYear, { db: tx });
+    if (live.ceiling != null && premium > spendable(live)) {
+      raced = true;
+      return;
+    }
+    await tx.medicalCommitment.create({
     data: {
       userId: me.id,
       planYearId: planYear.id,
@@ -219,7 +230,16 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
           }
         : {}),
     },
+    });
   });
+
+  if (raced) {
+    return {
+      ok: false,
+      errors: ["Your pool changed while you were choosing cover — refresh and try again."],
+      warnings: [],
+    };
+  }
 
   revalidatePath("/benefits");
   revalidatePath("/dashboard");

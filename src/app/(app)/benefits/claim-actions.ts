@@ -16,7 +16,7 @@ import {
   medicalCycleCharge,
 } from "@/lib/benefits/config";
 import { tracker } from "@/lib/benefits/claims";
-import { poolStateFor, spendable } from "@/lib/benefits/pool";
+import { poolStateFor, spendable, withPoolLock } from "@/lib/benefits/pool";
 import { evaluateClaim, type AllowanceContext } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate, poolCycleFraction } from "@/lib/benefits/proration";
 import { deriveTenureBand } from "@/lib/tenure";
@@ -45,9 +45,9 @@ export async function createClaim(formData: FormData): Promise<ClaimResult> {
     return { ok: true };
   } catch (e) {
     if (e instanceof ClaimError) return { ok: false, error: e.message };
-    // P2034 = the Serializable write conflict that stops two simultaneous claims from both
-    // spending the same pool money. It means the guard did its job, so the employee gets a
-    // "try again" rather than a 500 — most often it is a double-clicked Submit.
+    // P2034 = a write conflict / deadlock. `withPoolLock` makes this rare (it serialises on the
+    // employee's own row rather than taking database-wide predicate locks), but a lock-wait
+    // timeout under a double-clicked Submit can still surface here — as a "try again", not a 500.
     if (typeof e === "object" && e !== null && (e as { code?: string }).code === "P2034") {
       return {
         ok: false,
@@ -295,36 +295,33 @@ async function createClaimImpl(formData: FormData): Promise<void> {
   //
   // Only flexible claims draw on the pool; guaranteed benefits are paid from their own budget
   // and are bounded by their allocation further up.
-  await prisma.$transaction(
-    async (tx) => {
-      if (link.catalogItemId) {
-        const pool = await poolStateFor(me.id, planYear, { db: tx });
-        const free = spendable(pool);
-        if (pool.ceiling != null && claimAmount > free) {
-          fail(
-            free > 0
-              ? `Your pool moved while you were filling this in — only ${formatEGP(free)} is left, so this claim can't go through as entered. Refresh and try again.`
-              : "Your pool is fully used — contact HR."
-          );
-        }
+  await withPoolLock(me.id, async (tx) => {
+    if (link.catalogItemId) {
+      const pool = await poolStateFor(me.id, planYear, { db: tx });
+      const free = spendable(pool);
+      if (pool.ceiling != null && claimAmount > free) {
+        fail(
+          free > 0
+            ? `Your pool moved while you were filling this in — only ${formatEGP(free)} is left, so this claim can't go through as entered. Refresh and try again.`
+            : "Your pool is fully used — contact HR."
+        );
       }
-      await tx.benefitClaim.create({
-        data: {
-          userId: me.id,
-          planYearId: planYear.id,
-          guaranteedBenefitId: link.guaranteedBenefitId ?? null,
-          catalogItemId: link.catalogItemId ?? null,
-          amount: claimAmount,
-          fullCost: receiptCost,
-          note,
-          proofUrl,
-          proofName,
-          status: "SUBMITTED",
-        },
-      });
-    },
-    { isolationLevel: "Serializable" }
-  );
+    }
+    await tx.benefitClaim.create({
+      data: {
+        userId: me.id,
+        planYearId: planYear.id,
+        guaranteedBenefitId: link.guaranteedBenefitId ?? null,
+        catalogItemId: link.catalogItemId ?? null,
+        amount: claimAmount,
+        fullCost: receiptCost,
+        note,
+        proofUrl,
+        proofName,
+        status: "SUBMITTED",
+      },
+    });
+  });
 
   // Notify the HR inbox that a new claim awaits review (fire-and-forget; inert if
   // email is off/unconfigured, and never blocks the claim that was just saved).

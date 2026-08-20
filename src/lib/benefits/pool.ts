@@ -121,6 +121,34 @@ export function spendable(state: PoolState): number {
 }
 
 /**
+ * Run a pool-spending write with THIS employee's pool held still.
+ *
+ * A read-then-write on money needs the read and the write to be one atomic step, or two
+ * simultaneous claims each see the same free pool and both spend it. The obvious reach is a
+ * Serializable transaction — and it does stop the race, but measured against a real Postgres it
+ * also aborts writes for people who have nothing to do with each other: six DIFFERENT employees
+ * claiming at the same moment produced five "write conflict" failures and one success, because
+ * SSI predicate locks span far more than the rows this actually cares about. In production that
+ * is most claims bouncing whenever the module is busy.
+ *
+ * A row lock on the employee gives exactly the granularity the invariant needs: claims by the
+ * same person serialize, claims by different people never meet. Read-committed is then safe —
+ * the lock is what orders them, and each statement after it sees the previous holder's commit.
+ */
+export async function withPoolLock<T>(
+  userId: string,
+  fn: (tx: Prisma.TransactionClient) => Promise<T>
+): Promise<T> {
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
+      return fn(tx);
+    },
+    { timeout: 15000 }
+  );
+}
+
+/**
  * Read one employee's live pool position for a cycle.
  *
  * `excludeMedicalCommitmentId` lets a RE-PRICE measure itself: the commitment being re-priced is
