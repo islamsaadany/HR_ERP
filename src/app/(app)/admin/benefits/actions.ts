@@ -5,8 +5,10 @@ import { reconcileMedicalCharges } from "@/lib/benefits/reconcile";
 import { redirect } from "next/navigation";
 import type { ClaimType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { formatEGP } from "@/lib/labels";
 import { requireAdmin } from "@/lib/roles";
 import { getMedicalRateBands, poolCeilingFor } from "@/lib/benefits/config";
+import { poolStateFor, spendable } from "@/lib/benefits/pool";
 import { deriveTenureBand } from "@/lib/tenure";
 import { sumMedicalPremium, type PricedPerson } from "@/lib/benefits/rates";
 import { getNotificationSettings } from "@/lib/notifications/settings";
@@ -39,11 +41,36 @@ function parseDate(raw: FormDataEntryValue | null): Date | null {
 async function applyScheduledMedicalCharges(planYearId: string): Promise<void> {
   const scheduled = await prisma.medicalCycleCharge.findMany({
     where: { planYearId, status: "SCHEDULED" },
-    select: { id: true, commitment: { select: { user: { select: { status: true } } } } },
+    select: {
+      id: true,
+      amount: true,
+      commitment: { select: { id: true, userId: true, user: { select: { status: true } } } },
+    },
   });
   if (scheduled.length === 0) return;
 
-  const toApply = scheduled.filter((c) => c.commitment.user.status === "ACTIVE").map((c) => c.id);
+  const planYear = await prisma.planYear.findUnique({
+    where: { id: planYearId },
+    select: { id: true, startDate: true, endDate: true },
+  });
+
+  // A carried-forward charge is real money landing in a pool that may already be spoken for.
+  // This was a bare updateMany with no check at all, so opening a cycle could push someone
+  // straight past their ceiling before they had done anything (2026-08-20). A charge that
+  // doesn't fit STAYS SCHEDULED — never cancelled, never silently applied — and shows up on
+  // the report as an unapplied carry for HR to resolve. Dropping it would lose the money.
+  const overrun = new Set<string>();
+  if (planYear) {
+    for (const charge of scheduled) {
+      if (charge.commitment.user.status !== "ACTIVE") continue;
+      const pool = await poolStateFor(charge.commitment.userId, planYear);
+      if (pool.ceiling != null && charge.amount > spendable(pool)) overrun.add(charge.id);
+    }
+  }
+
+  const toApply = scheduled
+    .filter((c) => c.commitment.user.status === "ACTIVE" && !overrun.has(c.id))
+    .map((c) => c.id);
   const toCancel = scheduled.filter((c) => c.commitment.user.status !== "ACTIVE").map((c) => c.id);
 
   if (toApply.length > 0) {
@@ -229,6 +256,31 @@ async function repriceCommitment(
   const people: PricedPerson[] = [{ dob: commitment.user.dateOfBirth }, ...covered.map((d) => ({ dob: d.dateOfBirth }))];
   const { annualEGP, lines } = sumMedicalPremium(people, bands, new Date());
   const premium = Math.min(annualEGP, ceilingAmount);
+
+  // A re-price must respect the ceiling like every other medical write (2026-08-20) — it used
+  // to compare against the bare ceiling and ignore flexible claims entirely, so re-pricing was
+  // a way to walk someone past their pool without touching a claim.
+  //
+  // `excludeMedicalCommitmentId` is load-bearing: this commitment's own charge is already in the
+  // pool, so measuring against it un-excluded would refuse even a re-price that LOWERS the premium.
+  const planYear = await prisma.planYear.findUnique({
+    where: { id: commitment.planYearId },
+    select: { id: true, startDate: true, endDate: true },
+  });
+  if (planYear) {
+    const pool = await poolStateFor(commitment.userId, planYear, {
+      excludeMedicalCommitmentId: commitment.id,
+    });
+    const free = spendable(pool);
+    if (pool.ceiling != null && premium > free) {
+      return {
+        ok: false,
+        reason:
+          `the new premium (${formatEGP(premium)}) would exceed their remaining pool ` +
+          `(${formatEGP(free)} of ${formatEGP(pool.ceiling)}, with ${formatEGP(pool.flex)} in flexible claims)`,
+      };
+    }
+  }
 
   const coveredPeople = [
     { dependantId: null as string | null, label: commitment.user.name ?? "Employee", ageAtCommit: lines[0].ageAtCommit, premiumEGP: lines[0].premiumEGP },
@@ -477,6 +529,31 @@ export async function reopenClaim(formData: FormData): Promise<void> {
   // Only a rejection can be overturned. Anything else is already live in the flow (or paid),
   // and a race with another admin is a no-op, not an error — same posture as approveOne.
   if (!claim || claim.status !== "REJECTED") return;
+
+  // A REJECTED claim consumes nothing (the pool queries all filter `status: { not: "REJECTED" }`),
+  // so reopening one puts its amount BACK into the pool. Between the rejection and the reopen the
+  // employee may have spent that money elsewhere — so this has to be re-checked, not assumed
+  // (2026-08-20). Guaranteed claims are paid from their own budget and never touch the pool.
+  if (claim.catalogItemId) {
+    const planYear = await prisma.planYear.findUnique({
+      where: { id: claim.planYearId },
+      select: { id: true, startDate: true, endDate: true },
+    });
+    if (planYear) {
+      const pool = await poolStateFor(claim.userId, planYear);
+      const free = spendable(pool);
+      if (pool.ceiling != null && claim.amount > free) {
+        redirect(
+          "/admin/benefits?error=" +
+            encodeURIComponent(
+              `Can't reopen this claim: ${claim.user.name ?? "the employee"} has only ${formatEGP(free)} left ` +
+                `of their ${formatEGP(pool.ceiling)} pool and the claim is ${formatEGP(claim.amount)}. ` +
+                `They've spent it elsewhere since it was declined.`
+            )
+        );
+      }
+    }
+  }
 
   const wasRejectedFor = claim.decisionNote?.trim();
   const trail =

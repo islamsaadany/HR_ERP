@@ -16,6 +16,7 @@ import {
   medicalCycleCharge,
 } from "@/lib/benefits/config";
 import { tracker } from "@/lib/benefits/claims";
+import { poolStateFor, spendable } from "@/lib/benefits/pool";
 import { evaluateClaim, type AllowanceContext } from "@/lib/benefits/rules";
 import { classifyEligibility, prorate, poolCycleFraction } from "@/lib/benefits/proration";
 import { deriveTenureBand } from "@/lib/tenure";
@@ -44,6 +45,15 @@ export async function createClaim(formData: FormData): Promise<ClaimResult> {
     return { ok: true };
   } catch (e) {
     if (e instanceof ClaimError) return { ok: false, error: e.message };
+    // P2034 = the Serializable write conflict that stops two simultaneous claims from both
+    // spending the same pool money. It means the guard did its job, so the employee gets a
+    // "try again" rather than a 500 — most often it is a double-clicked Submit.
+    if (typeof e === "object" && e !== null && (e as { code?: string }).code === "P2034") {
+      return {
+        ok: false,
+        error: "Another claim of yours was being saved at the same moment. Nothing was lost — check your claims, and re-submit this one if it isn't there.",
+      };
+    }
     throw e; // real errors (incl. auth redirects) propagate as before
   }
 }
@@ -278,20 +288,43 @@ async function createClaimImpl(formData: FormData): Promise<void> {
     }
   }
 
-  await prisma.benefitClaim.create({
-    data: {
-      userId: me.id,
-      planYearId: planYear.id,
-      guaranteedBenefitId: link.guaranteedBenefitId ?? null,
-      catalogItemId: link.catalogItemId ?? null,
-      amount: claimAmount,
-      fullCost: receiptCost,
-      note,
-      proofUrl,
-      proofName,
-      status: "SUBMITTED",
+  // Everything above computed `claimAmount` from a pool read that is now seconds old. Two
+  // submissions racing each other both read the same free pool and both passed the check —
+  // there was no transaction and no lock anywhere on this path (2026-08-20). The pool is
+  // re-read INSIDE the write transaction, at Serializable, so the second one loses.
+  //
+  // Only flexible claims draw on the pool; guaranteed benefits are paid from their own budget
+  // and are bounded by their allocation further up.
+  await prisma.$transaction(
+    async (tx) => {
+      if (link.catalogItemId) {
+        const pool = await poolStateFor(me.id, planYear, { db: tx });
+        const free = spendable(pool);
+        if (pool.ceiling != null && claimAmount > free) {
+          fail(
+            free > 0
+              ? `Your pool moved while you were filling this in — only ${formatEGP(free)} is left, so this claim can't go through as entered. Refresh and try again.`
+              : "Your pool is fully used — contact HR."
+          );
+        }
+      }
+      await tx.benefitClaim.create({
+        data: {
+          userId: me.id,
+          planYearId: planYear.id,
+          guaranteedBenefitId: link.guaranteedBenefitId ?? null,
+          catalogItemId: link.catalogItemId ?? null,
+          amount: claimAmount,
+          fullCost: receiptCost,
+          note,
+          proofUrl,
+          proofName,
+          status: "SUBMITTED",
+        },
+      });
     },
-  });
+    { isolationLevel: "Serializable" }
+  );
 
   // Notify the HR inbox that a new claim awaits review (fire-and-forget; inert if
   // email is off/unconfigured, and never blocks the claim that was just saved).

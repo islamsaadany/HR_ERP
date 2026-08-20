@@ -13,6 +13,7 @@ const CHIP_TEXT: Record<ReportChip, string> = {
   ACTIVE: "Active",
   PENDING: "Pending review",
   EXHAUSTED: "Pool exhausted",
+  OVER_POOL: "Over pool",
 };
 const CHIP_COLOR: Record<ReportChip, string> = {
   ACTIVE: "FF1C7C37",
@@ -20,6 +21,7 @@ const CHIP_COLOR: Record<ReportChip, string> = {
   NO_ACTIVITY: "FF5C6B7A",
   NO_POOL: "FF5C6B7A",
   EXHAUSTED: "FFB91C1C",
+  OVER_POOL: "FFB91C1C",
 };
 
 /**

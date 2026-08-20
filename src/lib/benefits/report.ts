@@ -23,11 +23,19 @@ import {
   cycleWholeMonths,
 } from "@/lib/benefits/proration";
 import { flexCap } from "@/lib/benefits/rules";
+import { poolCeiling } from "@/lib/benefits/pool";
 import { deriveTenureBand } from "@/lib/tenure";
 import { EMPLOYMENT_TYPE_LABEL, TENURE_BAND_LABEL, formatDate } from "@/lib/labels";
 
 /** Status chip per person (FR-005). */
-export type ReportChip = "NO_POOL" | "NO_ACTIVITY" | "ACTIVE" | "PENDING" | "EXHAUSTED";
+export type ReportChip =
+  | "NO_POOL"
+  | "NO_ACTIVITY"
+  | "ACTIVE"
+  | "PENDING"
+  | "EXHAUSTED"
+  /** Past the ceiling — money already spent that the pool cannot cover (2026-08-20). */
+  | "OVER_POOL";
 
 export type ReportClaim = {
   id: string;
@@ -203,46 +211,22 @@ export async function cycleReport(planYearId: string): Promise<CycleReport | nul
 
     const band = deriveTenureBand(u.startDate).band;
 
-    // ── Ceiling, exactly as the employee's page derives it ──────────────────
-    // Banded employees: cycle-length proration on the 6-month gate. Sub-6-month
-    // employees (no band yet): the medical-only view's ceiling — the entry-tier
-    // amount at the 3-month mid-joiner fraction.
-    let ceiling: number | null = null;
-    let proratedFrom: number | null = null;
-    let noPoolReason: string | null = null;
-    let contract = "—";
-    if (!u.employmentType) {
-      noPoolReason = "no employment type set";
-    } else if (!hasKnownStartDate(u.startDate)) {
-      contract = EMPLOYMENT_TYPE_LABEL[u.employmentType];
-      noPoolReason = "no start date on file";
-    } else if (band) {
-      contract = `${EMPLOYMENT_TYPE_LABEL[u.employmentType]} · ${TENURE_BAND_LABEL[band]}`;
-      const annual = ceilingFor(u.employmentType, band);
-      if (annual == null) {
-        noPoolReason = "no pool ceiling configured";
-      } else {
-        const fraction = poolCycleFraction(classifyEligibility(u.startDate, 6, window), window);
-        if (fraction <= 0) {
-          noPoolReason = "not yet benefits-eligible";
-        } else {
-          ceiling = prorate(annual, fraction);
-          if (fraction < 1) proratedFrom = annual;
-        }
-      }
-    } else {
-      contract = `${EMPLOYMENT_TYPE_LABEL[u.employmentType]} · Under 6 months`;
-      const entry = ceilingFor(u.employmentType, "BAND_6MO_2Y");
-      const medEligibility = classifyEligibility(u.startDate, 3, window);
-      if (entry == null) {
-        noPoolReason = "no pool ceiling configured";
-      } else if (medEligibility.status === "NOT_YET") {
-        noPoolReason = "under 3 months — nothing unlocked yet";
-      } else {
-        ceiling = prorate(entry, medEligibility.fraction);
-        if (medEligibility.fraction < 1) proratedFrom = entry;
-      }
-    }
+    // ── Ceiling ────────────────────────────────────────────────────────────
+    // Derived by `poolCeiling`, the SAME function the claim path and every medical
+    // write now call (2026-08-20). It used to be re-derived here, and the copies had
+    // drifted — which is how an employee could be paid more than the report said they
+    // had. The contract label is presentation, so it stays here.
+    const derived = poolCeiling(u, ceilingFor, window);
+    const ceiling = derived.ceiling;
+    const proratedFrom = derived.proratedFrom;
+    const noPoolReason: string | null = derived.reason;
+    const contract = !u.employmentType
+      ? "—"
+      : band
+        ? `${EMPLOYMENT_TYPE_LABEL[u.employmentType]} · ${TENURE_BAND_LABEL[band]}`
+        : hasKnownStartDate(u.startDate)
+          ? `${EMPLOYMENT_TYPE_LABEL[u.employmentType]} · Under 6 months`
+          : EMPLOYMENT_TYPE_LABEL[u.employmentType];
 
     // ── Usage, split exactly as the engine splits it ────────────────────────
     let flexUsed = 0;
@@ -265,20 +249,27 @@ export async function cycleReport(planYearId: string): Promise<CycleReport | nul
 
     const medical = medicalCycleCharge(commitment, planYearId);
     const used = medical + flexUsed;
-    const remaining = ceiling != null ? Math.max(0, ceiling - used) : null;
+    // SIGNED, deliberately (2026-08-20). This was `Math.max(0, …)`, so an employee 2,093
+    // past their ceiling rendered identically to one who had spent it to the penny — the
+    // overruns were real in the database and invisible on the page that exists to find them.
+    const remaining = ceiling != null ? ceiling - used : null;
     const utilization = ceiling != null && ceiling > 0 ? used / ceiling : null;
 
     const anyActivity = used > 0 || guaranteedTotal > 0;
     const chip: ReportChip =
       ceiling == null
         ? "NO_POOL"
-        : pendingCount > 0
-          ? "PENDING"
-          : remaining === 0 && ceiling > 0
-            ? "EXHAUSTED"
-            : anyActivity
-              ? "ACTIVE"
-              : "NO_ACTIVITY";
+        : // Over the ceiling outranks a pending claim: it is a number someone has to act on,
+          // not a queue state that will resolve itself.
+          remaining != null && remaining < 0
+          ? "OVER_POOL"
+          : pendingCount > 0
+            ? "PENDING"
+            : remaining === 0 && ceiling > 0
+              ? "EXHAUSTED"
+              : anyActivity
+                ? "ACTIVE"
+                : "NO_ACTIVITY";
 
     // ── Popup detail ────────────────────────────────────────────────────────
     const term = commitment?.policyYearId ? termById.get(commitment.policyYearId) : null;

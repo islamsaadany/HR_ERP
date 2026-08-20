@@ -9,6 +9,7 @@ import { classifyEligibility, prorate } from "@/lib/benefits/proration";
 import { splitPremium } from "@/lib/benefits/policy-year";
 import { sumMedicalPremium, proratedPremiumEGP, type PricedPerson } from "@/lib/benefits/rates";
 import { deriveTenureBand } from "@/lib/tenure";
+import { poolStateFor, spendable } from "@/lib/benefits/pool";
 
 /** Medical insurance unlocks at 3 months of service (spec 019), before the 6-month basket. */
 const MEDICAL_THRESHOLD_MONTHS = 3;
@@ -126,6 +127,26 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
   const proratedCeiling = prorate(ceilingAmount, medicalEligibility.fraction);
   const proratedPremium = proratedPremiumEGP(annualEGP, medicalEligibility.fraction);
   const premium = Math.min(proratedPremium, proratedCeiling);
+
+  // THE CEILING IS AN INVARIANT, NOT AN ORDERING ACCIDENT (2026-08-20).
+  // This used to cap the premium at the WHOLE ceiling and never look at flexible claims, so
+  // whether the pool held depended purely on which came first: claim-then-medical overran it
+  // every time, silently, and the report floored the overdraft to zero so nobody saw it.
+  // Medical is refused rather than clamped because you cannot part-buy insurance — a premium
+  // trimmed to fit would record cover that was never purchased.
+  const pool = await poolStateFor(me.id, planYear);
+  const free = spendable(pool);
+  if (pool.ceiling != null && premium > free) {
+    return {
+      ok: false,
+      errors: [
+        pool.used > 0
+          ? `Your pool can't cover this premium. The cover you've chosen costs ${formatEGP(premium)}, but you have ${formatEGP(free)} left of your ${formatEGP(pool.ceiling)} pool — you've already used ${formatEGP(pool.used)}. Contact HR.`
+          : `Your medical premium of ${formatEGP(premium)} is more than your ${formatEGP(pool.ceiling)} pool. Contact HR.`,
+      ],
+      warnings: [],
+    };
+  }
 
   const warnings: string[] = [];
   if (proratedPremium > proratedCeiling) {

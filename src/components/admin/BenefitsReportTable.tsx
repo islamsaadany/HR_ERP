@@ -19,6 +19,8 @@ const CHIP_CLASS: Record<ReportChip, string> = {
   NO_ACTIVITY: "border border-line bg-paper text-muted",
   NO_POOL: "border border-line bg-paper text-muted",
   EXHAUSTED: "border border-red-200 bg-red-50 text-red-700",
+  // Over the ceiling is a stronger state than exhausted — solid, not tinted.
+  OVER_POOL: "border border-red-300 bg-red-100 font-semibold text-red-800",
 };
 
 function chipLabel(r: ReportRow): string {
@@ -33,6 +35,10 @@ function chipLabel(r: ReportRow): string {
       return `Pending review (${r.pendingCount})`;
     case "EXHAUSTED":
       return "Pool exhausted";
+    case "OVER_POOL":
+      // Name the size of the hole, not just its existence — "over pool" alone sends the
+      // operator hunting for the number that is already right here.
+      return `Over pool by ${formatNumber(Math.abs(r.remaining ?? 0))}`;
   }
 }
 

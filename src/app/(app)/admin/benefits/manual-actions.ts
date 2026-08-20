@@ -15,6 +15,7 @@ import {
   planYearWindow,
 } from "@/lib/benefits/config";
 import { flexCap } from "@/lib/benefits/rules";
+import { poolStateFor, spendable } from "@/lib/benefits/pool";
 import { classifyEligibility, prorate } from "@/lib/benefits/proration";
 import { sumMedicalPremium, proratedPremiumEGP, type PricedPerson } from "@/lib/benefits/rates";
 import { deriveTenureBand } from "@/lib/tenure";
@@ -221,14 +222,18 @@ async function flatAllocation(
     if (!user.employmentType || !user.tenureBand) {
       return { ok: false, error: "The employee has no employment type / tenure band set." };
     }
-    const ceilingRow = await prisma.poolCeiling.findUnique({
-      where: { employmentType_tenureBand: { employmentType: user.employmentType, tenureBand: user.tenureBand } },
-    });
-    if (!ceilingRow) return { ok: false, error: "No pool ceiling configured for that employee." };
+    // The employee's OWN prorated ceiling — derived band, cycle proration — not the raw
+    // configured amount against the stored band, which is what this used to read (2026-08-20).
+    // Those disagree for anyone mid-cycle or whose band has moved since it was last written,
+    // and the looser of two limits is the one that pays.
+    const pool = await poolStateFor(user.id, planYear);
+    if (pool.ceiling == null) {
+      return { ok: false, error: `No pool for that employee — ${pool.reason ?? "not configured"}.` };
+    }
     // Spec 031: an HR release is measured against the same per-benefit ceiling the employee's
     // claims are, including when this cycle has the 50% cap switched off — otherwise a release
     // could exceed what the cycle's own rule allows.
-    allocation = flexCap(ceilingRow.amount, planYear.flexCapEnabled);
+    allocation = flexCap(pool.ceiling, planYear.flexCapEnabled);
     claimWhere.catalogItemId = id;
   } else {
     return { ok: false, error: "Unknown benefit type." };
@@ -350,6 +355,24 @@ export async function recordManualRelease(formData: FormData): Promise<ManualRes
     };
   }
 
+  // The per-benefit cap was the ONLY limit here — the pool ceiling and the medical premium
+  // were never consulted, so an HR entry could pay past the pool even while the employee's own
+  // claim for the same benefit would have been clamped (2026-08-20). Guaranteed benefits are
+  // paid from their own budget and never touch the pool, so only flexible entries are bounded.
+  if (alloc.claimWhere.catalogItemId) {
+    const pool = await poolStateFor(userId, planYear);
+    const free = spendable(pool);
+    if (pool.ceiling != null && amount > free) {
+      return {
+        ok: false,
+        error:
+          `That exceeds this employee's remaining pool. Their ceiling is ${formatEGP(pool.ceiling)} and ` +
+          `${formatEGP(pool.used)} is already used (${formatEGP(pool.medical)} medical, ` +
+          `${formatEGP(pool.flex)} flexible), leaving ${formatEGP(free)}.`,
+      };
+    }
+  }
+
   await prisma.benefitClaim.create({
     data: {
       userId,
@@ -407,6 +430,23 @@ async function recordMedicalBackfill(
   if (override != null && Number.isFinite(override) && override > 0 && override !== priced.premium) {
     premium = Math.min(override, priced.proratedCeiling);
     adjusted = true;
+  }
+
+  // The ceiling binds HR exactly as it binds the employee (2026-08-20). A back-fill was
+  // previously bounded only by the ceiling itself, ignoring flexible claims already made in
+  // the cycle — so recording a medical that "already happened" could push the person past
+  // their pool with nothing to stop it and nothing to show it.
+  const pool = await poolStateFor(userId, ctx.planYear);
+  const free = spendable(pool);
+  if (pool.ceiling != null && premium > free) {
+    return {
+      ok: false,
+      error:
+        `That premium (${formatEGP(premium)}) is more than this employee has left. ` +
+        `Their pool is ${formatEGP(pool.ceiling)} and ${formatEGP(pool.used)} is already used ` +
+        `(${formatEGP(pool.medical)} medical, ${formatEGP(pool.flex)} flexible), leaving ${formatEGP(free)}. ` +
+        `Reduce the cover or the amount, or raise their ceiling first.`,
+    };
   }
 
   await prisma.medicalCommitment.create({
