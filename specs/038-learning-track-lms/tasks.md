@@ -73,16 +73,16 @@ employee sits at 0%. Quickstart scenarios 1, 2, 3, 11.
 
 - [X] T015 [US1] Write `src/app/(app)/admin/learning/actions.ts` — `createCourse`, `updateCourse`, `publishCourse` (completeness gate naming the **first specific gap**, FR-006), `unpublishCourse` (FR-007), `deleteCourse` (refused while any enrollment exists), all `requireAdmin()`
 - [X] T016 [US1] Add curriculum actions to the same file — `upsertSection`, `deleteSection` (soft), `upsertLesson`, `deleteLesson` (soft), `upsertLessonBlock`, `deleteBlock`, `reorderSections`, `reorderLessons`, `reorderBlocks`. Reordering **must never touch `LessonProgress`** (FR-023). `TEXT` blocks are **sanitised server-side before storage** — they are later rendered as HTML
-- [ ] T017 [US1] Write `src/app/(app)/admin/learning/page.tsx` — the course list with status chips and an Add course action, `requireAdmin()`, house `BackLink`
-- [ ] T018 [US1] Write `src/app/(app)/admin/learning/[courseId]/page.tsx` — the builder shell with the three tabs (Content · Access · People) in the `AdminBenefitsTabs` idiom, per mockup surface 1
-- [ ] T019 [P] [US1] Write `src/components/learning/CourseBuilder.tsx` + `SectionList.tsx` — the section/lesson tree with drag-reorder, matching the approved mockup
-- [ ] T020 [P] [US1] Write `src/components/learning/LessonEditor.tsx` + `BlockEditor.tsx` — the right-hand editor: title, required/optional, blocks for video link / text / file. File blocks upload to the private Blob store as `profile/documents-actions.ts` does; **video is a link field only, never an upload** (research D8)
-- [ ] T021 [US1] Write `src/app/api/learning/blocks/[id]/file/route.ts` — streams a `FILE` block via `streamPrivateBlob`, authorised by `courseAccessFor()`. A blob URL is never handed to a client that could not open the course
+- [X] T017 [US1] Write `src/app/(app)/admin/learning/page.tsx` — the course list with status chips and an Add course action, `requireAdmin()`, house `BackLink`
+- [X] T018 [US1] Write `src/app/(app)/admin/learning/[courseId]/page.tsx` — the builder shell with the three tabs (Content · Access · People) in the `AdminBenefitsTabs` idiom, per mockup surface 1
+- [X] T019 [P] [US1] Write `src/components/learning/CourseBuilder.tsx` + `SectionList.tsx` — the section/lesson tree with drag-reorder, matching the approved mockup
+- [X] T020 [P] [US1] Write `src/components/learning/LessonEditor.tsx` + `BlockEditor.tsx` — the right-hand editor: title, required/optional, blocks for video link / text / file. File blocks upload to the private Blob store as `profile/documents-actions.ts` does; **video is a link field only, never an upload** (research D8)
+- [X] T021 [US1] Write `src/app/api/learning/blocks/[id]/file/route.ts` — streams a `FILE` block via `streamPrivateBlob`, authorised by `courseAccessFor()`. A blob URL is never handed to a client that could not open the course
 - [X] T022 [US1] Write `src/app/(app)/learning/actions.ts` — `openCourse` (creates the `CourseEnrollment` on **first open**, not on assignment — research D4), `markLessonComplete`, `markLessonIncomplete`. Every one begins with `requireLearner()`; **no learner-id parameter anywhere in this file**
-- [ ] T023 [US1] Write `src/app/(app)/learning/page.tsx` — "My learning", reading `accessibleCoursesFor()`. Framed as obligations, not a catalogue: no browse, no search, no enrol. Per mockup surface 3
-- [ ] T024 [P] [US1] Write `src/components/learning/CourseCard.tsx` — the progress bar, next-up line, and the navy Continue/Start action; green reserved for the completed state only
-- [ ] T025 [US1] Write `src/app/(app)/learning/[courseId]/page.tsx` — the player shell, gated by `courseAccessFor()` so a draft or unreachable course is refused server-side, not merely hidden (FR-005, FR-016)
-- [ ] T026 [P] [US1] Write `src/components/learning/LessonNav.tsx` + `CoursePlayer.tsx` — lesson list with completion ticks, content area, Mark complete, resume via `firstIncompleteLessonId`. Per mockup surface 4 (the video gate itself lands in US3)
+- [X] T023 [US1] Write `src/app/(app)/learning/page.tsx` — "My learning", reading `accessibleCoursesFor()`. Framed as obligations, not a catalogue: no browse, no search, no enrol. Per mockup surface 3
+- [X] T024 [P] [US1] Write `src/components/learning/CourseCard.tsx` — the progress bar, next-up line, and the navy Continue/Start action; green reserved for the completed state only
+- [X] T025 [US1] Write `src/app/(app)/learning/[courseId]/page.tsx` — the player shell, gated by `courseAccessFor()` so a draft or unreachable course is refused server-side, not merely hidden (FR-005, FR-016)
+- [X] T026 [P] [US1] Write `src/components/learning/LessonNav.tsx` + `CoursePlayer.tsx` — lesson list with completion ticks, content area, Mark complete, resume via `firstIncompleteLessonId`. Per mockup surface 4 (the video gate itself lands in US3)
 
 **Checkpoint**: US1 is independently shippable — a company-wide `OPEN` course already works end to end.
 
@@ -103,7 +103,7 @@ with no HR action. Quickstart scenarios 5, 6, 7.
 - [ ] T031 [P] [US2] Write `src/components/learning/GroupManager.tsx` and `src/app/(app)/admin/learning/groups/page.tsx` — named groups with membership, in the `DepartmentsManager` read-first idiom
 - [ ] T032 [US2] Surface the grandfathered state on the employee's My learning card — the gold "you can still finish it" treatment from mockup surface 3, driven by the route the derivation already returns
 - [ ] T033 [US2] Add the reopen contract to `upsertLesson` in `src/app/(app)/admin/learning/actions.ts` — `onExistingCompletions: "REOPEN" | "KEEP"`, counted **inside the transaction** against `courseRoster(courseId)`, **refusing the edit when completions exist and no choice was supplied** (FR-039). `REOPEN` sets `firstCompletedAt`, clears `completedAt`, stamps `reopenedAt`; nothing is deleted (FR-040)
-- [ ] T034 [P] [US2] Write `src/components/learning/ReopenDialog.tsx` and the read-only `countAffectedByRequiredChange` helper — per mockup surface 2. The dialog is the affordance; T033's refusal is the guarantee
+- [X] T034 [P] [US2] Write `src/components/learning/ReopenDialog.tsx` and the read-only `countAffectedByRequiredChange` helper — per mockup surface 2. The dialog is the affordance; T033's refusal is the guarantee
 
 **Checkpoint**: restricted courses, live audiences, grandfathering and reopening all work.
 
@@ -145,9 +145,9 @@ date alongside its reopen date, and updates without a manual reload. Quickstart 
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T045 Register the module in `src/lib/modules.ts` — `{ key: "learning", label: "Learning", href: "/learning" }` — so it honours the existing release switch
-- [ ] T046 Add the Learning nav item to `NAV` in `src/components/AppShell.tsx` with a distinct icon (not a reused one — the Incentive/Benefits icon clash cost a round before). **Snapshot to `ui-versions/AppShell/` first** — this is an existing file
-- [ ] T047 Add the Learning card to `src/app/(app)/admin/page.tsx`. **Snapshot to `ui-versions/admin-home/` first**
+- [X] T045 Register the module in `src/lib/modules.ts` — `{ key: "learning", label: "Learning", href: "/learning" }` — so it honours the existing release switch
+- [X] T046 Add the Learning nav item to `NAV` in `src/components/AppShell.tsx` with a distinct icon (not a reused one — the Incentive/Benefits icon clash cost a round before). **Snapshot to `ui-versions/AppShell/` first** — this is an existing file
+- [X] T047 Add the Learning card to `src/app/(app)/admin/page.tsx`. **Snapshot to `ui-versions/admin-home/` first**
 - [ ] T048 Add a Learning tile to `src/app/(app)/dashboard/page.tsx` showing outstanding courses, in the existing card idiom. **Snapshot first**. Skip only if the tile cannot earn its place — the dashboard was deliberately trimmed on 2026-08-18
 - [ ] T049 Run the full quickstart — all 11 scenarios — and record what was verified and how, naming anything not verifiable from a session
 - [ ] T050 `npx tsc --noEmit` and `npm run build` green, with every type error across the outcome fixed
