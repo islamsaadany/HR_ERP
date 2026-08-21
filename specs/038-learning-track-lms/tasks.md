@@ -27,8 +27,8 @@ standing obligation. `npx tsc --noEmit` and `npm run build` must pass before any
 **Purpose**: make room for the module. No dependencies to install — the feature adds **no new runtime
 dependency**, no env var, no cron, and no video upload path (research D8).
 
-- [ ] T001 Create the module directories `src/lib/learning/`, `src/components/learning/`, `src/app/(app)/learning/`, `src/app/(app)/admin/learning/`
-- [ ] T002 Confirm `060` is still the next free migration number by listing `prisma/sql/` before writing any SQL
+- [X] T001 Create the module directories `src/lib/learning/`, `src/components/learning/`, `src/app/(app)/learning/`, `src/app/(app)/admin/learning/`
+- [X] T002 Confirm `060` is still the next free migration number by listing `prisma/sql/` before writing any SQL
 
 ---
 
@@ -40,24 +40,24 @@ copy of the rule, which is the failure the benefits pool taught us.
 
 ### Schema and migration
 
-- [ ] T003 Add the 5 enums and 12 models from [data-model.md](./data-model.md) to `prisma/schema.prisma` — `Course`, `CourseSection`, `Lesson`, `LessonBlock`, `VideoCheckpoint`, `CourseAudience`, `LearnerGroup`, `LearnerGroupMember`, `CourseAssignment`, `CourseEnrollment`, `LessonProgress` plus `User` back-relations only (**no new `User` column**, nothing named `Module` or `Announcement`)
-- [ ] T004 Write `prisma/sql/060_learning_track.sql` — additive and idempotent: enums via `DO $$ … EXCEPTION WHEN duplicate_object`, `CREATE TABLE IF NOT EXISTS`, indexes and FKs. No `ALTER` of an existing table, no back-fill, no drop
-- [ ] T005 Verify `060` on a throwaway Postgres 16 (`/usr/lib/postgresql/*/bin`, as the `postgres` user): apply the full chain, confirm 12 tables and 5 types, **apply a second time and confirm zero statements**, and confirm no drift against `prisma/schema.prisma`. Record the result — this is the evidence, not the intention
+- [X] T003 Add the 5 enums and 12 models from [data-model.md](./data-model.md) to `prisma/schema.prisma` — `Course`, `CourseSection`, `Lesson`, `LessonBlock`, `VideoCheckpoint`, `CourseAudience`, `LearnerGroup`, `LearnerGroupMember`, `CourseAssignment`, `CourseEnrollment`, `LessonProgress` plus `User` back-relations only (**no new `User` column**, nothing named `Module` or `Announcement`)
+- [X] T004 Write `prisma/sql/060_learning_track.sql` — additive and idempotent: enums via `DO $$ … EXCEPTION WHEN duplicate_object`, `CREATE TABLE IF NOT EXISTS`, indexes and FKs. No `ALTER` of an existing table, no back-fill, no drop
+- [X] T005 Verify `060` on a throwaway Postgres 16 (`/usr/lib/postgresql/*/bin`, as the `postgres` user): apply the full chain, confirm 12 tables and 5 types, **apply a second time and confirm zero statements**, and confirm no drift against `prisma/schema.prisma`. Record the result — this is the evidence, not the intention
 
 ### Pure logic (no Prisma, no React) — the parallel block
 
-- [ ] T006 [P] Port `src/lib/video.ts` from `/home/user/ahmedgalal-lang/fflms` into `src/lib/learning/video.ts` — URL classification and normalisation for YouTube / Vimeo / Drive / direct file. Drop nothing; keep the `DRIVE`-is-untrackable distinction explicit. Must stay free of server imports (it is bundled to the client)
-- [ ] T007 [P] Port `services/progress-calc.ts` into `src/lib/learning/progress.ts` — `computeProgressPercent` over **required** lessons keyed by lesson id, `firstIncompleteLessonId`, `isCourseComplete`
-- [ ] T008 [P] Write `src/lib/learning/audience.ts` — `audienceWhere(rows, now)` compiling audience rules into ONE `Prisma.UserWhereInput` (`OR` across rows, always `AND status: "ACTIVE"`), and `bandStartDateRange(band, now)` so a `TENURE_BAND` audience filters on `startDate` and never the stale stored `tenureBand` column (research D2). No audience kind may use negation — a null registry field simply matches nothing
-- [ ] T009 [P] Write `src/lib/learning/actor.ts` — `requireLearner()`: `requireUser()` then `getImpersonation()`, **refusing while impersonation is active** (FR-026). Document that no learning write may accept a user id as a parameter
+- [X] T006 [P] Port `src/lib/video.ts` from `/home/user/ahmedgalal-lang/fflms` into `src/lib/learning/video.ts` — URL classification and normalisation for YouTube / Vimeo / Drive / direct file. Drop nothing; keep the `DRIVE`-is-untrackable distinction explicit. Must stay free of server imports (it is bundled to the client)
+- [X] T007 [P] Port `services/progress-calc.ts` into `src/lib/learning/progress.ts` — `computeProgressPercent` over **required** lessons keyed by lesson id, `firstIncompleteLessonId`, `isCourseComplete`
+- [X] T008 [P] Write `src/lib/learning/audience.ts` — `audienceWhere(rows, now)` compiling audience rules into ONE `Prisma.UserWhereInput` (`OR` across rows, always `AND status: "ACTIVE"`), and `bandStartDateRange(band, now)` so a `TENURE_BAND` audience filters on `startDate` and never the stale stored `tenureBand` column (research D2). No audience kind may use negation — a null registry field simply matches nothing
+- [X] T009 [P] Write `src/lib/learning/actor.ts` — `requireLearner()`: `requireUser()` then `getImpersonation()`, **refusing while impersonation is active** (FR-026). Document that no learning write may accept a user id as a parameter
 
 ### THE access derivation
 
-- [ ] T010 Write `src/lib/learning/access.ts` using FFLMS's `course-assignment-calc.ts` as the starting shape, extended from 2 routes to **4**: live direct `CourseAssignment` · live group assignment via `LearnerGroupMember` · matching a live `CourseAudience` · an **in-progress `CourseEnrollment`** (`completedAt == null && accessWithdrawnAt == null`). Pure core `resolveRoutes(facts)`; nothing else may re-implement any part of it
-- [ ] T011 Add the three DB-touching entry points over that one rule in `src/lib/learning/access.ts`: `courseAccessFor(userId, courseId)`, `accessibleCoursesFor(userId)`, and `courseRoster(courseId)` — each a bounded number of queries, **never one query per employee**
-- [ ] T012 [P] Write `tests/learning-progress.test.ts` — required-vs-optional denominator, all-optional course reads 100%, reorder/rename cannot move the figure, resume point
-- [ ] T013 [P] Write `tests/learning-audience.test.ts` — each audience kind compiles correctly, rows union rather than intersect, a `TENURE_BAND` compiles to a date range, employees with null department / business unit / employment type / start date match nothing and raise nothing
-- [ ] T014 [P] Write `tests/learning-access.test.ts` — each of the four routes grants alone; two routes with one removed still grants (SC-006); an in-progress enrollment grants after every other route is gone (SC-010); a **completed** enrollment does not; a **withdrawn** one does not; someone who never started loses it immediately (FR-045)
+- [X] T010 Write `src/lib/learning/access.ts` using FFLMS's `course-assignment-calc.ts` as the starting shape, extended from 2 routes to **4**: live direct `CourseAssignment` · live group assignment via `LearnerGroupMember` · matching a live `CourseAudience` · an **in-progress `CourseEnrollment`** (`completedAt == null && accessWithdrawnAt == null`). Pure core `resolveRoutes(facts)`; nothing else may re-implement any part of it
+- [X] T011 Add the three DB-touching entry points over that one rule in `src/lib/learning/access.ts`: `courseAccessFor(userId, courseId)`, `accessibleCoursesFor(userId)`, and `courseRoster(courseId)` — each a bounded number of queries, **never one query per employee**
+- [X] T012 [P] Write `tests/learning-progress.test.ts` — required-vs-optional denominator, all-optional course reads 100%, reorder/rename cannot move the figure, resume point
+- [X] T013 [P] Write `tests/learning-audience.test.ts` — each audience kind compiles correctly, rows union rather than intersect, a `TENURE_BAND` compiles to a date range, employees with null department / business unit / employment type / start date match nothing and raise nothing
+- [X] T014 [P] Write `tests/learning-access.test.ts` — each of the four routes grants alone; two routes with one removed still grants (SC-006); an in-progress enrollment grants after every other route is gone (SC-010); a **completed** enrollment does not; a **withdrawn** one does not; someone who never started loses it immediately (FR-045)
 
 **Checkpoint**: `npx tsc --noEmit` clean, three test files passing, migration proven twice.
 

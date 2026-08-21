@@ -184,5 +184,11 @@ memberships, enrollments. No new columns.
 Purely additive: five `CREATE TYPE … ` guarded by `DO $$ … EXCEPTION WHEN duplicate_object`, twelve
 `CREATE TABLE IF NOT EXISTS`, their indexes and foreign keys. No existing table is altered, no data is
 back-filled, nothing is dropped — so a re-run is a no-op and a rollback is a `DROP` of new tables
-only. Applied by `scripts/apply-sql.mjs` at deploy per constitution 1.2.1; verified on a throwaway
-Postgres 16 before commit, including a second run.
+only. Applied by `scripts/apply-sql.mjs` at deploy per constitution 1.2.1.
+
+**Verified 2026-08-21** on a throwaway Postgres 16: the full 000→060 chain applied (63 files), then a
+second run applied **0 files**; 11 tables, 5 types and 21 foreign keys present. `prisma migrate diff`
+reports only `ALTER COLUMN "updatedAt" DROP DEFAULT` per table — the **established house pattern**
+(seven earlier migrations do the same; `IncentiveCycle`, `MedicalCycleCharge` and
+`PoolCeilingException` carry the identical diff today), since Prisma's `@updatedAt` models no DB
+default while Prisma always writes the column itself. Apart from those lines: zero drift.
