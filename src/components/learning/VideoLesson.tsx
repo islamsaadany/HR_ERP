@@ -77,6 +77,7 @@ export function VideoLesson({
   const activeCueRef = useRef<Checkpoint | null>(null);
   const resumeRef = useRef<() => void>(() => {});
   const [activeCue, setActiveCue] = useState<Checkpoint | null>(null);
+  const [playerError, setPlayerError] = useState<string | null>(null);
 
   // ── The moving parts, held in refs so the player effects never see them change ──
   const onWatchedRef = useRef(onWatched);
@@ -200,8 +201,34 @@ export function VideoLesson({
         }
         player = new YT.Player(target, {
           videoId: id,
-          playerVars: { start: Math.floor(startAtRef.current), rel: 0, playsinline: 1 },
+          // `origin` is REQUIRED, not optional politeness. With the JS API enabled, YouTube
+          // postMessages back to the embedding page, and without being told our origin it aims at
+          // https://www.youtube.com and the browser refuses:
+          //   "Failed to execute 'postMessage'… target origin does not match the recipient
+          //    window's origin"
+          // which is what the live deploy reported. `host` uses the no-cookie domain, which also
+          // stops the player calling doubleclick and pagead endpoints that ad blockers kill —
+          // several of the console errors we saw were exactly those, and a blocked player can
+          // stall rather than fail cleanly.
+          host: "https://www.youtube-nocookie.com",
+          playerVars: {
+            start: Math.floor(startAtRef.current),
+            rel: 0,
+            playsinline: 1,
+            origin: window.location.origin,
+          },
           events: {
+            onError: (e: { data?: number }) => {
+              // 2 bad id · 5 HTML5 error · 100 removed/private · 101 & 150 embedding disabled.
+              // Surfacing this beats a black rectangle nobody can explain.
+              setPlayerError(
+                e?.data === 101 || e?.data === 150
+                  ? "This video's owner doesn't allow it to be played outside YouTube. Use a different video, or upload it to a channel that permits embedding."
+                  : e?.data === 100
+                    ? "This video is private or has been removed."
+                    : "This video couldn't be loaded."
+              );
+            },
             onReady: () => {
               resumeRef.current = () => player?.playVideo();
               timer = setInterval(() => {
@@ -293,6 +320,11 @@ export function VideoLesson({
       ) : (
         <div ref={mountRef} className="h-full w-full [&>div]:h-full [&>div]:w-full [&_iframe]:h-full [&_iframe]:w-full" />
       )}
+      {playerError ? (
+        <div className="absolute inset-0 grid place-items-center bg-navy-900 p-6 text-center">
+          <p className="max-w-[42ch] text-sm text-white/90">{playerError}</p>
+        </div>
+      ) : null}
       {activeCue ? <CheckpointPrompt checkpoint={activeCue} onPass={() => passCue(activeCue)} /> : null}
     </div>
   );
