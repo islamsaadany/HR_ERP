@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { markLessonComplete, markLessonIncomplete } from "@/app/(app)/learning/actions";
@@ -68,6 +68,14 @@ export function CoursePlayer({
     watched: current?.watchedSec ?? 0,
     duration: current?.durationSec ?? 0,
   });
+
+  // Stable by useCallback, so the player is never rebuilt because this prop changed identity.
+  // VideoLesson now holds its callbacks in refs and cannot be broken by an unstable prop — this
+  // is the second line of defence, not the only one.
+  const handleWatched = useCallback(
+    (watched: number, duration: number) => setLive({ watched, duration }),
+    []
+  );
 
   const watchedPct =
     live.duration > 0 ? Math.floor((live.watched / live.duration) * 100) : 0;
@@ -142,7 +150,7 @@ export function CoursePlayer({
               initialPositionSec={current.positionSec}
               initialWatchedSec={current.watchedSec}
               checkpoints={current.checkpoints}
-              onWatched={(watched, duration) => setLive({ watched, duration })}
+              onWatched={handleWatched}
             />
           ) : (
             <div className="relative aspect-video overflow-hidden rounded-xl bg-navy-900">
