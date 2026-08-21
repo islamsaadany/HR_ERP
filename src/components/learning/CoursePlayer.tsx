@@ -77,8 +77,12 @@ export function CoursePlayer({
     []
   );
 
+  // Rounded, and matching the server's 2-second allowance, so the button and the server never
+  // disagree — a button that stays dead while the server would have accepted is the worst of both.
   const watchedPct =
-    live.duration > 0 ? Math.floor((live.watched / live.duration) * 100) : 0;
+    live.duration > 0
+      ? Math.min(100, Math.round(((live.watched + 2) / live.duration) * 100))
+      : 0;
   const gated =
     !!current && current.minWatchPercent > 0 && watchedPct < current.minWatchPercent;
 

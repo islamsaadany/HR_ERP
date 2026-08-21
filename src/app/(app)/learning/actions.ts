@@ -182,7 +182,12 @@ export async function markLessonComplete(lessonId: string): Promise<LearnResult>
       // that would mean asking Vimeo/YouTube for the true length — a network call and a new
       // dependency, neither of which this release takes. This stops people clicking past training;
       // it is not an adversarial control.
-      const required = Math.ceil((duration * lesson.minWatchPercent) / 100);
+      // A 2-second allowance on top of the client's end-of-video crediting. Between a player
+      // reporting a duration a fraction longer than it plays, and the last tick landing just
+      // short, an exact comparison can refuse someone who genuinely watched the whole thing —
+      // and being told "you've watched 99%" after sitting through all of it is the kind of thing
+      // that makes people stop trusting the platform.
+      const required = Math.max(0, Math.ceil((duration * lesson.minWatchPercent) / 100) - 2);
       if (duration <= 0 || watched < required) {
         const soFar = duration > 0 ? Math.floor((watched / duration) * 100) : 0;
         return {

@@ -169,6 +169,27 @@ export function VideoLesson({
       }
       lastTimeRef.current = now;
 
+      // ── Reaching the end credits the whole video ───────────────────────────────────────────
+      // Without this, "must watch 100%" is unreachable and the Complete button stays dead
+      // forever — which is exactly what happened on the live deploy. Credit only accrues on ticks
+      // that see the video PLAYING, so every buffer, ad break, tab switch and the final partial
+      // second is lost; a 2:06 video reliably lands around 2:00 of credit, and 100% of 126s is
+      // 126s. No tolerance chosen by feel fixes that honestly.
+      //
+      // What does: playback arriving at the end IS the proof. It cannot be faked, because a watch
+      // requirement always turns on the no-skip rule above — the playhead can't get here without
+      // having passed through everything before it.
+      if (duration > 0 && now >= duration - SEEK_TOLERANCE_SEC) {
+        if (watchedRef.current < duration) {
+          watchedRef.current = duration;
+          onWatchedRef.current?.(watchedRef.current, duration);
+        }
+        // Persist immediately rather than waiting for the 5s throttle — the learner is about to
+        // press Complete, and the server decides from what it has stored.
+        lastSaveRef.current = now;
+        void saveVideoProgress(lessonIdRef.current, now, Math.round(duration), Math.round(duration));
+      }
+
       if (now - lastSaveRef.current > 5) {
         lastSaveRef.current = now;
         void saveVideoProgress(
