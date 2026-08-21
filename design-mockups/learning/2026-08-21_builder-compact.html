@@ -1,0 +1,238 @@
+<title>Builder Layout Options</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:72ch}
+  .proposal{margin-top:38px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 14px 36px;max-width:74ch}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-navy{border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700)}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer}
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:9px;cursor:pointer}
+  .fld{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:2px;font-weight:700}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 9px;font-size:13px;color:var(--ink)}
+  .inp.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line)}
+  .tab{font-size:13px;font-weight:600;color:var(--muted);padding:7px 13px;border-bottom:2px solid transparent}
+  .tab.on{color:var(--navy-800);border-bottom-color:var(--navy-800)}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px;margin-top:4px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .sec{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+  .sec-h{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--navy-50);border-bottom:1px solid var(--line);font-size:12.5px;font-weight:700;color:var(--navy-800)}
+  .lrow{display:flex;align-items:center;gap:8px;padding:7px 10px;font-size:13px;box-shadow:inset 3px 0 0 var(--navy-800);background:#f7f9fd}
+  .meta{font-size:11px;color:var(--muted)}
+  .row2{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px}
+  .row3{display:grid;grid-template-columns:88px 96px 1fr;gap:8px}
+  .disclose{border:1px solid var(--line);border-radius:9px;background:var(--surface);margin-top:9px}
+  .disclose summary{cursor:pointer;list-style:none;padding:8px 10px;font-size:12.5px;font-weight:600;color:var(--navy-700);display:flex;align-items:center;gap:7px}
+  .disclose summary::-webkit-details-marker{display:none}
+  .disclose .caret{transition:transform .15s}
+  .disclose[open] .caret{transform:rotate(90deg)}
+  .disclose .body{padding:0 10px 10px}
+  .cp{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:12.5px;margin-top:5px}
+  .titlebar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .titlebar h3{font-family:Georgia,serif;font-size:21px;margin:0}
+  .titlebar .sml{font-size:12px;color:var(--muted)}
+  .decision{margin-top:34px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:840px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:5px 0}
+  .callout{font-size:11.5px;color:var(--muted);margin-top:8px}
+  .measure{display:inline-block;font-size:10.5px;font-weight:700;color:var(--gold-800);background:var(--gold-100);border:1px solid var(--gold-300);border-radius:999px;padding:2px 8px}
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 038 · layout review</p>
+  <h1>Course builder — two more contained layouts</h1>
+  <p class="lede">Same content, same controls, less height. Both options collapse the four stacked header rows into one, put <b>Minutes · Must watch · Counts toward progress</b> on a single line, and hide Notes behind a disclosure. They differ in where the lesson settings live. Figures are illustrative.</p>
+
+  <!-- ============ TODAY ============ -->
+  <section class="proposal">
+    <h2><span class="num">0</span> Today <span class="chip c-off">for comparison</span></h2>
+    <p class="sub">Four separate rows before any content: back link, title, tabs, then a status row with <b>Published</b> alone on the left and <b>Return to draft</b> alone on the right. On the right panel every field is full width, so Minutes gets the same room as a video URL.</p>
+    <div class="frame" style="opacity:.62">
+      <div style="font-size:12px;color:var(--muted)">← Learning</div>
+      <div style="height:10px"></div>
+      <h3 style="font-family:Georgia,serif;font-size:26px;margin:0">Test Course</h3>
+      <div class="sml" style="font-size:12px;color:var(--muted)">Testing things up</div>
+      <div style="height:14px"></div>
+      <div class="tabs"><span class="tab on">Content</span><span class="tab">Access 1</span><span class="tab">People 1</span></div>
+      <div style="height:14px"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="chip c-ok">Published</span><span class="btn-ghost">Return to draft</span></div>
+      <div style="height:14px"></div>
+      <div class="grid">
+        <div class="sec"><div class="sec-h">First Section <span style="flex:1"></span><span class="chip c-off">1 lesson</span></div><div class="lrow"><span style="flex:1">Simple Espanol<div class="meta">video · watch 100%</div></span><span class="chip c-navy">Required</span></div></div>
+        <div class="panel">
+          <label class="fld">Lesson title</label><input class="inp" value="Simple Espanol" readonly>
+          <div style="height:9px"></div><label class="fld">Minutes (optional)</label><input class="inp" readonly>
+          <div style="height:9px"></div><label class="fld">Counts toward progress</label><input class="inp" value="Required" readonly>
+          <div style="height:9px"></div><label class="fld">Video link</label><input class="inp mono" value="https://www.youtube.com/embed/nc51UwuL8pE" readonly>
+          <div style="height:9px"></div><label class="fld">Must watch (%)</label><input class="inp" value="100" readonly>
+          <div style="height:9px"></div><label class="fld">Notes (markdown)</label><textarea class="inp" rows="3" readonly></textarea>
+        </div>
+      </div>
+      <div class="callout"><span class="measure">≈ 205px of header before content</span></div>
+    </div>
+  </section>
+
+  <!-- ============ OPTION A ============ -->
+  <section class="proposal">
+    <h2><span class="num">A</span> One header line <span class="chip c-navy">recommended</span></h2>
+    <p class="sub">Back link, title, status and the draft toggle all share one row; the summary sits under the title as a quiet subtitle. Tabs become the divider — no separate status row at all. On the right, the three small settings share a line, sized to what they hold: Minutes is 88px because it takes two digits, not a sentence.</p>
+    <div class="frame">
+      <div class="titlebar">
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--muted)">← Learning</span>
+          <h3>Test Course</h3>
+          <span class="chip c-ok">Published</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="btn-ghost">Return to draft</span>
+          <span style="font-size:12px;color:var(--muted)">Manage groups →</span>
+        </div>
+      </div>
+      <div class="sml" style="margin-top:1px">Testing things up</div>
+      <div style="height:11px"></div>
+      <div class="tabs"><span class="tab on">Content</span><span class="tab">Access 1</span><span class="tab">People 1</span></div>
+      <div style="height:13px"></div>
+      <div class="grid">
+        <div>
+          <div class="sec"><div class="sec-h">First Section <span style="flex:1"></span><span class="chip c-off">1 lesson</span><span style="color:#b91c1c;font-size:11px">Remove</span></div>
+            <div class="lrow"><span style="flex:1">Simple Espanol<div class="meta">video · watch 100% · 1 checkpoint</div></span><span class="chip c-navy">Required</span></div>
+            <div style="padding:6px 10px;border-top:1px solid var(--line);font-size:12px;color:var(--navy-700);font-weight:600">+ Add lesson</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:9px"><input class="inp" placeholder="New section title"><span class="btn-ghost">+ Section</span></div>
+        </div>
+
+        <div class="panel">
+          <label class="fld">Lesson title</label>
+          <input class="inp" value="Simple Espanol" readonly>
+
+          <div style="height:9px"></div>
+          <div class="row3">
+            <div><label class="fld">Minutes</label><input class="inp" placeholder="—" readonly></div>
+            <div><label class="fld">Must watch</label><input class="inp" value="100%" readonly></div>
+            <div><label class="fld">Progress</label><input class="inp" value="Required" readonly></div>
+          </div>
+
+          <div style="height:9px"></div>
+          <label class="fld">Video link</label>
+          <input class="inp mono" value="https://www.youtube.com/embed/nc51UwuL8pE" readonly>
+          <div style="margin-top:4px;display:flex;align-items:center;gap:7px"><span class="chip c-navy">YouTube</span><span style="font-size:11.5px;color:var(--muted)">Playback can be measured — a watch requirement will work.</span></div>
+
+          <details class="disclose" open>
+            <summary><span class="caret">›</span> Checkpoints <span class="chip c-off">1</span></summary>
+            <div class="body">
+              <div class="cp"><span class="chip c-off">0:01</span><span style="flex:1">Is that working?</span><span style="font-size:11px;color:var(--muted)">2 options</span><span style="color:#b91c1c;font-size:11px">Remove</span></div>
+              <div style="margin-top:6px"><span class="btn-ghost">+ Add checkpoint</span></div>
+            </div>
+          </details>
+
+          <details class="disclose">
+            <summary><span class="caret">›</span> Notes <span class="chip c-off">empty</span></summary>
+            <div class="body"><textarea class="inp" rows="4" placeholder="Markdown…"></textarea></div>
+          </details>
+
+          <div style="display:flex;justify-content:space-between;margin-top:11px">
+            <span class="btn-navy">Save lesson</span>
+            <span style="font-size:12px;color:#b91c1c">Delete lesson</span>
+          </div>
+        </div>
+      </div>
+      <div class="callout"><span class="measure">≈ 96px of header — roughly half</span> · right panel loses two full-width rows</div>
+    </div>
+  </section>
+
+  <!-- ============ OPTION B ============ -->
+  <section class="proposal">
+    <h2><span class="num">B</span> Settings on the lesson row</h2>
+    <p class="sub">Same compact header. The difference: the small settings move <b>out</b> of the right panel and onto the selected lesson row itself, so the right panel holds only what needs room — the video link, checkpoints and notes. The lesson list becomes the place you set what a lesson <i>is</i>; the panel is where you put its <i>content</i>.</p>
+    <div class="frame">
+      <div class="titlebar">
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--muted)">← Learning</span>
+          <h3>Test Course</h3>
+          <span class="chip c-ok">Published</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="btn-ghost">Return to draft</span>
+          <span style="font-size:12px;color:var(--muted)">Manage groups →</span>
+        </div>
+      </div>
+      <div class="sml" style="margin-top:1px">Testing things up</div>
+      <div style="height:11px"></div>
+      <div class="tabs"><span class="tab on">Content</span><span class="tab">Access 1</span><span class="tab">People 1</span></div>
+      <div style="height:13px"></div>
+      <div class="grid">
+        <div>
+          <div class="sec">
+            <div class="sec-h">First Section <span style="flex:1"></span><span class="chip c-off">1 lesson</span><span style="color:#b91c1c;font-size:11px">Remove</span></div>
+            <div style="box-shadow:inset 3px 0 0 var(--navy-800);background:#f7f9fd;padding:8px 10px">
+              <input class="inp" value="Simple Espanol" readonly style="font-weight:600">
+              <div class="row3" style="margin-top:7px">
+                <div><label class="fld">Minutes</label><input class="inp" placeholder="—" readonly></div>
+                <div><label class="fld">Must watch</label><input class="inp" value="100%" readonly></div>
+                <div><label class="fld">Progress</label><input class="inp" value="Required" readonly></div>
+              </div>
+            </div>
+            <div style="padding:6px 10px;border-top:1px solid var(--line);font-size:12px;color:var(--navy-700);font-weight:600">+ Add lesson</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:9px"><input class="inp" placeholder="New section title"><span class="btn-ghost">+ Section</span></div>
+        </div>
+
+        <div class="panel">
+          <label class="fld">Video link</label>
+          <input class="inp mono" value="https://www.youtube.com/embed/nc51UwuL8pE" readonly>
+          <div style="margin-top:4px;display:flex;align-items:center;gap:7px"><span class="chip c-navy">YouTube</span><span style="font-size:11.5px;color:var(--muted)">Playback can be measured.</span></div>
+
+          <details class="disclose" open>
+            <summary><span class="caret">›</span> Checkpoints <span class="chip c-off">1</span></summary>
+            <div class="body">
+              <div class="cp"><span class="chip c-off">0:01</span><span style="flex:1">Is that working?</span><span style="font-size:11px;color:var(--muted)">2 options</span><span style="color:#b91c1c;font-size:11px">Remove</span></div>
+              <div style="margin-top:6px"><span class="btn-ghost">+ Add checkpoint</span></div>
+            </div>
+          </details>
+
+          <details class="disclose">
+            <summary><span class="caret">›</span> Notes <span class="chip c-off">empty</span></summary>
+            <div class="body"><textarea class="inp" rows="4" placeholder="Markdown…"></textarea></div>
+          </details>
+
+          <div style="display:flex;justify-content:space-between;margin-top:11px">
+            <span class="btn-navy">Save lesson</span>
+            <span style="font-size:12px;color:#b91c1c">Delete lesson</span>
+          </div>
+        </div>
+      </div>
+      <div class="callout"><span class="measure">Shortest right panel</span> · but editing spreads across both columns</div>
+    </div>
+  </section>
+
+  <div class="decision">
+    <h3>Which one?</h3>
+    <p style="margin:0 0 8px">Both do everything you asked: one header line instead of four, the three small settings on one line, Notes collapsed, and the Published chip sharing a row with Return to draft.</p>
+    <ul>
+      <li><b>A — recommended.</b> Everything about a lesson stays in one place. Cheapest to build, nothing moves that you already know the position of.</li>
+      <li><b>B</b> is shorter still, but you edit a lesson's title in the left column and its video in the right, which is a harder thing to learn.</li>
+    </ul>
+    <p style="margin:9px 0 0"><b>Also in both, worth a yes/no:</b> Checkpoints open by default (they're rarer, but when present they matter), Notes always start closed, and the labels shrink to <b>Minutes · Must watch · Progress</b>. Say if you'd rather keep the longer wording.</p>
+  </div>
+
+  <footer>Spec 038 · builder layout · 21/08/2026 · illustrative data. Nothing is built until you pick one.</footer>
+</div>

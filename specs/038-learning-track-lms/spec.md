@@ -271,7 +271,13 @@ roster updates without a manual reload.
 - **FR-024**: Reopening a course MUST return the employee to the first lesson they have not completed.
 - **FR-025**: A course MUST be marked complete automatically, with the date, when its required
   lessons are all complete — no separate action by the employee or HR.
-- **FR-026**: Learning progress MUST NOT be recordable while an admin is impersonating an employee.
+- **FR-026**: ~~Learning progress MUST NOT be recordable while an admin is impersonating an
+  employee.~~ **Withdrawn 2026-08-21 at the product owner's request**: impersonation is how the
+  module is tested, and the refusal made that impossible. A training record can therefore be
+  created by a Super User acting as someone else, and nothing distinguishes it from one the
+  employee earned — accepted knowingly. Reinstating it is a single constant
+  (`ALLOW_IMPERSONATED_WRITES` in `src/lib/learning/actor.ts`); the structural rule that made the
+  guard reliable — no learning write accepts a user id as a parameter — is kept so that stays true.
 
 **Video enforcement**
 
@@ -372,7 +378,8 @@ roster updates without a manual reload.
   no manual reload.
 - **SC-008**: No employee can reach a course they have no route to, including by direct link, in any
   attempt.
-- **SC-009**: Zero learning progress rows are attributable to an impersonating admin.
+- **SC-009**: ~~Zero learning progress rows are attributable to an impersonating admin.~~
+  Withdrawn with FR-026 on 2026-08-21.
 - **SC-010**: An employee who is mid-course when their last route is removed can still reach and
   finish that course, in 100% of cases.
 - **SC-011**: No completion is ever silently invalidated: every superseded completion retains its
