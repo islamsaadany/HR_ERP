@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — **2 open (Q1, Q2), raised with the user 2026-08-21**
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,26 +31,30 @@
 
 ## Notes
 
-**Validation run 1 (2026-08-21) — 15 of 16 pass.**
+**Validation run 2 (2026-08-21) — 16 of 16 pass. Ready for `/speckit-plan`.**
 
-The one failure is deliberate. Two behaviours have no defensible default and materially change what
-gets built, so they are marked rather than guessed:
+Run 1 failed one item on two open clarifications. Both were answered by the product owner and folded
+into the spec as requirements rather than prose:
 
-- **Q1** — whether adding required content reopens an already-completed course. Either answer is
-  coherent; they produce different data models (a completion that can be revoked vs. a completion
-  stamped against a curriculum version) and different employee experiences.
-- **Q2** — whether an employee part-way through a course keeps access when their last route to it is
-  removed. Grandfathering is kinder and risks people completing training they are no longer meant to
-  see; immediate revocation is cleaner and can strand someone mid-course through an unrelated HR edit.
+- **Q1 → HR chooses per edit** (FR-039 – FR-041, FR-046, SC-011). Adding required content to a course
+  with completions prompts the author, names how many people are affected, and supersedes rather than
+  erases the completions it reopens.
+- **Q2 → grandfather until finished** (FR-042 – FR-046, SC-010). Being mid-course is a route in its
+  own right, so FR-015's single shared derivation still answers every access question.
 
-A third candidate — whether completion expires and training recurs annually — was **not** marked. It
-is resolved by assumption (completion is permanent in this release; recurring training is a later
-spec), because the deferral is safe and reversible.
+**Two structural guards planning must honour, each in exactly one place:**
 
-**Two notes carried into planning, not blocking:**
+1. **FR-015 + FR-042** — one derivation of "does this person have a route to this course", with
+   in-progress standing expressed *inside* it. If grandfathering is bolted on as a special case at
+   the call sites instead, the module acquires the same failure the benefits pool had: several copies
+   of one rule, and whichever is loosest decides.
+2. **FR-023** — progress keyed by lesson identity, never position, so a curriculum edit can never
+   silently move someone's percentage.
 
-1. The spec mentions the navy/gold design language and dd/mm/yyyy dates. Both are standing house
-   constraints rather than implementation choices for this feature, so they are kept.
-2. FR-015 (a single shared derivation of "does this person still have a route") and FR-016
-   (server-decided access on every path) are the structural guards for this module, in the same
-   spirit as the benefits pool ceiling. Planning must place them in exactly one module each.
+**Interaction worth watching in planning.** Q1-C and Q2-B meet in one place: reopening a completed
+course for someone who has since lost every route. FR-041 settles it (reopening reaches only people
+the course currently reaches), but the ordering of the reopen check against the access derivation
+needs to be explicit in the data model, not left to whichever query runs first.
+
+**One carried note, not blocking:** the spec references the navy/gold design language and dd/mm/yyyy
+dates. Both are standing house constraints rather than implementation choices for this feature.

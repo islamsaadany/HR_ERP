@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-21
 
-**Status**: Draft — 2 open clarifications (see *Open Questions*)
+**Status**: Draft — clarifications resolved 2026-08-21, ready for `/speckit-plan`
 
 **Input**: User description: "Learning Track (LMS) as an HR_ERP module — port of the FFLMS platform, first slice. Add a Learning module to HR_ERP so HR can publish structured training courses and assign them to employees, and employees can work through them with tracked progress."
 
@@ -168,10 +168,13 @@ roster updates without a manual reload.
 - **Curriculum edited after people started.** Renaming or reordering lessons must not disturb anyone's
   completions or percentage. Removing a required lesson recalculates everyone's percentage over what
   remains — which can push a learner to 100%. Adding a required lesson to a course someone has
-  already completed is an open question (see *Open Questions Q1*).
+  already completed prompts the author for a decision (FR-039) rather than resolving silently.
 - **Access lost mid-course.** An employee moves department and their only route to a half-finished
-  course disappears. Progress is retained either way; whether they keep access to finish is an open
-  question (see *Open Questions Q2*).
+  course disappears. They keep access until they finish it (FR-042) — being mid-course is itself a
+  route. Someone who had **not** started loses it immediately, progress rows and all retained.
+- **Reopening meets grandfathering.** A completed course is reopened by FR-039 for someone who has
+  since lost every route to it. Reopening does not draw them back in (FR-041): grandfathering
+  protects work genuinely in progress, it does not resurrect a finished obligation.
 - **Impersonation.** An admin using "View as employee" must never be able to record learning progress
   as that person — a training record must reflect what the employee actually did.
 - **Empty and degenerate courses.** A course with no required lessons reads as complete. A section
@@ -210,6 +213,16 @@ roster updates without a manual reload.
 - **FR-008**: Uploaded video and file content MUST be stored in the platform's existing file store.
 - **FR-009**: HR MUST be able to supply a video as an uploaded file or as a link to a supported
   external source, and the platform MUST state plainly which sources it can measure playback on.
+- **FR-039**: When an edit to a published course increases the set of lessons it requires — a new
+  required lesson, or an optional one made required — and at least one employee has already
+  completed that course, the platform MUST ask the author whether the course reopens for those
+  employees, naming how many are affected. Neither outcome may be applied silently.
+- **FR-040**: When the author chooses to reopen, the affected completions MUST be superseded rather
+  than erased: the original completion date is retained alongside the date it was reopened, and the
+  course returns to in-progress for those employees. When the author chooses not to reopen, those
+  completions stand and the added lesson is not required of them.
+- **FR-041**: Reopening MUST affect only employees the course currently reaches. An employee who
+  completed the course and has since lost every route to it is not drawn back in.
 
 **Access and assignment**
 
@@ -234,6 +247,15 @@ roster updates without a manual reload.
 - **FR-018**: Assigning a course to a person or group that already has it MUST have no additional
   effect and MUST NOT disturb existing progress.
 - **FR-019**: Losing access MUST NOT delete recorded progress.
+- **FR-042**: An employee who has started but not completed a course MUST keep access to finish it
+  after their last route is removed. This in-progress standing is itself a route for the purposes of
+  FR-015, so the shared derivation — not a special case at the edges — is what grants it.
+- **FR-043**: Access retained under FR-042 MUST end when the employee completes the course, or when
+  HR explicitly withdraws it, and at no other time.
+- **FR-044**: HR MUST be able to see who currently holds a course only because they are mid-course,
+  and to withdraw that access individually, so "who can open this course" always has an answer.
+- **FR-045**: An employee who had not started a course when their last route was removed MUST lose
+  it immediately; grandfathering protects work in progress, not eligibility.
 
 **Learning and progress**
 
@@ -272,6 +294,9 @@ roster updates without a manual reload.
 - **FR-034**: Any HR view that people monitor MUST keep itself current while open rather than showing
   a figure captured when the page was drawn.
 - **FR-035**: All dates shown to any user MUST be displayed as dd/mm/yyyy.
+- **FR-046**: The course roster MUST distinguish employees reached by a current route from those
+  retained only because they are mid-course, and MUST show a superseded completion's original date
+  alongside the date it was reopened.
 
 **Boundaries**
 
@@ -300,7 +325,9 @@ roster updates without a manual reload.
 - **Course Assignment**: A grant of access to one course for one employee or one group, with who
   granted it and when, and whether it has been revoked.
 - **Course Enrollment**: One employee's participation in one course — their overall percentage,
-  when they started, and when they completed it.
+  when they started, when they completed it, whether that completion has since been superseded by
+  added required content (and when), and whether their access is currently being retained only
+  because they are mid-course.
 - **Lesson Progress**: One employee's state on one lesson — whether and when it was completed, the
   last playback position, and the credited watched seconds.
 
@@ -324,6 +351,10 @@ roster updates without a manual reload.
 - **SC-008**: No employee can reach a course they have no route to, including by direct link, in any
   attempt.
 - **SC-009**: Zero learning progress rows are attributable to an impersonating admin.
+- **SC-010**: An employee who is mid-course when their last route is removed can still reach and
+  finish that course, in 100% of cases.
+- **SC-011**: No completion is ever silently invalidated: every superseded completion retains its
+  original date, and every reopening is traceable to an author's explicit choice.
 
 ## Assumptions
 
@@ -335,8 +366,10 @@ roster updates without a manual reload.
   (including the Arabic-capable PDF), discussion boards, announcements and notifications, learner
   analytics and org-wide reporting, Excel export of rosters, recurring or expiring training,
   learning paths spanning several courses, and any manager-facing view of their team's progress.
-- **Completion is permanent** in this release. There is no annual refresh, expiry, or re-take cycle;
-  compliance-style recurring training is a later spec.
+- **Completion does not expire on a schedule** in this release — no annual refresh and no re-take
+  cycle; compliance-style recurring training is a later spec. It can, however, be superseded when HR
+  adds required content and chooses to reopen the course (FR-039), which is an editorial act by a
+  person, not a timer.
 - **Managers get no team view** in this release; visibility is HR-only. This is a deliberate
   narrowing — the org chart is available, so it is a small later addition.
 - Course content is authored in the platform. Importing SCORM, xAPI, or any external course package
@@ -361,14 +394,17 @@ roster updates without a manual reload.
   of its interface, which is rebuilt in this platform's navy/gold design language under the usual
   mockup-first rule.
 
-## Open Questions
+## Resolved Clarifications
 
-These two shape behaviour that people will notice, and neither has an obviously right default. They
-must be settled before planning.
+Both questions raised at specification time were settled by the product owner on 2026-08-21.
 
 - **Q1 — When required content is added to a course somebody already completed, does their
-  completion stand?** [NEEDS CLARIFICATION: does adding a required lesson reopen an already-completed
-  course, or is completion a permanent historical fact against the curriculum as it stood?]
+  completion stand?** → **HR chooses per edit.** The author is asked at the moment of the edit, told
+  how many people it affects, and neither outcome happens silently. Reopened completions are
+  superseded, not erased, and reopening reaches only people the course still reaches.
+  *(FR-039, FR-040, FR-041, FR-046, SC-011.)*
 - **Q2 — When an employee loses their last route to a course they are part-way through, do they keep
-  access to finish it?** [NEEDS CLARIFICATION: is in-progress access grandfathered until completion,
-  or revoked immediately with progress retained for later?]
+  access to finish it?** → **Yes, grandfathered until they finish.** Being mid-course is modelled as
+  a route in its own right rather than an exception, so the single shared access derivation still
+  answers every question. HR can see and withdraw such access, and an employee who had not started
+  loses the course immediately. *(FR-042, FR-043, FR-044, FR-045, FR-046, SC-010.)*
