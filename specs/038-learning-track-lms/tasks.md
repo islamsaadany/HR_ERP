@@ -71,14 +71,14 @@ copy of the rule, which is the failure the benefits pool taught us.
 three required lessons as an employee, confirm the course reports itself complete and a second
 employee sits at 0%. Quickstart scenarios 1, 2, 3, 11.
 
-- [ ] T015 [US1] Write `src/app/(app)/admin/learning/actions.ts` — `createCourse`, `updateCourse`, `publishCourse` (completeness gate naming the **first specific gap**, FR-006), `unpublishCourse` (FR-007), `deleteCourse` (refused while any enrollment exists), all `requireAdmin()`
-- [ ] T016 [US1] Add curriculum actions to the same file — `upsertSection`, `deleteSection` (soft), `upsertLesson`, `deleteLesson` (soft), `upsertLessonBlock`, `deleteBlock`, `reorderSections`, `reorderLessons`, `reorderBlocks`. Reordering **must never touch `LessonProgress`** (FR-023). `TEXT` blocks are **sanitised server-side before storage** — they are later rendered as HTML
+- [X] T015 [US1] Write `src/app/(app)/admin/learning/actions.ts` — `createCourse`, `updateCourse`, `publishCourse` (completeness gate naming the **first specific gap**, FR-006), `unpublishCourse` (FR-007), `deleteCourse` (refused while any enrollment exists), all `requireAdmin()`
+- [X] T016 [US1] Add curriculum actions to the same file — `upsertSection`, `deleteSection` (soft), `upsertLesson`, `deleteLesson` (soft), `upsertLessonBlock`, `deleteBlock`, `reorderSections`, `reorderLessons`, `reorderBlocks`. Reordering **must never touch `LessonProgress`** (FR-023). `TEXT` blocks are **sanitised server-side before storage** — they are later rendered as HTML
 - [ ] T017 [US1] Write `src/app/(app)/admin/learning/page.tsx` — the course list with status chips and an Add course action, `requireAdmin()`, house `BackLink`
 - [ ] T018 [US1] Write `src/app/(app)/admin/learning/[courseId]/page.tsx` — the builder shell with the three tabs (Content · Access · People) in the `AdminBenefitsTabs` idiom, per mockup surface 1
 - [ ] T019 [P] [US1] Write `src/components/learning/CourseBuilder.tsx` + `SectionList.tsx` — the section/lesson tree with drag-reorder, matching the approved mockup
 - [ ] T020 [P] [US1] Write `src/components/learning/LessonEditor.tsx` + `BlockEditor.tsx` — the right-hand editor: title, required/optional, blocks for video link / text / file. File blocks upload to the private Blob store as `profile/documents-actions.ts` does; **video is a link field only, never an upload** (research D8)
 - [ ] T021 [US1] Write `src/app/api/learning/blocks/[id]/file/route.ts` — streams a `FILE` block via `streamPrivateBlob`, authorised by `courseAccessFor()`. A blob URL is never handed to a client that could not open the course
-- [ ] T022 [US1] Write `src/app/(app)/learning/actions.ts` — `openCourse` (creates the `CourseEnrollment` on **first open**, not on assignment — research D4), `markLessonComplete`, `markLessonIncomplete`. Every one begins with `requireLearner()`; **no learner-id parameter anywhere in this file**
+- [X] T022 [US1] Write `src/app/(app)/learning/actions.ts` — `openCourse` (creates the `CourseEnrollment` on **first open**, not on assignment — research D4), `markLessonComplete`, `markLessonIncomplete`. Every one begins with `requireLearner()`; **no learner-id parameter anywhere in this file**
 - [ ] T023 [US1] Write `src/app/(app)/learning/page.tsx` — "My learning", reading `accessibleCoursesFor()`. Framed as obligations, not a catalogue: no browse, no search, no enrol. Per mockup surface 3
 - [ ] T024 [P] [US1] Write `src/components/learning/CourseCard.tsx` — the progress bar, next-up line, and the navy Continue/Start action; green reserved for the completed state only
 - [ ] T025 [US1] Write `src/app/(app)/learning/[courseId]/page.tsx` — the player shell, gated by `courseAccessFor()` so a draft or unreachable course is refused server-side, not merely hidden (FR-005, FR-016)
@@ -117,7 +117,7 @@ with no HR action. Quickstart scenarios 5, 6, 7.
 lesson **even with the control re-enabled in devtools**; playback pauses at the checkpoint; rewinding
 never reduces credited time. Quickstart scenarios 4, 10.
 
-- [ ] T035 [US3] Add `saveVideoProgress` to `src/app/(app)/learning/actions.ts` — upsert with `videoWatchedSec = GREATEST(existing, incoming)` **in SQL**, not a read-then-`Math.max`, so two open tabs cannot lose an update (FR-028, research D6)
+- [X] T035 [US3] Add `saveVideoProgress` to `src/app/(app)/learning/actions.ts` — upsert with `videoWatchedSec = GREATEST(existing, incoming)` **in SQL**, not a read-then-`Math.max`, so two open tabs cannot lose an update (FR-028, research D6)
 - [ ] T036 [US3] Enforce the gate inside `markLessonComplete` against the **stored** `videoWatchedSec`, never a client-supplied figure — a DOM-forced attempt must be refused by the server (SC-005)
 - [ ] T037 [US3] Add `upsertCheckpoint` / `deleteCheckpoint` to `src/app/(app)/admin/learning/actions.ts`, and refuse both a checkpoint and a non-zero `minWatchPercent` when the lesson's video is `DRIVE` — with the explanation, not a silent drop (FR-031). Re-validate at publish
 - [ ] T038 [P] [US3] Write `src/components/learning/VideoLesson.tsx` — one shared tick handler across native `<video>`, the YouTube IFrame API and the Vimeo SDK: forward-only watched accumulation (ignore deltas > 1.5s so seeking forward earns nothing), resume position, saves throttled to ~5s
