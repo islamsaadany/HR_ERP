@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
 import { courseRoster } from "@/lib/learning/access";
 import { computeProgressPercent } from "@/lib/learning/progress";
-import { audienceReach } from "@/app/(app)/admin/learning/access-actions";
+import { audienceReach } from "@/lib/learning/queries";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { CourseBuilder, type BuilderSection } from "@/components/learning/CourseBuilder";
 import { PublishToggle } from "@/components/learning/PublishToggle";

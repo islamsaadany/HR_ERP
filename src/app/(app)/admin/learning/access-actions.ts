@@ -5,7 +5,7 @@ import type { AudienceKind } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
 import { courseAccessFor } from "@/lib/learning/access";
-import { audienceWhere, type AudienceRule } from "@/lib/learning/audience";
+import { audienceReach } from "@/lib/learning/queries";
 
 /**
  * Who a course reaches (spec 038 US2). HR Admin + Super User.
@@ -89,16 +89,6 @@ export async function removeAudience(courseId: string, audienceId: string): Prom
   await prisma.courseAudience.delete({ where: { id: audienceId } });
   revalidate(courseId);
   return { ok: true };
-}
-
-/** How many active employees this course's audience rules reach right now. */
-export async function audienceReach(courseId: string): Promise<number> {
-  const rules = await prisma.courseAudience.findMany({
-    where: { courseId },
-    select: { kind: true, value: true },
-  });
-  const where = audienceWhere(rules as AudienceRule[]);
-  return where ? prisma.user.count({ where }) : 0;
 }
 
 export async function assignToUser(courseId: string, userId: string): Promise<AccessResult> {

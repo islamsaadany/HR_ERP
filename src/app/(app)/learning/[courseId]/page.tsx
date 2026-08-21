@@ -6,7 +6,7 @@ import { courseAccessFor } from "@/lib/learning/access";
 import { learningWritesBlocked } from "@/lib/learning/actor";
 import { coursePlayerData } from "@/lib/learning/queries";
 import { computeProgressPercent, firstIncompleteLessonId } from "@/lib/learning/progress";
-import { openCourse } from "@/app/(app)/learning/actions";
+import { ensureEnrollment } from "@/lib/learning/enrollment";
 import { CoursePlayer, type PlayerSection } from "@/components/learning/CoursePlayer";
 import { LessonContent, type Block } from "@/components/learning/LessonContent";
 import { isTrackableSource, videoProvider } from "@/lib/learning/video";
@@ -37,7 +37,10 @@ export default async function CoursePlayerPage({
 
   // Opening the course is what starts it. Doing this before the read means the first paint already
   // shows the enrollment rather than an empty state that fills in on the next refresh.
-  await openCourse(courseId);
+  //
+  // NOTE the plain function, not the `openCourse` action: an action revalidates, and revalidating
+  // during a render is unsupported by Next.js — that was the "server-side exception" on this page.
+  await ensureEnrollment(user.id, courseId);
 
   const data = await coursePlayerData(courseId, user.id);
   if (!data) notFound();

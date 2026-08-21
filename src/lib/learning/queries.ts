@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { accessibleCoursesFor } from "@/lib/learning/access";
+import { audienceWhere, type AudienceRule } from "@/lib/learning/audience";
 import { computeProgressPercent, firstIncompleteLessonId, type LessonRef } from "@/lib/learning/progress";
 import { renewalState, type RenewalState } from "@/lib/learning/renewal";
 import type { CourseCardData } from "@/components/learning/CourseCard";
@@ -232,4 +233,23 @@ export async function teamLearning(managerId: string): Promise<TeamMemberLearnin
     })
   );
   return rows;
+}
+
+/**
+ * How many active employees this course's audience rules reach right now.
+ *
+ * A PLAIN query, deliberately not exported from a `"use server"` file. It used to live in
+ * `access-actions.ts`, which made it a publicly callable endpoint — and it carried no
+ * `requireAdmin()`, so anyone who knew the shape of the request could have enumerated audience
+ * sizes. Nothing here is dangerous on its own, but "every export in this file is a public POST
+ * endpoint" is exactly the property that is easy to forget, so the query moved instead of gaining
+ * a guard. Callers do their own authorisation, as they already do for every other query here.
+ */
+export async function audienceReach(courseId: string): Promise<number> {
+  const rules = await prisma.courseAudience.findMany({
+    where: { courseId },
+    select: { kind: true, value: true },
+  });
+  const where = audienceWhere(rules as AudienceRule[]);
+  return where ? prisma.user.count({ where }) : 0;
 }
