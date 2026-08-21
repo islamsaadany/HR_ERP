@@ -89,7 +89,7 @@ export function LessonEditor({
   const busy = pending || blockPending;
 
   return (
-    <div className="rounded-xl border border-line bg-surface p-3.5">
+    <div className="rounded-xl border border-line bg-surface p-4">
       <label className={LABEL} htmlFor="lesson-title">Lesson title</label>
       <input
         id="lesson-title"
@@ -98,50 +98,32 @@ export function LessonEditor({
         onChange={(e) => setTitle(e.target.value)}
       />
 
-      {/* Three small settings on one line, each sized to what it actually holds — Minutes takes two
-          digits, not a sentence. Labels shortened to match (layout A, approved 2026-08-21). */}
-      <div className="mt-2.5 grid grid-cols-[88px_96px_1fr] gap-2">
-        <div>
-          <label className={LABEL} htmlFor="lesson-minutes">Minutes</label>
+      <div className="mt-3 flex gap-3">
+        <div className="flex-1">
+          <label className={LABEL} htmlFor="lesson-minutes">Minutes (optional)</label>
           <input
             id="lesson-minutes"
             className={INPUT}
             inputMode="numeric"
-            placeholder="—"
             value={minutes}
             onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))}
           />
         </div>
-        <div>
-          <label className={LABEL} htmlFor="lesson-watch">Must watch</label>
-          <input
-            id="lesson-watch"
-            className={INPUT}
-            inputMode="numeric"
-            value={watch}
-            disabled={untrackable}
-            title="Percent of the video that must be watched. 0 for no requirement."
-            onChange={(e) => {
-              const n = Math.min(100, Number(e.target.value.replace(/\D/g, "") || 0));
-              setWatch(String(n));
-            }}
-          />
-        </div>
-        <div>
-          <label className={LABEL} htmlFor="lesson-required">Progress</label>
+        <div className="flex-1">
+          <label className={LABEL} htmlFor="lesson-required">Counts toward progress</label>
           <select
             id="lesson-required"
             className={INPUT}
             value={isRequired ? "required" : "optional"}
             onChange={(e) => setIsRequired(e.target.value === "required")}
           >
-            <option value="required">Required — counts</option>
+            <option value="required">Required</option>
             <option value="optional">Optional</option>
           </select>
         </div>
       </div>
 
-      <div className="mt-2.5">
+      <div className="mt-3">
         <label className={LABEL} htmlFor="lesson-video">Video link</label>
         <input
           id="lesson-video"
@@ -176,12 +158,28 @@ export function LessonEditor({
         </div>
       </div>
 
-      {untrackable ? (
-        <p className="mt-2 rounded-r-lg border-l-[3px] border-red-500 bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
-          Google Drive can&rsquo;t report playback, so this lesson can&rsquo;t be gated or carry a
-          checkpoint. The video will still play.
-        </p>
-      ) : null}
+      <div className="mt-3">
+        <label className={LABEL} htmlFor="lesson-watch">
+          Must watch (%) — 0 for no requirement
+        </label>
+        <input
+          id="lesson-watch"
+          className={INPUT}
+          inputMode="numeric"
+          value={watch}
+          disabled={untrackable}
+          onChange={(e) => {
+            const n = Math.min(100, Number(e.target.value.replace(/\D/g, "") || 0));
+            setWatch(String(n));
+          }}
+        />
+        {untrackable ? (
+          <p className="mt-1.5 rounded-r-lg border-l-[3px] border-red-500 bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
+            Google Drive can&rsquo;t report playback, so this lesson can&rsquo;t be gated or carry a
+            checkpoint. The video will still play.
+          </p>
+        ) : null}
+      </div>
 
       <LessonVideoSettings
         courseId={courseId}
@@ -190,35 +188,25 @@ export function LessonEditor({
         checkpoints={lesson.checkpoints}
       />
 
-      {/* Notes start closed — most lessons have none, and an empty textarea was costing ~120px of
-          height on every lesson to show nothing. The chip says whether there is anything inside. */}
-      <details className="mt-2.5 rounded-lg border border-line bg-surface" open={!!textBlock?.text}>
-        <summary className="flex cursor-pointer list-none items-center gap-2 px-2.5 py-2 text-[12.5px] font-semibold text-navy-700 [&::-webkit-details-marker]:hidden">
-          <span aria-hidden className="transition-transform">›</span>
-          Notes
-          <span className={CHIP.muted}>{textBlock?.text ? "written" : "empty"}</span>
-        </summary>
-        <div className="px-2.5 pb-2.5">
-          <textarea
-            id="lesson-text"
-            aria-label="Lesson notes, markdown"
-            className={`${INPUT} min-h-[90px]`}
-            value={text}
-            placeholder="Markdown…"
-            onChange={(e) => setText(e.target.value)}
-          />
-          {text.trim() !== (textBlock?.text ?? "") ? (
-            <button
-              type="button"
-              disabled={busy}
-              className={`${BTN_GHOST} mt-1.5`}
-              onClick={() => saveBlock("TEXT", text, textBlock?.id ?? null)}
-            >
-              Save notes
-            </button>
-          ) : null}
-        </div>
-      </details>
+      <div className="mt-3">
+        <label className={LABEL} htmlFor="lesson-text">Notes (markdown, optional)</label>
+        <textarea
+          id="lesson-text"
+          className={`${INPUT} min-h-[90px]`}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        {text.trim() !== (textBlock?.text ?? "") ? (
+          <button
+            type="button"
+            disabled={busy}
+            className={`${BTN_GHOST} mt-1.5`}
+            onClick={() => saveBlock("TEXT", text, textBlock?.id ?? null)}
+          >
+            Save notes
+          </button>
+        ) : null}
+      </div>
 
       {blockError ? (
         <p role="alert" className="mt-2 text-xs text-red-700">
@@ -227,7 +215,7 @@ export function LessonEditor({
       ) : null}
 
       {lesson.blocks.length > 0 ? (
-        <ul className="mt-2.5 space-y-1">
+        <ul className="mt-3 space-y-1">
           {lesson.blocks.map((b) => (
             <li key={b.id} className="flex items-center gap-2 text-[12.5px] text-muted">
               <span className={CHIP.muted}>{b.type}</span>
@@ -252,7 +240,7 @@ export function LessonEditor({
         </ul>
       ) : null}
 
-      <div className="mt-3 flex justify-between gap-2">
+      <div className="mt-4 flex justify-between gap-2">
         <button
           type="button"
           disabled={busy || !title.trim()}

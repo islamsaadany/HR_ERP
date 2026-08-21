@@ -86,8 +86,20 @@ export function VideoLesson({
   const [activeCue, setActiveCue] = useState<Checkpoint | null>(null);
   const [playerError, setPlayerError] = useState<string | null>(null);
   const [blockedSkip, setBlockedSkip] = useState(false);
-  /** The furthest point legitimately reached. Resuming counts — they got there honestly before. */
-  const maxReachedRef = useRef(initialPositionSec);
+  /**
+   * The furthest point legitimately reached.
+   *
+   * Seeded from the LOWER of the resume position and the credited watched seconds, which is the
+   * whole subtlety: the resume position is where playback last STOPPED, and someone who dragged to
+   * the end once has a resume position at the end while having watched almost none of it. Seeding
+   * from that alone (the first version of this, and the reason it did nothing) hands them the
+   * entire scrubber on their next visit.
+   *
+   * Credited seconds alone would be wrong the other way: rewatching 0–30s twice credits 60s
+   * against a furthest point of 30s, which would unlock 30 seconds they have never seen. The
+   * lower of the two is true under both.
+   */
+  const maxReachedRef = useRef(Math.min(initialPositionSec, initialWatchedSec));
   const enforceRef = useRef(enforceNoSkip);
 
   // ── The moving parts, held in refs so the player effects never see them change ──

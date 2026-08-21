@@ -83,18 +83,11 @@ export function LessonVideoSettings({
   }
 
   return (
-    // Open when there are checkpoints, closed when there are not — the common case is none, and
-    // three lines of "there aren't any" on every lesson is exactly the height we set out to save.
-    <details className="mt-2.5 rounded-lg border border-line bg-surface" open={checkpoints.length > 0}>
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-2.5 py-2 text-[12.5px] font-semibold text-navy-700 [&::-webkit-details-marker]:hidden">
-        <span aria-hidden>›</span>
-        Checkpoints
-        <span className={CHIP.muted}>{checkpoints.length || "none"}</span>
-      </summary>
-      <div className="px-2.5 pb-2.5">
+    <div className="mt-3 border-t border-line pt-3">
+      <span className={LABEL}>Checkpoints</span>
       {checkpoints.length === 0 && !adding ? (
         <p className="text-[12px] text-muted">
-          A checkpoint pauses the video and asks a question before it continues.
+          None yet. A checkpoint pauses the video and asks a question before it continues.
         </p>
       ) : null}
 
@@ -182,7 +175,6 @@ export function LessonVideoSettings({
           + Add checkpoint
         </button>
       )}
-      </div>
-    </details>
+    </div>
   );
 }

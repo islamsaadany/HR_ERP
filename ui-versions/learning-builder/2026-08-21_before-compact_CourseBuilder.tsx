@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   deleteLesson,
   deleteSection,
+  publishCourse,
+  unpublishCourse,
   upsertLesson,
   upsertSection,
   type CompletionChoice,
@@ -26,10 +28,12 @@ export type BuilderSection = { id: string; title: string; lessons: EditableLesso
  */
 export function CourseBuilder({
   courseId,
+  status,
   sections,
   renewAfterMonths,
 }: {
   courseId: string;
+  status: "DRAFT" | "PUBLISHED";
   sections: BuilderSection[];
   renewAfterMonths: number | null;
 }) {
@@ -105,9 +109,32 @@ export function CourseBuilder({
 
   return (
     <div>
-      {/* The status chip and Publish/Return-to-draft moved into the page header (layout A) —
-          they describe the course, not this tab, and the row they occupied here was pure chrome
-          between the tabs and the first piece of content. */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={status === "PUBLISHED" ? CHIP.done : CHIP.attention}>
+            {status === "PUBLISHED" ? "Published" : "Draft"}
+          </span>
+          {status === "DRAFT" ? (
+            <span className="text-xs text-muted">No employee can see this yet.</span>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          disabled={pending}
+          className={status === "PUBLISHED" ? BTN_GHOST : BTN_NAVY}
+          onClick={() =>
+            run(
+              () => (status === "PUBLISHED" ? unpublishCourse(courseId) : publishCourse(courseId)),
+              status === "PUBLISHED"
+                ? "Back to draft — employees can no longer see it. Nobody's progress was touched."
+                : "Published."
+            )
+          }
+        >
+          {status === "PUBLISHED" ? "Return to draft" : "Publish"}
+        </button>
+      </div>
+
       {error ? (
         <p role="alert" className="mb-3 rounded-r-lg border-l-[3px] border-red-500 bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
           {error}

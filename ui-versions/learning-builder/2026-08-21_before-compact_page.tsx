@@ -5,9 +5,9 @@ import { requireAdmin } from "@/lib/roles";
 import { courseRoster } from "@/lib/learning/access";
 import { computeProgressPercent } from "@/lib/learning/progress";
 import { audienceReach } from "@/app/(app)/admin/learning/access-actions";
+import { BackLink } from "@/components/admin/BackLink";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { CourseBuilder, type BuilderSection } from "@/components/learning/CourseBuilder";
-import { PublishToggle } from "@/components/learning/PublishToggle";
 import { AudiencePicker, type RouteRow } from "@/components/learning/AudiencePicker";
 import { CourseRoster, type RosterRow } from "@/components/learning/CourseRoster";
 import { LearningTabs } from "@/components/learning/LearningTabs";
@@ -190,43 +190,23 @@ export default async function CourseBuilderPage({
     <div>
       {/* Other admins assign courses and employees finish them while this sits open. */}
       <AutoRefresh />
-      {/* One header row (layout A, approved 2026-08-21). The back link, title, status chip and the
-          draft toggle used to occupy four stacked rows before any content appeared; they now share
-          a line, and the tabs below act as the divider so there is no separate status row at all. */}
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <Link href="/admin/learning" className="text-sm text-muted hover:text-ink">
-            ← Learning
-          </Link>
-          <h1 className="font-serif text-2xl text-ink">{course.title}</h1>
-          <span
-            className={
-              course.status === "PUBLISHED"
-                ? "inline-block rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-[10px] font-bold text-green-700"
-                : "inline-block rounded-full border border-gold-300 bg-gold-100 px-2.5 py-0.5 text-[10px] font-bold text-gold-800"
-            }
-          >
-            {course.status === "PUBLISHED" ? "Published" : "Draft"}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <PublishToggle courseId={course.id} status={course.status} />
-          <Link href="/admin/learning/groups" className="text-sm text-muted hover:text-ink">
-            Manage groups →
-          </Link>
-        </div>
+      <BackLink href="/admin/learning" label="Learning" />
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="font-serif text-3xl text-ink">{course.title}</h1>
+        <Link href="/admin/learning/groups" className="text-sm text-muted hover:text-ink">
+          Manage groups →
+        </Link>
       </div>
-      {course.summary ? (
-        <p className="mt-0.5 max-w-[70ch] text-sm text-muted">{course.summary}</p>
-      ) : null}
+      {course.summary ? <p className="mt-1 max-w-[70ch] text-muted">{course.summary}</p> : null}
 
-      <div className="mt-3">
+      <div className="mt-5">
         <LearningTabs
           accessCount={audienceRows.length + assignmentRows.length}
           peopleCount={rosterRows.length}
           content={
             <CourseBuilder
               courseId={course.id}
+              status={course.status}
               sections={sections}
               renewAfterMonths={course.renewAfterMonths}
             />
