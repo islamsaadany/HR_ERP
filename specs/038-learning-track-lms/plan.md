@@ -61,7 +61,7 @@ via the one `formatDate` · navy = action, green = done-state only.
 | Principle | Gate | Status after Phase 1 |
 |---|---|---|
 | **I — Align Before Building** | Scope, authoring model, assignment model and provenance agreed before specifying; both spec clarifications answered by the product owner before planning. | ✅ Pass |
-| **II — UI Changes Require Approval** | No component is written before an approved HTML mockup; four surfaces identified below; snapshots to `ui-versions/` are moot (all files are new) but the mockup gate is not. | ✅ Pass — **gate open, mockups owed next** |
+| **II — UI Changes Require Approval** | Mockup `design-mockups/learning/2026-08-21_learning-track.html` covering all five surfaces was **approved 2026-08-21**. Components may now be written to match it; any deviation needs a fresh mockup. `ui-versions/` snapshots are owed for the existing files the wiring tasks edit (AppShell, admin home, dashboard), not for new files. | ✅ Pass — **gate cleared** |
 | **III — Benefits Money Server-Authoritative** | No money in this feature. The *pattern* is honoured where it applies: one derivation of the access rule, enforced server-side on every path. | ✅ Pass (n/a, pattern applied) |
 | **IV — Spec-Driven & Docs Move With Code** | spec → plan → tasks → implement. `PROJECT_DETAILS.md`, `IMPLEMENTATION_PROGRESS.md` (Phase 9) and `IMPLEMENTATION_PLAN.md` are updated in the implementing commits. | ✅ Pass |
 | **V — Engineered Enough, Explicit Over Clever** | One rule per concept, no cached percentage, no second auth idiom. Pure-function tests only; no regime introduced. | ✅ Pass |
@@ -176,4 +176,4 @@ sign-off:
 - **Phase 0 — Research**: ✅ complete → [research.md](./research.md) (D1–D9, all resolved)
 - **Phase 1 — Design & contracts**: ✅ complete → [data-model.md](./data-model.md),
   [contracts/server-actions.md](./contracts/server-actions.md), [quickstart.md](./quickstart.md)
-- **Phase 2 — Tasks**: not started — `/speckit-tasks`, after the four mockups are signed off
+- **Phase 2 — Tasks**: ✅ complete → [tasks.md](./tasks.md) (51 tasks; MVP = Phases 1–3)
