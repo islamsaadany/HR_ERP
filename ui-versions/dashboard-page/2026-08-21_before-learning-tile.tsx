@@ -2,7 +2,6 @@ import Link from "next/link";
 import { requireUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { tracksForUser } from "@/lib/onboarding";
-import { outstandingCourseCount } from "@/lib/learning/queries";
 import { getActivePlanYear } from "@/lib/benefits/config";
 import { getDisabledModules } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
@@ -82,10 +81,6 @@ export default async function DashboardPage() {
   const showOnboarding = on("onboarding") && !onboardingDone;
   const showBenefits = on("benefits") && !!planYear;
   const showTimeOff = on("timeoff");
-  const showLearning = on("learning");
-  // Only when they actually owe something. The dashboard was deliberately trimmed on 2026-08-18;
-  // a permanent "0 courses" tile would be exactly the noise that trimming removed.
-  const outstandingCourses = showLearning ? await outstandingCourseCount(me.id) : 0;
   const showApprovals = on("timeoff") && hasReports > 0;
 
   return (
@@ -112,14 +107,6 @@ export default async function DashboardPage() {
         {showTimeOff ? (
           <Tile title="Time-Off" href="/time-off">
             {myPending > 0 ? `${myPending} request(s) pending.` : "Request time off."}
-          </Tile>
-        ) : null}
-
-        {showLearning && outstandingCourses > 0 ? (
-          <Tile title="Learning" href="/learning">
-            {outstandingCourses === 1
-              ? "1 course to finish."
-              : `${outstandingCourses} courses to finish.`}
           </Tile>
         ) : null}
 

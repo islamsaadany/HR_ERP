@@ -407,3 +407,74 @@ header under a pinned page title.
   (`ff-scroll-below-xl`) so it keeps the frozen first column like everything else. The parked offset
   is measured at runtime by `<StickyHeaderOffset>` because it changes with the impersonation banner
   and a wrapped heading.
+
+## Learning Track (spec 038, built 2026-08-21)
+
+HR authors training courses and routes them to employees; employees work through them with tracked
+progress. Adapted from `ahmedgalal-lang/FFLMS`; the employee registry is the only source of people.
+
+**Structure**: `Course` → `CourseSection` → `Lesson` → `LessonBlock` (VIDEO / TEXT / FILE), plus
+`VideoCheckpoint`. Named `CourseSection` because `ModuleFlag` already means "app area" here.
+
+**Access — one derivation, four routes** (`src/lib/learning/access.ts`). A person reaches a course by
+a live `CourseAssignment` to them, a `CourseAssignment` to a `LearnerGroup` they belong to, a
+`CourseAudience` rule they match, or by being **mid-course**. Three entry points over one rule:
+`courseAccessFor` (per person), `accessibleCoursesFor` (My learning), `courseRoster` (HR roster).
+Nothing else may decide access.
+
+**Audiences are rules, not lists**: `CourseAudience` stores `{kind, value}` — ALL_ACTIVE, DEPARTMENT,
+BUSINESS_UNIT, EMPLOYMENT_TYPE, TENURE_BAND, REPORTS_TO — compiled by `audience.ts` into ONE
+`where`. Rules union. A TENURE_BAND rule compiles to a **startDate range**, never the stored
+`tenureBand`, which is derived and can be stale. A rule that reaches nobody must never widen to
+everybody. `audience.ts` also holds an in-memory twin of the same rule for the per-person direction;
+a test cross-checks that the two select the same people.
+
+**Assignment ≠ enrollment**: assigning grants eligibility; the `CourseEnrollment` is created on
+**first open**. That is what makes "someone who never started loses access immediately" expressible,
+and what makes grandfathering free — an in-progress enrollment IS a route, so nothing is written
+when other routes disappear.
+
+**Progress**: computed from `LessonProgress`, never stored. Keyed by lesson id, so reordering or
+renaming cannot move anyone's percentage. Only REQUIRED lessons count. `videoWatchedSec` and
+`videoDurationSec` advance with SQL `GREATEST`, so rewinding never costs credit and two open tabs
+cannot lose an update.
+
+**Reopening**: adding required content to a published course with completions asks the author, is
+refused without an explicit choice, and supersedes (`firstCompletedAt` + `reopenedAt`) rather than
+erasing. Reaches only people the course still reaches.
+
+**Video is linked, not hosted** — unlisted Vimeo/YouTube or a direct file URL. Google Drive plays but
+exposes no playback API, so a watch gate or checkpoint on one is refused. The gate is decided
+server-side from stored seconds; the duration originates from the player, so it stops people
+clicking past training rather than someone determined to forge it.
+
+**Impersonation**: `requireLearner()` refuses every learning write while an admin is viewing as an
+employee, and no learning write takes a user id as a parameter — so a new action cannot skip it.
+
+**Rich text** is markdown rendered by `react-markdown` (as Knowledge does): no HTML sanitiser, no
+`dangerouslySetInnerHTML`.
+
+**Surfaces**: `/learning` (My learning — obligations, not a catalogue), `/learning/[courseId]` (the
+player), `/admin/learning` (course list), `/admin/learning/[courseId]` (Content · Access · People),
+`/admin/learning/groups`. File blocks stream via `/api/learning/blocks/[id]/file`, authorised by the
+same derivation. Registered in `lib/modules.ts` as `learning` for the release switch.
+
+**Manager team view** (`/learning/team`, added 2026-08-21): a manager sees their CURRENT direct
+reports and each one's course progress. Gated on the org chart via `isManager`, exactly like
+Time-Off approvals — no stored role, so a reporting-line change takes effect immediately in both
+directions and losing your last report removes the page. Read-only and deliberately narrower than
+the HR roster: names, titles and progress, but no route information, because why someone holds a
+course is an HR matter. Direct reports only, not the tree below them.
+
+**Optional renewal** (`Course.renewAfterMonths`, added 2026-08-21): a course may require redoing on
+a cycle — 6 months, a year, 2 or 3 years — defaulting to *never*, which is what every existing course
+keeps. Lapsing is **derived** from the completion date (`lib/learning/renewal.ts`), never stored and
+never swept by a job, so changing a period re-evaluates everyone at once and nothing can be missed
+or half-applied. A lapsed completion reads as not-complete everywhere, and grants access again
+through the in-progress route — the person has been asked to redo it. Lesson ticks and watched
+seconds are cleared only when the learner reopens the course; `firstCompletedAt` and
+`completionCount` are kept. HR is told how many people would lapse immediately before saving a period.
+
+**Not in this release**: quizzes, gradable assignments, certificates, discussions, notifications,
+analytics, roster export, learning paths. No email, no cron,
+no new env var, no new runtime dependency.

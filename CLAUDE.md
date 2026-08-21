@@ -156,7 +156,7 @@ four steering files (same commit).
 The **Benefits** module is the heart of v1 — it is the only module involving money and admin-configured rules (pool ceilings by employment type × tenure, a 50% single-benefit cap, and rate-card-driven medical insurance that is exempt from the 50% cap). As of **spec 018** it is a **claim-based living allowance**: no basket to submit — employees claim flexible benefits as they spend across the open plan year, medical is a one-time commitment, and the benefit-count limit is retired (dormant flag). All rule enforcement lives server-side.
 
 ### Technology Stack (decided)
-- **Framework:** Next.js 16 (App Router) + React 19
+- **Framework:** Next.js 15 (App Router) + React 19
 - **Language:** TypeScript
 - **Database:** PostgreSQL (Neon, serverless) + Prisma
 - **Auth:** NextAuth.js v5, Google provider, restricted to the company domain. HR/Admin role gating on server routes.

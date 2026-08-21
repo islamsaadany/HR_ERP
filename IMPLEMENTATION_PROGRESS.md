@@ -16,7 +16,54 @@
 | 6 — Benefits (admin config) | 🟢 Complete |
 | 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |
-| 9 — Learning Track placeholder + Handoff | ⬜ Not started |
+| 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating; migrations `060`+`061`) |
+
+## Spec 038 — Learning Track: courses, assignment & tracked progress (built 2026-08-21 — migrations `060` + `061`)
+- **Phase 9 built for real**, adapted from `ahmedgalal-lang/FFLMS` (confirmed ours to reuse). HR
+  authors courses (course → **CourseSection** → lesson → blocks), publishes behind a completeness
+  gate that names the first specific gap, and routes them to people; employees work through them
+  with tracked progress. Aligned first: **HR/Admin authors only** (no instructor role), **both**
+  registry-derived audiences and ad-hoc groups, core learning loop only for v1.
+- **Audiences are RULES, not expansions** — a `CourseAudience` row stores "the Consulting
+  department" and is resolved live, so a new joiner is picked up with nobody re-running anything.
+  A **tenure** audience compiles to a `startDate` RANGE, never the stored `tenureBand` column,
+  which is derived and can be stale. Rules union; a broken rule reaches nobody rather than everyone.
+- **One access derivation** (`src/lib/learning/access.ts`) across four routes — direct assignment,
+  group, live audience, and **being mid-course**. Grandfathering is *derived*, never a flag, so none
+  of the six paths that can remove a route has to remember to set anything. Assignment ≠ enrollment:
+  the enrollment is created on **first open**, which is what makes "never started ⇒ lose it
+  immediately" expressible at all.
+- **Reopening (Q1-C)**: an edit raising a published course's required set re-counts affected people
+  *inside* the write and **refuses** without an explicit choice — the dialog is an affordance, the
+  refusal is the guarantee. Completions are superseded, never erased (`firstCompletedAt` kept).
+- **Video is linked, not hosted** (unlisted Vimeo/YouTube or a direct file). Blob is private here
+  and `blob-serve.ts` implements no HTTP Range, which seeking needs. Google Drive plays but cannot
+  be measured, so a gate or checkpoint on one is **refused**, not silently ignored.
+- The watch gate is decided server-side from stored watched/duration seconds. **Stated limit**: the
+  duration originates from the player, so it stops people clicking past training, not someone
+  determined to forge it. Closing that means calling Vimeo/YouTube — deliberately not in this release.
+- Rich text is **markdown via react-markdown** (as Knowledge already does), so the module needs no
+  HTML sanitiser and no `dangerouslySetInnerHTML`.
+- Verified: **75/75** unit tests (progress, audience incl. a cross-check that the SQL and in-memory
+  forms select the same people, and the 4-route access matrix); **22/22** US1 and **21/21** US2–US4
+  against a throwaway Postgres 16; **5/5** on the watched-seconds `GREATEST` incl. the two-tab race.
+  Migrations `060`/`061` applied twice (second run a no-op), zero drift beyond the house-standard
+  `updatedAt` default. `tsc` + `build` green.
+- **Manager team view** added same-day on request: `/learning/team`, gated on the org chart
+  (`isManager`), showing current direct reports and their progress. Read-only, no route
+  information — that stays with HR. Verified 14/14 (direct reports only, not the tree below;
+  reporting-line moves take effect immediately both ways; leavers drop off).
+- **Optional per-course renewal** added same-day on request (migration `062`): a course may fall
+  due again after 6/12/24/36 months, defaulting to never. Lapsing is DERIVED from the completion
+  date — no flag, no cron — so a period change re-evaluates everyone instantly and nothing can be
+  missed or run twice; ticks clear only when the learner returns, and their first completion and
+  completion count survive. HR sees how many people would lapse immediately before saving.
+  Verified 12/12 + 15 unit tests.
+- **SC-005 scoped honestly** on user decision: the watch gate measures honest engagement, not
+  cheating. It is server-decided from stored seconds, but the duration comes from the player;
+  querying Vimeo/YouTube for the true length was considered and declined.
+- **Deferred and named in the spec**: quizzes, gradable assignments, certificates (incl. the
+  Arabic-capable PDF), discussions, notifications, analytics, roster export, learning paths.
 
 ## Spec 037 — Official holidays: verification, bridges & team announcements (built 2026-08-19 — migration `057` applies on deploy)
 - **The log grew up.** `PublicHoliday` moved from a single unique date to two date **ranges** —

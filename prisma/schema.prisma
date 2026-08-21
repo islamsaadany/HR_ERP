@@ -154,6 +154,18 @@ model User {
   campaignsCreated DataRequestCampaign[] @relation("CampaignCreator")
   campaignTargets  DataRequestTarget[]   @relation("CampaignTarget")
 
+  // Learning Track (spec 038) — back-relations only; this feature adds NO column to User.
+  coursesCreated           Course[]             @relation("CourseCreator")
+  coursesUpdated           Course[]             @relation("CourseUpdater")
+  courseAudiencesCreated   CourseAudience[]     @relation("AudienceCreator")
+  learnerGroupsCreated     LearnerGroup[]       @relation("LearnerGroupCreator")
+  learnerGroupMemberships  LearnerGroupMember[] @relation("GroupMemberSubject")
+  learnerGroupMembersAdded LearnerGroupMember[] @relation("GroupMemberAdder")
+  courseAssignments        CourseAssignment[]   @relation("CourseAssignmentSubject")
+  courseAssignmentsGranted CourseAssignment[]   @relation("CourseAssignmentActor")
+  courseEnrollments        CourseEnrollment[]   @relation("EnrollmentLearner")
+  courseAccessWithdrawn    CourseEnrollment[]   @relation("AccessWithdrawer")
+
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   poolExceptions        PoolCeilingException[] @relation("PoolExceptionSubject")
@@ -1173,4 +1185,310 @@ model PoolCeilingException {
 enum PoolExceptionKind {
   RAISED
   ACCEPTED
+}
+
+// ─── Learning Track (spec 038) ──────────────────────────────────────────
+// HR authors courses and routes them to employees; employees work through them with
+// tracked progress. The employee registry is the ONLY source of people — this module
+// adds no account, no sign-up and no role.
+//
+// Naming: the middle hierarchy level is `CourseSection`, never `Module` (ModuleFlag
+// already means "app area" here), and nothing here is called `Announcement`.
+
+enum LearningCourseStatus {
+  DRAFT // invisible to employees, including by direct link
+  PUBLISHED
+}
+
+enum LearningVisibility {
+  OPEN // every active employee
+  RESTRICTED // only people an access route reaches
+}
+
+enum LessonBlockType {
+  VIDEO
+  TEXT
+  FILE
+}
+
+/// How a course is routed to people. Stored as a RULE and resolved live against the
+/// registry, never expanded into membership rows — that is what makes a new joiner pick
+/// up their courses with no HR action (spec 038 FR-014).
+enum AudienceKind {
+  ALL_ACTIVE
+  DEPARTMENT
+  BUSINESS_UNIT
+  EMPLOYMENT_TYPE
+  TENURE_BAND
+  REPORTS_TO
+}
+
+/// Where a lesson's video lives. Stored rather than re-derived on read, so the server can
+/// check trackability without re-parsing a URL. There is deliberately no UPLOAD member:
+/// video is linked, never hosted (spec 038 research D8). DRIVE plays but exposes no
+/// playback API, so it can carry no watch gate and no checkpoint.
+enum VideoSource {
+  YOUTUBE
+  VIMEO
+  DRIVE
+  DIRECT_FILE
+}
+
+model Course {
+  id           String               @id @default(cuid())
+  title        String
+  summary      String?
+  /// Private blob URL, streamed like every other image in the app.
+  coverBlobUrl String?
+  category     String?
+  status       LearningCourseStatus @default(DRAFT)
+  visibility   LearningVisibility   @default(RESTRICTED)
+  /// Optional renewal period in months. NULL (the default) = completion is permanent. When set,
+  /// a completion older than this is treated as lapsed and the course returns to the learner's
+  /// list. Lapsing is DERIVED from the completion date, never a stored flag and never a scheduled
+  /// job, so nothing can be missed or run twice.
+  renewAfterMonths Int?
+  order        Int                  @default(0)
+  publishedAt  DateTime?
+
+  createdById String?
+  createdBy   User?   @relation("CourseCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?   @relation("CourseUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  sections    CourseSection[]
+  audiences   CourseAudience[]
+  assignments CourseAssignment[]
+  enrollments CourseEnrollment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([order])
+}
+
+model CourseSection {
+  id        String    @id @default(cuid())
+  courseId  String
+  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title     String
+  order     Int
+  deletedAt DateTime?
+
+  lessons Lesson[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
+}
+
+model Lesson {
+  id               String        @id @default(cuid())
+  sectionId        String
+  section          CourseSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  title            String
+  order            Int
+  /// Only REQUIRED lessons count toward the course percentage (spec 038 FR-004/FR-022).
+  isRequired       Boolean       @default(true)
+  estimatedMinutes Int?
+  /// Gate completion until this % of the lesson's video is watched. 0 = no gate.
+  /// Refused for a DRIVE video, which reports no playback (FR-031).
+  minWatchPercent  Int           @default(0)
+  /// Soft delete: removing a lesson must leave everyone's completions meaningful.
+  deletedAt        DateTime?
+
+  blocks      LessonBlock[]
+  checkpoints VideoCheckpoint[]
+  progress    LessonProgress[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sectionId])
+}
+
+model LessonBlock {
+  id            String          @id @default(cuid())
+  lessonId      String
+  lesson        Lesson          @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  type          LessonBlockType
+  order         Int
+  /// TEXT only — sanitised SERVER-SIDE before storage, because it is rendered as HTML.
+  text          String?
+  /// FILE only — a private blob URL. Never a video: the platform hosts no video.
+  blobUrl       String?
+  /// VIDEO only — the external source, with `videoSource` recording which it is.
+  externalUrl   String?
+  videoSource   VideoSource?
+  fileName      String?
+  fileSizeBytes Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([lessonId])
+}
+
+/// A question shown at a moment in a lesson's video: playback pauses until it is answered.
+/// Answers are NEVER stored — this is a comprehension device, not an assessment (FR-032).
+model VideoCheckpoint {
+  id           String   @id @default(cuid())
+  lessonId     String
+  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  atSec        Int
+  prompt       String
+  options      String[]
+  correctIndex Int
+  createdAt    DateTime @default(now())
+
+  @@index([lessonId])
+}
+
+/// One routing rule on a course. Rules on the same course UNION (a person matching any of
+/// them is reached). `value` is interpreted per `kind`: the department label, a
+/// BusinessUnit id, an EmploymentType, a TenureBand, or the manager's User id; null for
+/// ALL_ACTIVE. A TENURE_BAND rule is compiled to a startDate RANGE, never to the stored
+/// (and possibly stale) User.tenureBand column — see lib/learning/audience.ts.
+model CourseAudience {
+  id       String       @id @default(cuid())
+  courseId String
+  course   Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  kind     AudienceKind
+  value    String?
+
+  createdById String?
+  createdBy   User?    @relation("AudienceCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@unique([courseId, kind, value])
+  @@index([courseId])
+}
+
+/// A named, reusable cohort for the cases no registry field describes ("2026 new joiners").
+model LearnerGroup {
+  id   String @id @default(cuid())
+  name String @unique
+
+  createdById String?
+  createdBy   User?   @relation("LearnerGroupCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  members     LearnerGroupMember[]
+  assignments CourseAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LearnerGroupMember {
+  id      String       @id @default(cuid())
+  groupId String
+  group   LearnerGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User         @relation("GroupMemberSubject", fields: [userId], references: [id], onDelete: Cascade)
+
+  addedById String?
+  addedBy   User?    @relation("GroupMemberAdder", fields: [addedById], references: [id], onDelete: SetNull)
+  addedAt   DateTime @default(now())
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+/// A grant of access to one course, to EITHER one employee or one group — exactly one of
+/// `userId`/`groupId` is set. Revocation is a stamp, never a delete, so the trail survives.
+/// Granting does NOT enrol: enrollment happens when the employee first opens the course,
+/// which is what makes "never started ⇒ lose access immediately" expressible (FR-045).
+model CourseAssignment {
+  id       String        @id @default(cuid())
+  courseId String
+  course   Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId   String?
+  user     User?         @relation("CourseAssignmentSubject", fields: [userId], references: [id], onDelete: Cascade)
+  groupId  String?
+  group    LearnerGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  grantedById String?
+  grantedBy   User?     @relation("CourseAssignmentActor", fields: [grantedById], references: [id], onDelete: SetNull)
+  grantedAt   DateTime  @default(now())
+  revokedAt   DateTime?
+
+  @@unique([courseId, userId])
+  @@unique([courseId, groupId])
+  @@index([courseId, revokedAt])
+  @@index([userId])
+  @@index([groupId])
+}
+
+/// One employee's participation in one course. Created on FIRST OPEN, not on assignment.
+///
+/// This row is itself an ACCESS ROUTE: while `completedAt` and `accessWithdrawnAt` are both
+/// null the learner is mid-course and keeps access even after every other route is gone
+/// (FR-042). Nothing is written when a route is removed — the rule reads this state — so no
+/// route-removal path can forget to grandfather someone.
+///
+/// There is deliberately NO progressPercent column: the percentage is computed from
+/// LessonProgress, so it can never disagree with the rows it summarises.
+model CourseEnrollment {
+  id       String @id @default(cuid())
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation("EnrollmentLearner", fields: [userId], references: [id], onDelete: Cascade)
+
+  startedAt        DateTime  @default(now())
+  /// Null while in progress. Cleared (not erased) when required content is added and HR
+  /// chooses to reopen — `firstCompletedAt` keeps the original date.
+  completedAt      DateTime?
+  firstCompletedAt DateTime?
+  reopenedAt       DateTime?
+  /// How many times this person has completed the course. Only moves for a RENEWAL cycle, so a
+  /// reopened-and-refinished course is still one completion.
+  completionCount  Int       @default(0)
+
+  /// HR ending grandfathered access (FR-043/FR-044). Refused unless the enrollment is
+  /// CURRENTLY grandfathered, so it can never strip access held by a real route.
+  accessWithdrawnAt   DateTime?
+  accessWithdrawnById String?
+  accessWithdrawnBy   User?     @relation("AccessWithdrawer", fields: [accessWithdrawnById], references: [id], onDelete: SetNull)
+
+  /// Resume hint only. The authority is the first incomplete lesson over progress rows.
+  lastLessonId String?
+
+  lessonProgress LessonProgress[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([courseId, userId])
+  @@index([userId])
+  @@index([courseId])
+}
+
+/// One learner's state on one lesson. Keyed by LESSON ID, never position, so reordering or
+/// renaming a curriculum can never move anyone's percentage (FR-023).
+model LessonProgress {
+  id           String           @id @default(cuid())
+  enrollmentId String
+  enrollment   CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lessonId     String
+  lesson       Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  completedAt     DateTime?
+  lastPositionSec Int?
+  /// Credited watched seconds. Only ever INCREASES — advanced with SQL GREATEST so seeking
+  /// backward cannot reduce it and two open tabs cannot lose an update (FR-028).
+  videoWatchedSec Int       @default(0)
+  /// The video's length as the player reported it, kept so the SERVER can check the watch gate
+  /// (watched / duration >= minWatchPercent) instead of trusting a percentage from the client.
+  /// Also only ever increases, for the same reason. Note this figure still ORIGINATES from the
+  /// player — the gate stops someone clicking past training, not someone determined to forge it.
+  videoDurationSec Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([enrollmentId, lessonId])
+  @@index([lessonId])
 }
