@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteBlock, upsertLessonBlock } from "@/app/(app)/admin/learning/actions";
 import { videoSourceFor } from "@/lib/learning/video";
+import { LessonVideoSettings, type CheckpointRow } from "@/components/learning/LessonVideoSettings";
 import { BTN_DANGER, BTN_GHOST, BTN_NAVY, CHIP, INPUT, LABEL } from "@/components/learning/ui";
 
 export type EditableBlock = {
@@ -22,7 +23,7 @@ export type EditableLesson = {
   estimatedMinutes: number | null;
   minWatchPercent: number;
   blocks: EditableBlock[];
-  checkpointCount: number;
+  checkpoints: CheckpointRow[];
 };
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -179,6 +180,13 @@ export function LessonEditor({
           </p>
         ) : null}
       </div>
+
+      <LessonVideoSettings
+        courseId={courseId}
+        lessonId={lesson.id}
+        trackable={!untrackable && !!videoBlock}
+        checkpoints={lesson.checkpoints}
+      />
 
       <div className="mt-3">
         <label className={LABEL} htmlFor="lesson-text">Notes (markdown, optional)</label>

@@ -150,7 +150,13 @@ export async function coursePlayerData(courseId: string, userId: string) {
   const progress = enrollment
     ? await prisma.lessonProgress.findMany({
         where: { enrollmentId: enrollment.id },
-        select: { lessonId: true, completedAt: true, lastPositionSec: true, videoWatchedSec: true },
+        select: {
+          lessonId: true,
+          completedAt: true,
+          lastPositionSec: true,
+          videoWatchedSec: true,
+          videoDurationSec: true,
+        },
       })
     : [];
 

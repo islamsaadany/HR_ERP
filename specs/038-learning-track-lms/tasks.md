@@ -96,13 +96,13 @@ employee sits at 0%. Quickstart scenarios 1, 2, 3, 11.
 including by direct URL, create a new Consulting employee and confirm they hold it on first sign-in
 with no HR action. Quickstart scenarios 5, 6, 7.
 
-- [ ] T027 [US2] Write `src/app/(app)/admin/learning/access-actions.ts` — `setVisibility`, `addAudience` (validated per kind against the real registry), `removeAudience`, `assignToUser`, `assignToGroup`, `revokeAssignment` (stamps `revokedAt`, never deletes). Idempotent via the unique keys (FR-018); **creates no enrollment** (research D4)
-- [ ] T028 [US2] Add group actions to the same file — `createGroup`, `renameGroup`, `deleteGroup` (refused while it holds a live assignment), `addGroupMembers`, `removeGroupMember`. Names trimmed and deduped case-insensitively, following `src/lib/departments.ts`
-- [ ] T029 [US2] Add `withdrawGrandfatheredAccess` to the same file — stamps `accessWithdrawnAt`, **refused unless that enrollment is currently grandfathered**, so it can never strip access someone holds by a real route (FR-043/FR-044)
-- [ ] T030 [P] [US2] Write `src/components/learning/AudiencePicker.tsx` — the Access tab's route table with a live "people today" count per row, per mockup surface 1
-- [ ] T031 [P] [US2] Write `src/components/learning/GroupManager.tsx` and `src/app/(app)/admin/learning/groups/page.tsx` — named groups with membership, in the `DepartmentsManager` read-first idiom
-- [ ] T032 [US2] Surface the grandfathered state on the employee's My learning card — the gold "you can still finish it" treatment from mockup surface 3, driven by the route the derivation already returns
-- [ ] T033 [US2] Add the reopen contract to `upsertLesson` in `src/app/(app)/admin/learning/actions.ts` — `onExistingCompletions: "REOPEN" | "KEEP"`, counted **inside the transaction** against `courseRoster(courseId)`, **refusing the edit when completions exist and no choice was supplied** (FR-039). `REOPEN` sets `firstCompletedAt`, clears `completedAt`, stamps `reopenedAt`; nothing is deleted (FR-040)
+- [X] T027 [US2] Write `src/app/(app)/admin/learning/access-actions.ts` — `setVisibility`, `addAudience` (validated per kind against the real registry), `removeAudience`, `assignToUser`, `assignToGroup`, `revokeAssignment` (stamps `revokedAt`, never deletes). Idempotent via the unique keys (FR-018); **creates no enrollment** (research D4)
+- [X] T028 [US2] Add group actions to the same file — `createGroup`, `renameGroup`, `deleteGroup` (refused while it holds a live assignment), `addGroupMembers`, `removeGroupMember`. Names trimmed and deduped case-insensitively, following `src/lib/departments.ts`
+- [X] T029 [US2] Add `withdrawGrandfatheredAccess` to the same file — stamps `accessWithdrawnAt`, **refused unless that enrollment is currently grandfathered**, so it can never strip access someone holds by a real route (FR-043/FR-044)
+- [X] T030 [P] [US2] Write `src/components/learning/AudiencePicker.tsx` — the Access tab's route table with a live "people today" count per row, per mockup surface 1
+- [X] T031 [P] [US2] Write `src/components/learning/GroupManager.tsx` and `src/app/(app)/admin/learning/groups/page.tsx` — named groups with membership, in the `DepartmentsManager` read-first idiom
+- [X] T032 [US2] Surface the grandfathered state on the employee's My learning card — the gold "you can still finish it" treatment from mockup surface 3, driven by the route the derivation already returns
+- [X] T033 [US2] Add the reopen contract to `upsertLesson` in `src/app/(app)/admin/learning/actions.ts` — `onExistingCompletions: "REOPEN" | "KEEP"`, counted **inside the transaction** against `courseRoster(courseId)`, **refusing the edit when completions exist and no choice was supplied** (FR-039). `REOPEN` sets `firstCompletedAt`, clears `completedAt`, stamps `reopenedAt`; nothing is deleted (FR-040)
 - [X] T034 [P] [US2] Write `src/components/learning/ReopenDialog.tsx` and the read-only `countAffectedByRequiredChange` helper — per mockup surface 2. The dialog is the affordance; T033's refusal is the guarantee
 
 **Checkpoint**: restricted courses, live audiences, grandfathering and reopening all work.
@@ -118,12 +118,12 @@ lesson **even with the control re-enabled in devtools**; playback pauses at the 
 never reduces credited time. Quickstart scenarios 4, 10.
 
 - [X] T035 [US3] Add `saveVideoProgress` to `src/app/(app)/learning/actions.ts` — upsert with `videoWatchedSec = GREATEST(existing, incoming)` **in SQL**, not a read-then-`Math.max`, so two open tabs cannot lose an update (FR-028, research D6)
-- [ ] T036 [US3] Enforce the gate inside `markLessonComplete` against the **stored** `videoWatchedSec`, never a client-supplied figure — a DOM-forced attempt must be refused by the server (SC-005)
-- [ ] T037 [US3] Add `upsertCheckpoint` / `deleteCheckpoint` to `src/app/(app)/admin/learning/actions.ts`, and refuse both a checkpoint and a non-zero `minWatchPercent` when the lesson's video is `DRIVE` — with the explanation, not a silent drop (FR-031). Re-validate at publish
-- [ ] T038 [P] [US3] Write `src/components/learning/VideoLesson.tsx` — one shared tick handler across native `<video>`, the YouTube IFrame API and the Vimeo SDK: forward-only watched accumulation (ignore deltas > 1.5s so seeking forward earns nothing), resume position, saves throttled to ~5s
-- [ ] T039 [P] [US3] Write `src/components/learning/CheckpointPrompt.tsx` — pauses playback, asks, resumes on answer. Answers are **never stored** (FR-032)
-- [ ] T040 [P] [US3] Write `src/components/learning/LessonVideoSettings.tsx` — the watch-% and checkpoint editors, with the Drive refusal state from mockup surface 1
-- [ ] T041 [US3] Show the gate as a **fact** on the player ("you've watched 62% — watch 80% to complete"), not a blocked-action error, per mockup surface 4
+- [X] T036 [US3] Enforce the gate inside `markLessonComplete` against the **stored** `videoWatchedSec`, never a client-supplied figure — a DOM-forced attempt must be refused by the server (SC-005)
+- [X] T037 [US3] Add `upsertCheckpoint` / `deleteCheckpoint` to `src/app/(app)/admin/learning/actions.ts`, and refuse both a checkpoint and a non-zero `minWatchPercent` when the lesson's video is `DRIVE` — with the explanation, not a silent drop (FR-031). Re-validate at publish
+- [X] T038 [P] [US3] Write `src/components/learning/VideoLesson.tsx` — one shared tick handler across native `<video>`, the YouTube IFrame API and the Vimeo SDK: forward-only watched accumulation (ignore deltas > 1.5s so seeking forward earns nothing), resume position, saves throttled to ~5s
+- [X] T039 [P] [US3] Write `src/components/learning/CheckpointPrompt.tsx` — pauses playback, asks, resumes on answer. Answers are **never stored** (FR-032)
+- [X] T040 [P] [US3] Write `src/components/learning/LessonVideoSettings.tsx` — the watch-% and checkpoint editors, with the Drive refusal state from mockup surface 1
+- [X] T041 [US3] Show the gate as a **fact** on the player ("you've watched 62% — watch 80% to complete"), not a blocked-action error, per mockup surface 4
 
 **Checkpoint**: gating holds against a hostile client; Drive videos play but never pretend to be gated.
 
@@ -137,9 +137,9 @@ never reduces credited time. Quickstart scenarios 4, 10.
 their route and progress, distinguishes grandfathered rows, shows a superseded completion's original
 date alongside its reopen date, and updates without a manual reload. Quickstart scenario 8.
 
-- [ ] T042 [US4] Write `src/app/(app)/admin/learning/[courseId]/roster` (the People tab) reading `courseRoster()` — never a second access query
-- [ ] T043 [P] [US4] Write `src/components/learning/CourseRoster.tsx` — Route as a first-class column, gold-tinted grandfathered rows with Withdraw, original + reopened dates, all through `formatDate` (dd/mm/yyyy). Per mockup surface 5
-- [ ] T044 [US4] Drop `AutoRefresh` into the roster page so it stays live while it sits open (FR-034) — a monitored server page never re-renders on its own
+- [X] T042 [US4] Write `src/app/(app)/admin/learning/[courseId]/roster` (the People tab) reading `courseRoster()` — never a second access query
+- [X] T043 [P] [US4] Write `src/components/learning/CourseRoster.tsx` — Route as a first-class column, gold-tinted grandfathered rows with Withdraw, original + reopened dates, all through `formatDate` (dd/mm/yyyy). Per mockup surface 5
+- [X] T044 [US4] Drop `AutoRefresh` into the roster page so it stays live while it sits open (FR-034) — a monitored server page never re-renders on its own
 
 ---
 
@@ -148,10 +148,10 @@ date alongside its reopen date, and updates without a manual reload. Quickstart 
 - [X] T045 Register the module in `src/lib/modules.ts` — `{ key: "learning", label: "Learning", href: "/learning" }` — so it honours the existing release switch
 - [X] T046 Add the Learning nav item to `NAV` in `src/components/AppShell.tsx` with a distinct icon (not a reused one — the Incentive/Benefits icon clash cost a round before). **Snapshot to `ui-versions/AppShell/` first** — this is an existing file
 - [X] T047 Add the Learning card to `src/app/(app)/admin/page.tsx`. **Snapshot to `ui-versions/admin-home/` first**
-- [ ] T048 Add a Learning tile to `src/app/(app)/dashboard/page.tsx` showing outstanding courses, in the existing card idiom. **Snapshot first**. Skip only if the tile cannot earn its place — the dashboard was deliberately trimmed on 2026-08-18
-- [ ] T049 Run the full quickstart — all 11 scenarios — and record what was verified and how, naming anything not verifiable from a session
-- [ ] T050 `npx tsc --noEmit` and `npm run build` green, with every type error across the outcome fixed
-- [ ] T051 Update `PROJECT_DETAILS.md` (models, routes, behaviour), `IMPLEMENTATION_PROGRESS.md` (**Phase 9 — Learning Track moves off "Not started"**), `IMPLEMENTATION_PLAN.md` (decisions log: LMS adopted from FFLMS, video linked not hosted, Q1/Q2 answers), and `CLAUDE.md` if a new pattern was established — in the **same commit** as the code (Principle IV)
+- [X] T048 Add a Learning tile to `src/app/(app)/dashboard/page.tsx` showing outstanding courses, in the existing card idiom. **Snapshot first**. Skip only if the tile cannot earn its place — the dashboard was deliberately trimmed on 2026-08-18
+- [X] T049 Run the full quickstart — all 11 scenarios — and record what was verified and how, naming anything not verifiable from a session
+- [X] T050 `npx tsc --noEmit` and `npm run build` green, with every type error across the outcome fixed
+- [X] T051 Update `PROJECT_DETAILS.md` (models, routes, behaviour), `IMPLEMENTATION_PROGRESS.md` (**Phase 9 — Learning Track moves off "Not started"**), `IMPLEMENTATION_PLAN.md` (decisions log: LMS adopted from FFLMS, video linked not hosted, Q1/Q2 answers), and `CLAUDE.md` if a new pattern was established — in the **same commit** as the code (Principle IV)
 
 ---
 

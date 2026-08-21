@@ -9,7 +9,7 @@ import { computeProgressPercent, firstIncompleteLessonId } from "@/lib/learning/
 import { openCourse } from "@/app/(app)/learning/actions";
 import { CoursePlayer, type PlayerSection } from "@/components/learning/CoursePlayer";
 import { LessonContent, type Block } from "@/components/learning/LessonContent";
-import { VideoFrame } from "@/components/learning/VideoFrame";
+import { isTrackableSource, videoProvider } from "@/lib/learning/video";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +44,7 @@ export default async function CoursePlayerPage({
   const { course, enrollment, progress } = data;
 
   const doneIds = new Set(progress.filter((p) => p.completedAt).map((p) => p.lessonId));
-  const watchedByLesson = new Map(progress.map((p) => [p.lessonId, p.videoWatchedSec]));
+  const progressByLesson = new Map(progress.map((p) => [p.lessonId, p]));
 
   const flat = course.sections.flatMap((s) => s.lessons);
   if (flat.length === 0) {
@@ -64,21 +64,36 @@ export default async function CoursePlayerPage({
   if (!requestedLessonId) redirect(`/learning/${courseId}?lesson=${currentId}`);
 
   const current = flat.find((l) => l.id === currentId)!;
-  const video = current.blocks.find((b) => b.type === "VIDEO" && b.externalUrl);
   const blocked = await learningWritesBlocked();
 
   const sections: PlayerSection[] = course.sections.map((s) => ({
     id: s.id,
     title: s.title,
-    lessons: s.lessons.map((l) => ({
-      id: l.id,
-      title: l.title,
-      isRequired: l.isRequired,
-      estimatedMinutes: l.estimatedMinutes,
-      minWatchPercent: l.minWatchPercent,
-      completed: doneIds.has(l.id),
-      watchedSec: watchedByLesson.get(l.id) ?? 0,
-    })),
+    lessons: s.lessons.map((l) => {
+      const p = progressByLesson.get(l.id);
+      const videoBlock = l.blocks.find((b) => b.type === "VIDEO" && b.externalUrl);
+      return {
+        id: l.id,
+        title: l.title,
+        isRequired: l.isRequired,
+        estimatedMinutes: l.estimatedMinutes,
+        minWatchPercent: l.minWatchPercent,
+        completed: doneIds.has(l.id),
+        watchedSec: p?.videoWatchedSec ?? 0,
+        durationSec: p?.videoDurationSec ?? 0,
+        positionSec: p?.lastPositionSec ?? 0,
+        video: videoBlock?.externalUrl
+          ? {
+              url: videoBlock.externalUrl,
+              provider: videoProvider(videoBlock.externalUrl),
+              trackable: videoBlock.videoSource
+                ? isTrackableSource(videoBlock.videoSource)
+                : true,
+            }
+          : null,
+        checkpoints: l.checkpoints,
+      };
+    }),
   }));
 
   return (
@@ -102,9 +117,6 @@ export default async function CoursePlayerPage({
         percent={computeProgressPercent(flat, doneIds)}
         writesBlocked={blocked}
       >
-        {video?.externalUrl ? (
-          <VideoFrame url={video.externalUrl} source={video.videoSource} title={current.title} />
-        ) : null}
         <LessonContent blocks={current.blocks as Block[]} />
       </CoursePlayer>
     </div>

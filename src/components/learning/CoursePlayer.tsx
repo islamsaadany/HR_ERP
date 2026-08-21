@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { markLessonComplete, markLessonIncomplete } from "@/app/(app)/learning/actions";
 import { ProgressBar } from "@/components/learning/ProgressBar";
+import { VideoLesson } from "@/components/learning/VideoLesson";
+import type { Checkpoint } from "@/components/learning/CheckpointPrompt";
+import type { VideoProvider } from "@/lib/learning/video";
 import { BTN_GHOST, BTN_NAVY, CHIP } from "@/components/learning/ui";
 
 export type PlayerLesson = {
@@ -15,6 +18,10 @@ export type PlayerLesson = {
   minWatchPercent: number;
   completed: boolean;
   watchedSec: number;
+  durationSec: number;
+  positionSec: number;
+  video: { url: string; provider: VideoProvider; trackable: boolean } | null;
+  checkpoints: Checkpoint[];
 };
 
 export type PlayerSection = { id: string; title: string; lessons: PlayerLesson[] };
@@ -43,7 +50,7 @@ export function CoursePlayer({
   percent: number;
   /** Set when an admin is impersonating — writes are refused server-side (FR-026). */
   writesBlocked: string | null;
-  /** The video player for the current lesson, rendered by the server component. */
+  /** Everything below the video for the current lesson, rendered by the server component. */
   children?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -55,7 +62,17 @@ export function CoursePlayer({
   const requiredTotal = all.filter((l) => l.isRequired).length;
   const requiredDone = all.filter((l) => l.isRequired && l.completed).length;
 
-  const gated = !!current && current.minWatchPercent > 0 && current.watchedSec <= 0;
+  // Live watched figure: starts from what the server has, then follows the player as it ticks, so
+  // the gate message counts up in front of the learner instead of only updating on reload.
+  const [live, setLive] = useState<{ watched: number; duration: number }>({
+    watched: current?.watchedSec ?? 0,
+    duration: current?.durationSec ?? 0,
+  });
+
+  const watchedPct =
+    live.duration > 0 ? Math.floor((live.watched / live.duration) * 100) : 0;
+  const gated =
+    !!current && current.minWatchPercent > 0 && watchedPct < current.minWatchPercent;
 
   function toggle() {
     if (!current) return;
@@ -115,6 +132,35 @@ export function CoursePlayer({
       </nav>
 
       <div>
+        {current?.video ? (
+          current.video.trackable ? (
+            <VideoLesson
+              key={current.id}
+              lessonId={current.id}
+              src={current.video.url}
+              provider={current.video.provider}
+              initialPositionSec={current.positionSec}
+              initialWatchedSec={current.watchedSec}
+              checkpoints={current.checkpoints}
+              onWatched={(watched, duration) => setLive({ watched, duration })}
+            />
+          ) : (
+            <div className="relative aspect-video overflow-hidden rounded-xl bg-navy-900">
+              <iframe
+                src={current.video.url}
+                title={current.title}
+                allowFullScreen
+                className="h-full w-full border-0"
+              />
+            </div>
+          )
+        ) : null}
+        {current?.video && !current.video.trackable ? (
+          <p className="mt-2 text-[11.5px] text-muted">
+            <span className={CHIP.muted}>Google Drive</span> Playback can&rsquo;t be measured for
+            this source, so this lesson has no watch requirement.
+          </p>
+        ) : null}
         {children}
 
         <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
@@ -142,8 +188,9 @@ export function CoursePlayer({
           </p>
         ) : gated && !current?.completed ? (
           <p className="mt-3 rounded-r-lg border-l-[3px] border-gold-500 bg-gold-100 px-3 py-2 text-[12.5px] text-gold-800">
-            Watch <b>{current?.minWatchPercent}%</b> of the video to complete this lesson. Skipping
-            ahead doesn&rsquo;t count, and rewinding never loses what you&rsquo;ve already watched.
+            You&rsquo;ve watched <b>{watchedPct}%</b> of this video. Watch{" "}
+            <b>{current?.minWatchPercent}%</b> to complete the lesson — skipping ahead doesn&rsquo;t
+            count, and rewinding never loses what you&rsquo;ve already watched.
           </p>
         ) : null}
 

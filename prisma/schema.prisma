@@ -1472,6 +1472,11 @@ model LessonProgress {
   /// Credited watched seconds. Only ever INCREASES — advanced with SQL GREATEST so seeking
   /// backward cannot reduce it and two open tabs cannot lose an update (FR-028).
   videoWatchedSec Int       @default(0)
+  /// The video's length as the player reported it, kept so the SERVER can check the watch gate
+  /// (watched / duration >= minWatchPercent) instead of trusting a percentage from the client.
+  /// Also only ever increases, for the same reason. Note this figure still ORIGINATES from the
+  /// player — the gate stops someone clicking past training, not someone determined to forge it.
+  videoDurationSec Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

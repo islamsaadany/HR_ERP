@@ -453,3 +453,64 @@ export async function deleteBlock(courseId: string, blockId: string): Promise<Co
   revalidate(courseId);
   return { ok: true };
 }
+
+// ─── Video checkpoints (US3) ────────────────────────────────────────────
+
+/**
+ * A checkpoint is only meaningful on a video whose playback we can observe. On a Google Drive
+ * source we REFUSE rather than store one that would never fire (FR-031) — a checkpoint that
+ * silently never appears is worse than none, because everyone believes the lesson was gated.
+ */
+export async function upsertCheckpoint(
+  courseId: string,
+  input: {
+    lessonId: string;
+    checkpointId: string | null;
+    atSec: number;
+    prompt: string;
+    options: string[];
+    correctIndex: number;
+  }
+): Promise<CourseResult> {
+  await requireAdmin();
+
+  const prompt = input.prompt.trim();
+  const options = input.options.map((o) => o.trim()).filter(Boolean);
+  if (!prompt) return { ok: false, error: "Write the question." };
+  if (options.length < 2) return { ok: false, error: "Give at least two answers to choose from." };
+  if (input.correctIndex < 0 || input.correctIndex >= options.length) {
+    return { ok: false, error: "Mark which answer is the right one." };
+  }
+  if (input.atSec < 0) return { ok: false, error: "Pick a moment in the video." };
+
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: input.lessonId },
+    select: { blocks: { select: { type: true, videoSource: true } } },
+  });
+  const video = lesson?.blocks.find((b) => b.type === "VIDEO" && b.videoSource);
+  if (!video?.videoSource) {
+    return { ok: false, error: "Add a video to this lesson first." };
+  }
+  if (!isTrackableSource(video.videoSource)) {
+    return { ok: false, error: untrackableReason(video.videoSource) ?? "" };
+  }
+
+  const data = { atSec: input.atSec, prompt, options, correctIndex: input.correctIndex };
+  if (input.checkpointId) {
+    await prisma.videoCheckpoint.update({ where: { id: input.checkpointId }, data });
+  } else {
+    await prisma.videoCheckpoint.create({ data: { lessonId: input.lessonId, ...data } });
+  }
+  revalidate(courseId);
+  return { ok: true };
+}
+
+export async function deleteCheckpoint(
+  courseId: string,
+  checkpointId: string
+): Promise<CourseResult> {
+  await requireAdmin();
+  await prisma.videoCheckpoint.delete({ where: { id: checkpointId } });
+  revalidate(courseId);
+  return { ok: true };
+}

@@ -161,26 +161,28 @@ export async function markLessonComplete(lessonId: string): Promise<LearnResult>
     if (lesson.minWatchPercent > 0) {
       const progress = await prisma.lessonProgress.findUnique({
         where: { enrollmentId_lessonId: { enrollmentId: enrollment.id, lessonId } },
-        select: { videoWatchedSec: true },
+        select: { videoWatchedSec: true, videoDurationSec: true },
       });
       const watched = progress?.videoWatchedSec ?? 0;
-      // INTERIM — completed by T036 (US3).
+      const duration = progress?.videoDurationSec ?? 0;
+      // The gate, decided HERE from stored figures — never from anything the page sends with the
+      // request. Re-enabling the disabled button in devtools changes nothing.
       //
-      // This refuses a learner who has watched nothing, which already defeats "open the lesson and
-      // click complete". It does NOT yet compare watched seconds against the required fraction,
-      // because the video's DURATION is only known to the player: nothing server-side knows how
-      // long a Vimeo or YouTube link runs for. T036 stores the duration reported alongside
-      // `videoWatchedSec` and gates on the ratio.
+      // A duration of 0 means the player has never reported one (nothing watched, or a source we
+      // cannot measure). Treated as NOT satisfied: failing closed is the only safe reading, since
+      // the alternative lets an unplayed video count as watched.
       //
-      // Worth stating plainly rather than discovering later: even then the duration originates
-      // from the client, so a determined learner who under-reports it can pass the gate. Closing
-      // that would mean asking Vimeo/YouTube for the real duration — a network call and a new
-      // dependency, neither of which this release takes. The gate is an honesty aid against
-      // clicking past training, not an adversarial control, and the spec should say so.
-      if (watched <= 0) {
+      // The honest limit, stated so nobody later mistakes this for more than it is: the duration
+      // ORIGINATES from the player, so a learner determined to under-report it can pass. Closing
+      // that would mean asking Vimeo/YouTube for the true length — a network call and a new
+      // dependency, neither of which this release takes. This stops people clicking past training;
+      // it is not an adversarial control.
+      const required = Math.ceil((duration * lesson.minWatchPercent) / 100);
+      if (duration <= 0 || watched < required) {
+        const soFar = duration > 0 ? Math.floor((watched / duration) * 100) : 0;
         return {
           ok: false as const,
-          error: `Watch at least ${lesson.minWatchPercent}% of the video before completing this lesson.`,
+          error: `You've watched ${soFar}% of this video. Watch ${lesson.minWatchPercent}% to complete the lesson.`,
         };
       }
     }
@@ -238,7 +240,8 @@ export async function markLessonIncomplete(lessonId: string): Promise<LearnResul
 export async function saveVideoProgress(
   lessonId: string,
   positionSec: number,
-  watchedSec: number
+  watchedSec: number,
+  durationSec = 0
 ): Promise<LearnResult> {
   return guard(async () => {
     const learner = await requireLearner();
@@ -250,13 +253,17 @@ export async function saveVideoProgress(
 
     const position = Math.max(0, Math.round(positionSec));
     const watched = Math.max(0, Math.round(watchedSec));
+    const duration = Math.max(0, Math.round(durationSec));
 
+    // Duration is maxed too, not overwritten: a player that reports 0 on an early tick (before
+    // metadata loads) must not wipe a real figure and quietly re-open the gate.
     await prisma.$executeRaw`
-      INSERT INTO "LessonProgress" ("id", "enrollmentId", "lessonId", "lastPositionSec", "videoWatchedSec", "createdAt", "updatedAt")
-      VALUES (gen_random_uuid()::text, ${enrollment.id}, ${lessonId}, ${position}, ${watched}, NOW(), NOW())
+      INSERT INTO "LessonProgress" ("id", "enrollmentId", "lessonId", "lastPositionSec", "videoWatchedSec", "videoDurationSec", "createdAt", "updatedAt")
+      VALUES (gen_random_uuid()::text, ${enrollment.id}, ${lessonId}, ${position}, ${watched}, NULLIF(${duration}, 0), NOW(), NOW())
       ON CONFLICT ("enrollmentId", "lessonId") DO UPDATE
         SET "lastPositionSec" = ${position},
             "videoWatchedSec" = GREATEST("LessonProgress"."videoWatchedSec", ${watched}),
+            "videoDurationSec" = GREATEST(COALESCE("LessonProgress"."videoDurationSec", 0), ${duration}),
             "updatedAt" = NOW()
     `;
     return { ok: true as const };

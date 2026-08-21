@@ -111,6 +111,14 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   through request → approve → pay).
 
 ### Settled
+- **2026-08-21 — Learning Track (LMS) adopted from FFLMS (spec 038).** `ahmedgalal-lang/FFLMS`
+  confirmed ours to reuse; its domain design and pure logic are adapted, its identity model,
+  instructor role, public catalog and UI are not. `frappe/lms` reviewed and rejected as a code
+  source — wrong stack entirely and **AGPL-3.0**, which would bind this platform.
+  Decisions: HR/Admin authors only (no instructor role) · both registry-derived audiences and
+  ad-hoc groups · core learning loop for v1 · adding required content to a finished course **asks
+  per edit** and supersedes rather than erases (Q1-C) · an employee mid-course **keeps access**
+  until they finish (Q2-B) · **video is linked, not hosted**.
 - **2026 — Stack:** Next.js 15 + Prisma + Postgres + Tailwind, NextAuth Google, Vercel Blob, Vercel deploy. Firebase reference reimplemented, not reused.
 - **2026 — Repo:** `islamsaadany/HR_ERP` (new repo; now in session scope).
 - **2026 — v1 modules:** Onboarding, Benefits, Team Directory, HR Documents, Dashboard.
