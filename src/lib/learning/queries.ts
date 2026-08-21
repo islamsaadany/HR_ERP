@@ -162,3 +162,63 @@ export async function coursePlayerData(courseId: string, userId: string) {
 
   return { course, enrollment, progress };
 }
+
+export type TeamMemberLearning = {
+  userId: string;
+  name: string;
+  title: string | null;
+  courses: Array<{
+    courseId: string;
+    title: string;
+    percent: number;
+    completedAt: Date | null;
+    grandfatheredOnly: boolean;
+  }>;
+  outstanding: number;
+};
+
+/**
+ * A manager's direct reports and where each of them has got to.
+ *
+ * Scoped to CURRENT direct reports (`reportsToId`), matching how Time-Off resolves approvals —
+ * the org chart as it stands, never a stored snapshot, so a reporting-line change takes effect
+ * immediately in both directions.
+ *
+ * Direct reports only, not the whole tree below them. A manager seeing their reports' reports
+ * would be a bigger decision than "can I see my team", and nobody has asked for it.
+ *
+ * Deliberately narrower than the HR roster: a manager sees TITLES and PROGRESS, and no route
+ * information. Whether someone holds a course because of their department, a group, or a personal
+ * assignment is an HR matter, not their manager's.
+ */
+export async function teamLearning(managerId: string): Promise<TeamMemberLearning[]> {
+  const reports = await prisma.user.findMany({
+    where: { reportsToId: managerId, status: "ACTIVE" },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, title: true },
+  });
+  if (reports.length === 0) return [];
+
+  // One myLearning pass per report. At this scale (a handful of reports) that is honest and
+  // simple; it also means a manager sees EXACTLY what their report sees, by construction, rather
+  // than a parallel query that could drift from it.
+  const rows = await Promise.all(
+    reports.map(async (person) => {
+      const courses = await myLearning(person.id);
+      return {
+        userId: person.id,
+        name: person.name,
+        title: person.title,
+        courses: courses.map((c) => ({
+          courseId: c.courseId,
+          title: c.title,
+          percent: c.percent,
+          completedAt: c.completedAt,
+          grandfatheredOnly: c.grandfatheredOnly,
+        })),
+        outstanding: courses.filter((c) => c.completedAt === null).length,
+      };
+    })
+  );
+  return rows;
+}

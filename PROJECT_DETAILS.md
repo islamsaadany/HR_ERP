@@ -459,6 +459,13 @@ player), `/admin/learning` (course list), `/admin/learning/[courseId]` (Content 
 `/admin/learning/groups`. File blocks stream via `/api/learning/blocks/[id]/file`, authorised by the
 same derivation. Registered in `lib/modules.ts` as `learning` for the release switch.
 
+**Manager team view** (`/learning/team`, added 2026-08-21): a manager sees their CURRENT direct
+reports and each one's course progress. Gated on the org chart via `isManager`, exactly like
+Time-Off approvals — no stored role, so a reporting-line change takes effect immediately in both
+directions and losing your last report removes the page. Read-only and deliberately narrower than
+the HR roster: names, titles and progress, but no route information, because why someone holds a
+course is an HR matter. Direct reports only, not the tree below them.
+
 **Not in this release**: quizzes, gradable assignments, certificates, discussions, notifications,
-analytics, roster export, recurring training, learning paths, manager team views. No email, no cron,
+analytics, roster export, recurring training, learning paths. No email, no cron,
 no new env var, no new runtime dependency.

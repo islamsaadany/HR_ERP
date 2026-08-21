@@ -49,9 +49,13 @@
   against a throwaway Postgres 16; **5/5** on the watched-seconds `GREATEST` incl. the two-tab race.
   Migrations `060`/`061` applied twice (second run a no-op), zero drift beyond the house-standard
   `updatedAt` default. `tsc` + `build` green.
+- **Manager team view** added same-day on request: `/learning/team`, gated on the org chart
+  (`isManager`), showing current direct reports and their progress. Read-only, no route
+  information — that stays with HR. Verified 14/14 (direct reports only, not the tree below;
+  reporting-line moves take effect immediately both ways; leavers drop off).
 - **Deferred and named in the spec**: quizzes, gradable assignments, certificates (incl. the
   Arabic-capable PDF), discussions, notifications, analytics, roster export, recurring training,
-  learning paths, manager-facing team views.
+  learning paths.
 
 ## Spec 037 — Official holidays: verification, bridges & team announcements (built 2026-08-19 — migration `057` applies on deploy)
 - **The log grew up.** `PublicHoliday` moved from a single unique date to two date **ranges** —

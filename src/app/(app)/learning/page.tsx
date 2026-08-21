@@ -1,4 +1,5 @@
-import { requireUser } from "@/lib/roles";
+import Link from "next/link";
+import { isManager, requireUser } from "@/lib/roles";
 import { requireModuleEnabled } from "@/lib/modules";
 import { myLearning } from "@/lib/learning/queries";
 import { CourseCard } from "@/components/learning/CourseCard";
@@ -19,7 +20,7 @@ export const dynamic = "force-dynamic";
 export default async function LearningPage() {
   await requireModuleEnabled("learning");
   const user = await requireUser();
-  const courses = await myLearning(user.id);
+  const [courses, manages] = await Promise.all([myLearning(user.id), isManager(user.id)]);
 
   const outstanding = courses.filter((c) => c.completedAt === null);
   const finished = courses.filter((c) => c.completedAt !== null);
@@ -28,7 +29,15 @@ export default async function LearningPage() {
     <div>
       <AutoRefresh />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Learning</p>
-      <h1 className="mt-1 font-serif text-3xl text-ink">My learning</h1>
+      <div className="mt-1 flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="font-serif text-3xl text-ink">My learning</h1>
+        {/* Only for people who actually have reports — the capability comes from the org chart. */}
+        {manages ? (
+          <Link href="/learning/team" className="text-sm text-muted hover:text-ink">
+            My team&rsquo;s training →
+          </Link>
+        ) : null}
+      </div>
       <p className="mt-1 max-w-[70ch] text-muted">
         {courses.length === 0
           ? "Nothing has been assigned to you yet. When it is, it will appear here."
