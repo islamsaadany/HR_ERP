@@ -111,7 +111,7 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   through request → approve → pay).
 
 ### Settled
-- **2026 — Stack:** Next.js 16 + Prisma + Postgres + Tailwind, NextAuth Google, Vercel Blob, Vercel deploy. Firebase reference reimplemented, not reused.
+- **2026 — Stack:** Next.js 15 + Prisma + Postgres + Tailwind, NextAuth Google, Vercel Blob, Vercel deploy. Firebase reference reimplemented, not reused.
 - **2026 — Repo:** `islamsaadany/HR_ERP` (new repo; now in session scope).
 - **2026 — v1 modules:** Onboarding, Benefits, Team Directory, HR Documents, Dashboard.
 - **2026 — Auth:** Google SSO restricted to the company domain + an HR/Admin role.
