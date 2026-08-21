@@ -15,7 +15,6 @@ const NAV = [
   { href: "/handbook", label: "Handbook & Resources", icon: "handbook" },
   { href: "/knowledge", label: "Knowledge Base", icon: "knowledge" },
   { href: "/time-off", label: "Time-Off", icon: "timeoff" },
-  { href: "/learning", label: "Learning", icon: "learning" },
   { href: "/profile", label: "My Profile", icon: "profile" },
 ];
 
@@ -559,12 +558,6 @@ function NavIcon({ name }: { name: string }) {
     case "timeoff":
       return (
         <svg {...common}><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 9h16M9 3v4M15 3v4" /></svg>
-      );
-    case "learning":
-      // A graduation cap — deliberately unlike any other glyph here. Incentive shipped reusing the
-      // Benefits gift icon and had to be redrawn; two nav items that look alike is a real cost.
-      return (
-        <svg {...common}><path d="M12 4 2.5 8.5 12 13l9.5-4.5z" /><path d="M6.5 10.7V16c0 1.4 2.5 2.6 5.5 2.6s5.5-1.2 5.5-2.6v-5.3" /><path d="M21.5 8.5V14" /></svg>
       );
     case "profile":
       return (

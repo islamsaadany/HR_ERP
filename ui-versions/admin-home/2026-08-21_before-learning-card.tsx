@@ -48,12 +48,6 @@ const CATEGORIES: Category[] = [
         body: "Add, rename, or remove the departments used across records and filters.",
         ready: true,
       },
-      {
-        href: "/admin/learning",
-        title: "Learning",
-        body: "Build training courses and choose who they reach.",
-        ready: true,
-      },
     ],
   },
   {

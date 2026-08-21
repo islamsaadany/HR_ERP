@@ -13,6 +13,7 @@ export const MODULES = [
   { key: "handbook", label: "Handbook & Resources", href: "/handbook" },
   { key: "knowledge", label: "Knowledge Base", href: "/knowledge" },
   { key: "timeoff", label: "Time-Off", href: "/time-off" },
+  { key: "learning", label: "Learning", href: "/learning" },
 ] as const;
 
 export type ModuleKey = (typeof MODULES)[number]["key"];
