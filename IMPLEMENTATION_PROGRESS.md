@@ -53,9 +53,17 @@
   (`isManager`), showing current direct reports and their progress. Read-only, no route
   information — that stays with HR. Verified 14/14 (direct reports only, not the tree below;
   reporting-line moves take effect immediately both ways; leavers drop off).
+- **Optional per-course renewal** added same-day on request (migration `062`): a course may fall
+  due again after 6/12/24/36 months, defaulting to never. Lapsing is DERIVED from the completion
+  date — no flag, no cron — so a period change re-evaluates everyone instantly and nothing can be
+  missed or run twice; ticks clear only when the learner returns, and their first completion and
+  completion count survive. HR sees how many people would lapse immediately before saving.
+  Verified 12/12 + 15 unit tests.
+- **SC-005 scoped honestly** on user decision: the watch gate measures honest engagement, not
+  cheating. It is server-decided from stored seconds, but the duration comes from the player;
+  querying Vimeo/YouTube for the true length was considered and declined.
 - **Deferred and named in the spec**: quizzes, gradable assignments, certificates (incl. the
-  Arabic-capable PDF), discussions, notifications, analytics, roster export, recurring training,
-  learning paths.
+  Arabic-capable PDF), discussions, notifications, analytics, roster export, learning paths.
 
 ## Spec 037 — Official holidays: verification, bridges & team announcements (built 2026-08-19 — migration `057` applies on deploy)
 - **The log grew up.** `PublicHoliday` moved from a single unique date to two date **ranges** —

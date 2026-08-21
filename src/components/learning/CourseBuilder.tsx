@@ -13,6 +13,7 @@ import {
 } from "@/app/(app)/admin/learning/actions";
 import { ReopenDialog } from "@/components/learning/ReopenDialog";
 import { LessonEditor, type EditableLesson } from "@/components/learning/LessonEditor";
+import { RenewalSetting } from "@/components/learning/RenewalSetting";
 import { BTN_GHOST, BTN_NAVY, CHIP, INPUT } from "@/components/learning/ui";
 
 export type BuilderSection = { id: string; title: string; lessons: EditableLesson[] };
@@ -29,10 +30,12 @@ export function CourseBuilder({
   courseId,
   status,
   sections,
+  renewAfterMonths,
 }: {
   courseId: string;
   status: "DRAFT" | "PUBLISHED";
   sections: BuilderSection[];
+  renewAfterMonths: number | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -272,6 +275,8 @@ export function CourseBuilder({
           </p>
         )}
       </div>
+
+      <RenewalSetting courseId={courseId} renewAfterMonths={renewAfterMonths} />
 
       {awaiting ? (
         <ReopenDialog

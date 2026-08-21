@@ -466,6 +466,15 @@ directions and losing your last report removes the page. Read-only and deliberat
 the HR roster: names, titles and progress, but no route information, because why someone holds a
 course is an HR matter. Direct reports only, not the tree below them.
 
+**Optional renewal** (`Course.renewAfterMonths`, added 2026-08-21): a course may require redoing on
+a cycle — 6 months, a year, 2 or 3 years — defaulting to *never*, which is what every existing course
+keeps. Lapsing is **derived** from the completion date (`lib/learning/renewal.ts`), never stored and
+never swept by a job, so changing a period re-evaluates everyone at once and nothing can be missed
+or half-applied. A lapsed completion reads as not-complete everywhere, and grants access again
+through the in-progress route — the person has been asked to redo it. Lesson ticks and watched
+seconds are cleared only when the learner reopens the course; `firstCompletedAt` and
+`completionCount` are kept. HR is told how many people would lapse immediately before saving a period.
+
 **Not in this release**: quizzes, gradable assignments, certificates, discussions, notifications,
-analytics, roster export, recurring training, learning paths. No email, no cron,
+analytics, roster export, learning paths. No email, no cron,
 no new env var, no new runtime dependency.

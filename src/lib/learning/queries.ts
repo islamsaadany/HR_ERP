@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { accessibleCoursesFor } from "@/lib/learning/access";
 import { computeProgressPercent, firstIncompleteLessonId, type LessonRef } from "@/lib/learning/progress";
+import { renewalState, type RenewalState } from "@/lib/learning/renewal";
 import type { CourseCardData } from "@/components/learning/CourseCard";
 
 /**
@@ -70,19 +71,29 @@ export async function myLearning(userId: string): Promise<CourseCardData[]> {
     const nextId = firstIncompleteLessonId(list, done);
     const required = list.filter((l) => l.isRequired);
 
+    // Renewal is computed from the STORED completion date, then the card's completion is cleared
+    // if it has lapsed. Both halves matter: computing renewal from an already-cleared date would
+    // report PERMANENT for every lapsed course, and leaving the date in place would show "✓
+    // Completed" next to "Due again" and file the course under finished.
+    const renewal = renewalState(h.enrollment?.completedAt ?? null, h.renewAfterMonths);
+    const lapsed = renewal.kind === "LAPSED";
+
     return {
       courseId: h.courseId,
       title: h.title,
       summary: h.summary,
-      percent: computeProgressPercent(list, done),
+      // A lapsed course reads as 0% — its ticks are cleared the moment the learner reopens it, and
+      // showing 100% in the meantime would say "nothing to do" about the one thing they must redo.
+      percent: lapsed ? 0 : computeProgressPercent(list, done),
       nextLessonTitle: list.find((l) => l.id === nextId)?.title ?? null,
-      lessonsDone: required.filter((l) => done.has(l.id)).length,
+      lessonsDone: lapsed ? 0 : required.filter((l) => done.has(l.id)).length,
       lessonsTotal: required.length,
       startedAt: h.enrollment?.startedAt ?? null,
-      completedAt: h.enrollment?.completedAt ?? null,
+      completedAt: lapsed ? null : (h.enrollment?.completedAt ?? null),
       firstCompletedAt: h.enrollment?.firstCompletedAt ?? null,
       reopenedAt: h.enrollment?.reopenedAt ?? null,
       grandfatheredOnly: h.access.grandfatheredOnly,
+      renewal,
     };
   });
 }

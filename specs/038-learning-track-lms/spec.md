@@ -288,6 +288,22 @@ roster updates without a manual reload.
 - **FR-032**: Checkpoint answers are a comprehension device only — they MUST NOT be scored, stored as
   a grade, or affect completion beyond letting playback continue.
 
+**Renewal (added 2026-08-21)**
+
+- **FR-047**: A course MUST support an optional renewal period, defaulting to none (completion is
+  permanent).
+- **FR-048**: When a period is set, a completion older than it MUST read as lapsed everywhere — the
+  learner's list, the manager's view and the HR roster — and the course MUST return to the
+  learner's outstanding work.
+- **FR-049**: Lapsing MUST be derived from the completion date, never stored as a flag and never
+  driven by a scheduled job, so that changing a course's period takes effect immediately for
+  everyone and no state can be missed or applied twice.
+- **FR-050**: A learner's lesson completions MUST be cleared only when they reopen the lapsed
+  course, never while they are away; their first completion date and the number of times they have
+  completed the course MUST be retained.
+- **FR-051**: Before a renewal period is saved, the platform MUST tell the author how many people
+  hold a completion old enough to lapse immediately.
+
 **Visibility for HR**
 
 - **FR-033**: HR MUST be able to view, per published course, the employees it currently reaches with
@@ -345,7 +361,12 @@ roster updates without a manual reload.
 - **SC-004**: Reordering, renaming, or adding optional lessons in a course with active learners
   changes no learner's recorded percentage.
 - **SC-005**: An employee who skips to the end of a gated video cannot mark that lesson complete,
-  in 100% of attempts, including attempts made by manipulating the page.
+  in 100% of attempts, including attempts made by re-enabling the disabled control in the browser.
+  **Scope, agreed 2026-08-21**: the gate is decided on the server from stored watched and duration
+  seconds, but the duration is reported by the video player, so someone who deliberately falsifies
+  it can pass. Making that impossible means querying Vimeo/YouTube for each video's true length,
+  which was considered and **declined** as not worth the dependency. This measures honest
+  engagement; it is not an anti-cheating control, and nothing in the product should imply it is.
 - **SC-006**: An employee who is reached by two routes and loses one retains access in 100% of cases.
 - **SC-007**: A course roster reflects a completion that happened elsewhere within one minute, with
   no manual reload.
@@ -366,13 +387,20 @@ roster updates without a manual reload.
   forgotten**: quizzes and scored assessments, gradable assignments and submissions, certificates
   (including the Arabic-capable PDF), discussion boards, announcements and notifications, learner
   analytics and org-wide reporting, Excel export of rosters, recurring or expiring training,
-  learning paths spanning several courses, and any manager-facing view of their team's progress.
-- **Completion does not expire on a schedule** in this release — no annual refresh and no re-take
-  cycle; compliance-style recurring training is a later spec. It can, however, be superseded when HR
-  adds required content and chooses to reopen the course (FR-039), which is an editorial act by a
-  person, not a timer.
-- **Managers get no team view** in this release; visibility is HR-only. This is a deliberate
-  narrowing — the org chart is available, so it is a small later addition.
+  learning paths spanning several courses.
+- **Completion is permanent unless HR sets a renewal period** (added 2026-08-21). Each course
+  carries an optional period — 6 months, a year, 2 or 3 years — defaulting to *never*, which is what
+  every existing course keeps. When set, a completion older than the period lapses and the course
+  returns to the learner's list. Lapsing is **derived** from the completion date rather than stored
+  or swept by a scheduled job, so it cannot be missed or half-applied, and changing a course's
+  period re-evaluates everyone immediately. A learner's lesson ticks are cleared only when they
+  actually reopen the lapsed course; their first completion date and how many times they have
+  completed it are kept. Completion can also be superseded when HR adds required content and chooses
+  to reopen (FR-039) — an editorial act by a person, not a timer.
+- **Managers see their own team** (added 2026-08-21): a manager views their current direct reports
+  and each one's progress at `/learning/team`, gated on the org chart rather than a stored role.
+  Read-only, and narrower than the HR roster — no route information, because why someone holds a
+  course is an HR matter. Direct reports only, not the tree below them.
 - Course content is authored in the platform. Importing SCORM, xAPI, or any external course package
   is out of scope now and not designed for.
 

@@ -7,6 +7,7 @@ import {
   type AudienceRule,
   type AudienceSubject,
 } from "@/lib/learning/audience";
+import { hasLapsed } from "@/lib/learning/renewal";
 
 /**
  * THE course-access derivation — one definition, used by every path that reads or writes anything
@@ -57,6 +58,26 @@ export type AccessFacts = {
   /** Null when they have never opened the course. */
   enrollment: { completedAt: Date | null; accessWithdrawnAt: Date | null } | null;
 };
+
+/**
+ * A LAPSED completion is not a completion.
+ *
+ * Applied at the single point where facts are assembled, so every reader agrees: the learner's
+ * list, the roster and the access rule all treat a course that has fallen due again as in
+ * progress. Doing this here rather than in each caller is what stops the three drifting apart —
+ * and it is why a lapsed course also starts granting access again through the IN_PROGRESS route,
+ * which is exactly right: they have been asked to do it again.
+ */
+function effectiveEnrollment(
+  enrollment: { completedAt: Date | null; accessWithdrawnAt: Date | null } | null,
+  renewAfterMonths: number | null,
+  now: Date
+) {
+  if (!enrollment) return null;
+  return hasLapsed(enrollment.completedAt, renewAfterMonths, now)
+    ? { ...enrollment, completedAt: null }
+    : enrollment;
+}
 
 export type AccessResult = {
   allowed: boolean;
@@ -150,6 +171,7 @@ export async function courseAccessFor(
       select: {
         status: true,
         visibility: true,
+        renewAfterMonths: true,
         audiences: { select: { kind: true, value: true } },
         assignments: {
           where: { revokedAt: null },
@@ -187,7 +209,11 @@ export async function courseAccessFor(
       course.audiences as AudienceRule[],
       now
     ),
-    enrollment: course.enrollments[0] ?? null,
+    enrollment: effectiveEnrollment(
+      course.enrollments[0] ?? null,
+      course.renewAfterMonths,
+      now
+    ),
   });
 }
 
@@ -197,6 +223,8 @@ export type HeldCourse = {
   summary: string | null;
   coverBlobUrl: string | null;
   access: AccessResult;
+  /** Null = completion is permanent for this course. */
+  renewAfterMonths: number | null;
   enrollment: {
     startedAt: Date;
     completedAt: Date | null;
@@ -236,6 +264,7 @@ export async function accessibleCoursesFor(
         coverBlobUrl: true,
         status: true,
         visibility: true,
+        renewAfterMonths: true,
         audiences: { select: { kind: true, value: true } },
         assignments: {
           where: { revokedAt: null },
@@ -275,7 +304,7 @@ export async function accessibleCoursesFor(
         (a) => a.groupId !== null && myGroups.has(a.groupId)
       ),
       matchesAudience: subjectMatchesAudience(subject, course.audiences as AudienceRule[], now),
-      enrollment,
+      enrollment: effectiveEnrollment(enrollment, course.renewAfterMonths, now),
     });
     if (!access.allowed) continue;
 
@@ -285,6 +314,7 @@ export async function accessibleCoursesFor(
       summary: course.summary,
       coverBlobUrl: course.coverBlobUrl,
       access,
+      renewAfterMonths: course.renewAfterMonths,
       enrollment: enrollment
         ? {
             startedAt: enrollment.startedAt,
@@ -305,6 +335,7 @@ export type RosterEntry = {
   email: string;
   department: string | null;
   access: AccessResult;
+  renewAfterMonths: number | null;
   enrollment: {
     id: string;
     startedAt: Date;
@@ -332,6 +363,7 @@ export async function courseRoster(
     select: {
       status: true,
       visibility: true,
+      renewAfterMonths: true,
       audiences: { select: { kind: true, value: true } },
       assignments: { where: { revokedAt: null }, select: { userId: true, groupId: true } },
       enrollments: {
@@ -406,7 +438,7 @@ export async function courseRoster(
       hasDirectAssignment: directIds.includes(person.id),
       hasGroupAssignment: groupMemberIds.has(person.id),
       matchesAudience: audienceIds.has(person.id),
-      enrollment,
+      enrollment: effectiveEnrollment(enrollment, course.renewAfterMonths, now),
     });
     if (!access.allowed) continue;
 
@@ -416,6 +448,7 @@ export async function courseRoster(
       email: person.email,
       department: person.department,
       access,
+      renewAfterMonths: course.renewAfterMonths,
       enrollment: enrollment
         ? {
             id: enrollment.id,

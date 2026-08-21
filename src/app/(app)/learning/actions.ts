@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { courseAccessFor } from "@/lib/learning/access";
 import { ImpersonationWriteRefused, requireLearner } from "@/lib/learning/actor";
 import { computeProgressPercent, firstIncompleteLessonId, type LessonRef } from "@/lib/learning/progress";
+import { hasLapsed } from "@/lib/learning/renewal";
 
 /**
  * Learning writes (spec 038 US1/US3).
@@ -69,11 +70,39 @@ export async function openCourse(courseId: string): Promise<LearnResult> {
     const access = await courseAccessFor(learner.id, courseId);
     if (!access.allowed) return { ok: false as const, error: "You don't have access to this course." };
 
-    await prisma.courseEnrollment.upsert({
+    const enrollment = await prisma.courseEnrollment.upsert({
       where: { courseId_userId: { courseId, userId: learner.id } },
       create: { courseId, userId: learner.id },
       update: {},
+      select: { id: true, completedAt: true, completionCount: true },
     });
+
+    // A LAPSED course is cleared here, at the moment the learner comes back to redo it — not by a
+    // scheduled sweep. Two reasons that matters: nobody's ticks vanish while they aren't looking,
+    // and there is no job that could half-finish across the company. Everything before this point
+    // only READS the completion as lapsed; this is the single place it is acted on.
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { renewAfterMonths: true },
+    });
+    if (course && hasLapsed(enrollment.completedAt, course.renewAfterMonths)) {
+      await prisma.$transaction([
+        prisma.lessonProgress.updateMany({
+          where: { enrollmentId: enrollment.id },
+          data: { completedAt: null, videoWatchedSec: 0, lastPositionSec: 0 },
+        }),
+        prisma.courseEnrollment.update({
+          where: { id: enrollment.id },
+          data: {
+            completedAt: null,
+            // Their history is kept: the first completion, and how many times they have done it.
+            completionCount: Math.max(enrollment.completionCount, 1),
+            startedAt: new Date(),
+          },
+        }),
+      ]);
+    }
+
     revalidatePath("/learning");
     revalidatePath(`/learning/${courseId}`);
     return { ok: true as const };
@@ -101,14 +130,18 @@ async function syncCompletion(
 
   const enrollment = await tx.courseEnrollment.findUnique({
     where: { id: enrollmentId },
-    select: { completedAt: true },
+    select: { completedAt: true, firstCompletedAt: true },
   });
   if (!enrollment) return;
 
   if (percent >= 100 && enrollment.completedAt === null) {
     await tx.courseEnrollment.update({
       where: { id: enrollmentId },
-      data: { completedAt: new Date() },
+      data: {
+        completedAt: new Date(),
+        firstCompletedAt: enrollment.firstCompletedAt ?? new Date(),
+        completionCount: { increment: 1 },
+      },
     });
   } else if (percent < 100 && enrollment.completedAt !== null) {
     // Un-completing a lesson, or a required lesson being added, puts the course back in progress.

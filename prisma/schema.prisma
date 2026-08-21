@@ -1243,6 +1243,11 @@ model Course {
   category     String?
   status       LearningCourseStatus @default(DRAFT)
   visibility   LearningVisibility   @default(RESTRICTED)
+  /// Optional renewal period in months. NULL (the default) = completion is permanent. When set,
+  /// a completion older than this is treated as lapsed and the course returns to the learner's
+  /// list. Lapsing is DERIVED from the completion date, never a stored flag and never a scheduled
+  /// job, so nothing can be missed or run twice.
+  renewAfterMonths Int?
   order        Int                  @default(0)
   publishedAt  DateTime?
 
@@ -1438,6 +1443,9 @@ model CourseEnrollment {
   completedAt      DateTime?
   firstCompletedAt DateTime?
   reopenedAt       DateTime?
+  /// How many times this person has completed the course. Only moves for a RENEWAL cycle, so a
+  /// reopened-and-refinished course is still one completion.
+  completionCount  Int       @default(0)
 
   /// HR ending grandfathered access (FR-043/FR-044). Refused unless the enrollment is
   /// CURRENTLY grandfathered, so it can never strip access held by a real route.

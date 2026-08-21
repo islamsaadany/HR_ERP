@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/labels";
 import { ProgressBar } from "@/components/learning/ProgressBar";
+import type { RenewalState } from "@/lib/learning/renewal";
 import { BTN_NAVY, CHIP } from "@/components/learning/ui";
 
 export type CourseCardData = {
@@ -17,6 +18,8 @@ export type CourseCardData = {
   reopenedAt: Date | null;
   /** True when the ONLY thing granting access is being mid-course (FR-042). */
   grandfatheredOnly: boolean;
+  /** Whether this course must be redone, and when. PERMANENT for most courses. */
+  renewal: RenewalState;
 };
 
 /**
@@ -52,6 +55,15 @@ export function CourseCard({ course }: { course: CourseCardData }) {
           {complete ? (
             <span className={CHIP.done}>✓ Completed {formatDate(course.completedAt)}</span>
           ) : null}
+          {/* A course that has fallen due again reads as outstanding, not as a lapsed completion —
+              the ask is "do this again", and dressing it up as a failure would be wrong. */}
+          {course.renewal.kind === "LAPSED" ? (
+            <span className={CHIP.attention}>Due again</span>
+          ) : complete && course.renewal.kind === "DUE_SOON" ? (
+            <span className={CHIP.attention}>
+              Due again in {course.renewal.daysLeft} day{course.renewal.daysLeft === 1 ? "" : "s"}
+            </span>
+          ) : null}
           {course.grandfatheredOnly && !complete ? (
             <span className={CHIP.attention}>Finish by</span>
           ) : null}
@@ -70,8 +82,15 @@ export function CourseCard({ course }: { course: CourseCardData }) {
             </>
           ) : notStarted ? (
             <>Not started · {course.lessonsTotal} lessons</>
+          ) : course.renewal.kind === "LAPSED" ? (
+            <>It&rsquo;s time to do this one again — your last completion has expired</>
           ) : complete ? (
-            <>All {course.lessonsTotal} lessons done</>
+            <>
+              All {course.lessonsTotal} lessons done
+              {course.renewal.kind === "DUE" || course.renewal.kind === "DUE_SOON" ? (
+                <> · due again {formatDate(course.renewal.dueAt)}</>
+              ) : null}
+            </>
           ) : (
             <>
               {course.lessonsDone} of {course.lessonsTotal} lessons
@@ -86,7 +105,15 @@ export function CourseCard({ course }: { course: CourseCardData }) {
       </div>
 
       <Link href={`/learning/${course.courseId}`} className={BTN_NAVY}>
-        {complete ? "Review" : reopened ? "Finish it" : notStarted ? "Start" : "Continue"}
+        {course.renewal.kind === "LAPSED"
+          ? "Do it again"
+          : complete
+            ? "Review"
+            : reopened
+              ? "Finish it"
+              : notStarted
+                ? "Start"
+                : "Continue"}
       </Link>
     </div>
   );

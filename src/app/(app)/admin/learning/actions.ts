@@ -514,3 +514,39 @@ export async function deleteCheckpoint(
   revalidate(courseId);
   return { ok: true };
 }
+
+/**
+ * Set (or clear) a course's renewal period.
+ *
+ * Takes effect immediately for everyone, including people who completed it long ago — lapsing is
+ * derived from the completion date, so there is no sweep to wait for and no back-fill to run. That
+ * cuts both ways and is worth knowing: setting "every year" on a course finished 18 months ago
+ * puts it back on those people's lists today.
+ */
+export async function setCourseRenewal(
+  courseId: string,
+  renewAfterMonths: number | null
+): Promise<CourseResult> {
+  await requireAdmin();
+  if (renewAfterMonths !== null && (renewAfterMonths <= 0 || renewAfterMonths > 120)) {
+    return { ok: false, error: "Choose a renewal period between 1 and 120 months." };
+  }
+  await prisma.course.update({ where: { id: courseId }, data: { renewAfterMonths } });
+  revalidate(courseId);
+  return { ok: true };
+}
+
+/** How many people a renewal change would put back on the hook right now. */
+export async function countLapsedByRenewal(
+  courseId: string,
+  renewAfterMonths: number | null
+): Promise<number> {
+  await requireAdmin();
+  if (renewAfterMonths === null) return 0;
+  const { hasLapsed } = await import("@/lib/learning/renewal");
+  const enrollments = await prisma.courseEnrollment.findMany({
+    where: { courseId, completedAt: { not: null } },
+    select: { completedAt: true },
+  });
+  return enrollments.filter((e) => hasLapsed(e.completedAt, renewAfterMonths)).length;
+}

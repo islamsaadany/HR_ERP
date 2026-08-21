@@ -47,6 +47,7 @@ export default async function CourseBuilderPage({
       summary: true,
       status: true,
       visibility: true,
+      renewAfterMonths: true,
       sections: {
         where: { deletedAt: null },
         orderBy: { order: "asc" },
@@ -203,7 +204,12 @@ export default async function CourseBuilderPage({
           accessCount={audienceRows.length + assignmentRows.length}
           peopleCount={rosterRows.length}
           content={
-            <CourseBuilder courseId={course.id} status={course.status} sections={sections} />
+            <CourseBuilder
+              courseId={course.id}
+              status={course.status}
+              sections={sections}
+              renewAfterMonths={course.renewAfterMonths}
+            />
           }
           access={
             <AudiencePicker
