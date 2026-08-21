@@ -181,10 +181,20 @@ they do today and blocks only the writes.
 
 ---
 
-## D8 — Video delivery: **OPEN — decision required before implementation**
+## D8 — Video is linked, not hosted (**resolved 2026-08-21**)
 
-Everything else in this plan is settled. This one is not, because it trades confidentiality against
-cost and effort, and that is not a call to make silently.
+**Decision**: lesson video is supplied as a **link** — unlisted Vimeo, unlisted YouTube, or a direct
+file URL. The platform hosts no video. Course covers and downloadable lesson files still go to the
+existing private Blob store as they do everywhere else in the app.
+
+**Rationale**: the two measurable link sources give employees an identical experience to a hosted
+file — resume, watch-gating and checkpoints all work through their player APIs — for none of the
+cost. Hosting would need a byte-range streaming path the platform does not have (see below), and the
+confidentiality gain is smaller than it looks: an unlisted Vimeo link and an unguessable blob URL are
+the same posture. Hosting returns as its own spec if HR meets content that cannot go on Vimeo — at
+which point option C below is the honest answer and its cost is accepted deliberately.
+
+**What made this a real decision rather than a default**:
 
 **What is true today**: the Blob store is used exclusively with `access: "private"`
 (`profile/documents-actions.ts`, `admin/knowledge/actions.ts`), and private blobs are streamed back
@@ -193,9 +203,14 @@ implement HTTP Range**, which video seeking and resume require. Uploads today go
 action, and `next.config.mjs` sets no `serverActions.bodySizeLimit` (Next's default is 1 MB), which
 is worth verifying independently of this feature — `documents-actions.ts` advertises a 10 MB cap.
 
-The three routes are set out with their costs in `plan.md` under *Open Decision — Video delivery*.
-Whichever is chosen, `src/lib/video.ts` (D9) is unaffected: link-based video works identically in all
-three.
+The alternatives, for the record: **B — client-direct upload to a public blob** (small to build; the
+URL is public-but-unguessable, so no better than an unlisted link while making the content ours to
+store); **C — client-direct upload to a private blob plus a Range-capable streaming route** (the only
+option where video genuinely cannot be watched without signing in, at the cost of implementing Range
+correctly and pushing every watched byte through a Function).
+
+`src/lib/video.ts` (D9) is unaffected either way — it already classifies and normalises exactly these
+link forms, which is most of what this release needs from it.
 
 ---
 

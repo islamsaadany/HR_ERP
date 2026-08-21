@@ -210,9 +210,10 @@ roster updates without a manual reload.
   lesson with no content, naming the specific gap.
 - **FR-007**: A published course MUST be returnable to draft, hiding it from employees without
   destroying anyone's recorded progress.
-- **FR-008**: Uploaded video and file content MUST be stored in the platform's existing file store.
-- **FR-009**: HR MUST be able to supply a video as an uploaded file or as a link to a supported
-  external source, and the platform MUST state plainly which sources it can measure playback on.
+- **FR-008**: Downloadable lesson files and course cover images MUST be stored in the platform's
+  existing file store. **Video is not hosted by the platform in this release** (see Assumptions).
+- **FR-009**: HR MUST supply a lesson's video as a link to a supported external source, and the
+  platform MUST state plainly which sources it can measure playback on and which it cannot.
 - **FR-039**: When an edit to a published course increases the set of lessons it requires — a new
   required lesson, or an optional one made required — and at least one employee has already
   completed that course, the platform MUST ask the author whether the course reopens for those
@@ -379,9 +380,14 @@ roster updates without a manual reload.
 
 - The existing employee registry, roles, sign-in, impersonation, file storage, and branding are
   reused as-is. This feature adds no new environment variables and no scheduled job.
-- The **supported video sources** are: files uploaded to the platform, YouTube, Vimeo, and any direct
-  link to a video file — all of which can be measured — plus Google Drive links, which play but
-  **cannot** be measured or gated. This distinction is a property of those services, not a choice.
+- **Video is linked, not hosted** (decided 2026-08-21). The supported sources are **unlisted Vimeo**
+  and **unlisted YouTube** — both fully measurable, so watch-gating, resume and checkpoints behave
+  exactly as they would for a hosted file — plus a direct link to a video file. **Google Drive links
+  play but cannot be measured or gated**; that is a property of the service, not a choice, and
+  FR-031 makes the platform refuse rather than pretend. Hosting video ourselves was considered and
+  deferred: it requires a byte-range streaming path the platform does not have, and an unlisted link
+  carries the same public-but-unguessable exposure as a blob URL would. Should HR meet content that
+  cannot go on Vimeo, hosting returns as its own small spec.
 - The employee-facing Learning area replaces the Phase-9 placeholder. It sits alongside Handbook and
   Knowledge rather than merging with them; a later decision may relate the three.
 

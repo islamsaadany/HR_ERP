@@ -69,33 +69,30 @@ via the one `formatDate` · navy = action, green = done-state only.
 
 **No violations. Complexity Tracking is therefore empty and omitted.**
 
-## Open Decision — Video delivery
+## Resolved — Video is linked, not hosted (2026-08-21)
 
-Everything else is settled; this is not, and it should not be settled silently.
+**Decision**: lesson video is supplied as a **link** — unlisted Vimeo, unlisted YouTube, or a direct
+file URL. The platform hosts no video. Course covers and downloadable lesson files continue to use the
+existing private Blob store.
 
-**What is true in the codebase today**: Blob is used exclusively as `access: "private"`
+**What made this a real decision.** Blob is used exclusively as `access: "private"`
 (`profile/documents-actions.ts:27`, `admin/knowledge/actions.ts:41`), and private blobs are streamed
 back through a Function by `src/lib/blob-serve.ts` — which returns the whole body and **implements no
-HTTP Range**, the thing video seeking and resume depend on. Uploads go through a server action, and
-`next.config.mjs` sets no `serverActions.bodySizeLimit` (Next's default is 1 MB) while
-`documents-actions.ts` advertises a 10 MB cap — worth verifying on its own account, independent of
-this feature.
+HTTP Range**, the thing video seeking and resume depend on. Hosting video would mean building that
+path and pushing every watched byte through a Function. Against that, an unlisted Vimeo link and an
+unguessable blob URL carry the *same* exposure, and both measurable link sources give the employee an
+identical experience — resume, watch-gating and checkpoints all work through their player APIs.
 
-| Option | What it means | Cost |
-|---|---|---|
-| **A — Links only** | No uploads. HR pastes an unlisted YouTube/Vimeo link. Both are fully trackable, so watch-gating and checkpoints work unchanged. | Zero storage work; best playback. Content lives outside our control, and "unlisted" is public-but-unguessable. |
-| **B — Client-direct upload, public blob** | Browser uploads straight to Blob; the video plays from the Blob CDN with Range and seeking for free. | Small implementation. The blob URL is public-but-unguessable — anyone with the link watches without signing in. |
-| **C — Client-direct upload, private blob + Range-capable streaming route** | Fully authenticated: every byte passes `courseAccessFor()`. | We implement Range correctly, and all video bandwidth flows through Functions — a 500 MB course video watched by 40 people is real cost and real function-duration risk. |
+**Consequences for this plan**: no `POST /api/learning/upload`, no video streaming route, no `UPLOAD`
+member on `VideoSource`, and `LessonBlock.externalUrl` (never `blobUrl`) carries a `VIDEO` block.
+`src/lib/learning/video.ts` is unchanged — classifying and normalising exactly these link forms is
+most of what it is for. Hosting returns as its own small spec if HR meets content that cannot go on
+Vimeo; the alternatives and their costs are recorded in [research.md](./research.md) D8.
 
-**Recommendation: A for this release, with B added later only if HR actually needs to host video we
-cannot put on Vimeo.** It is the only option with no new failure mode, it needs no upload path at
-all, the trackability employees experience is identical, and it defers the confidentiality question
-until there is a real video to have it about. If training content is genuinely confidential, C is the
-only honest answer and its cost should be accepted deliberately.
-
-*This choice affects: the `LessonBlock` upload fields, `POST /api/learning/upload`,
-`GET /api/learning/blocks/[id]/video`, and roughly one task group in `tasks.md`. It affects nothing
-else — `src/lib/learning/video.ts` and the player are identical under all three.*
+**Unrelated finding, worth a look on its own account**: `next.config.mjs` sets no
+`serverActions.bodySizeLimit` while `documents-actions.ts` advertises a 10 MB cap for personal
+documents. Next's default is well below that, so the existing personal-document upload may fail above
+the default on Vercel. Not part of this feature — flagged, not fixed.
 
 ## Project Structure
 
@@ -176,7 +173,7 @@ sign-off:
 
 ## Phase status
 
-- **Phase 0 — Research**: ✅ complete → [research.md](./research.md) (D1–D9; D8 is the open decision above)
+- **Phase 0 — Research**: ✅ complete → [research.md](./research.md) (D1–D9, all resolved)
 - **Phase 1 — Design & contracts**: ✅ complete → [data-model.md](./data-model.md),
   [contracts/server-actions.md](./contracts/server-actions.md), [quickstart.md](./quickstart.md)
-- **Phase 2 — Tasks**: not started — `/speckit-tasks`, after the video decision and the mockups
+- **Phase 2 — Tasks**: not started — `/speckit-tasks`, after the four mockups are signed off

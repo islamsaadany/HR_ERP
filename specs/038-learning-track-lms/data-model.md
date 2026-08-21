@@ -14,11 +14,12 @@ LearningCourseStatus   DRAFT | PUBLISHED
 LearningVisibility     OPEN | RESTRICTED
 LessonBlockType        VIDEO | TEXT | FILE
 AudienceKind           ALL_ACTIVE | DEPARTMENT | BUSINESS_UNIT | EMPLOYMENT_TYPE | TENURE_BAND | REPORTS_TO
-VideoSource            UPLOAD | YOUTUBE | VIMEO | DRIVE | DIRECT_FILE
+VideoSource            YOUTUBE | VIMEO | DRIVE | DIRECT_FILE
 ```
 
 `VideoSource` is stored, not re-derived on read, so a lesson's trackability is a fact the server can
-check without re-parsing a URL. `DRIVE` is the untrackable one (FR-031).
+check without re-parsing a URL. `DRIVE` is the untrackable one (FR-031). There is no `UPLOAD` member:
+video is linked, never hosted (research D8).
 
 ---
 
@@ -64,11 +65,13 @@ block has `source = DRIVE` (FR-031). Checked in the curriculum action, and again
 
 ### `LessonBlock`
 `id` · `lessonId` → Lesson (`Cascade`) · `type` LessonBlockType · `order` Int ·
-`text` String? (sanitised HTML for `TEXT`) · `blobUrl` String? · `externalUrl` String? ·
-`videoSource` VideoSource? · `fileName` String? · `fileSizeBytes` Int?
+`text` String? (sanitised HTML for `TEXT`) · `blobUrl` String? (`FILE` only) · `externalUrl` String?
+(`VIDEO` only) · `videoSource` VideoSource? · `fileName` String? · `fileSizeBytes` Int?
 `@@unique([lessonId, order])`
 
-**Invariant**: exactly one of `blobUrl` / `externalUrl` / `text` is populated, per `type`.
+**Invariant**: exactly one of `blobUrl` / `externalUrl` / `text` is populated, and which one is fixed
+by `type` — `VIDEO` ⇒ `externalUrl` + `videoSource` (never `blobUrl`; the platform hosts no video),
+`FILE` ⇒ `blobUrl`, `TEXT` ⇒ `text`.
 
 ### `VideoCheckpoint`
 `id` · `lessonId` → Lesson (`Cascade`) · `atSec` Int · `prompt` String · `options` String[] ·

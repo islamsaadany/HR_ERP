@@ -85,8 +85,7 @@ There is **no** learner-id parameter anywhere in this file.
 |---|---|---|
 | `GET /api/learning/courses/[id]/cover` | signed-in + access check | Streams the private cover blob via `streamPrivateBlob`. |
 | `GET /api/learning/blocks/[id]/file` | signed-in + access check on the owning course | Streams a `FILE` block. |
-| `GET /api/learning/blocks/[id]/video` | signed-in + access check | **Shape depends on the open video-delivery decision** (plan.md → *Open Decision*). Under the private-streaming option this route must implement HTTP **Range**, which `streamPrivateBlob` does not do today. |
-| `POST /api/learning/upload` | `ADMIN` | Client-direct upload handshake, if uploads are in scope after the video decision. |
+| — | — | **No video route.** Video is linked, not hosted (research D8), so the player embeds the external source directly and no byte ever passes through us. |
 
 **Authorisation on every one of these is `courseAccessFor()`** — the same derivation the pages use.
 A blob URL is never handed to a client that could not open the course.
