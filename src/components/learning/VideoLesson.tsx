@@ -57,6 +57,7 @@ export function VideoLesson({
   initialPositionSec,
   initialWatchedSec,
   checkpoints,
+  enforceNoSkip = false,
   onWatched,
 }: {
   lessonId: string;
@@ -65,6 +66,12 @@ export function VideoLesson({
   initialPositionSec: number;
   initialWatchedSec: number;
   checkpoints: Checkpoint[];
+  /**
+   * Prevent dragging past the furthest point actually watched. Set when the lesson carries a watch
+   * requirement — that requirement is the thing being enforced, so without one there is nothing to
+   * police and the learner keeps a normal scrubber.
+   */
+  enforceNoSkip?: boolean;
   /** Report (watchedSec, durationSec) up so the page can show live progress toward the gate. */
   onWatched?: (watchedSec: number, durationSec: number) => void;
 }) {
@@ -78,6 +85,10 @@ export function VideoLesson({
   const resumeRef = useRef<() => void>(() => {});
   const [activeCue, setActiveCue] = useState<Checkpoint | null>(null);
   const [playerError, setPlayerError] = useState<string | null>(null);
+  const [blockedSkip, setBlockedSkip] = useState(false);
+  /** The furthest point legitimately reached. Resuming counts — they got there honestly before. */
+  const maxReachedRef = useRef(initialPositionSec);
+  const enforceRef = useRef(enforceNoSkip);
 
   // ── The moving parts, held in refs so the player effects never see them change ──
   const onWatchedRef = useRef(onWatched);
@@ -88,7 +99,15 @@ export function VideoLesson({
     onWatchedRef.current = onWatched;
     checkpointsRef.current = [...checkpoints].sort((a, b) => a.atSec - b.atSec);
     lessonIdRef.current = lessonId;
+    enforceRef.current = enforceNoSkip;
   });
+
+  // The notice is a nudge, not a state — it clears itself so it doesn't sit there accusing anyone.
+  useEffect(() => {
+    if (!blockedSkip) return;
+    const t = setTimeout(() => setBlockedSkip(false), 4000);
+    return () => clearTimeout(t);
+  }, [blockedSkip]);
 
   const save = useCallback((positionSec: number, durationSec: number) => {
     void saveVideoProgress(
@@ -100,8 +119,33 @@ export function VideoLesson({
   }, []);
 
   /** Shared per-tick logic. Stable by construction — it closes over refs only. */
+  /** Tolerance for a legitimate advance. Ticks land every 500ms, so anything beyond this is a drag. */
+  const SEEK_TOLERANCE_SEC = 1.5;
+
   const processTick = useRef(
-    (now: number, duration: number, isPlaying: boolean, pause: () => void) => {
+    (
+      now: number,
+      duration: number,
+      isPlaying: boolean,
+      pause: () => void,
+      seekTo?: (sec: number) => void
+    ) => {
+      // ── No skipping ahead ──────────────────────────────────────────────────────────────────
+      // Credit already ignored a forward drag, so the watch requirement was never satisfiable by
+      // skipping. But the learner could still drag to the end and SEE the video finish, which
+      // reads as "done" even though the platform disagrees — a confusing place to leave someone.
+      // On a lesson with a watch requirement we now put the playhead back where they got to.
+      //
+      // Rewinding stays free, deliberately: it is how you rewatch something you missed, and the
+      // player already advertises that it costs nothing.
+      if (enforceRef.current && seekTo && now > maxReachedRef.current + SEEK_TOLERANCE_SEC) {
+        seekTo(maxReachedRef.current);
+        lastTimeRef.current = maxReachedRef.current;
+        setBlockedSkip(true);
+        return;
+      }
+      if (now > maxReachedRef.current) maxReachedRef.current = now;
+
       const delta = now - lastTimeRef.current;
       // < 1.5s means genuine playback. A drag forward produces a far bigger gap and earns nothing.
       if (delta > 0 && delta < 1.5 && isPlaying) {
@@ -152,7 +196,15 @@ export function VideoLesson({
     resumeRef.current = () => void el.play();
 
     const onTime = () =>
-      processTick(el.currentTime, el.duration || 0, !el.paused, () => el.pause());
+      processTick(
+        el.currentTime,
+        el.duration || 0,
+        !el.paused,
+        () => el.pause(),
+        (sec) => {
+          el.currentTime = sec;
+        }
+      );
     const onPause = () => save(el.currentTime, el.duration || 0);
     el.addEventListener("timeupdate", onTime);
     el.addEventListener("pause", onPause);
@@ -181,6 +233,7 @@ export function VideoLesson({
       getPlayerState: () => number;
       pauseVideo: () => void;
       playVideo: () => void;
+      seekTo: (seconds: number, allowSeekAhead: boolean) => void;
       destroy: () => void;
     };
     let player: YTPlayer | null = null;
@@ -237,7 +290,8 @@ export function VideoLesson({
                   player.getCurrentTime(),
                   player.getDuration() || 0,
                   player.getPlayerState() === 1, // 1 = playing
-                  () => player?.pauseVideo()
+                  () => player?.pauseVideo(),
+                  (sec) => player?.seekTo(sec, true)
                 );
               }, 500);
             },
@@ -301,7 +355,9 @@ export function VideoLesson({
           player.getDuration(),
           player.getPaused(),
         ]).catch(() => [0, 0, true] as const);
-        processTick(now, duration || 0, !paused, () => void player?.pause());
+        processTick(now, duration || 0, !paused, () => void player?.pause(), (sec) => {
+          void player?.setCurrentTime(sec);
+        });
       }, 500);
     });
 
@@ -320,6 +376,11 @@ export function VideoLesson({
       ) : (
         <div ref={mountRef} className="h-full w-full [&>div]:h-full [&>div]:w-full [&_iframe]:h-full [&_iframe]:w-full" />
       )}
+      {blockedSkip ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-navy-900/85 px-4 py-2.5 text-center text-[12.5px] text-white">
+          This lesson has to be watched through — you can rewind, but not skip ahead.
+        </div>
+      ) : null}
       {playerError ? (
         <div className="absolute inset-0 grid place-items-center bg-navy-900 p-6 text-center">
           <p className="max-w-[42ch] text-sm text-white/90">{playerError}</p>

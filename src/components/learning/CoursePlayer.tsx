@@ -150,6 +150,9 @@ export function CoursePlayer({
               initialPositionSec={current.positionSec}
               initialWatchedSec={current.watchedSec}
               checkpoints={current.checkpoints}
+              // Only policed when HR set a watch requirement — that requirement is the thing being
+              // enforced, so without one the learner keeps a normal scrubber.
+              enforceNoSkip={current.minWatchPercent > 0}
               onWatched={handleWatched}
             />
           ) : (
