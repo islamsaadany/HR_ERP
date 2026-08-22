@@ -1,0 +1,212 @@
+<title>Learning Manager Role</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-400:#4f6d97;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .proposal{margin-top:36px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:76ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-navy{border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:9px;cursor:pointer}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;cursor:pointer}
+  .fld{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:2px;font-weight:700}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 9px;font-size:13px;color:var(--ink)}
+  .row{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:9px 0;font-size:13px}
+  .row:last-child{border-bottom:0}
+  .av{width:28px;height:28px;border-radius:999px;background:var(--navy-50);border:1px solid var(--navy-200);color:var(--navy-700);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none}
+  .decision{margin-top:34px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:860px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:5px 0}
+  .note{font-size:11.5px;color:var(--muted);margin-top:9px}
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  @media(max-width:880px){.grid2{grid-template-columns:1fr}}
+  .adminrow{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:7px 12px;font-size:13px}
+  .adminrow:last-child{border-bottom:0}
+  .glyph{width:22px;height:22px;border-radius:6px;background:var(--navy-50);color:var(--navy-700);display:grid;place-items:center;font-size:12px;flex:none}
+  .cat{display:flex;align-items:center;gap:10px;margin:0 0 6px}
+  .cat b{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--navy-700)}
+  .cat i{flex:1;height:1px;background:var(--line)}
+  .gone{opacity:.32;filter:grayscale(1)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:0 8px 6px;font-weight:800}
+  td{padding:7px 8px;border-top:1px solid var(--line)}
+  .yes{color:var(--green);font-weight:800}
+  .no{color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 038 · learning manager</p>
+  <h1>Someone who runs Learning, and nothing else</h1>
+  <p class="lede">A person who can build and run courses without becoming an HR Admin. They reach <b>only</b> the Learning part of the admin — nothing about salaries, benefits, leave or employee records. HR appoints them from a new <b>Setup</b> page inside Learning, and stays above it. Illustrative content throughout.</p>
+
+  <!-- 1 -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Setup: who runs Learning <span class="chip c-off">HR only</span></h2>
+    <p class="sub">A new page at Admin → Learning → <b>Setup</b>, beside &ldquo;Manage groups&rdquo;. HR Admins and Super Users are listed but not removable — they hold Learning because they hold everything, and pretending otherwise would create a way to lock HR out of a module.</p>
+
+    <div class="frame">
+      <div class="grid2">
+        <div class="panel">
+          <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:var(--navy-800)">Who manages Learning</p>
+          <p style="margin:0 0 11px;font-size:11.5px;color:var(--muted)">These people can reach Admin → Learning. Nothing else in the admin opens for them.</p>
+
+          <div class="row">
+            <span class="av">SM</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600">Sara Mahmoud</span>
+              <span style="font-size:11.5px;color:var(--muted)">L&amp;D · appointed by Islam · 22/08/2026</span>
+            </span>
+            <span class="chip c-navy">Learning manager</span>
+            <span style="color:var(--red);font-size:11px;font-weight:600">Remove</span>
+          </div>
+          <div class="row">
+            <span class="av">KH</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600">Karim Hassan</span>
+              <span style="font-size:11.5px;color:var(--muted)">Consulting · appointed by Islam · 22/08/2026</span>
+            </span>
+            <span class="chip c-navy">Learning manager</span>
+            <span style="color:var(--red);font-size:11px;font-weight:600">Remove</span>
+          </div>
+          <div class="row" style="opacity:.72">
+            <span class="av">IS</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600">Islam Saadany</span>
+              <span style="font-size:11.5px;color:var(--muted)">Super User — holds Learning because they hold everything</span>
+            </span>
+            <span class="chip c-off">always</span>
+          </div>
+          <div class="row" style="opacity:.72">
+            <span class="av">NA</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600">Nada Adel</span>
+              <span style="font-size:11.5px;color:var(--muted)">HR Admin — holds Learning because they hold everything</span>
+            </span>
+            <span class="chip c-off">always</span>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:flex-end;margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+            <div style="flex:1"><span class="fld">Add someone</span><input class="inp" placeholder="Search employees…" readonly></div>
+            <span class="btn-navy">Appoint</span>
+          </div>
+          <p class="note">Only HR Admins and Super Users can change this list. A learning manager can <b>see</b> it but not edit it — otherwise the role could quietly hand itself out.</p>
+        </div>
+
+        <div class="panel">
+          <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:var(--navy-800)">What a learning manager can do</p>
+          <p style="margin:0 0 11px;font-size:11.5px;color:var(--muted)">Everything Learning, nothing else. Their employee record and their own role stay exactly as they are.</p>
+          <table>
+            <thead><tr><th>Area</th><th style="width:74px">Manager</th><th style="width:52px">HR</th></tr></thead>
+            <tbody>
+              <tr><td>Create, edit, publish courses</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+              <tr><td>Who a course reaches (audiences, groups)</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+              <tr><td>Materials, resources, suggestions</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+              <tr><td>Course roster — who has finished what</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+              <tr><td>Appoint another learning manager</td><td class="no">No</td><td class="yes">Yes</td></tr>
+              <tr><td>Employee records, salaries, benefits</td><td class="no">No</td><td class="yes">Yes</td></tr>
+              <tr><td>Time-off, handbook, announcements</td><td class="no">No</td><td class="yes">Yes</td></tr>
+              <tr><td>Modules, brand, view-as-employee</td><td class="no">No</td><td class="no">Super User</td></tr>
+            </tbody>
+          </table>
+          <p class="note">The roster is in, deliberately: you cannot run training without seeing who has done it. It shows names and progress on <i>courses</i> — never pay, leave or personal records.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="proposal">
+    <h2><span class="num">2</span> What Sara sees when she opens Admin <span class="chip c-off">Learning manager</span></h2>
+    <p class="sub">The same Admin door in the sidebar, opening on a page with one section. Not a greyed-out list of things she cannot have — an admin home that shows fifteen locked doors is worse than one that shows the one she owns.</p>
+
+    <div class="frame">
+      <div class="grid2">
+        <div>
+          <p style="margin:0 0 8px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Sara — Learning manager</p>
+          <div class="panel" style="padding:10px 0">
+            <div style="padding:0 12px"><div class="cat"><b>Learning</b><i></i><span style="font-size:10px;color:var(--muted)">1</span></div></div>
+            <div class="adminrow"><span class="glyph" style="background:var(--gold-100);color:var(--gold-800)">◎</span><span style="flex:1;font-weight:600;color:var(--navy-800)">Learning</span><span style="display:inline-grid;place-items:center;height:18px;min-width:18px;border-radius:999px;background:var(--gold-500);color:var(--navy-900);font-size:10.5px;font-weight:800;padding:0 6px">2</span></div>
+          </div>
+          <p class="note">Her sidebar is otherwise an ordinary employee&rsquo;s: My learning, Benefits, Time-Off, Directory — she is still an employee, and takes courses like everyone else.</p>
+        </div>
+
+        <div>
+          <p style="margin:0 0 8px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Nada — HR Admin (unchanged)</p>
+          <div class="panel" style="padding:10px 0">
+            <div style="padding:0 12px"><div class="cat"><b>Benefits &amp; Time-Off</b><i></i><span style="font-size:10px;color:var(--muted)">2</span></div></div>
+            <div class="adminrow"><span class="glyph">◆</span><span style="flex:1;font-weight:600;color:var(--navy-800)">Benefits Management</span></div>
+            <div class="adminrow"><span class="glyph">▤</span><span style="flex:1;font-weight:600;color:var(--navy-800)">Time-Off</span></div>
+            <div style="padding:10px 12px 0"><div class="cat"><b>People</b><i></i><span style="font-size:10px;color:var(--muted)">5</span></div></div>
+            <div class="adminrow"><span class="glyph">☰</span><span style="flex:1;font-weight:600;color:var(--navy-800)">Employee Registry</span></div>
+            <div class="adminrow"><span class="glyph">✎</span><span style="flex:1;font-weight:600;color:var(--navy-800)">Change Requests</span></div>
+            <div class="adminrow"><span class="glyph" style="background:var(--gold-100);color:var(--gold-800)">◎</span><span style="flex:1;font-weight:600;color:var(--navy-800)">Learning</span><span style="display:inline-grid;place-items:center;height:18px;min-width:18px;border-radius:999px;background:var(--gold-500);color:var(--navy-900);font-size:10.5px;font-weight:800;padding:0 6px">2</span></div>
+            <div class="adminrow" style="opacity:.5"><span class="glyph">…</span><span style="flex:1;color:var(--muted)">and the rest, exactly as today</span></div>
+          </div>
+          <p class="note">Nothing is taken away from HR. Appointing someone adds a pair of hands; it does not hand anything over.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="proposal">
+    <h2><span class="num">3</span> The part I need you to decide <span class="chip c-gold">open</span></h2>
+    <p class="sub">You said HR &ldquo;becomes on verification level or something&rdquo;. That could mean two quite different products, and it changes how much gets built — so I have drawn both rather than picking for you.</p>
+
+    <div class="frame">
+      <div class="grid2">
+        <div class="panel">
+          <p style="margin:0 0 2px;font-size:13px;font-weight:700;color:var(--navy-800)">A · HR oversees, doesn&rsquo;t gate <span class="chip c-ok">simpler</span></p>
+          <p style="margin:0 0 10px;font-size:12px;color:var(--muted)">The manager publishes courses themselves. HR&rsquo;s &ldquo;verification&rdquo; is that they appointed the person, can see everything they do, and can remove them in one click.</p>
+          <div style="border:1px solid var(--line);border-radius:9px;padding:9px;background:var(--paper);font-size:12px">
+            <b style="color:var(--navy-800)">Sara</b> builds a course → <b style="color:var(--navy-800)">Sara</b> publishes it → employees see it.
+          </div>
+          <p class="note">Fastest to run day to day. Nothing waits on HR. The risk is that a half-finished course can go live without a second pair of eyes.</p>
+        </div>
+
+        <div class="panel">
+          <p style="margin:0 0 2px;font-size:13px;font-weight:700;color:var(--navy-800)">B · HR signs off before it goes live <span class="chip c-gold">more to build</span></p>
+          <p style="margin:0 0 10px;font-size:12px;color:var(--muted)">The manager does everything up to publishing, then sends it for approval. HR gets a queue, the same way suggested resources work now.</p>
+          <div style="border:1px solid var(--line);border-radius:9px;padding:9px;background:var(--paper);font-size:12px">
+            <b style="color:var(--navy-800)">Sara</b> builds a course → <span class="chip c-gold">Sent for approval</span> → <b style="color:var(--navy-800)">HR</b> publishes → employees see it.
+          </div>
+          <p class="note">A real second pair of eyes, and a record of who approved what. The cost is that a course sits waiting whenever HR is busy — the thing you were trying to get away from.</p>
+        </div>
+      </div>
+      <p class="note"><b>My recommendation: A</b>, and add B later if it turns out to be needed. You are appointing someone precisely so training stops queueing behind HR; putting a queue back in at the last step undoes most of that. Everything a manager does is already visible to HR — the course list, the roster, who published what — so &ldquo;oversight&rdquo; is real without being a gate.</p>
+    </div>
+  </section>
+
+  <div class="decision">
+    <h3>What I&rsquo;m assuming — correct me and I&rsquo;ll change it</h3>
+    <ul>
+      <li><b>It is not a new role on the employee record.</b> Sara stays an EMPLOYEE; she holds an appointment to run Learning. That is why it cannot leak into Benefits or salaries — there is nothing to leak, and the employee form does not change.</li>
+      <li><b>HR Admins and Super Users keep Learning automatically</b>, are shown on the list as &ldquo;always&rdquo;, and cannot be removed from it — otherwise the module could be locked away from HR.</li>
+      <li><b>A learning manager cannot appoint another one.</b> They see the list read-only.</li>
+      <li><b>The roster is included</b> — names, courses, progress. You cannot run training blind to who has done it. No pay, leave, or personal data.</li>
+      <li><b>Appointing is per person, not per course.</b> A manager runs the whole module, not a subject area. Per-course ownership is a bigger idea and I would rather not guess at it.</li>
+      <li><b>Nothing about the module switch changes</b> — if Learning is switched off in Modules, it is off for managers too.</li>
+    </ul>
+    <p style="margin:10px 0 0">The one I need: <b>A or B</b> in section 3. Everything else above I will build as drawn unless you say otherwise.</p>
+  </div>
+
+  <footer>Spec 038 · learning manager role · 22/08/2026 · illustrative content. Nothing is built until you approve.</footer>
+</div>
