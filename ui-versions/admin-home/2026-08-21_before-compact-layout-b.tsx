@@ -111,101 +111,45 @@ function benefitsFlag(a: BenefitsAttention): Flag | null {
   return { count: a.total, tags };
 }
 
-/** One-glyph marks. Deliberately not emoji: they inherit the text colour and stay on-brand. */
-const GLYPH: Record<string, string> = {
-  "/admin/benefits": "◆",
-  "/admin/time-off": "▤",
-  "/admin/employees": "☰",
-  "/admin/change-requests": "✎",
-  "/admin/data-requests": "◫",
-  "/admin/departments": "⌗",
-  "/admin/learning": "◎",
-  "/admin/onboarding": "▶",
-  "/admin/handbook": "▣",
-  "/admin/knowledge": "◈",
-  "/admin/announcements": "✦",
-  "/admin/impersonate": "◉",
-  "/admin/modules": "⊞",
-  "/admin/brand": "◐",
-  "/admin/notifications": "✉",
-};
-
-/**
- * One destination, as a row (compact layout B, approved 2026-08-21).
- *
- * The description moved into a HOVER so fifteen destinations fit one screen instead of scrolling.
- * The count stays on the row, because "something is waiting" has to be visible without hovering —
- * that is the whole point of the flag. The BREAKDOWN ("2 claims to review", "1 over-charged") joins
- * the description in the hover: it was added in August so a card says what you are walking into,
- * and losing it entirely would undo that, but it does not have to be on screen at rest.
- *
- * The hover is CSS-only and also opens on keyboard focus, so it is not mouse-only.
- */
-function AdminRow({ card, flag }: { card: Card; flag: Flag | null }) {
+function AdminCard({ card, flag }: { card: Card; flag: Flag | null }) {
   return (
     <Link
       href={card.href}
       className={
-        "group relative flex items-center gap-2.5 border-b border-line px-3 py-2 text-[13px] first:rounded-t-xl last:rounded-b-xl last:border-b-0 hover:bg-navy-50/40 " +
-        (card.ready ? "" : "pointer-events-none opacity-60")
+        "ff-card ff-adcard rounded-xl border bg-surface p-5 hover:border-navy-300 " +
+        (flag ? "border-gold-300" : "border-line") +
+        (card.ready ? "" : " pointer-events-none opacity-60")
       }
     >
-      <span
-        aria-hidden
-        className={
-          "grid h-[22px] w-[22px] flex-none place-items-center rounded-md text-[12px] " +
-          (flag ? "bg-gold-100 text-gold-800" : "bg-navy-50 text-navy-700")
-        }
-      >
-        {GLYPH[card.href] ?? "•"}
-      </span>
-
-      <span className="min-w-0 flex-1 truncate font-semibold text-navy-800">{card.title}</span>
-
       {flag ? (
-        <span className="ml-auto inline-grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gold-500 px-1.5 text-[10.5px] font-extrabold text-navy-900">
-          {flag.count}
+        <span className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-gold-100 px-2.5 py-1 text-[11px] font-bold text-gold-800">
+          <span className="h-1.5 w-1.5 rounded-full bg-gold-500" aria-hidden="true" />
+          {flag.count} need{flag.count === 1 ? "s" : ""} attention
         </span>
       ) : null}
-
-      {/* The hover card. `pointer-events-none` so it can never sit between the cursor and the row. */}
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute bottom-[calc(100%+6px)] left-3 z-20 w-[250px] rounded-lg bg-navy-900 px-2.5 py-2 text-[11.5px] font-normal leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
-      >
-        {card.ready ? card.body : "Coming soon"}
-        {flag ? (
-          <span className="mt-1 block font-semibold text-gold-300">
-            {flag.tags.map((t) => t.label).join(" · ")}
-          </span>
-        ) : null}
-      </span>
+      <div className="ff-ad-title text-[19px] font-semibold tracking-[-0.01em] text-ink">{card.title}</div>
+      <p className="ff-ad-details text-sm text-muted">{card.ready ? card.body : "Coming soon"}</p>
+      {/* The count says "click"; the breakdown says what you are walking into. Only rendered
+          when something is waiting, so a quiet card looks exactly as it always has. */}
+      {flag ? (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {flag.tags.map((t) => (
+            <span
+              key={t.label}
+              className={
+                "rounded-md border px-2 py-0.5 text-[11.5px] font-semibold " +
+                (t.tone === "bad"
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : "border-gold-300 bg-gold-50 text-gold-800")
+              }
+            >
+              {t.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </Link>
   );
-}
-
-/**
- * Deal the sections into two columns, balancing by CARD COUNT rather than section count.
- *
- * With four sections a naive two-and-two split leaves a short column next to a long one, and an HR
- * Admin (who never sees the Super-User section) would get three-and-one. Filling whichever column
- * is currently shorter keeps both roughly level for either audience, and keeps each section whole.
- *
- * Sections are taken in SOURCE ORDER, never sorted: Benefits & Time-Off leads on purpose (it is the
- * daily queue — the only section where something is waiting on HR rather than being authored by
- * them), and People follows because it is the registry every other module reads from. Sorting by
- * size to get a tidier split would quietly undo that. A column three rows longer is the cheaper
- * price.
- */
-function splitIntoColumns(cats: Category[]): [Category[], Category[]] {
-  const columns: [Category[], Category[]] = [[], []];
-  const heights = [0, 0];
-  for (const cat of cats) {
-    const target = heights[0] <= heights[1] ? 0 : 1;
-    columns[target].push(cat);
-    heights[target] += cat.cards.length + 1; // +1 for the section heading
-  }
-  return columns;
 }
 
 export default async function AdminPage() {
@@ -261,42 +205,29 @@ export default async function AdminPage() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-baseline gap-x-3">
-        <h1 className="font-serif text-2xl text-ink">HR Admin</h1>
-        <p className="text-sm text-muted">Manage the platform.</p>
-      </div>
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin</p>
+      <h1 className="mt-1 font-serif text-3xl text-ink">HR Admin</h1>
+      <p className="mt-2 text-muted">Manage the platform.</p>
 
-      {/* Two REAL grid columns, not CSS multi-column.
-          Multicol was the obvious way to balance four sections across two columns, but each row
-          carries an absolutely-positioned hover card and browsers place those inconsistently
-          inside a multicol formatting context. A plain grid with the sections dealt into two
-          buckets is predictable, and balancing by CARD COUNT (rather than section count) keeps the
-          columns even when the Super-User section is hidden from an HR Admin. */}
-      <div className="mt-6 grid gap-x-6 md:grid-cols-2">
-        {splitIntoColumns(categories).map((column, ci) => (
-        <div key={ci}>
-        {column.map((cat) => (
-          <section key={cat.label} className="mb-4">
-            <div className="mb-1.5 flex items-center gap-2.5">
-              <span className="h-[6px] w-[6px] flex-shrink-0 rounded-full bg-gold-500" aria-hidden="true" />
-              <span className="whitespace-nowrap text-[10px] font-extrabold uppercase tracking-[0.09em] text-navy-700">
+      <div className="mt-9 flex flex-col gap-8">
+        {categories.map((cat) => (
+          <section key={cat.label}>
+            <div className="mb-3.5 flex items-center gap-3">
+              <span className="h-[7px] w-[7px] flex-shrink-0 rounded-full bg-gold-500" aria-hidden="true" />
+              <span className="whitespace-nowrap text-xs font-bold uppercase tracking-[0.12em] text-navy-700">
                 {cat.label}
               </span>
               <span className="h-px flex-1 bg-line" aria-hidden="true" />
-              <span className="whitespace-nowrap text-[10px] text-muted">
+              <span className="whitespace-nowrap text-xs text-muted">
                 {cat.superOnly ? `Super User · ${cat.cards.length}` : cat.cards.length}
               </span>
             </div>
-            {/* NO `overflow-hidden` here: it would clip the hover card, which sits above its row.
-                The corners are rounded on the first and last rows instead. */}
-            <div className="rounded-xl border border-line bg-surface">
+            <div className="ff-stagger grid gap-4 sm:grid-cols-2">
               {cat.cards.map((card) => (
-                <AdminRow key={card.title} card={card} flag={flags[card.href] ?? null} />
+                <AdminCard key={card.title} card={card} flag={flags[card.href] ?? null} />
               ))}
             </div>
           </section>
-        ))}
-        </div>
         ))}
       </div>
     </div>
