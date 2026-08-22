@@ -1,0 +1,233 @@
+<title>Who Takes This Course</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-400:#4f6d97;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;--red-line:#f3c6c6;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .proposal{margin-top:36px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:78ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-navy{border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-red{border:1px solid var(--red-line);background:#fdf3f3;color:var(--red)}
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:9px;cursor:pointer}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;cursor:pointer}
+  .add{display:inline-flex;align-items:center;gap:5px;border:1px dashed var(--navy-200);background:transparent;color:var(--navy-700);font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:999px;cursor:pointer}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--ink)}
+  .decision{margin-top:34px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:860px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:5px 0}
+  .note{font-size:11.5px;color:var(--muted);margin-top:9px}
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  @media(max-width:880px){.grid2{grid-template-columns:1fr}}
+
+  .switch{display:flex;gap:0;border:1px solid var(--navy-200);border-radius:9px;overflow:hidden;background:var(--surface)}
+  .switch span{font-size:12.5px;font-weight:600;padding:7px 15px;color:var(--muted);cursor:pointer}
+  .switch span.on{background:var(--navy-800);color:#fff}
+
+  .field{border-top:1px solid var(--line);padding:11px 0}
+  .field:first-of-type{border-top:0}
+  .field-head{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+  .field-head b{font-size:12px;font-weight:800;color:var(--navy-800)}
+  .field-head i{font-size:11.5px;color:var(--muted);font-style:normal}
+  .picks{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .tag{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700);border-radius:999px;padding:4px 6px 4px 11px}
+  .tag .n{font-variant-numeric:tabular-nums;font-weight:800;color:var(--navy-800);background:#fff;border:1px solid var(--navy-100);border-radius:999px;padding:0 6px;font-size:10.5px}
+  .tag.warn{border-color:var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .tag.warn .n{background:#fff;border-color:var(--gold-300);color:var(--gold-800)}
+  .x{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:999px;background:var(--navy-200);color:var(--navy-800);font-size:10px;font-weight:800}
+  .tag.warn .x{background:var(--gold-300)}
+  .total{margin-top:12px;border-top:1px solid var(--line);padding-top:11px;display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;font-size:13px}
+  .total b{font-family:Georgia,serif;font-size:22px;color:var(--navy-800)}
+  .pop{border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 6px 20px rgba(10,26,48,.09);overflow:hidden;max-width:330px}
+  .pop-search{display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--line);padding:7px 10px;background:var(--paper);font-size:12.5px;color:var(--muted)}
+  .opt{display:flex;align-items:center;gap:9px;padding:6px 10px;border-bottom:1px solid var(--line);font-size:13px}
+  .opt:last-child{border-bottom:0}
+  .box{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--navy-200);flex:none;display:grid;place-items:center;font-size:10px;color:#fff;background:var(--surface)}
+  .box.on{background:var(--navy-800);border-color:var(--navy-800)}
+  .pop-foot{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-top:1px solid var(--line);background:var(--paper)}
+  .gone{text-decoration:line-through;opacity:.5}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 038 · access, v2</p>
+  <h1>Who takes this course</h1>
+  <p class="lede">Rewritten after your note: this is a <b>course setup</b>, not a list of routes you build one by one. You answer one question — who takes this? — and the system works out the rest. The word &ldquo;route&rdquo; disappears from the screen, and the table with it. Illustrative content throughout.</p>
+
+  <!-- 1 -->
+  <section class="proposal">
+    <h2><span class="num">1</span> The two switches, told apart</h2>
+    <p class="sub">These get confused because they sound similar. They are independent, and <b>Draft always wins</b> — a Draft course marked &ldquo;Everyone&rdquo; is still seen by nobody.</p>
+
+    <div class="frame">
+      <div class="grid2">
+        <div class="panel">
+          <p style="margin:0 0 2px;font-size:12.5px;font-weight:800;color:var(--navy-800)">Draft / Published</p>
+          <p style="margin:0 0 9px;font-size:11.5px;color:var(--muted)">Does this course exist for anybody yet?</p>
+          <p style="margin:0 0 5px;font-size:12.5px"><span class="chip c-gold">Draft</span> Invisible to every employee, even on a direct link. Only course authors see it.</p>
+          <p style="margin:0;font-size:12.5px"><span class="chip c-ok">Published</span> It is real. Now the second switch decides who.</p>
+          <p class="note">Lives on the course header, beside the title. Unchanged.</p>
+        </div>
+        <div class="panel">
+          <p style="margin:0 0 2px;font-size:12.5px;font-weight:800;color:var(--navy-800)">Everyone / Only certain people</p>
+          <p style="margin:0 0 9px;font-size:11.5px;color:var(--muted)">Once published, who can see it?</p>
+          <p style="margin:0 0 5px;font-size:12.5px"><span class="chip c-navy">Everyone</span> Every active employee.</p>
+          <p style="margin:0;font-size:12.5px"><span class="chip c-off">Only certain people</span> Only who you choose below.</p>
+          <p class="note">Lives at the top of this tab. Renamed from &ldquo;Open / Restricted&rdquo;, which said the same thing in words nobody uses out loud.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="proposal">
+    <h2><span class="num">2</span> The setup <span class="chip c-ok">the whole tab</span></h2>
+    <p class="sub">Seven named fields instead of a build-a-row box. Each is a list of what you have chosen, with how many people it covers <b>right now</b>, and a <b>+ add</b> that opens a searchable tick-list. Nothing is a table, and nothing saves until you press Add.</p>
+
+    <div class="frame">
+      <div class="panel">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px">
+          <span style="font-size:13px;font-weight:800;color:var(--navy-800)">Who takes this course?</span>
+          <span class="switch"><span>Everyone</span><span class="on">Only certain people</span></span>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><b>Departments</b><i>everyone in them, now and later</i></div>
+          <div class="picks">
+            <span class="tag">Consulting <span class="n">9</span> <span class="x">✕</span></span>
+            <span class="tag">Delivery <span class="n">12</span> <span class="x">✕</span></span>
+            <span class="add">+ add</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><b>Groups</b><i>lists you made on Manage groups</i></div>
+          <div class="picks">
+            <span class="tag">New joiners 2026 <span class="n">5</span> <span class="x">✕</span></span>
+            <span class="add">+ add</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><b>Specific people</b><i>named one by one</i></div>
+          <div class="picks">
+            <span class="tag">Ahmed Ali <span class="x">✕</span></span>
+            <span class="add">+ add</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><b>Business units</b></div>
+          <div class="picks">
+            <span class="tag warn">Endurance <span class="n">0</span> <span class="x">✕</span></span>
+            <span class="add">+ add</span>
+          </div>
+          <p class="note" style="color:var(--gold-800)">Gold means <b>this one reaches nobody today</b> — an empty business unit, a renamed department, a manager with no reports. Worth seeing before you publish.</p>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><b>Tenure</b></div>
+          <div class="picks"><span class="add">+ add</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><b>Employment type</b></div>
+          <div class="picks"><span class="add">+ add</span></div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><b>A manager&rsquo;s team</b><i>their current direct reports</i></div>
+          <div class="picks"><span class="add">+ add</span></div>
+        </div>
+
+        <div class="total">
+          <span style="color:var(--muted)">Right now this reaches</span>
+          <b>24 people</b>
+          <span style="color:var(--muted)">— fewer than the numbers above add up to, because some people are in more than one.</span>
+          <span style="flex:1"></span>
+          <span class="btn-ghost">See who →</span>
+        </div>
+      </div>
+      <p class="note">&ldquo;See who&rdquo; goes to the <b>People</b> tab, which already lists every individual and how far they have got. That is why there is no table here any more — it was a worse version of a screen that already exists.</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="proposal">
+    <h2><span class="num">3</span> What &ldquo;+ add&rdquo; opens</h2>
+    <p class="sub">The same tick-list everywhere, with a search box when the list is long. Tick as many as you like; press the button once.</p>
+
+    <div class="frame">
+      <div class="grid2">
+        <div>
+          <p style="margin:0 0 7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Specific people — long list, so it searches</p>
+          <div class="pop">
+            <div class="pop-search">🔍 <span style="flex:1;color:var(--ink)">nad</span> <span style="font-size:11px">3 of 148</span></div>
+            <div class="opt"><span class="box on">✓</span><span style="flex:1"><b>Nada Adel</b> <span style="color:var(--muted)">— People &amp; Culture</span></span></div>
+            <div class="opt"><span class="box on">✓</span><span style="flex:1"><b>Nadine Fouad</b> <span style="color:var(--muted)">— Consulting</span></span></div>
+            <div class="opt"><span class="box"></span><span style="flex:1"><b>Ahmed Nada</b> <span style="color:var(--muted)">— Delivery</span></span><span class="chip c-off">already covered</span></div>
+            <div class="pop-foot"><span style="font-size:11.5px;color:var(--muted)">2 selected</span><span class="btn-navy">Add</span></div>
+          </div>
+          <p class="note">&ldquo;Already covered&rdquo; means this person is <i>reached by something you have already chosen</i> — Ahmed is in Delivery. Shown but not tickable, so you cannot add the same person twice and then wonder why.</p>
+        </div>
+
+        <div>
+          <p style="margin:0 0 7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Tenure — four options, no search needed</p>
+          <div class="pop">
+            <div class="opt"><span class="box"></span><span style="flex:1">6 months – 2 years</span><span style="color:var(--muted);font-size:11.5px">14</span></div>
+            <div class="opt"><span class="box on">✓</span><span style="flex:1">2 – 4 years</span><span style="color:var(--muted);font-size:11.5px">21</span></div>
+            <div class="opt"><span class="box"></span><span style="flex:1">4 – 7 years</span><span style="color:var(--muted);font-size:11.5px">8</span></div>
+            <div class="opt"><span class="box"></span><span style="flex:1">7 years and over</span><span style="color:var(--muted);font-size:11.5px">3</span></div>
+            <div class="pop-foot"><span style="font-size:11.5px;color:var(--muted)">1 selected</span><span class="btn-navy">Add</span></div>
+          </div>
+          <p class="note">The count sits beside each option <i>before</i> you pick it, so you are not choosing blind.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="proposal">
+    <h2><span class="num">4</span> What goes away</h2>
+    <p class="sub">Four things removed, and the reason each earned its removal.</p>
+    <div class="frame">
+      <div class="panel">
+        <p style="margin:0 0 9px;font-size:12.5px"><span class="chip c-red">removed</span> <b class="gone">The second &ldquo;Everyone&rdquo;</b> — the Audience dropdown&rsquo;s first entry. Today you can set a course to Restricted and then pick &ldquo;Everyone&rdquo; there, so the badge says Restricted while every employee gets it. One control now, at the top.</p>
+        <p style="margin:0 0 9px;font-size:12.5px"><span class="chip c-red">removed</span> <b class="gone">The routes table</b> — it repeated what the fields now say, in a form that needed a glossary. Individuals live on the People tab.</p>
+        <p style="margin:0 0 9px;font-size:12.5px"><span class="chip c-red">removed</span> <b class="gone">The word &ldquo;route&rdquo;</b> — jargon I introduced. It stays in the code, where it is the right word.</p>
+        <p style="margin:0;font-size:12.5px"><span class="chip c-gold">fixed</span> <b>The people counts.</b> Every line currently shows the same figure — everyone matched by <i>any</i> of your choices — so Consulting (9) and Endurance (0) both read 23. Each is now counted on its own, which is the only way the gold &ldquo;reaches nobody&rdquo; flag can work.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="decision">
+    <h3>What I&rsquo;m assuming — correct me and I&rsquo;ll change it</h3>
+    <ul>
+      <li><b>The upload template is untouched.</b> Access is set here, as you said.</li>
+      <li><b>Draft/Published stays exactly where it is</b> on the course header. Only this tab changes.</li>
+      <li><b>&ldquo;Open / Restricted&rdquo; is renamed</b> to &ldquo;Everyone / Only certain people&rdquo;. Same setting, same behaviour, words people say out loud.</li>
+      <li><b>Every field is one kind of thing.</b> You do not mix people and departments in one Add — each field adds its own kind, which is what makes the counts meaningful.</li>
+      <li><b>Groups are still made on Manage groups.</b> This tab points at them; it is not a second place to edit who is in one.</li>
+      <li><b>Nothing is lost.</b> Existing courses keep every choice they have — the same data, shown as fields instead of rows.</li>
+      <li><b>Mid-course people are not shown here.</b> Someone who started a course and then stopped matching keeps it until they finish; that is on the People tab, marked as such, because it is not something you choose.</li>
+    </ul>
+  </div>
+
+  <footer>Spec 038 · course access setup · 22/08/2026 · illustrative content. Nothing is built until you approve.</footer>
+</div>
