@@ -16,7 +16,30 @@
 | 6 — Benefits (admin config) | 🟢 Complete |
 | 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |
-| 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library; migrations `060`–`064`) |
+| 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment; migrations `060`–`065`) |
+
+## Learning: a manager who runs the module and nothing else (built 2026-08-22 — migration `065`)
+- **Mockup-approved first** (`design-mockups/learning/2026-08-22_learning-manager.html`), option
+  **A** chosen: **HR oversees, it does not gate.** A learning manager publishes their own courses;
+  nothing waits for approval. The alternative (a publish approval queue) was drawn and declined —
+  you appoint someone precisely so training stops queueing behind HR.
+- **An appointment, not a role.** `LearningManager` is a table; the person stays an `EMPLOYEE`. No
+  new `Role` member means no new value for Benefits, Time-Off or the salary guard to be right
+  about — which is why this cannot leak into them, structurally rather than by care.
+- **ONE derivation**: `canManageLearning` (role OR appointment) is asked by every Learning admin
+  page and action, the Admin door in `(app)/layout.tsx`, the draft-preview route inside
+  `courseAccessFor`, and the document-serving route. Nothing reads `isAdmin` for Learning any more.
+- **HR cannot be locked out**: HR Admins and Super Users hold Learning with no row at all, and are
+  shown on Setup as "always" with no Remove button.
+- **A manager cannot appoint another manager** — `settings-actions.ts` is `requireAdmin()`. They see
+  the list read-only.
+- **Their admin home shows one section**, and the other modules' counts are not fetched at all —
+  not merely unrendered.
+- **Verified**: migration `065` applied twice on a throwaway Postgres 16, `prisma migrate diff`
+  reports **no difference** against `schema.prisma`, and `scripts/verify-learning-manager.mts`
+  **20/20** against a real database. Every other admin page re-checked for its own guard (all
+  `requireAdmin`/`requireSuperUser`; the two guard-less ones are pure redirects). `npx tsc
+  --noEmit` and `npm run build` clean.
 
 ## Learning: course materials, resource library & rating (built 2026-08-22 — migration `064`)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_materials-v2.html`), then built.

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { LessonBlockType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/roles";
+import { requireLearningManager } from "@/lib/learning/managers";
 import { courseRoster } from "@/lib/learning/access";
 import { isTrackableSource, normalizeVideoUrl, untrackableReason, videoSourceFor } from "@/lib/learning/video";
 
@@ -44,7 +44,7 @@ const clean = (v: FormDataEntryValue | null | undefined) =>
 // ─── Course ─────────────────────────────────────────────────────────────
 
 export async function createCourse(formData: FormData): Promise<CourseResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   const title = clean(formData.get("title"));
   if (!title) return { ok: false, error: "Give the course a title." };
 
@@ -64,7 +64,7 @@ export async function createCourse(formData: FormData): Promise<CourseResult> {
 }
 
 export async function updateCourse(courseId: string, formData: FormData): Promise<CourseResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   const title = clean(formData.get("title"));
   if (!title) return { ok: false, error: "Give the course a title." };
 
@@ -133,7 +133,7 @@ async function firstPublishGap(courseId: string): Promise<string | null> {
 }
 
 export async function publishCourse(courseId: string): Promise<CourseResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   const gap = await firstPublishGap(courseId);
   if (gap) return { ok: false, error: gap };
 
@@ -147,7 +147,7 @@ export async function publishCourse(courseId: string): Promise<CourseResult> {
 
 /** Back to draft: invisible to employees immediately, nobody's progress touched (FR-007). */
 export async function unpublishCourse(courseId: string): Promise<CourseResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   await prisma.course.update({
     where: { id: courseId },
     data: { status: "DRAFT", updatedById: admin.id },
@@ -157,7 +157,7 @@ export async function unpublishCourse(courseId: string): Promise<CourseResult> {
 }
 
 export async function deleteCourse(courseId: string): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
   const enrolled = await prisma.courseEnrollment.count({ where: { courseId } });
   if (enrolled > 0) {
     return {
@@ -177,7 +177,7 @@ export async function upsertSection(
   sectionId: string | null,
   title: string
 ): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
   const clean_ = title.trim();
   if (!clean_) return { ok: false, error: "Give the section a title." };
 
@@ -198,7 +198,7 @@ export async function upsertSection(
 
 /** Soft delete — a hard delete would cascade away lesson progress people earned. */
 export async function deleteSection(courseId: string, sectionId: string): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
   await prisma.$transaction([
     prisma.lesson.updateMany({
       where: { sectionId, deletedAt: null },
@@ -219,7 +219,7 @@ export async function deleteSection(courseId: string, sectionId: string): Promis
  * dialog opening and the operator pressing Add.
  */
 export async function countAffectedByRequiredChange(courseId: string): Promise<number> {
-  await requireAdmin();
+  await requireLearningManager();
   const roster = await courseRoster(courseId);
   return roster.filter((r) => r.enrollment?.completedAt != null).length;
 }
@@ -246,7 +246,7 @@ export async function upsertLesson(
   input: LessonInput,
   onExistingCompletions?: CompletionChoice
 ): Promise<CourseResult | NeedsCompletionDecision> {
-  await requireAdmin();
+  await requireLearningManager();
   const title = input.title.trim();
   if (!title) return { ok: false, error: "Give the lesson a title." };
 
@@ -339,7 +339,7 @@ export async function upsertLesson(
 }
 
 export async function deleteLesson(courseId: string, lessonId: string): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
   await prisma.lesson.update({ where: { id: lessonId }, data: { deletedAt: new Date() } });
   revalidate(courseId);
   return { ok: true };
@@ -357,7 +357,7 @@ async function applyOrder(
 }
 
 export async function reorderSections(courseId: string, ids: string[]): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
   await applyOrder(ids, (id, order) =>
     prisma.courseSection.update({ where: { id }, data: { order } })
   );
@@ -366,14 +366,14 @@ export async function reorderSections(courseId: string, ids: string[]): Promise<
 }
 
 export async function reorderLessons(courseId: string, ids: string[]): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
   await applyOrder(ids, (id, order) => prisma.lesson.update({ where: { id }, data: { order } }));
   revalidate(courseId);
   return { ok: true };
 }
 
 export async function reorderBlocks(courseId: string, ids: string[]): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
   await applyOrder(ids, (id, order) =>
     prisma.lessonBlock.update({ where: { id }, data: { order } })
   );
@@ -395,7 +395,7 @@ export async function upsertLessonBlock(
   courseId: string,
   input: BlockInput
 ): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
   const value = input.value.trim();
 
   const data: Prisma.LessonBlockUncheckedCreateInput = {
@@ -448,7 +448,7 @@ export async function upsertLessonBlock(
 }
 
 export async function deleteBlock(courseId: string, blockId: string): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
   await prisma.lessonBlock.delete({ where: { id: blockId } });
   revalidate(courseId);
   return { ok: true };
@@ -472,7 +472,7 @@ export async function upsertCheckpoint(
     correctIndex: number;
   }
 ): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
 
   const prompt = input.prompt.trim();
   const options = input.options.map((o) => o.trim()).filter(Boolean);
@@ -509,7 +509,7 @@ export async function deleteCheckpoint(
   courseId: string,
   checkpointId: string
 ): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
   await prisma.videoCheckpoint.delete({ where: { id: checkpointId } });
   revalidate(courseId);
   return { ok: true };
@@ -527,7 +527,7 @@ export async function setCourseRenewal(
   courseId: string,
   renewAfterMonths: number | null
 ): Promise<CourseResult> {
-  await requireAdmin();
+  await requireLearningManager();
   if (renewAfterMonths !== null && (renewAfterMonths <= 0 || renewAfterMonths > 120)) {
     return { ok: false, error: "Choose a renewal period between 1 and 120 months." };
   }
@@ -541,7 +541,7 @@ export async function countLapsedByRenewal(
   courseId: string,
   renewAfterMonths: number | null
 ): Promise<number> {
-  await requireAdmin();
+  await requireLearningManager();
   if (renewAfterMonths === null) return 0;
   const { hasLapsed } = await import("@/lib/learning/renewal");
   const enrollments = await prisma.courseEnrollment.findMany({

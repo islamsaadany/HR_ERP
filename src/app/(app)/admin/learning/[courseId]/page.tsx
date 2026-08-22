@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/roles";
+import { requireLearningManager } from "@/lib/learning/managers";
 import { courseRoster } from "@/lib/learning/access";
 import { computeProgressPercent } from "@/lib/learning/progress";
 import { audienceReach } from "@/lib/learning/queries";
@@ -37,7 +37,7 @@ export default async function CourseBuilderPage({
 }: {
   params: Promise<{ courseId: string }>;
 }) {
-  await requireAdmin();
+  await requireLearningManager();
   const { courseId } = await params;
 
   const course = await prisma.course.findUnique({

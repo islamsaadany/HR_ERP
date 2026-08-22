@@ -130,6 +130,17 @@ four steering files (same commit).
   break a page-level sticky header.
 - **An all-or-nothing form must put its rejection where the eyes are** — the employee edit form validated the WHOLE record on save and rendered the reason at the top of a four-section form while Save sat at the bottom, so a legacy phone silently killed every unrelated edit and read as a dead button (cost us "part-time won't save"; found 2026-08-20). Two rules: (a) a whole-record validator must never reject over a stored value the operator didn't touch — pass the current values in and exempt unchanged ones; (b) an error banner needs `role="alert"`, `tabIndex={-1}`, and a `scrollIntoView` + `focus` effect, and must report **every** fault at once, not just the first.
 - **Never close a menu/modal from a submit button's `onClick`** — React flushes click updates synchronously, so the `<form>` unmounts before the browser dispatches `submit`; the action silently never runs ("Form submission canceled because the form is not connected" is the only clue). Dispatch first, then close — wrap the action: `action={(fd) => { dispatch(fd); setOpen(false); }}`. Cost us a shipped-but-dead bulk password action; found 2026-08-16.
+- **Per-module authority is an APPOINTMENT, never a new `Role` member** — "someone who runs
+  Learning but is not HR" was built as a `LearningManager` row, not a role. A new role value is
+  something every other module's check has to be right about forever; an appointment is inert, the
+  person stays an `EMPLOYEE`, and the employee form does not change — so it cannot leak into
+  Benefits or salaries because there is nothing new to misread. Rules: **one derivation**
+  (`canManageLearning` = role OR appointment) asked by the pages, the actions, the sidebar door and
+  the serving routes alike — never `isAdmin` for that module again; the **role-holders are never
+  rows** (HR holds it because they hold everything, so emptying the table cannot lock them out, and
+  they get no Remove button that would lie about it); and **the appointment cannot appoint** —
+  granting stays `requireAdmin()`, or the role hands itself out. A restricted admin home shows the
+  ONE section they own, and the other modules' counts are not fetched at all.
 - **A visibility rule needs ONE source and must be re-decided at the door** — the Learning
   materials tab labels three document slots and the employee page only ever selects one, but
   neither is a control: a URL is a URL, and somebody who has seen a slides link can guess an
@@ -310,4 +321,4 @@ TEST_DATABASE_URL="postgresql://…/hrerp_test" npm test
 
 ---
 
-*Last Updated: 2026-08-22 (Added: a visibility rule needs one source and must be re-decided at the serving route, 404 not 403. Previously: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.))*
+*Last Updated: 2026-08-22 (Added: per-module authority is an appointment, never a new Role member — one derivation, role-holders are never rows, the appointment cannot appoint. Plus: a visibility rule needs one source and must be re-decided at the serving route, 404 not 403. Previously: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.))*

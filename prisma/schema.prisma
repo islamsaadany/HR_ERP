@@ -155,21 +155,23 @@ model User {
   campaignTargets  DataRequestTarget[]   @relation("CampaignTarget")
 
   // Learning Track (spec 038) — back-relations only; this feature adds NO column to User.
-  coursesCreated           Course[]             @relation("CourseCreator")
-  coursesUpdated           Course[]             @relation("CourseUpdater")
-  courseAudiencesCreated   CourseAudience[]     @relation("AudienceCreator")
-  learnerGroupsCreated     LearnerGroup[]       @relation("LearnerGroupCreator")
-  learnerGroupMemberships  LearnerGroupMember[] @relation("GroupMemberSubject")
-  learnerGroupMembersAdded LearnerGroupMember[] @relation("GroupMemberAdder")
-  courseAssignments        CourseAssignment[]   @relation("CourseAssignmentSubject")
-  courseAssignmentsGranted CourseAssignment[]   @relation("CourseAssignmentActor")
-  courseEnrollments        CourseEnrollment[]   @relation("EnrollmentLearner")
-  courseAccessWithdrawn    CourseEnrollment[]   @relation("AccessWithdrawer")
+  coursesCreated            Course[]             @relation("CourseCreator")
+  coursesUpdated            Course[]             @relation("CourseUpdater")
+  courseAudiencesCreated    CourseAudience[]     @relation("AudienceCreator")
+  learnerGroupsCreated      LearnerGroup[]       @relation("LearnerGroupCreator")
+  learnerGroupMemberships   LearnerGroupMember[] @relation("GroupMemberSubject")
+  learnerGroupMembersAdded  LearnerGroupMember[] @relation("GroupMemberAdder")
+  courseAssignments         CourseAssignment[]   @relation("CourseAssignmentSubject")
+  courseAssignmentsGranted  CourseAssignment[]   @relation("CourseAssignmentActor")
+  courseEnrollments         CourseEnrollment[]   @relation("EnrollmentLearner")
+  courseAccessWithdrawn     CourseEnrollment[]   @relation("AccessWithdrawer")
   // Course materials (spec 038 materials, 2026-08-22)
-  courseDocumentsUploaded  CourseDocument[]     @relation("CourseDocumentUploader")
-  courseResourcesSuggested CourseResource[]     @relation("CourseResourceSuggester")
-  courseResourcesReviewed  CourseResource[]     @relation("CourseResourceReviewer")
-  courseRatings            CourseRating[]       @relation("CourseRater")
+  courseDocumentsUploaded   CourseDocument[]     @relation("CourseDocumentUploader")
+  courseResourcesSuggested  CourseResource[]     @relation("CourseResourceSuggester")
+  courseResourcesReviewed   CourseResource[]     @relation("CourseResourceReviewer")
+  courseRatings             CourseRating[]       @relation("CourseRater")
+  learningManager           LearningManager?     @relation("LearningManagerSubject")
+  learningManagersAppointed LearningManager[]    @relation("LearningManagerAppointer")
 
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -1612,4 +1614,27 @@ model CourseRating {
 
   @@unique([courseId, userId])
   @@index([courseId])
+}
+
+/// An appointment to run the Learning module — NOT a role on the employee record.
+///
+/// The person stays an `EMPLOYEE`; holding a row here opens Admin → Learning and nothing else.
+/// Doing it this way rather than as a `Role` member is what keeps it from ever leaking into
+/// Benefits, salaries or Time-Off: there is no new role for another module's check to misread, and
+/// the employee form does not change.
+///
+/// HR Admins and Super Users are NOT listed here — they hold Learning because they hold
+/// everything. `canManageLearning` unions the two, so nobody can lock HR out of the module by
+/// emptying this table.
+model LearningManager {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation("LearningManagerSubject", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Who appointed them. Only an HR Admin or Super User can write this row — a learning manager
+  /// appointing another one would let the role hand itself out.
+  appointedById String?
+  appointedBy   User?   @relation("LearningManagerAppointer", fields: [appointedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
 }

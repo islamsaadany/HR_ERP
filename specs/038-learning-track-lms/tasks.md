@@ -172,6 +172,22 @@ date alongside its reopen date, and updates without a manual reload. Quickstart 
 
 ---
 
+## Phase 9: A Learning manager appointment (added 2026-08-22, mockup-approved — option A, no publish gate)
+
+- [X] T064 `LearningManager` model (unique `userId`, `appointedById`) + `prisma/sql/065_learning_managers.sql`
+- [X] T065 `src/lib/learning/managers.ts` — `canManageLearning` as THE one derivation (role OR appointment), `requireLearningManager`, `learningManagers`
+- [X] T066 Swap `requireAdmin()` → `requireLearningManager()` across every Learning admin page, action file, and the template route
+- [X] T067 `courseAccessFor` feeds `viewerIsAdmin` from `canManageLearning`, so a manager previews drafts they author
+- [X] T068 `/api/learning/documents/[id]` asks the same derivation, so a manager can fetch the HR-only slots they maintain
+- [X] T069 `showAdmin` in `src/app/(app)/layout.tsx` from `canManageLearning`, so the Admin door opens for a manager
+- [X] T070 Admin home shows a manager ONE section, and does not even fetch the other modules' counts. **Snapshot to `ui-versions/admin-home/` first**
+- [X] T071 `/admin/learning/settings` — the Setup page — plus `settings-actions.ts` guarded by `requireAdmin()` (a manager must not be able to appoint another)
+- [X] T072 `LearningManagers.tsx` — appointed rows removable, HR rows shown as "always" and not removable
+- [X] T073 `scripts/verify-learning-manager.mts` against a throwaway Postgres; migration applied twice and diffed against the schema
+- [X] T074 `npx tsc --noEmit` + `npm run build` green; docs updated in the same commit
+
+---
+
 ## Dependencies
 
 ```
@@ -226,4 +242,5 @@ a half-built one.
 | 6 US4 (P4) | 3 |
 | 7 Polish | 7 |
 | 8 Materials (2026-08-22) | 12 |
-| **Total** | **63** |
+| 9 Learning manager (2026-08-22) | 11 |
+| **Total** | **74** |

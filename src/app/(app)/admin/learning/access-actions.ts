@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { AudienceKind } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/roles";
+import { requireLearningManager } from "@/lib/learning/managers";
 import { courseAccessFor } from "@/lib/learning/access";
 import { audienceReach } from "@/lib/learning/queries";
 
@@ -28,7 +28,7 @@ export async function setVisibility(
   courseId: string,
   visibility: "OPEN" | "RESTRICTED"
 ): Promise<AccessResult> {
-  await requireAdmin();
+  await requireLearningManager();
   await prisma.course.update({ where: { id: courseId }, data: { visibility } });
   revalidate(courseId);
   return { ok: true };
@@ -66,7 +66,7 @@ export async function addAudience(
   kind: AudienceKind,
   value: string | null
 ): Promise<AccessResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   const problem = await validateRule(kind, value);
   if (problem) return { ok: false, error: problem };
 
@@ -85,14 +85,14 @@ export async function addAudience(
 }
 
 export async function removeAudience(courseId: string, audienceId: string): Promise<AccessResult> {
-  await requireAdmin();
+  await requireLearningManager();
   await prisma.courseAudience.delete({ where: { id: audienceId } });
   revalidate(courseId);
   return { ok: true };
 }
 
 export async function assignToUser(courseId: string, userId: string): Promise<AccessResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   const person = await prisma.user.findUnique({
     where: { id: userId },
     select: { status: true },
@@ -114,7 +114,7 @@ export async function assignToUser(courseId: string, userId: string): Promise<Ac
 }
 
 export async function assignToGroup(courseId: string, groupId: string): Promise<AccessResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   await prisma.courseAssignment.upsert({
     where: { courseId_groupId: { courseId, groupId } },
     create: { courseId, groupId, grantedById: admin.id },
@@ -129,7 +129,7 @@ export async function revokeAssignment(
   courseId: string,
   assignmentId: string
 ): Promise<AccessResult> {
-  await requireAdmin();
+  await requireLearningManager();
   await prisma.courseAssignment.update({
     where: { id: assignmentId },
     data: { revokedAt: new Date() },
@@ -146,7 +146,7 @@ const normalizeName = (s: string) => s.trim().replace(/\s+/g, " ");
 const sameName = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
 export async function createGroup(name: string): Promise<AccessResult & { id?: string }> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   const clean = normalizeName(name);
   if (!clean) return { ok: false, error: "Give the group a name." };
 
@@ -163,7 +163,7 @@ export async function createGroup(name: string): Promise<AccessResult & { id?: s
 }
 
 export async function renameGroup(groupId: string, name: string): Promise<AccessResult> {
-  await requireAdmin();
+  await requireLearningManager();
   const clean = normalizeName(name);
   if (!clean) return { ok: false, error: "Give the group a name." };
 
@@ -180,7 +180,7 @@ export async function renameGroup(groupId: string, name: string): Promise<Access
 }
 
 export async function deleteGroup(groupId: string): Promise<AccessResult> {
-  await requireAdmin();
+  await requireLearningManager();
   const live = await prisma.courseAssignment.count({
     where: { groupId, revokedAt: null },
   });
@@ -196,7 +196,7 @@ export async function deleteGroup(groupId: string): Promise<AccessResult> {
 }
 
 export async function addGroupMembers(groupId: string, userIds: string[]): Promise<AccessResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   if (userIds.length === 0) return { ok: true };
   // createMany + skipDuplicates: adding someone already in the group is a no-op, and membership
   // is live, so they pick up every course assigned to the group with no back-fill write.
@@ -210,7 +210,7 @@ export async function addGroupMembers(groupId: string, userIds: string[]): Promi
 }
 
 export async function removeGroupMember(groupId: string, userId: string): Promise<AccessResult> {
-  await requireAdmin();
+  await requireLearningManager();
   await prisma.learnerGroupMember.deleteMany({ where: { groupId, userId } });
   revalidatePath("/admin/learning/groups");
   revalidatePath("/learning");
@@ -228,7 +228,7 @@ export async function withdrawGrandfatheredAccess(
   courseId: string,
   enrollmentId: string
 ): Promise<AccessResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   const enrollment = await prisma.courseEnrollment.findUnique({
     where: { id: enrollmentId },
     select: { userId: true, courseId: true },

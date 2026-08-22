@@ -4,7 +4,7 @@ import { put, del } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import type { CourseDocumentSlot, CourseResourceKind } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/roles";
+import { requireLearningManager } from "@/lib/learning/managers";
 import {
   DOCUMENT_SLOTS,
   MAX_DOCUMENT_BYTES,
@@ -15,7 +15,7 @@ import {
 /**
  * Course materials — the HR side (spec 038 materials, 2026-08-22).
  *
- * Every action here starts with `requireAdmin()`. Nothing in this file decides who may SEE a
+ * Every action here starts with `requireLearningManager()`. Nothing in this file decides who may SEE a
  * document; that is `EMPLOYEE_VISIBLE_SLOTS` in `src/lib/learning/materials.ts`, enforced by the
  * serving route. Keeping the two apart is deliberate — an upload screen must never be the thing
  * that decides visibility.
@@ -42,7 +42,7 @@ function revalidate(courseId: string) {
  * a dangling row costs the operator a document they think they have.
  */
 export async function uploadCourseDocument(formData: FormData): Promise<MaterialsResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   const courseId = clean(formData.get("courseId"));
   const slot = clean(formData.get("slot")) as CourseDocumentSlot;
   const file = formData.get("file");
@@ -102,7 +102,7 @@ export async function uploadCourseDocument(formData: FormData): Promise<Material
 }
 
 export async function removeCourseDocument(documentId: string): Promise<MaterialsResult> {
-  await requireAdmin();
+  await requireLearningManager();
   const doc = await prisma.courseDocument.findUnique({
     where: { id: documentId },
     select: { courseId: true, blobUrl: true },
@@ -119,7 +119,7 @@ export async function removeCourseDocument(documentId: string): Promise<Material
 
 /** HR adding a resource directly — published straight away; there is nobody to approve it past. */
 export async function addCourseResource(formData: FormData): Promise<MaterialsResult> {
-  await requireAdmin();
+  await requireLearningManager();
   const courseId = clean(formData.get("courseId"));
   const kind = clean(formData.get("kind")) as CourseResourceKind;
   const name = clean(formData.get("name"));
@@ -154,7 +154,7 @@ export async function addCourseResource(formData: FormData): Promise<MaterialsRe
 }
 
 export async function removeCourseResource(resourceId: string): Promise<MaterialsResult> {
-  await requireAdmin();
+  await requireLearningManager();
   const resource = await prisma.courseResource.findUnique({
     where: { id: resourceId },
     select: { courseId: true },
@@ -172,7 +172,7 @@ export async function removeCourseResource(resourceId: string): Promise<Material
  * suggestion worth keeping should not be declined over a missing "https".
  */
 export async function approveSuggestion(formData: FormData): Promise<MaterialsResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   const resourceId = clean(formData.get("resourceId"));
   const name = clean(formData.get("name"));
   const rawUrl = clean(formData.get("url"));
@@ -216,7 +216,7 @@ export async function approveSuggestion(formData: FormData): Promise<MaterialsRe
  * rather than deleted so the same link cannot be re-suggested into the queue forever unnoticed.
  */
 export async function declineSuggestion(resourceId: string): Promise<MaterialsResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
   const resource = await prisma.courseResource.findUnique({
     where: { id: resourceId },
     select: { id: true, courseId: true, status: true },

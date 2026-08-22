@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { isAdmin } from "@/lib/roles";
+import { canManageLearning } from "@/lib/learning/managers";
 import { streamPrivateBlob } from "@/lib/blob-serve";
 import { courseAccessFor } from "@/lib/learning/access";
 import { isEmployeeVisibleSlot } from "@/lib/learning/materials";
@@ -38,7 +38,9 @@ export async function GET(
   });
   if (!doc) return new NextResponse("Not found", { status: 404 });
 
-  if (!isAdmin(session.user.role)) {
+  // Asked through the ONE derivation, so an appointed learning manager can fetch the outline they
+  // are responsible for while an ordinary employee still cannot.
+  if (!(await canManageLearning({ id: session.user.id, role: session.user.role }))) {
     // 404 rather than 403 for the HR-only slots: a "forbidden" confirms the document exists,
     // which is exactly what the employee side is not supposed to reveal.
     if (!isEmployeeVisibleSlot(doc.slot)) return new NextResponse("Not found", { status: 404 });

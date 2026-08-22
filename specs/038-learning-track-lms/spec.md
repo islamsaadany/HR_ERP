@@ -334,6 +334,22 @@ roster updates without a manual reload.
   attribute a rating to a person.
 - **FR-061**: Putting the finish panel away MUST persist, so it does not reappear on the next visit.
 
+**Who runs the module (added 2026-08-22)**
+
+- **FR-062**: An employee MUST be appointable to run the Learning module without any change to
+  their role on the employee record.
+- **FR-063**: Someone holding that appointment MUST reach the Learning part of the admin and
+  NOTHING else — no employee records, salaries, benefits, time-off, or any other admin area.
+- **FR-064**: HR Admins and Super Users MUST hold Learning by virtue of their role, without an
+  appointment, so that no change to the appointment list can lock them out of the module.
+- **FR-065**: Only an HR Admin or Super User MUST be able to appoint or remove a learning manager;
+  a learning manager MUST see the list but not change it.
+- **FR-066**: A learning manager MUST be able to publish a course themselves — nothing they do
+  waits for HR approval. HR's oversight is that they appointed the person, can see everything they
+  do, and can remove the appointment at any time.
+- **FR-067**: A learning manager MUST see the course roster, because training cannot be run blind
+  to who has completed it; it MUST show course progress only, never pay, leave, or personal records.
+
 **Visibility for HR**
 
 - **FR-033**: HR MUST be able to view, per published course, the employees it currently reaches with
@@ -367,6 +383,8 @@ roster updates without a manual reload.
 - **Course Resource**: A recommended book, article, video, course or link — a type, a name, an
   optional link, and whether it is published, awaiting HR review, or declined.
 - **Course Rating**: One person's 1–5 score for a course. Reported only as an average and a count.
+- **Learning Manager**: An appointment held by an employee, letting them run the Learning module
+  and nothing else. Not a role on the employee record.
 - **Video Checkpoint**: A question attached to a lesson's video at a given moment, with its options
   and the expected answer, used only to pause and resume playback.
 - **Course Audience**: A rule attached to a restricted course that names a slice of the employee

@@ -506,6 +506,28 @@ seconds are cleared only when the learner reopens the course; `firstCompletedAt`
   `completionCount > ratingPromptDoneCount`, so a renewal asks again by itself — no flag to reset,
   no job.
 
+**Who runs the module** (`LearningManager`, added 2026-08-22, migration `065`, mockup-approved):
+an employee can be **appointed** to run Learning without becoming an HR Admin. It is an
+appointment, **not a `Role` member** — the person stays an `EMPLOYEE`, so there is no new role
+value for Benefits, Time-Off or the salary guard to be right about, and nothing can leak into them.
+`canManageLearning` in `src/lib/learning/managers.ts` is **THE one derivation** (role **or**
+appointment) and is what every Learning admin page, every Learning admin action, the Admin door in
+`(app)/layout.tsx`, `courseAccessFor`'s draft-preview route, and `/api/learning/documents/[id]` all
+ask — never `isAdmin` directly. HR Admins and Super Users hold Learning **without a row**, so
+emptying the table can never lock them out; they show on the Setup page as "always" with no Remove
+button, because a control that promises something the code will not do is worse than none.
+
+**Option A, chosen 2026-08-22: HR oversees, it does not gate.** A manager publishes their own
+courses; nothing waits for approval. HR's oversight is that they appointed the person, see
+everything they do, and can remove the appointment in one click — the point of appointing someone
+is that training stops queueing behind HR. What a manager gets: courses, access routes, groups,
+materials, resources, suggestions, and the **roster** (course progress only — never pay, leave or
+personal records). What they do not: appointing another manager (`settings-actions.ts` is
+`requireAdmin()`, or the role could hand itself out), and anything else in the admin. Their admin
+home shows **one section**, and the other modules' counts are not merely unrendered — they are not
+fetched. Surface: `/admin/learning/settings` ("Setup: who runs Learning"), readable by a manager,
+editable only by HR.
+
 **Not in this release**: quizzes, gradable assignments, certificates, discussions, analytics,
 roster export, learning paths, resource categorisation (worth doing once a course has more than a
 handful). No email, no cron, no new env var, no new runtime dependency.

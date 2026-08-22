@@ -3,7 +3,7 @@
 import ExcelJS from "exceljs";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/roles";
+import { requireLearningManager } from "@/lib/learning/managers";
 import {
   groupIntoSections,
   parseCourseWorkbook,
@@ -53,7 +53,7 @@ function sheetRows(ws: ExcelJS.Worksheet | undefined, columns: number): string[]
  * outcome: it looks finished and isn't.
  */
 export async function importCourseFromWorkbook(formData: FormData): Promise<ImportCourseResult> {
-  const admin = await requireAdmin();
+  const admin = await requireLearningManager();
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {

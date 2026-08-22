@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/roles";
+import { requireLearningManager } from "@/lib/learning/managers";
 import { formatDate } from "@/lib/labels";
 import { BackLink } from "@/components/admin/BackLink";
 import { NewCourseForm } from "@/components/learning/NewCourseForm";
@@ -12,7 +12,7 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 export const dynamic = "force-dynamic";
 
 export default async function AdminLearningPage() {
-  await requireAdmin();
+  await requireLearningManager();
 
   const courses = await prisma.course.findMany({
     orderBy: [{ status: "asc" }, { order: "asc" }],
@@ -65,6 +65,15 @@ export default async function AdminLearningPage() {
         Build training courses and choose who they reach. A course stays a draft — invisible to
         everyone — until you publish it.
       </p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
+        <Link href="/admin/learning/groups" className="text-muted hover:text-ink">
+          Manage groups →
+        </Link>
+        <Link href="/admin/learning/settings" className="text-muted hover:text-ink">
+          Setup: who runs Learning →
+        </Link>
+      </div>
 
       <NewCourseForm />
 

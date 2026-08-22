@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { isAdmin, isSuperUser, requireUser } from "@/lib/roles";
-import { redirect } from "next/navigation";
+import { requireAdmin, isSuperUser } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
-import { canManageLearning } from "@/lib/learning/managers";
 import { pendingRequestCount } from "@/lib/profile/change-requests";
 import { benefitsAttention, pendingLeaveCount, type BenefitsAttention } from "@/lib/benefits/attention";
 
@@ -212,13 +210,8 @@ function splitIntoColumns(cats: Category[]): [Category[], Category[]] {
 }
 
 export default async function AdminPage() {
-  // NOT `requireAdmin()` since 2026-08-22: an appointed learning manager reaches this page too,
-  // and sees exactly one section. Anyone else is sent home by the same one derivation that guards
-  // the pages behind it, so the door and the rooms can never disagree.
-  const actor = await requireUser();
-  if (!(await canManageLearning(actor))) redirect("/dashboard");
+  const actor = await requireAdmin();
   const superUser = isSuperUser(actor.role);
-  const hrAdmin = isAdmin(actor.role);
 
   // Each count is wrapped on its own: an un-migrated table drops that one pill rather than
   // breaking the admin home, which is the only way back into everything else.
@@ -229,18 +222,13 @@ export default async function AdminPage() {
       return fallback;
     }
   };
-  const emptyAttention = {
-    claimsToReview: 0, overCharged: 0, coverEnded: 0, frozen: 0, blocked: 0, medical: 0, total: 0,
-  } as BenefitsAttention;
-  // Not merely unrendered for a learning manager — not FETCHED. They have no business knowing how
-  // many claims or leave requests are waiting, and a count that is never read should not be read.
-  const [attention, pendingLeave, pendingChangeRequests] = hrAdmin
-    ? await Promise.all([
-        safe(benefitsAttention, emptyAttention),
-        safe(pendingLeaveCount, 0),
-        safe(pendingRequestCount, 0),
-      ])
-    : [emptyAttention, 0, 0];
+  const [attention, pendingLeave, pendingChangeRequests] = await Promise.all([
+    safe(benefitsAttention, {
+      claimsToReview: 0, overCharged: 0, coverEnded: 0, frozen: 0, blocked: 0, medical: 0, total: 0,
+    } as BenefitsAttention),
+    safe(pendingLeaveCount, 0),
+    safe(pendingRequestCount, 0),
+  ]);
 
   // Resources employees have suggested and HR has not yet approved or declined (spec 038
   // materials). Wrapped like the others: before migration 064 runs, this table does not exist.
@@ -289,25 +277,13 @@ export default async function AdminPage() {
         : null,
   };
 
-  // A learning manager gets ONE section — the module they run. Deliberately not the full list with
-  // fourteen rows greyed out: an admin home that shows mostly locked doors is worse than one that
-  // shows the single door you own. HR sees everything, unchanged.
-  const categories = hrAdmin
-    ? CATEGORIES.filter((cat) => !cat.superOnly || superUser)
-    : [
-        {
-          label: "Learning",
-          cards: CATEGORIES.flatMap((c) => c.cards).filter((c) => c.href === "/admin/learning"),
-        },
-      ];
+  const categories = CATEGORIES.filter((cat) => !cat.superOnly || superUser);
 
   return (
     <div>
       <div className="flex flex-wrap items-baseline gap-x-3">
-        <h1 className="font-serif text-2xl text-ink">{hrAdmin ? "HR Admin" : "Learning Admin"}</h1>
-        <p className="text-sm text-muted">
-          {hrAdmin ? "Manage the platform." : "Build training courses and choose who they reach."}
-        </p>
+        <h1 className="font-serif text-2xl text-ink">HR Admin</h1>
+        <p className="text-sm text-muted">Manage the platform.</p>
       </div>
 
       {/* Two REAL grid columns, not CSS multi-column.

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser, getImpersonation } from "@/lib/roles";
-import { isAdmin, isFinance, canAccessIncentive } from "@/lib/roles";
+import { canManageLearning } from "@/lib/learning/managers";
+import { isFinance, canAccessIncentive } from "@/lib/roles";
 import { getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
 import { prisma } from "@/lib/prisma";
@@ -21,6 +22,11 @@ export default async function AppLayout({
 }) {
   const user = await requireUser();
   const impersonation = await getImpersonation();
+
+  // The Admin door. HR Admins and Super Users as before, plus anyone appointed to run Learning —
+  // their admin home shows that one section (spec 038 follow-up, 2026-08-22). Asked through the
+  // one derivation so the door and the pages behind it can never disagree.
+  const showAdmin = await canManageLearning(user);
 
   // Gate anyone on a temporary password to /set-password until they choose their own.
   // Guarded so a pre-migration DB (no mustChangePassword column) never breaks the shell.
@@ -110,7 +116,7 @@ export default async function AppLayout({
     <AppShell
       name={user.name}
       email={user.email}
-      showAdmin={isAdmin(user.role)}
+      showAdmin={showAdmin}
       showIncentive={canAccessIncentive(user.role)}
       showPayments={isFinance(user.role)}
       hiddenNav={hiddenNav}

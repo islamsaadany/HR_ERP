@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
-import { requireAdmin } from "@/lib/roles";
+import { requireLearningManager } from "@/lib/learning/managers";
 import { RENEWAL_MONTHS } from "@/lib/learning/import";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +32,7 @@ function header(ws: ExcelJS.Worksheet, labels: string[]) {
  * an example that is obviously an example does not, and they delete the rows they don't want.
  */
 export async function GET() {
-  await requireAdmin();
+  await requireLearningManager();
   const wb = new ExcelJS.Workbook();
 
   const course = wb.addWorksheet("Course", { views: [{ state: "frozen", ySplit: 1 }] });

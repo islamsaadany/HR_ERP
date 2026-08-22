@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/roles";
+import { requireLearningManager } from "@/lib/learning/managers";
 import { BackLink } from "@/components/admin/BackLink";
 import { GroupManager, type GroupRow } from "@/components/learning/GroupManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function LearnerGroupsPage() {
-  await requireAdmin();
+  await requireLearningManager();
 
   const [groups, employees] = await Promise.all([
     prisma.learnerGroup.findMany({

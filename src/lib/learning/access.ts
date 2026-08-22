@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/roles";
+import { canManageLearning } from "@/lib/learning/managers";
 import {
   audienceWhere,
   subjectMatchesAudience,
@@ -39,7 +39,7 @@ import { hasLapsed } from "@/lib/learning/renewal";
 
 /** How a person reaches a course. Order is the order they are reported in. */
 export type AccessRoute =
-  | "ADMIN" // HR Admin / Super User — may see any course, including drafts they are authoring
+  | "ADMIN" // may author courses (HR Admin / Super User / learning manager) — sees drafts too
   | "OPEN" // the course is published and open to every active employee
   | "DIRECT" // a live CourseAssignment naming this person
   | "GROUP" // a live CourseAssignment to a LearnerGroup they belong to
@@ -48,7 +48,7 @@ export type AccessRoute =
 
 export type AccessFacts = {
   course: { status: "DRAFT" | "PUBLISHED"; visibility: "OPEN" | "RESTRICTED" };
-  /** The viewer is an HR Admin or Super User. */
+  /** The viewer may author courses — an HR Admin, a Super User, or an appointed learning manager. */
   viewerIsAdmin: boolean;
   /** The viewer is an ACTIVE employee. A leaver reaches nothing (FR-017). */
   viewerIsActive: boolean;
@@ -200,7 +200,10 @@ export async function courseAccessFor(
 
   return resolveRoutes({
     course: { status: course.status, visibility: course.visibility },
-    viewerIsAdmin: isAdmin(user.role),
+    // "Admin" here means MAY AUTHOR COURSES, which since 2026-08-22 also covers an appointed
+    // learning manager. Asked through the one derivation so this can never disagree with the
+    // guard on the page they came from.
+    viewerIsAdmin: await canManageLearning(user),
     viewerIsActive: user.status === "ACTIVE",
     hasDirectAssignment: course.assignments.some((a) => a.userId === userId),
     hasGroupAssignment: groupMembership > 0,
