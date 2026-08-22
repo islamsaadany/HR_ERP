@@ -1,0 +1,230 @@
+<title>Compact Admin Home</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;--red-bg:#fdf0f0;--red-line:#f3c6c6;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .proposal{margin-top:36px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:76ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:16px}
+  .secname{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 6px}
+  .measure{display:inline-block;font-size:10.5px;font-weight:700;color:var(--gold-800);background:var(--gold-100);border:1px solid var(--gold-300);border-radius:999px;padding:2px 8px}
+  .note{font-size:11.5px;color:var(--muted);margin-top:9px}
+  .decision{margin-top:34px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:850px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:5px 0}
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+
+  /* shared hover tooltip — the description now lives here */
+  .tip{position:relative}
+  .tip .bubble{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 7px);z-index:20;
+    background:var(--navy-900);color:#fff;font-size:11.5px;line-height:1.45;font-weight:400;
+    padding:7px 10px;border-radius:8px;width:230px;text-align:left;opacity:0;pointer-events:none;transition:opacity .12s}
+  .tip .bubble b{color:var(--gold-300)}
+  .tip:hover .bubble,.tip:focus-within .bubble{opacity:1}
+  .tip .bubble::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+    border:5px solid transparent;border-top-color:var(--navy-900)}
+
+  /* today */
+  .oldcard{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:20px;position:relative}
+  .oldgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .oldcard .t{font-size:19px;font-weight:600;letter-spacing:-.01em}
+  .oldcard .b{font-size:13.5px;color:var(--muted);margin-top:4px}
+  .pill{position:absolute;right:14px;top:14px;display:inline-flex;align-items:center;gap:6px;border-radius:999px;background:var(--gold-100);padding:3px 9px;font-size:11px;font-weight:700;color:var(--gold-800)}
+  .tag{display:inline-block;border-radius:6px;border:1px solid var(--gold-300);background:#fdf9ee;color:var(--gold-800);padding:1px 7px;font-size:11px;font-weight:600;margin-right:5px;margin-top:7px}
+
+  /* A — dense tiles */
+  .tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .tile{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+    padding:9px 10px;font-size:13px;font-weight:600;color:var(--navy-800);cursor:pointer;position:relative}
+  .tile:hover{border-color:var(--navy-300);background:#f9fbfe}
+  .tile.warn{border-color:var(--gold-300)}
+  .ico{width:22px;height:22px;flex:none;border-radius:6px;background:var(--navy-50);display:grid;place-items:center;color:var(--navy-700);font-size:12px}
+  .tile.warn .ico{background:var(--gold-100);color:var(--gold-800)}
+  .cnt{margin-left:auto;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:var(--gold-500);color:var(--navy-900);font-size:10.5px;font-weight:800;padding:0 5px}
+  .cnt.bad{background:#dc2626;color:#fff}
+
+  /* B — grouped lists */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px 22px}
+  .lst{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+  .li{display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:13px;border-bottom:1px solid var(--line);cursor:pointer;position:relative}
+  .li:last-child{border-bottom:0}
+  .li:hover{background:#f9fbfe}
+  .li .nm{font-weight:600;color:var(--navy-800)}
+
+  /* C — one grid, colour-coded */
+  .flow{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-left-width:3px;border-radius:9px;
+    background:var(--surface);padding:7px 11px;font-size:12.5px;font-weight:600;color:var(--navy-800);cursor:pointer;position:relative}
+  .chip:hover{border-color:var(--navy-300);border-left-color:inherit;background:#f9fbfe}
+  .c-ben{border-left-color:var(--gold-500)}
+  .c-ppl{border-left-color:var(--navy-800)}
+  .c-con{border-left-color:#4f6d97}
+  .c-plt{border-left-color:#9aa3b2}
+  .key{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:9px}
+  .key i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Admin home · layout review</p>
+  <h1>A compact Admin page — three options</h1>
+  <p class="lede">15 destinations in 4 sections. Today they need scrolling; all three options below fit one laptop screen. In every option the description moves into a <b>hover</b>, so hover any item to read it — that is the mechanism, not a mockup trick.</p>
+
+  <!-- TODAY -->
+  <section class="proposal">
+    <h2><span class="num">0</span> Today</h2>
+    <p class="sub">Three cards a row, each with a 19px title and a full sentence beneath. Five rows plus four headings — roughly 720px of cards before the page header, so it never fits one view.</p>
+    <div class="frame" style="opacity:.66">
+      <p class="secname">Benefits &amp; Time-Off</p>
+      <div class="oldgrid">
+        <div class="oldcard" style="border-color:var(--gold-300)">
+          <span class="pill"><span style="width:6px;height:6px;border-radius:999px;background:var(--gold-500)"></span>3 need attention</span>
+          <div class="t">Benefits Management</div>
+          <div class="b">Plan-year window and submissions.</div>
+          <span class="tag">2 claims to review</span><span class="tag">1 over-charged</span>
+        </div>
+        <div class="oldcard"><div class="t">Time-Off</div><div class="b">View all leave requests; approve or decline as a fallback.</div></div>
+        <div class="oldcard"><div class="t">Employee Registry</div><div class="b">Create and edit employee records, employment, reporting lines, and roles.</div></div>
+      </div>
+      <div class="note"><span class="measure">≈ 720px of cards · 5 rows · scrolls</span></div>
+    </div>
+  </section>
+
+  <!-- A -->
+  <section class="proposal">
+    <h2><span class="num">A</span> Dense tiles <span style="font-size:11px;font-weight:700;color:var(--gold-800);background:var(--gold-100);border:1px solid var(--gold-300);border-radius:999px;padding:2px 9px">recommended</span></h2>
+    <p class="sub">The same card idea, shrunk: an icon, a title, and a count when something needs attention. Five to a row instead of three, one line instead of three. Sections keep their headings, so you still navigate by category rather than reading all fifteen.</p>
+    <div class="frame">
+      <p class="secname">Benefits &amp; Time-Off</p>
+      <div class="tiles" style="margin-bottom:12px">
+        <div class="tile warn tip" tabindex="0"><span class="ico">◆</span>Benefits<span class="cnt">3</span>
+          <span class="bubble">Plan-year window and submissions.<br><b>2 claims to review · 1 over-charged</b></span></div>
+        <div class="tile warn tip" tabindex="0"><span class="ico">▤</span>Time-Off<span class="cnt">4</span>
+          <span class="bubble">View all leave requests; approve or decline as a fallback.<br><b>4 awaiting a decision</b></span></div>
+      </div>
+
+      <p class="secname">People</p>
+      <div class="tiles" style="margin-bottom:12px">
+        <div class="tile tip" tabindex="0"><span class="ico">☰</span>Employee Registry<span class="bubble">Create and edit employee records, employment, reporting lines, and roles.</span></div>
+        <div class="tile warn tip" tabindex="0"><span class="ico">✎</span>Change Requests<span class="cnt">2</span><span class="bubble">Corrections employees have asked for — approve a field and it is written to their record.<br><b>2 waiting</b></span></div>
+        <div class="tile tip" tabindex="0"><span class="ico">◫</span>Data Requests<span class="bubble">Ask the team to fill or verify profile fields — a popup and sidebar reminder until they answer.</span></div>
+        <div class="tile tip" tabindex="0"><span class="ico">⌗</span>Departments<span class="bubble">Add, rename, or remove the departments used across records and filters.</span></div>
+        <div class="tile tip" tabindex="0"><span class="ico">🎓</span>Learning<span class="bubble">Build training courses and choose who they reach.</span></div>
+      </div>
+
+      <p class="secname">Content &amp; Communications</p>
+      <div class="tiles" style="margin-bottom:12px">
+        <div class="tile tip" tabindex="0"><span class="ico">▶</span>Onboarding<span class="bubble">The activities new joiners see, by track.</span></div>
+        <div class="tile tip" tabindex="0"><span class="ico">▣</span>Handbook<span class="bubble">Policies, sections and downloadable company files.</span></div>
+        <div class="tile tip" tabindex="0"><span class="ico">◈</span>Knowledge Base<span class="bubble">Consulting references and reads.</span></div>
+        <div class="tile tip" tabindex="0"><span class="ico">✦</span>Announcements<span class="bubble">Messages shown on the employee dashboard.</span></div>
+      </div>
+
+      <p class="secname">Platform <span style="font-weight:600;text-transform:none;letter-spacing:0">· Super User</span></p>
+      <div class="tiles">
+        <div class="tile tip" tabindex="0"><span class="ico">◉</span>View as Employee<span class="bubble">See the app exactly as an employee sees it.</span></div>
+        <div class="tile tip" tabindex="0"><span class="ico">⊞</span>Modules<span class="bubble">Switch platform modules on or off to release when ready.</span></div>
+        <div class="tile tip" tabindex="0"><span class="ico">◐</span>Branding<span class="bubble">Colours, logo and platform name.</span></div>
+        <div class="tile tip" tabindex="0"><span class="ico">✉</span>Notifications<span class="bubble">Which transactional emails send, and the holiday reminder lead time.</span></div>
+      </div>
+      <div class="note"><span class="measure">≈ 300px · fits one view</span> · hover any tile for its description</div>
+    </div>
+  </section>
+
+  <!-- B -->
+  <section class="proposal">
+    <h2><span class="num">B</span> Grouped lists, two columns</h2>
+    <p class="sub">Sections become short lists side by side. The densest readable option and the most "control panel" — you scan a column rather than a grid. Loses the card shape entirely.</p>
+    <div class="frame">
+      <div class="cols">
+        <div>
+          <p class="secname">Benefits &amp; Time-Off</p>
+          <div class="lst">
+            <div class="li tip" tabindex="0"><span class="ico">◆</span><span class="nm">Benefits Management</span><span class="cnt">3</span><span class="bubble">Plan-year window and submissions.<br><b>2 claims to review · 1 over-charged</b></span></div>
+            <div class="li tip" tabindex="0"><span class="ico">▤</span><span class="nm">Time-Off</span><span class="cnt">4</span><span class="bubble">View all leave requests; approve or decline as a fallback.</span></div>
+          </div>
+          <p class="secname" style="margin-top:12px">People</p>
+          <div class="lst">
+            <div class="li tip" tabindex="0"><span class="ico">☰</span><span class="nm">Employee Registry</span><span class="bubble">Create and edit employee records, employment, reporting lines, and roles.</span></div>
+            <div class="li tip" tabindex="0"><span class="ico">✎</span><span class="nm">Change Requests</span><span class="cnt">2</span><span class="bubble">Corrections employees have asked for.</span></div>
+            <div class="li tip" tabindex="0"><span class="ico">◫</span><span class="nm">Data Requests</span><span class="bubble">Ask the team to fill or verify profile fields.</span></div>
+            <div class="li tip" tabindex="0"><span class="ico">⌗</span><span class="nm">Departments</span><span class="bubble">Add, rename, or remove departments.</span></div>
+            <div class="li tip" tabindex="0"><span class="ico">🎓</span><span class="nm">Learning</span><span class="bubble">Build training courses and choose who they reach.</span></div>
+          </div>
+        </div>
+        <div>
+          <p class="secname">Content &amp; Communications</p>
+          <div class="lst">
+            <div class="li tip" tabindex="0"><span class="ico">▶</span><span class="nm">Onboarding Content</span><span class="bubble">The activities new joiners see, by track.</span></div>
+            <div class="li tip" tabindex="0"><span class="ico">▣</span><span class="nm">Handbook &amp; Resources</span><span class="bubble">Policies, sections and downloadable files.</span></div>
+            <div class="li tip" tabindex="0"><span class="ico">◈</span><span class="nm">Knowledge Base</span><span class="bubble">Consulting references and reads.</span></div>
+            <div class="li tip" tabindex="0"><span class="ico">✦</span><span class="nm">Announcements</span><span class="bubble">Messages shown on the employee dashboard.</span></div>
+          </div>
+          <p class="secname" style="margin-top:12px">Platform · Super User</p>
+          <div class="lst">
+            <div class="li tip" tabindex="0"><span class="ico">◉</span><span class="nm">View as Employee</span><span class="bubble">See the app exactly as an employee sees it.</span></div>
+            <div class="li tip" tabindex="0"><span class="ico">⊞</span><span class="nm">Modules</span><span class="bubble">Switch modules on or off.</span></div>
+            <div class="li tip" tabindex="0"><span class="ico">◐</span><span class="nm">Branding</span><span class="bubble">Colours, logo and platform name.</span></div>
+            <div class="li tip" tabindex="0"><span class="ico">✉</span><span class="nm">Notifications</span><span class="bubble">Which transactional emails send.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="note"><span class="measure">≈ 260px · densest</span></div>
+    </div>
+  </section>
+
+  <!-- C -->
+  <section class="proposal">
+    <h2><span class="num">C</span> One flowing set, colour-coded</h2>
+    <p class="sub">No headings at all — every destination is a chip, with a coloured left edge for its section and a key above. Smallest by a distance, but you find things by memory rather than by category.</p>
+    <div class="frame">
+      <div class="key">
+        <span><i style="background:var(--gold-500)"></i>Benefits &amp; Time-Off</span>
+        <span><i style="background:var(--navy-800)"></i>People</span>
+        <span><i style="background:#4f6d97"></i>Content</span>
+        <span><i style="background:#9aa3b2"></i>Platform</span>
+      </div>
+      <div class="flow">
+        <span class="chip c-ben tip" tabindex="0">Benefits<span class="cnt">3</span><span class="bubble">Plan-year window and submissions.<br><b>2 claims to review · 1 over-charged</b></span></span>
+        <span class="chip c-ben tip" tabindex="0">Time-Off<span class="cnt">4</span><span class="bubble">All leave requests.</span></span>
+        <span class="chip c-ppl tip" tabindex="0">Employee Registry<span class="bubble">Records, employment, reporting lines, roles.</span></span>
+        <span class="chip c-ppl tip" tabindex="0">Change Requests<span class="cnt">2</span><span class="bubble">Corrections employees asked for.</span></span>
+        <span class="chip c-ppl tip" tabindex="0">Data Requests<span class="bubble">Ask the team to fill or verify fields.</span></span>
+        <span class="chip c-ppl tip" tabindex="0">Departments<span class="bubble">Add, rename, remove departments.</span></span>
+        <span class="chip c-ppl tip" tabindex="0">Learning<span class="bubble">Build courses and choose who they reach.</span></span>
+        <span class="chip c-con tip" tabindex="0">Onboarding<span class="bubble">Activities new joiners see.</span></span>
+        <span class="chip c-con tip" tabindex="0">Handbook<span class="bubble">Policies and company files.</span></span>
+        <span class="chip c-con tip" tabindex="0">Knowledge Base<span class="bubble">References and reads.</span></span>
+        <span class="chip c-con tip" tabindex="0">Announcements<span class="bubble">Dashboard messages.</span></span>
+        <span class="chip c-plt tip" tabindex="0">View as Employee<span class="bubble">See the app as an employee.</span></span>
+        <span class="chip c-plt tip" tabindex="0">Modules<span class="bubble">Switch modules on or off.</span></span>
+        <span class="chip c-plt tip" tabindex="0">Branding<span class="bubble">Colours, logo, platform name.</span></span>
+        <span class="chip c-plt tip" tabindex="0">Notifications<span class="bubble">Transactional email settings.</span></span>
+      </div>
+      <div class="note"><span class="measure">≈ 150px · smallest</span> · no section headings</div>
+    </div>
+  </section>
+
+  <div class="decision">
+    <h3>Which one — and the one thing all three cost you</h3>
+    <ul>
+      <li><b>A — recommended.</b> Fits one view, keeps the sections, and still looks like the rest of the app. The smallest change to how you already navigate.</li>
+      <li><b>B</b> is denser and scans well once learned, but it stops looking like a dashboard.</li>
+      <li><b>C</b> is the smallest and the hardest to learn — with 15 items and no headings, you find things by memory.</li>
+    </ul>
+    <p style="margin:10px 0 0"><b>The cost, in all three:</b> the attention <i>breakdown</i> tags — “2 claims to review”, “1 over-charged” — no longer sit on the card. They were added deliberately in August so a card says what you are walking into, not just that something is waiting. In these layouts a <b>count</b> stays visible and the breakdown moves into the hover. If that matters more than compactness, A can keep the tags on flagged cards only — those are rarely more than two at a time.</p>
+  </div>
+
+  <footer>Admin home · 21/08/2026 · real card names, illustrative counts. Hover anything to see the description mechanism. Nothing is built until you pick one.</footer>
+</div>
