@@ -1,0 +1,283 @@
+<title>Course Materials &amp; Resource Library</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-400:#4f6d97;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;--red-line:#f3c6c6;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .proposal{margin-top:36px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:76ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+  .tab{font-size:13px;font-weight:600;color:var(--muted);padding:7px 13px;border-bottom:2px solid transparent}
+  .tab.on{color:var(--navy-800);border-bottom-color:var(--navy-800)}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-navy{border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:9px;cursor:pointer}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;cursor:pointer}
+  .btn-quiet{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;cursor:pointer}
+  .fld{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:2px;font-weight:700}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 9px;font-size:13px;color:var(--ink)}
+  .slot{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px;background:var(--surface)}
+  .slot.empty{border-style:dashed;background:transparent}
+  .doc{width:26px;height:30px;border-radius:3px;border:1px solid var(--navy-200);background:var(--navy-50);flex:none;display:grid;place-items:center;font-size:9px;font-weight:800;color:var(--navy-700)}
+  .res{display:flex;align-items:flex-start;gap:9px;border-bottom:1px solid var(--line);padding:8px 0;font-size:13px}
+  .res:last-child{border-bottom:0}
+  .kind{width:64px;flex:none}
+  .decision{margin-top:34px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:860px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:5px 0}
+  .note{font-size:11.5px;color:var(--muted);margin-top:9px}
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  .stars{display:inline-flex;gap:5px;font-size:26px;line-height:1;color:var(--gold-500)}
+  .star-off{color:var(--navy-100)}
+  .later{margin-top:12px;border:1px dashed var(--navy-200);border-radius:10px;padding:11px 13px;font-size:12.5px;color:var(--muted);background:transparent}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 038 · materials · v2</p>
+  <h1>Course materials &amp; the resource library</h1>
+  <p class="lede">Version 2, after your notes: slides <b>preview in the page</b>, a resource is just a <b>type, a name and an optional link</b>, and the library grows because <b>employees suggest to it</b> when they finish a course — HR approves before anything appears. Illustrative content throughout.</p>
+
+  <!-- 1 -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Admin: a fourth tab <span class="chip c-off">HR</span></h2>
+    <p class="sub">Content · Access · People · <b>Materials</b>. Documents are three fixed slots rather than a free file list — a course either has its outline or it doesn't, and a named slot shows that at a glance. Only the slides reach employees.</p>
+
+    <div class="frame">
+      <div class="tabs"><span class="tab">Content</span><span class="tab">Access <span style="font-size:10px">2</span></span><span class="tab">People <span style="font-size:10px">14</span></span><span class="tab on">Materials <span style="font-size:10px">2</span></span></div>
+
+      <div class="grid2">
+        <div class="panel">
+          <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:var(--navy-800)">Course documents</p>
+          <p style="margin:0 0 11px;font-size:11.5px;color:var(--muted)">The standard set. Only the slides are shown to employees.</p>
+
+          <div class="slot">
+            <span class="doc">PDF</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600">Course outline.pdf</span>
+              <span style="font-size:11px;color:var(--muted)">120 KB · uploaded 21/08/2026</span>
+            </span>
+            <span class="chip c-off">HR only</span>
+            <span class="btn-ghost">Replace</span>
+          </div>
+
+          <div class="slot">
+            <span class="doc">DOCX</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600">Expanded outline.docx</span>
+              <span style="font-size:11px;color:var(--muted)">340 KB · uploaded 21/08/2026</span>
+            </span>
+            <span class="chip c-off">HR only</span>
+            <span class="btn-ghost">Replace</span>
+          </div>
+
+          <div class="slot">
+            <span class="doc">PDF</span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600">Slides.pdf</span>
+              <span style="font-size:11px;color:var(--muted)">2.1 MB · previews in the page</span>
+            </span>
+            <span class="chip c-ok">Employees see this</span>
+            <span class="btn-ghost">Replace</span>
+          </div>
+          <p class="note">A green chip means employees get it; everything else stays with HR. The label sits on the slot rather than in a legend somewhere else.</p>
+        </div>
+
+        <div class="panel">
+          <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:var(--navy-800)">Course resources</p>
+          <p style="margin:0 0 11px;font-size:11.5px;color:var(--muted)">A type, a name, and a link when there is one. Employees see all of these.</p>
+
+          <div class="res">
+            <span class="kind"><span class="chip c-navy">Book</span></span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600">The Coaching Habit</span>
+              <span style="font-size:11.5px;color:var(--muted)">Michael Bungay Stanier — no link, it's a book.</span>
+            </span>
+            <span style="color:var(--red);font-size:11px">Remove</span>
+          </div>
+          <div class="res">
+            <span class="kind"><span class="chip c-navy">Article</span></span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600">What great listeners actually do</span>
+              <span style="font-size:11.5px;color:var(--muted)">hbr.org</span>
+            </span>
+            <span style="color:var(--red);font-size:11px">Remove</span>
+          </div>
+          <div class="res">
+            <span class="kind"><span class="chip c-navy">Course</span></span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600">Power &amp; Influence</span>
+              <span style="font-size:11.5px;color:var(--muted)">coursera.org</span>
+            </span>
+            <span style="color:var(--red);font-size:11px">Remove</span>
+          </div>
+          <div class="res">
+            <span class="kind"><span class="chip c-navy">Video</span></span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600">The power of listening — William Ury</span>
+              <span style="font-size:11.5px;color:var(--muted)">youtube.com · <span class="chip c-gold" style="font-size:9px">suggested by Ahmed Ali</span></span>
+            </span>
+            <span style="color:var(--red);font-size:11px">Remove</span>
+          </div>
+
+          <div style="display:flex;gap:7px;align-items:flex-end;margin-top:11px;border-top:1px solid var(--line);padding-top:11px;flex-wrap:wrap">
+            <div style="width:86px"><span class="fld">Type</span><input class="inp" value="Article" readonly></div>
+            <div style="flex:1;min-width:130px"><span class="fld">Name</span><input class="inp" placeholder="What it's called" readonly></div>
+            <div style="flex:1;min-width:130px"><span class="fld">Link <span style="text-transform:none;font-weight:400">— optional</span></span><input class="inp" placeholder="https://" readonly></div>
+            <span class="btn-navy">Add</span>
+          </div>
+          <p class="note">Types: Book · Article · Course · Video · Link. A gold tag marks anything that came in from an employee, so you can see the library growing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="proposal">
+    <h2><span class="num">2</span> Employee: one Materials section on the course page <span class="chip c-off">Employee</span></h2>
+    <p class="sub">Sits in the left curriculum rail, under the lessons, as its own entry — so it is visible from day one, before anyone has started, and it opens in the main area like a lesson does. Slides preview inline; nothing hints the outline or expanded outline exist.</p>
+
+    <div class="frame">
+      <div style="display:grid;grid-template-columns:230px 1fr;gap:14px;align-items:start">
+        <div class="panel" style="padding:10px">
+          <p style="margin:0 0 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Curriculum</p>
+          <p style="margin:0 0 3px;font-size:11.5px;font-weight:700;color:var(--navy-700)">1 · Foundations</p>
+          <p style="margin:0 0 2px 9px;font-size:12px;color:var(--muted)">1.1 What is coaching ✓</p>
+          <p style="margin:0 0 9px 9px;font-size:12px;color:var(--muted)">1.2 Asking, not telling</p>
+          <p style="margin:0 0 3px;font-size:11.5px;font-weight:700;color:var(--navy-700)">2 · In practice</p>
+          <p style="margin:0 0 2px 9px;font-size:12px;color:var(--muted)">2.1 The first conversation</p>
+          <p style="margin:0 0 11px 9px;font-size:12px;color:var(--muted)">2.2 When it goes wrong</p>
+          <div style="border-top:1px solid var(--line);padding-top:9px;margin-top:2px">
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--navy-800);background:var(--navy-50);border:1px solid var(--navy-200);border-radius:8px;padding:6px 9px;width:100%">📎 Materials &amp; resources</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <p style="margin:0 0 9px;font-size:13px;font-weight:700;color:var(--navy-800)">Materials &amp; resources</p>
+          <div style="background:var(--navy-900);border-radius:10px;aspect-ratio:16/8;display:grid;place-items:center;color:#7f92ad;font-size:12px;text-align:center">the slides, previewing in the page<br><span style="font-size:11px;color:#5d6f89">page 1 of 34</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:7px">
+            <span style="font-size:11.5px;color:var(--muted)">Slides · 34 pages</span>
+            <span class="btn-ghost">Open full screen</span>
+          </div>
+
+          <p style="margin:14px 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">If you want to go further</p>
+          <div class="res"><span class="kind"><span class="chip c-navy">Book</span></span><span style="flex:1"><span style="display:block;font-weight:600">The Coaching Habit</span><span style="font-size:11.5px;color:var(--muted)">Michael Bungay Stanier</span></span></div>
+          <div class="res"><span class="kind"><span class="chip c-navy">Article</span></span><span style="flex:1"><span style="display:block;font-weight:600">What great listeners actually do →</span><span style="font-size:11.5px;color:var(--muted)">hbr.org</span></span></div>
+          <div class="res"><span class="kind"><span class="chip c-navy">Video</span></span><span style="flex:1"><span style="display:block;font-weight:600">The power of listening — William Ury →</span><span style="font-size:11.5px;color:var(--muted)">suggested by a colleague</span></span></div>
+        </div>
+      </div>
+      <p class="note">The outline and expanded outline never appear here, and nothing hints they exist — so nobody asks for a file they are not meant to have.</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="proposal">
+    <h2><span class="num">3</span> Finishing a course: rate it, and pass something on <span class="chip c-off">Employee</span></h2>
+    <p class="sub">One panel, shown once, right where the course completes. Both parts are optional — the rating is one tap, the suggestion is for the people who actually have something to give. Asking here works because it is the only moment the course is fresh and the person is done with it.</p>
+
+    <div class="frame">
+      <div class="panel" style="max-width:560px;margin:0 auto">
+        <p style="margin:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--green)">Course complete</p>
+        <p style="font-family:Georgia,serif;font-size:19px;margin:3px 0 2px">Coaching Conversations</p>
+        <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted)">Finished on 22/08/2026 · 4 lessons · 1h 12m</p>
+
+        <div style="border-top:1px solid var(--line);padding-top:12px">
+          <p style="margin:0 0 7px;font-size:13px;font-weight:600">How was it?</p>
+          <div class="stars">★ ★ ★ ★ <span class="star-off">★</span></div>
+          <p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Only HR sees ratings, and only as an average across everyone — never who gave what.</p>
+        </div>
+
+        <div style="border-top:1px solid var(--line);padding-top:12px;margin-top:13px">
+          <p style="margin:0 0 3px;font-size:13px;font-weight:600">Know something good on this topic?</p>
+          <p style="margin:0 0 9px;font-size:12px;color:var(--muted)">A book, an article, a talk, another course — anything that helped you. HR reviews it, and if it lands it shows up here for everyone who takes this course.</p>
+          <div style="display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap">
+            <div style="width:86px"><span class="fld">Type</span><input class="inp" value="Video" readonly></div>
+            <div style="flex:1;min-width:130px"><span class="fld">Name</span><input class="inp" value="The power of listening — William Ury" readonly></div>
+          </div>
+          <div style="margin-top:7px"><span class="fld">Link <span style="text-transform:none;font-weight:400">— if you have one</span></span><input class="inp" value="https://youtube.com/watch?v=…" readonly></div>
+          <div style="display:flex;gap:8px;margin-top:11px;align-items:center">
+            <span class="btn-navy">Send to HR</span>
+            <span class="btn-quiet">Skip</span>
+          </div>
+        </div>
+      </div>
+      <p class="note">Nothing here blocks completion — the course is already finished when this appears. Skip closes it and it does not come back.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="proposal">
+    <h2><span class="num">4</span> HR: the suggestions queue <span class="chip c-off">HR</span></h2>
+    <p class="sub">A gold badge on Admin → Learning when something is waiting, in the same way Data Requests and Time-Off already announce themselves. Approving drops the resource straight into that course's list, tagged with who suggested it.</p>
+
+    <div class="frame">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px">
+          <p style="margin:0;font-size:13px;font-weight:700;color:var(--navy-800)">Suggested resources <span class="chip c-gold">2 waiting</span></p>
+          <span style="font-size:11.5px;color:var(--muted)">from employees who finished a course</span>
+        </div>
+
+        <div style="border:1px solid var(--line);border-radius:10px;padding:11px;margin-bottom:8px;background:var(--surface)">
+          <div style="display:flex;gap:9px;align-items:flex-start">
+            <span class="kind"><span class="chip c-navy">Video</span></span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600;font-size:13px">The power of listening — William Ury</span>
+              <span style="font-size:11.5px;color:var(--muted)">youtube.com/watch?v=… ↗</span>
+              <span style="display:block;font-size:11.5px;color:var(--muted);margin-top:3px">Ahmed Ali · for <b>Coaching Conversations</b> · 22/08/2026</span>
+            </span>
+            <span style="display:flex;gap:6px;flex:none"><span class="btn-navy">Approve</span><span class="btn-quiet">Decline</span></span>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--line);border-radius:10px;padding:11px;background:var(--surface)">
+          <div style="display:flex;gap:9px;align-items:flex-start">
+            <span class="kind"><span class="chip c-navy">Book</span></span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-weight:600;font-size:13px">Never Split the Difference</span>
+              <span style="font-size:11.5px;color:var(--muted)">no link</span>
+              <span style="display:block;font-size:11.5px;color:var(--muted);margin-top:3px">Mona Selim · for <b>Coaching Conversations</b> · 21/08/2026</span>
+            </span>
+            <span style="display:flex;gap:6px;flex:none"><span class="btn-navy">Approve</span><span class="btn-quiet">Decline</span></span>
+          </div>
+        </div>
+        <p class="note">HR can fix the name or the link before approving — a typed URL is a typed URL. Declining is silent; the employee is not told, because a "no" on a book recommendation is not worth a notification.</p>
+      </div>
+
+      <div class="later">
+        <b>Later, not now:</b> once a course has more than a handful of resources, group them by type (Books · Articles · Videos · Courses) with the newest first. Building that today would be scaffolding around three items.
+      </div>
+    </div>
+  </section>
+
+  <div class="decision">
+    <h3>What I'm assuming — correct me and I'll change it</h3>
+    <ul>
+      <li><b>Slides preview in the page</b>, full-screen on demand. This works natively for a <b>PDF</b>; a PowerPoint file cannot preview in a browser, so a .pptx would fall back to a download button. I'd accept both and preview what can be previewed.</li>
+      <li><b>A resource is type + name + optional link</b> — Book, Article, Course, Video, Link. No note field; the name carries it.</li>
+      <li><b>Rating is 1–5 stars, optional, once per completion.</b> HR sees the average and the count per course, never who rated what.</li>
+      <li><b>A suggestion is attached to the course the person just finished</b>, and HR can edit it before approving. Declining is silent.</li>
+      <li><b>Materials are a curriculum entry, not a lesson</b> — no progress, no completion, always visible, doesn't affect anyone's percentage.</li>
+      <li><b>Employees suggest only at completion</b>, not from a button that's always there — it keeps the queue honest and ties the suggestion to a course.</li>
+    </ul>
+    <p style="margin:10px 0 0">Three things I'd like a yes or no on: <b>(a)</b> ratings anonymous to HR as above, or should HR see who said what? <b>(b)</b> can an employee suggest a resource any time from the course page too, not only at the end? <b>(c)</b> should a renewal — retaking a course a year later — ask for the rating again?</p>
+  </div>
+
+  <footer>Spec 038 · course materials v2 · 22/08/2026 · illustrative content. Nothing is built until you approve.</footer>
+</div>
