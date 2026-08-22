@@ -475,6 +475,37 @@ through the in-progress route — the person has been asked to redo it. Lesson t
 seconds are cleared only when the learner reopens the course; `firstCompletedAt` and
 `completionCount` are kept. HR is told how many people would lapse immediately before saving a period.
 
-**Not in this release**: quizzes, gradable assignments, certificates, discussions, notifications,
-analytics, roster export, learning paths. No email, no cron,
-no new env var, no new runtime dependency.
+**Course materials, resources & rating** (added 2026-08-22, migration `064`, mockup-approved):
+
+- **Documents are three FIXED slots** — `CourseDocument` keyed `(courseId, slot)` on
+  `OUTLINE | EXPANDED_OUTLINE | SLIDES`. A named slot makes a missing outline visible at a glance;
+  a free file list would not. Replacing is an upsert, so a course can never carry two sets of slides.
+- **Only SLIDES reaches employees**, and the rule is written ONCE — `EMPLOYEE_VISIBLE_SLOTS` in
+  `src/lib/learning/materials.ts`. The employee page never *selects* the other two, and
+  `/api/learning/documents/[id]` re-decides it on every request (a URL is a URL), answering **404**
+  rather than 403 for an HR-only slot, because "forbidden" confirms the file exists.
+- **Slides preview in the page** for a PDF (the blob is streamed with an `inline` disposition);
+  anything else — .pptx, .docx — cannot preview in any browser without a conversion service we do
+  not run, so it gets a download button and the admin slot says "download only".
+- **Resources** (`CourseResource`) are a type (BOOK / ARTICLE / VIDEO / COURSE / LINK), a name, and
+  an **optional** link — a book usually has none. Typed links are normalised
+  (`normaliseResourceUrl`: bare host gets `https://`, a `javascript:` "link" is refused).
+- **Employees grow the library**: anyone with access may suggest a resource, from the course page
+  at any time or from the finish panel. A suggestion is `PENDING` and is invisible to every
+  employee until HR approves it in the ONE queue on `/admin/learning` (gold badge on Admin home).
+  HR may fix the name or link on the way through. **Declining is silent** — a "no" on a book
+  recommendation is not worth a notification. Cap of 10 pending per person per course.
+- **Materials are a curriculum ENTRY, not a lesson** (`/learning/[courseId]?view=materials`):
+  visible from day one, before starting, with no progress of its own and no effect on any percentage.
+  An approved suggestion shows as "suggested by a colleague" — never a name.
+- **Rating**: 1–5 on the finish panel, optional, never blocking (the course is already complete
+  when the panel appears). **Anonymous**: `CourseRating.userId` exists only so one person is one
+  score and nobody is asked twice — no screen attributes a rating, HR sees the average and count.
+  A renewal **updates** the row rather than adding one, so nobody skews an average by retaking.
+- **Skipping the panel is durable**: `CourseEnrollment.ratingPromptDoneCount`. The panel shows while
+  `completionCount > ratingPromptDoneCount`, so a renewal asks again by itself — no flag to reset,
+  no job.
+
+**Not in this release**: quizzes, gradable assignments, certificates, discussions, analytics,
+roster export, learning paths, resource categorisation (worth doing once a course has more than a
+handful). No email, no cron, no new env var, no new runtime dependency.

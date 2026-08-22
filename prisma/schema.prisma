@@ -165,6 +165,11 @@ model User {
   courseAssignmentsGranted CourseAssignment[]   @relation("CourseAssignmentActor")
   courseEnrollments        CourseEnrollment[]   @relation("EnrollmentLearner")
   courseAccessWithdrawn    CourseEnrollment[]   @relation("AccessWithdrawer")
+  // Course materials (spec 038 materials, 2026-08-22)
+  courseDocumentsUploaded  CourseDocument[]     @relation("CourseDocumentUploader")
+  courseResourcesSuggested CourseResource[]     @relation("CourseResourceSuggester")
+  courseResourcesReviewed  CourseResource[]     @relation("CourseResourceReviewer")
+  courseRatings            CourseRating[]       @relation("CourseRater")
 
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -1260,6 +1265,9 @@ model Course {
   audiences   CourseAudience[]
   assignments CourseAssignment[]
   enrollments CourseEnrollment[]
+  documents   CourseDocument[]
+  resources   CourseResource[]
+  ratings     CourseRating[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1460,6 +1468,11 @@ model CourseEnrollment {
   /// Resume hint only. The authority is the first incomplete lesson over progress rows.
   lastLessonId String?
 
+  /// The `completionCount` the finish panel (rating + suggest a resource) has already been
+  /// answered or skipped for. The panel shows while `completionCount > ratingPromptDoneCount`,
+  /// so skipping is durable and a RENEWAL asks again on its own — no flag to reset and no job.
+  ratingPromptDoneCount Int @default(0)
+
   lessonProgress LessonProgress[]
 
   createdAt DateTime @default(now())
@@ -1495,4 +1508,108 @@ model LessonProgress {
 
   @@unique([enrollmentId, lessonId])
   @@index([lessonId])
+}
+
+// ── Course materials (spec 038 materials, 2026-08-22) ──────────────────────────────────
+
+/// The three documents a course carries. Fixed SLOTS, not a free file list: a course either
+/// has its outline or it does not, and a named slot says so at a glance instead of making
+/// somebody read filenames. Only SLIDES is ever served to an employee — that rule lives in
+/// `src/lib/learning/materials.ts` and in the serving route, never in a page.
+enum CourseDocumentSlot {
+  OUTLINE
+  EXPANDED_OUTLINE
+  SLIDES
+}
+
+enum CourseResourceKind {
+  BOOK
+  ARTICLE
+  COURSE
+  VIDEO
+  LINK
+}
+
+/// PENDING is an employee's suggestion awaiting HR. Only PUBLISHED rows are ever shown to
+/// anybody but HR, so a suggestion cannot reach the library by being forgotten about.
+enum CourseResourceStatus {
+  PENDING
+  PUBLISHED
+  DECLINED
+}
+
+model CourseDocument {
+  id       String             @id @default(cuid())
+  courseId String
+  course   Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  slot     CourseDocumentSlot
+
+  /// Private blob URL, streamed through the server like every other file in the app.
+  blobUrl     String
+  fileName    String
+  contentType String?
+  sizeBytes   Int?
+
+  uploadedById String?
+  uploadedBy   User?   @relation("CourseDocumentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// One document per slot per course — replacing is an upsert, so a course can never end up
+  /// with two "Slides" and no way to tell which one employees are getting.
+  @@unique([courseId, slot])
+}
+
+/// Reading and links recommended alongside a course. A type, a name, and a link WHEN THERE IS
+/// ONE — a book usually has no URL, which is why `url` is nullable rather than required.
+model CourseResource {
+  id       String               @id @default(cuid())
+  courseId String
+  course   Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  kind     CourseResourceKind
+  name     String
+  url      String?
+  status   CourseResourceStatus @default(PUBLISHED)
+  order    Int                  @default(0)
+
+  /// Set when an employee proposed this rather than HR adding it. Kept after approval so the
+  /// library visibly grows from people, and so HR can see who is contributing.
+  suggestedById String?
+  suggestedBy   User?   @relation("CourseResourceSuggester", fields: [suggestedById], references: [id], onDelete: SetNull)
+
+  reviewedById String?
+  reviewedBy   User?     @relation("CourseResourceReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId, status])
+  @@index([status])
+}
+
+/// One person's rating of one course, 1–5.
+///
+/// ANONYMITY, stated honestly: `userId` is stored because it is the only way to avoid asking the
+/// same person twice and to keep one person to one score. It is NEVER exposed — no query in this
+/// app selects it for display, and HR sees only the average and the count. Renewing a course
+/// UPDATES this row rather than adding one, so a person can never be counted twice in an average.
+model CourseRating {
+  id       String @id @default(cuid())
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation("CourseRater", fields: [userId], references: [id], onDelete: Cascade)
+
+  stars           Int
+  /// Which completion this score was given for, so a renewal's re-rating is distinguishable
+  /// from the original in the row's history.
+  completionIndex Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([courseId, userId])
+  @@index([courseId])
 }

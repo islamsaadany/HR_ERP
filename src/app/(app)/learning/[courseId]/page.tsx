@@ -11,6 +11,10 @@ import { CoursePlayer, type PlayerSection } from "@/components/learning/CoursePl
 import { LessonContent, type Block } from "@/components/learning/LessonContent";
 import { isTrackableSource, videoProvider } from "@/lib/learning/video";
 import { lessonLength } from "@/lib/learning/renewal";
+import { MaterialsPanel } from "@/components/learning/MaterialsPanel";
+import { CourseFinishPanel } from "@/components/learning/CourseFinishPanel";
+import { shouldAskForRating } from "@/lib/learning/materials";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +30,13 @@ export default async function CoursePlayerPage({
   searchParams,
 }: {
   params: Promise<{ courseId: string }>;
-  searchParams: Promise<{ lesson?: string }>;
+  searchParams: Promise<{ lesson?: string; view?: string }>;
 }) {
   await requireModuleEnabled("learning");
   const user = await requireUser();
   const { courseId } = await params;
-  const { lesson: requestedLessonId } = await searchParams;
+  const { lesson: requestedLessonId, view } = await searchParams;
+  const viewingMaterials = view === "materials";
 
   const access = await courseAccessFor(user.id, courseId);
   if (!access.allowed) notFound();
@@ -65,10 +70,29 @@ export default async function CoursePlayerPage({
 
   const resumeId = firstIncompleteLessonId(flat, doneIds) ?? flat[0].id;
   const currentId = flat.some((l) => l.id === requestedLessonId) ? requestedLessonId! : resumeId;
-  if (!requestedLessonId) redirect(`/learning/${courseId}?lesson=${currentId}`);
+  // The materials view has no lesson of its own, so it must not be bounced to one.
+  if (!requestedLessonId && !viewingMaterials) redirect(`/learning/${courseId}?lesson=${currentId}`);
 
   const current = flat.find((l) => l.id === currentId)!;
   const blocked = await learningWritesBlocked();
+
+  // Materials. Only the employee-visible slot is SELECTED — the outline and expanded outline are
+  // never fetched here, so there is nothing to accidentally leak into a prop. The serving route
+  // refuses them independently, which is what actually holds.
+  const [slides, resources] = await Promise.all([
+    prisma.courseDocument.findFirst({
+      where: { courseId, slot: "SLIDES" },
+      select: { id: true, slot: true, fileName: true, contentType: true, sizeBytes: true },
+    }),
+    prisma.courseResource.findMany({
+      where: { courseId, status: "PUBLISHED" },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+      select: { id: true, kind: true, name: true, url: true, suggestedById: true },
+    }),
+  ]);
+
+  // Shown once per completion, above everything, and never blocking — see CourseFinishPanel.
+  const askForRating = enrollment ? shouldAskForRating(enrollment) : false;
 
   const sections: PlayerSection[] = course.sections.map((s) => ({
     id: s.id,
@@ -114,12 +138,37 @@ export default async function CoursePlayerPage({
         ) : null}
       </div>
 
+      {askForRating && enrollment?.completedAt ? (
+        <CourseFinishPanel
+          courseId={courseId}
+          courseTitle={course.title}
+          completedAt={enrollment.completedAt}
+          lessonCount={flat.length}
+        />
+      ) : null}
+
       <CoursePlayer
         courseId={courseId}
         sections={sections}
         currentLessonId={currentId}
         percent={computeProgressPercent(flat, doneIds)}
         writesBlocked={blocked}
+        viewingMaterials={viewingMaterials}
+        materials={
+          <MaterialsPanel
+            courseId={courseId}
+            slides={slides}
+            resources={resources.map((r) => ({
+              id: r.id,
+              kind: r.kind,
+              name: r.name,
+              url: r.url,
+              // "a colleague", never a name — a recommendation is not a byline, and the person who
+              // suggested it did not sign up to be shown to everyone who takes the course.
+              fromColleague: r.suggestedById !== null,
+            }))}
+          />
+        }
       >
         <LessonContent blocks={current.blocks as Block[]} />
       </CoursePlayer>

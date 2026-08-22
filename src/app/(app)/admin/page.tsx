@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAdmin, isSuperUser } from "@/lib/roles";
+import { prisma } from "@/lib/prisma";
 import { pendingRequestCount } from "@/lib/profile/change-requests";
 import { benefitsAttention, pendingLeaveCount, type BenefitsAttention } from "@/lib/benefits/attention";
 
@@ -229,6 +230,13 @@ export default async function AdminPage() {
     safe(pendingRequestCount, 0),
   ]);
 
+  // Resources employees have suggested and HR has not yet approved or declined (spec 038
+  // materials). Wrapped like the others: before migration 064 runs, this table does not exist.
+  const pendingSuggestions = await safe(
+    () => prisma.courseResource.count({ where: { status: "PENDING" } }),
+    0
+  );
+
   const flags: Record<string, Flag | null> = {
     "/admin/benefits": benefitsFlag(attention),
     "/admin/time-off":
@@ -250,6 +258,18 @@ export default async function AdminPage() {
             tags: [
               {
                 label: `${pendingChangeRequests} correction${pendingChangeRequests === 1 ? "" : "s"} to approve`,
+                tone: "warn",
+              },
+            ],
+          }
+        : null,
+    "/admin/learning":
+      pendingSuggestions > 0
+        ? {
+            count: pendingSuggestions,
+            tags: [
+              {
+                label: `${pendingSuggestions} suggested resource${pendingSuggestions === 1 ? "" : "s"} to review`,
                 tone: "warn",
               },
             ],

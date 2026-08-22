@@ -6,6 +6,8 @@ import { courseAccessFor } from "@/lib/learning/access";
 import { ImpersonationWriteRefused, requireLearner } from "@/lib/learning/actor";
 import { computeProgressPercent, firstIncompleteLessonId, type LessonRef } from "@/lib/learning/progress";
 import { ensureEnrollment } from "@/lib/learning/enrollment";
+import { normaliseResourceUrl, RESOURCE_KINDS } from "@/lib/learning/materials";
+import type { CourseResourceKind } from "@prisma/client";
 
 /**
  * Learning writes (spec 038 US1/US3).
@@ -305,4 +307,132 @@ export async function resumeLessonId(
     }),
   ]);
   return firstIncompleteLessonId(lessons, done.map((d) => d.lessonId)) ?? lessons[0]?.id ?? null;
+}
+
+// ─── Course materials (spec 038 materials, 2026-08-22) ──────────────────
+
+/**
+ * Rate a course, 1–5.
+ *
+ * ANONYMOUS to everyone who reads it: HR sees the average and the count, never who said what.
+ * `userId` is stored only so the same person is not asked twice and cannot be counted twice —
+ * renewing UPDATES the existing row rather than adding one.
+ *
+ * Rating is optional and never blocks anything: the course is already complete before the panel
+ * that carries this appears.
+ */
+export async function rateCourse(courseId: string, stars: number): Promise<LearnResult> {
+  return guard(async () => {
+    const learner = await requireLearner();
+    const access = await courseAccessFor(learner.id, courseId);
+    if (!access.allowed) return { ok: false as const, error: "You don't have access to this course." };
+
+    const value = Math.round(stars);
+    if (!Number.isFinite(value) || value < 1 || value > 5) {
+      return { ok: false as const, error: "Choose between 1 and 5 stars." };
+    }
+
+    const enrollment = await prisma.courseEnrollment.findUnique({
+      where: { courseId_userId: { courseId, userId: learner.id } },
+      select: { id: true, completedAt: true, completionCount: true },
+    });
+    if (!enrollment?.completedAt) {
+      return { ok: false as const, error: "You can rate a course once you've finished it." };
+    }
+
+    await prisma.$transaction([
+      prisma.courseRating.upsert({
+        where: { courseId_userId: { courseId, userId: learner.id } },
+        create: {
+          courseId,
+          userId: learner.id,
+          stars: value,
+          completionIndex: Math.max(1, enrollment.completionCount),
+        },
+        update: { stars: value, completionIndex: Math.max(1, enrollment.completionCount) },
+      }),
+      // Answering also settles the panel, so it does not reappear on the next visit.
+      prisma.courseEnrollment.update({
+        where: { id: enrollment.id },
+        data: { ratingPromptDoneCount: enrollment.completionCount },
+      }),
+    ]);
+
+    revalidatePath(`/learning/${courseId}`);
+    return { ok: true as const };
+  });
+}
+
+/**
+ * Put the finish panel away without rating.
+ *
+ * Durable rather than a client-side dismissal, so "Skip" means skipped — and a RENEWAL still asks
+ * again by itself, because finishing again moves `completionCount` past this figure.
+ */
+export async function dismissFinishPanel(courseId: string): Promise<LearnResult> {
+  return guard(async () => {
+    const learner = await requireLearner();
+    const enrollment = await prisma.courseEnrollment.findUnique({
+      where: { courseId_userId: { courseId, userId: learner.id } },
+      select: { id: true, completionCount: true },
+    });
+    if (!enrollment) return { ok: false as const, error: "You haven't started this course." };
+
+    await prisma.courseEnrollment.update({
+      where: { id: enrollment.id },
+      data: { ratingPromptDoneCount: enrollment.completionCount },
+    });
+    revalidatePath(`/learning/${courseId}`);
+    return { ok: true as const };
+  });
+}
+
+/**
+ * Suggest a resource for a course.
+ *
+ * Lands as PENDING — never in the library. Only HR moves it to PUBLISHED, so a suggestion cannot
+ * reach other employees by being forgotten about.
+ *
+ * Anyone with access to the course may suggest, at any time, from the course page or the finish
+ * panel. A cap of 10 pending suggestions per person per course keeps one enthusiastic afternoon
+ * from becoming HR's whole queue.
+ */
+export async function suggestResource(formData: FormData): Promise<LearnResult> {
+  return guard(async () => {
+    const learner = await requireLearner();
+    const courseId = typeof formData.get("courseId") === "string" ? String(formData.get("courseId")).trim() : "";
+    const kind = typeof formData.get("kind") === "string" ? String(formData.get("kind")).trim() : "";
+    const name = typeof formData.get("name") === "string" ? String(formData.get("name")).trim() : "";
+    const rawUrl = typeof formData.get("url") === "string" ? String(formData.get("url")).trim() : "";
+
+    const access = await courseAccessFor(learner.id, courseId);
+    if (!access.allowed) return { ok: false as const, error: "You don't have access to this course." };
+
+    if (!RESOURCE_KINDS.includes(kind as (typeof RESOURCE_KINDS)[number])) {
+      return { ok: false as const, error: "Choose what kind of resource this is." };
+    }
+    if (!name) return { ok: false as const, error: "Give it a name so HR knows what it is." };
+    if (name.length > 200) return { ok: false as const, error: "That name is too long (200 characters max)." };
+
+    const url = normaliseResourceUrl(rawUrl);
+    if (rawUrl && !url) return { ok: false as const, error: "That doesn't look like a web address." };
+
+    const pending = await prisma.courseResource.count({
+      where: { courseId, suggestedById: learner.id, status: "PENDING" },
+    });
+    if (pending >= 10) {
+      return {
+        ok: false as const,
+        error: "You already have 10 suggestions waiting for this course. HR will get to them.",
+      };
+    }
+
+    await prisma.courseResource.create({
+      data: { courseId, kind: kind as CourseResourceKind, name, url, status: "PENDING", suggestedById: learner.id },
+    });
+
+    revalidatePath(`/learning/${courseId}`);
+    revalidatePath("/admin/learning");
+    return { ok: true as const };
+  });
 }

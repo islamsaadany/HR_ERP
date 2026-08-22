@@ -3,33 +3,27 @@
 import { useState } from "react";
 
 /**
- * Content · Access · People · Materials, following the AdminBenefitsTabs idiom.
+ * Content · Access · People, following the AdminBenefitsTabs idiom.
  *
  * Client-side switching keeps "who gets this" next to "what is it" — the reason these are tabs on
- * one page rather than four separate screens.
+ * one page rather than three separate screens.
  */
-type TabId = "content" | "access" | "people" | "materials";
-
 export function LearningTabs({
   content,
   access,
   people,
-  materials,
   accessCount,
   peopleCount,
-  materialsCount,
 }: {
   content: React.ReactNode;
   access: React.ReactNode;
   people: React.ReactNode;
-  materials: React.ReactNode;
   accessCount: number;
   peopleCount: number;
-  materialsCount: number;
 }) {
-  const [tab, setTab] = useState<TabId>("content");
+  const [tab, setTab] = useState<"content" | "access" | "people">("content");
 
-  const Tab = ({ id, label, count }: { id: TabId; label: string; count?: number }) => (
+  const Tab = ({ id, label, count }: { id: typeof tab; label: string; count?: number }) => (
     <button
       type="button"
       onClick={() => setTab(id)}
@@ -53,15 +47,8 @@ export function LearningTabs({
         <Tab id="content" label="Content" />
         <Tab id="access" label="Access" count={accessCount} />
         <Tab id="people" label="People" count={peopleCount} />
-        <Tab id="materials" label="Materials" count={materialsCount} />
       </div>
-      {tab === "content"
-        ? content
-        : tab === "access"
-          ? access
-          : tab === "people"
-            ? people
-            : materials}
+      {tab === "content" ? content : tab === "access" ? access : people}
     </div>
   );
 }

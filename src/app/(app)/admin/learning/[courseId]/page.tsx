@@ -11,6 +11,7 @@ import { PublishToggle } from "@/components/learning/PublishToggle";
 import { AudiencePicker, type RouteRow } from "@/components/learning/AudiencePicker";
 import { CourseRoster, type RosterRow } from "@/components/learning/CourseRoster";
 import { LearningTabs } from "@/components/learning/LearningTabs";
+import { CourseMaterials } from "@/components/learning/CourseMaterials";
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +106,27 @@ export default async function CourseBuilderPage({
     prisma.learnerGroup.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true, _count: { select: { members: true } } },
+    }),
+  ]);
+
+  // Materials: the three document slots and the PUBLISHED resources. Pending suggestions are NOT
+  // loaded here — they live in one queue on /admin/learning, so HR reviews them in one place
+  // rather than course by course.
+  const [documents, resources] = await Promise.all([
+    prisma.courseDocument.findMany({
+      where: { courseId },
+      select: { id: true, slot: true, fileName: true, contentType: true, sizeBytes: true, createdAt: true },
+    }),
+    prisma.courseResource.findMany({
+      where: { courseId, status: "PUBLISHED" },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true,
+        kind: true,
+        name: true,
+        url: true,
+        suggestedBy: { select: { name: true } },
+      },
     }),
   ]);
 
@@ -234,6 +256,7 @@ export default async function CourseBuilderPage({
         <LearningTabs
           accessCount={audienceRows.length + assignmentRows.length}
           peopleCount={rosterRows.length}
+          materialsCount={documents.length + resources.length}
           content={
             <CourseBuilder
               courseId={course.id}
@@ -257,6 +280,19 @@ export default async function CourseBuilderPage({
             />
           }
           people={<CourseRoster courseId={course.id} rows={rosterRows} />}
+          materials={
+            <CourseMaterials
+              courseId={course.id}
+              documents={documents}
+              resources={resources.map((r) => ({
+                id: r.id,
+                kind: r.kind,
+                name: r.name,
+                url: r.url,
+                suggestedByName: r.suggestedBy?.name ?? null,
+              }))}
+            />
+          }
         />
       </div>
     </div>

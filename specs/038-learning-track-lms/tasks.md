@@ -155,6 +155,23 @@ date alongside its reopen date, and updates without a manual reload. Quickstart 
 
 ---
 
+## Phase 8: Course materials, resources & rating (added 2026-08-22, mockup-approved)
+
+- [X] T052 `prisma/schema.prisma`: `CourseDocument` (unique `courseId`+`slot`), `CourseResource`, `CourseRating` (unique `courseId`+`userId`), enums `CourseDocumentSlot` / `CourseResourceKind` / `CourseResourceStatus`, and `CourseEnrollment.ratingPromptDoneCount`
+- [X] T053 `prisma/sql/064_course_materials.sql` — additive and idempotent, in the same commit
+- [X] T054 `src/lib/learning/materials.ts` — the ONE source of `EMPLOYEE_VISIBLE_SLOTS`, plus resource kinds, URL normalising, previewability, `averageStars`, `shouldAskForRating`
+- [X] T055 `src/app/api/learning/documents/[id]/route.ts` — re-decides visibility per request; 404 (not 403) for an HR-only slot
+- [X] T056 `src/app/(app)/admin/learning/materials-actions.ts` — upload/replace/remove a slot, add/remove a resource, approve/decline a suggestion
+- [X] T057 Learner actions in `src/app/(app)/learning/actions.ts` — `rateCourse`, `dismissFinishPanel`, `suggestResource` (PENDING only, capped at 10 per person per course)
+- [X] T058 `CourseMaterials.tsx` (Materials tab) + a fourth tab in `LearningTabs.tsx`. **Snapshot `LearningTabs` first**
+- [X] T059 `MaterialsPanel.tsx` — employee slides preview + resources + suggest form; mounted as a curriculum entry in `CoursePlayer.tsx`. **Snapshot `CoursePlayer` first**
+- [X] T060 `CourseFinishPanel.tsx` — 1–5 rating + suggest, shown once per completion, never blocking
+- [X] T061 `SuggestionQueue.tsx` on `/admin/learning` + the gold badge on Admin home
+- [X] T062 `scripts/verify-course-materials.mts` against a throwaway Postgres, and the migration applied twice + diffed against the schema
+- [X] T063 `npx tsc --noEmit` + `npm run build` green; docs updated in the same commit
+
+---
+
 ## Dependencies
 
 ```
@@ -208,4 +225,5 @@ a half-built one.
 | 5 US3 (P3) | 7 |
 | 6 US4 (P4) | 3 |
 | 7 Polish | 7 |
-| **Total** | **51** |
+| 8 Materials (2026-08-22) | 12 |
+| **Total** | **63** |

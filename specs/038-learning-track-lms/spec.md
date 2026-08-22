@@ -310,6 +310,30 @@ roster updates without a manual reload.
 - **FR-051**: Before a renewal period is saved, the platform MUST tell the author how many people
   hold a completion old enough to lapse immediately.
 
+**Course materials, resources and rating (added 2026-08-22)**
+
+- **FR-052**: A course MUST carry three named document slots — course outline, expanded outline and
+  slides — each holding at most one file, replaceable by HR.
+- **FR-053**: Of those, ONLY the slides MUST be shown to employees; the outline and expanded
+  outline MUST NOT be shown, listed, hinted at, or fetchable by anyone but HR.
+- **FR-054**: Slides MUST be presented in the page where the file format allows it, and offered as
+  a download where it does not, with the difference stated rather than shown as an empty viewer.
+- **FR-055**: A course MUST carry a list of recommended resources, each a type (book, article,
+  video, course or link), a name, and a link where one exists — the link being optional, because a
+  book usually has none.
+- **FR-056**: Employees with access to a course MUST be able to see its slides and resources from
+  the moment they can see the course, before starting it, as a curriculum entry that carries no
+  progress and does not affect anyone's completion percentage.
+- **FR-057**: Any employee with access to a course MUST be able to suggest a resource for it, both
+  at any time from the course page and at the moment they finish it.
+- **FR-058**: A suggested resource MUST NOT be visible to any employee until HR approves it; HR
+  MUST be able to correct its name and link before approving, and declining MUST be silent.
+- **FR-059**: On finishing a course, an employee MUST be offered a 1–5 rating. It MUST be optional,
+  MUST NOT block or alter completion, and MUST be offered again after a renewal completion.
+- **FR-060**: Ratings MUST be reported only as an average and a count per course. No screen MUST
+  attribute a rating to a person.
+- **FR-061**: Putting the finish panel away MUST persist, so it does not reappear on the next visit.
+
 **Visibility for HR**
 
 - **FR-033**: HR MUST be able to view, per published course, the employees it currently reaches with
@@ -338,6 +362,11 @@ roster updates without a manual reload.
 - **Lesson**: A single learning step within a section. Title, order, required-or-optional, an optional
   watch requirement, and its ordered content blocks.
 - **Lesson Block**: One piece of a lesson's content — a video, formatted text, or a file.
+- **Course Document**: One of a course's three fixed document slots (outline, expanded outline,
+  slides) and the file in it. Only the slides slot reaches employees.
+- **Course Resource**: A recommended book, article, video, course or link — a type, a name, an
+  optional link, and whether it is published, awaiting HR review, or declined.
+- **Course Rating**: One person's 1–5 score for a course. Reported only as an average and a count.
 - **Video Checkpoint**: A question attached to a lesson's video at a given moment, with its options
   and the expected answer, used only to pause and resume playback.
 - **Course Audience**: A rule attached to a restricted course that names a slice of the employee

@@ -42,8 +42,6 @@ export function CoursePlayer({
   currentLessonId,
   percent,
   writesBlocked,
-  materials,
-  viewingMaterials = false,
   children,
 }: {
   courseId: string;
@@ -52,12 +50,6 @@ export function CoursePlayer({
   percent: number;
   /** Set when an admin is impersonating — writes are refused server-side (FR-026). */
   writesBlocked: string | null;
-  /**
-   * The course's slides and resources. A curriculum ENTRY rather than a lesson: always visible,
-   * from day one, with no progress of its own and no effect on anyone's percentage.
-   */
-  materials?: React.ReactNode;
-  viewingMaterials?: boolean;
   /** Everything below the video for the current lesson, rendered by the server component. */
   children?: React.ReactNode;
 }) {
@@ -115,7 +107,7 @@ export function CoursePlayer({
               {si + 1}. {section.title}
             </p>
             {section.lessons.map((lesson, li) => {
-              const active = !viewingMaterials && lesson.id === currentLessonId;
+              const active = lesson.id === currentLessonId;
               return (
                 <Link
                   key={lesson.id}
@@ -148,20 +140,6 @@ export function CoursePlayer({
             })}
           </div>
         ))}
-        {materials ? (
-          <div className="border-t border-line p-2">
-            <Link
-              href={`/learning/${courseId}?view=materials`}
-              className={`flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-[12.5px] font-bold ${
-                viewingMaterials
-                  ? "border-navy-200 bg-navy-50 text-navy-800"
-                  : "border-transparent text-navy-700 hover:bg-navy-50/40"
-              }`}
-            >
-              <span aria-hidden>📎</span> Materials &amp; resources
-            </Link>
-          </div>
-        ) : null}
         <div className="border-t border-line p-3">
           <ProgressBar percent={percent} width={9999} />
           <p className="mt-1 text-[11px] text-muted">
@@ -171,10 +149,6 @@ export function CoursePlayer({
       </nav>
 
       <div>
-        {viewingMaterials ? (
-          materials
-        ) : (
-          <>
         {current?.video ? (
           current.video.trackable ? (
             <VideoLesson
@@ -245,8 +219,6 @@ export function CoursePlayer({
             {error}
           </p>
         ) : null}
-          </>
-        )}
       </div>
     </div>
   );

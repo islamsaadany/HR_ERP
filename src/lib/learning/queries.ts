@@ -155,7 +155,15 @@ export async function coursePlayerData(courseId: string, userId: string) {
     }),
     prisma.courseEnrollment.findUnique({
       where: { courseId_userId: { courseId, userId } },
-      select: { id: true, completedAt: true, lastLessonId: true },
+      // completionCount + ratingPromptDoneCount drive the finish panel: it shows while the
+      // former is ahead of the latter, so skipping is durable and a renewal asks again by itself.
+      select: {
+        id: true,
+        completedAt: true,
+        lastLessonId: true,
+        completionCount: true,
+        ratingPromptDoneCount: true,
+      },
     }),
   ]);
   if (!course) return null;

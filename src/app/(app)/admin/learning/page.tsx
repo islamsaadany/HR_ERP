@@ -5,6 +5,9 @@ import { formatDate } from "@/lib/labels";
 import { BackLink } from "@/components/admin/BackLink";
 import { NewCourseForm } from "@/components/learning/NewCourseForm";
 import { CHIP } from "@/components/learning/ui";
+import { SuggestionQueue, type Suggestion } from "@/components/learning/SuggestionQueue";
+import { averageStars } from "@/lib/learning/materials";
+import { AutoRefresh } from "@/components/AutoRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +24,40 @@ export default async function AdminLearningPage() {
       visibility: true,
       publishedAt: true,
       _count: { select: { sections: true, enrollments: true, audiences: true, assignments: true } },
+      ratings: { select: { stars: true } },
     },
   });
 
+  // Employees suggest resources; nothing reaches the library until HR approves it here. ONE queue
+  // for the whole module — reviewing four suggestions should not mean opening four courses.
+  const pending = await prisma.courseResource.findMany({
+    where: { status: "PENDING" },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      kind: true,
+      name: true,
+      url: true,
+      createdAt: true,
+      course: { select: { id: true, title: true } },
+      suggestedBy: { select: { name: true } },
+    },
+  });
+  const suggestions: Suggestion[] = pending.map((p) => ({
+    id: p.id,
+    kind: p.kind,
+    name: p.name,
+    url: p.url,
+    courseId: p.course.id,
+    courseTitle: p.course.title,
+    suggestedByName: p.suggestedBy?.name ?? null,
+    createdAt: p.createdAt,
+  }));
+
   return (
     <div>
+      {/* Employees suggest resources and finish courses while this page sits open. */}
+      <AutoRefresh />
       <BackLink href="/admin" label="Admin" />
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin</p>
       <h1 className="mt-1 font-serif text-3xl text-ink">Learning</h1>
@@ -35,6 +67,8 @@ export default async function AdminLearningPage() {
       </p>
 
       <NewCourseForm />
+
+      <SuggestionQueue suggestions={suggestions} />
 
       {courses.length === 0 ? (
         <p className="mt-6 rounded-xl border border-line bg-surface p-5 text-sm text-muted">
@@ -69,6 +103,14 @@ export default async function AdminLearningPage() {
                       </>
                     ) : null}
                     {course.publishedAt ? <> · published {formatDate(course.publishedAt)}</> : null}
+                    {course.ratings.length > 0 ? (
+                      <>
+                        {" "}
+                        · ★ {averageStars(course.ratings.map((r) => r.stars))} from{" "}
+                        {course.ratings.length}{" "}
+                        {course.ratings.length === 1 ? "rating" : "ratings"}
+                      </>
+                    ) : null}
                   </span>
                 </span>
                 <span className="text-sm text-muted">→</span>

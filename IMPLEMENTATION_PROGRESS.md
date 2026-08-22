@@ -16,7 +16,33 @@
 | 6 — Benefits (admin config) | 🟢 Complete |
 | 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |
-| 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating; migrations `060`+`061`) |
+| 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library; migrations `060`–`064`) |
+
+## Learning: course materials, resource library & rating (built 2026-08-22 — migration `064`)
+- **Mockup-approved first** (`design-mockups/learning/2026-08-22_materials-v2.html`), then built.
+  Four surfaces: a **Materials** tab on the course builder, the employee **Materials & resources**
+  curriculum entry, the **finish panel** (rating + suggest a resource), and HR's **suggestions
+  queue** on `/admin/learning` with a gold badge on Admin home.
+- **Three fixed document slots** — outline, expanded outline, slides. **Only the slides reach
+  employees**, and that rule is written once (`EMPLOYEE_VISIBLE_SLOTS`) and re-decided by
+  `/api/learning/documents/[id]` on every request, answering 404 (not 403) for an HR-only slot so
+  it does not confirm the file exists. A PDF **previews in the page**; a .pptx cannot in any
+  browser, so it gets a download button and the admin slot says so rather than showing an empty
+  viewer.
+- **Employees grow the library.** Anyone with course access may suggest a resource — from the
+  course page at any time, or from the finish panel. It lands PENDING and is invisible to every
+  employee until HR approves it; HR may fix the name or link first, and **declining is silent**.
+  An approved suggestion shows as "suggested by a colleague", never a name.
+- **Rating is anonymous and never blocks.** 1–5 on completion, optional. `userId` is stored only so
+  one person is one score and nobody is asked twice; no screen attributes a rating. A renewal
+  UPDATES the row, so retaking cannot skew an average. Skipping is durable
+  (`ratingPromptDoneCount`), and a renewal asks again by itself — no flag to reset, no job.
+- **Verified**: migration `064` applied twice on a throwaway Postgres 16 (idempotent), the resulting
+  schema diffed against `schema.prisma` (only the house `updatedAt DEFAULT` difference documented in
+  `060`), and `scripts/verify-course-materials.mts` **35/35** against a real database. `npx tsc
+  --noEmit` and `npm run build` clean.
+- **Deliberately not built**: categorising resources by type. With three items it would be
+  scaffolding; worth doing once a course carries more than a handful.
 
 ## Spec 038 — Learning Track: courses, assignment & tracked progress (built 2026-08-21 — migrations `060` + `061`)
 - **Phase 9 built for real**, adapted from `ahmedgalal-lang/FFLMS` (confirmed ours to reuse). HR
