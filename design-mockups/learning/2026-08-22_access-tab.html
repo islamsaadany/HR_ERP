@@ -1,0 +1,203 @@
+<title>Access Tab Rework</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-400:#4f6d97;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;--red-line:#f3c6c6;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .proposal{margin-top:36px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:78ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-navy{border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:9px;cursor:pointer}
+  .btn-navy[disabled]{opacity:.45}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;cursor:pointer}
+  .fld{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:3px;font-weight:700}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--ink)}
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface)}
+  thead th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px;font-weight:800;border-bottom:1px solid var(--line);background:var(--paper)}
+  td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  .num-cell{text-align:right;font-variant-numeric:tabular-nums}
+  .tbl{border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .decision{margin-top:34px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:860px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:5px 0}
+  .note{font-size:11.5px;color:var(--muted);margin-top:9px}
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+  .bug{margin-top:16px;border-left:3px solid var(--red);background:#fdf3f3;padding:13px 17px;border-radius:0 10px 10px 0;font-size:13px;max-width:860px}
+  .bug h3{font-family:Georgia,serif;font-size:15px;margin:0 0 5px;color:var(--red)}
+  .before{opacity:.85}
+  .pick{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+  .pick-search{display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--line);padding:7px 10px;background:var(--paper);font-size:12.5px;color:var(--muted)}
+  .opt{display:flex;align-items:center;gap:9px;padding:6px 10px;border-bottom:1px solid var(--line);font-size:13px}
+  .opt:last-child{border-bottom:0}
+  .box{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--navy-200);flex:none;display:grid;place-items:center;font-size:10px;color:#fff;background:var(--surface)}
+  .box.on{background:var(--navy-800);border-color:var(--navy-800)}
+  .staged{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700);border-radius:999px;padding:3px 5px 3px 10px}
+  .x{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:999px;background:var(--navy-200);color:var(--navy-800);font-size:10px;font-weight:800}
+  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;border:1px solid var(--line);background:var(--paper);border-radius:5px;padding:1px 5px;color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  @media(max-width:880px){.grid2{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 038 · access tab</p>
+  <h1>Choosing who takes a course</h1>
+  <p class="lede">The template stays as it is — no &ldquo;who it&rsquo;s for&rdquo; sheet. Instead the <b>Access</b> tab does the job properly: one control instead of three, <b>pick several at once</b>, search for a person by typing, and nothing commits until you press Add. Illustrative content throughout.</p>
+
+  <!-- 1 -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Today it is three controls that behave differently</h2>
+    <p class="sub">An audience needs two dropdowns <i>and</i> a button. A group applies the instant you pick it. A person applies the instant you pick it. Three mechanisms, two of them with no way back except Remove — and every one of them takes exactly one item.</p>
+
+    <div class="frame before">
+      <div class="panel">
+        <p style="margin:0 0 9px;font-size:13px;font-weight:700;color:var(--navy-800)">Add a route</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">
+          <div style="min-width:150px"><span class="fld">Audience</span><select class="inp"><option>Department</option></select></div>
+          <div style="min-width:190px"><span class="fld">Which</span><select class="inp"><option>Choose…</option></select></div>
+          <span class="btn-navy">Add audience</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+          <div style="min-width:190px"><span class="fld">Or a group</span><select class="inp"><option>Choose a group…</option></select></div>
+          <div style="min-width:190px"><span class="fld">Or one person</span><select class="inp"><option>Choose an employee…</option></select></div>
+        </div>
+        <p class="note" style="color:var(--red)">Adding five people means five trips through a dropdown of every employee in the company, each one saving the moment you release the mouse.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="proposal">
+    <h2><span class="num">2</span> One control, several at a time <span class="chip c-ok">proposed</span></h2>
+    <p class="sub">Pick what kind of route, tick as many as you want, press <b>Add</b>. The same shape whether you are adding two departments, three groups, or eight people — and you can see what you are about to add before it happens.</p>
+
+    <div class="frame">
+      <div class="panel">
+        <p style="margin:0 0 9px;font-size:13px;font-weight:700;color:var(--navy-800)">Give access to…</p>
+
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:11px">
+          <div style="min-width:190px"><span class="fld">Kind of route</span>
+            <select class="inp">
+              <option>Specific people</option>
+              <option>Groups</option>
+              <option>Departments</option>
+              <option>Business units</option>
+              <option>Employment type</option>
+              <option>Tenure band</option>
+              <option>A manager&rsquo;s team</option>
+              <option>Everyone (active employees)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pick">
+          <div class="pick-search">🔍 <span style="flex:1">nad</span> <span class="kbd">3 of 148 shown</span></div>
+          <div class="opt"><span class="box on">✓</span><span style="flex:1"><b>Nada Adel</b> <span style="color:var(--muted)">— People &amp; Culture</span></span></div>
+          <div class="opt"><span class="box on">✓</span><span style="flex:1"><b>Nadine Fouad</b> <span style="color:var(--muted)">— Consulting</span></span></div>
+          <div class="opt"><span class="box"></span><span style="flex:1"><b>Ahmed Nada</b> <span style="color:var(--muted)">— Delivery</span></span> <span class="chip c-off">already has access</span></div>
+        </div>
+
+        <div class="staged">
+          <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">About to add</span>
+          <span class="tag">Nada Adel <span class="x">✕</span></span>
+          <span class="tag">Nadine Fouad <span class="x">✕</span></span>
+          <span class="tag">Karim Hassan <span class="x">✕</span></span>
+          <span style="flex:1"></span>
+          <span class="btn-navy">Add 3 people</span>
+        </div>
+        <p class="note">Someone who already has access is shown but not selectable, so you cannot add the same person twice and then wonder why there are two rows. Nothing is saved until you press the button — the current panel saves the moment a dropdown changes, which is why there is no way to change your mind.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="proposal">
+    <h2><span class="num">3</span> The routes table, saying what it is supposed to say</h2>
+    <p class="sub">Each route reports <b>its own</b> reach — see the defect below, which this fixes. A route that reaches nobody is called out in gold rather than looking identical to one that works, and a group row opens to show who is actually in it instead of sending you to another screen.</p>
+
+    <div class="frame">
+      <div class="tbl">
+        <table>
+          <thead><tr><th>Route</th><th>Reaches</th><th class="num-cell" style="width:110px">People today</th><th style="width:70px"></th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="chip c-navy">Audience · Department</span></td>
+              <td>Consulting</td>
+              <td class="num-cell">9</td>
+              <td style="text-align:right"><span style="color:var(--red);font-size:11px;font-weight:600">Remove</span></td>
+            </tr>
+            <tr>
+              <td><span class="chip c-navy">Audience · Tenure band</span></td>
+              <td>6 months – 2 years</td>
+              <td class="num-cell">14</td>
+              <td style="text-align:right"><span style="color:var(--red);font-size:11px;font-weight:600">Remove</span></td>
+            </tr>
+            <tr style="background:#fdfaf0">
+              <td><span class="chip c-navy">Audience · Business unit</span></td>
+              <td>Endurance</td>
+              <td class="num-cell"><span class="chip c-gold">nobody</span></td>
+              <td style="text-align:right"><span style="color:var(--red);font-size:11px;font-weight:600">Remove</span></td>
+            </tr>
+            <tr>
+              <td><span class="chip c-off">Group</span></td>
+              <td>
+                New joiners 2026
+                <span style="display:block;font-size:11.5px;color:var(--muted);margin-top:3px">▾ Sara Mahmoud · Karim Hassan · Mona Selim · Omar Fathy · Youssef Adel</span>
+              </td>
+              <td class="num-cell">5</td>
+              <td style="text-align:right"><span style="color:var(--red);font-size:11px;font-weight:600">Remove</span></td>
+            </tr>
+            <tr>
+              <td><span class="chip c-off">Direct</span></td>
+              <td>Ahmed Ali</td>
+              <td class="num-cell">1</td>
+              <td style="text-align:right"><span style="color:var(--red);font-size:11px;font-weight:600">Remove</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:10px;border-left:3px solid var(--gold-500);background:var(--gold-100);color:var(--gold-800);padding:9px 12px;border-radius:0 9px 9px 0;font-size:12.5px">
+        Routes <b>add up</b> — <b>24 people</b> in total, fewer than the rows above because some people match more than one. Someone reached twice keeps the course until the last route goes.
+      </p>
+      <p class="note">Unchanged: the Open/Restricted switch above the table, and the People tab, which is still where you go to see every individual the course reaches and how far they have got.</p>
+    </div>
+  </section>
+
+  <div class="bug">
+    <h3>A defect I found while reading this panel</h3>
+    <p style="margin:0 0 7px">Every <b>audience</b> row currently shows the <i>same</i> number: everyone matched by <i>any</i> audience rule, not by that rule. So &ldquo;Consulting&rdquo; and &ldquo;Endurance&rdquo; both read <b>23</b> even when Endurance reaches nobody — which is precisely the case the column exists to expose. There is also a second query (<code>audienceReach</code>) run on every page load whose result is never used.</p>
+    <p style="margin:0">Both are fixed as part of this: each rule counted on its own, and the dead query removed. Worth knowing it has been wrong since the tab shipped — any &ldquo;this reaches N people&rdquo; figure you have read on an audience row was the combined total.</p>
+  </div>
+
+  <div class="decision">
+    <h3>What I&rsquo;m assuming — correct me and I&rsquo;ll change it</h3>
+    <ul>
+      <li><b>The template is unchanged.</b> No &ldquo;who it&rsquo;s for&rdquo; sheet, as you said — access is set here.</li>
+      <li><b>One kind at a time, many values at once.</b> You pick &ldquo;Specific people&rdquo; then tick eight; you do not mix people and departments in one Add. Mixing reads clever and is harder to check before you commit.</li>
+      <li><b>Search appears where a list is long</b> — people, departments, managers. A list of two business units does not need a search box.</li>
+      <li><b>Each tick becomes its own route row</b>, exactly as today: three departments make three removable rows, not one lumped &ldquo;3 departments&rdquo;.</li>
+      <li><b>Groups are still created and edited on Manage groups.</b> This panel points at them and shows who is in them; it does not become a second place to edit membership.</li>
+      <li><b>Nothing else on the tab moves</b> — the Open/Restricted switch, the routes-add-up note, and the People tab all stay as they are.</li>
+    </ul>
+  </div>
+
+  <footer>Spec 038 · access tab · 22/08/2026 · illustrative content. Nothing is built until you approve.</footer>
+</div>
