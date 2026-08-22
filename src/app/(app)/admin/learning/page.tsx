@@ -94,8 +94,14 @@ export default async function AdminLearningPage() {
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-[14.5px] font-bold text-navy-800">{course.title}</span>
+                    {/* Three states since 2026-08-22. "Paused" is not "Draft": one has never been
+                        live, the other was and is meant to be again. */}
                     <span className={course.status === "PUBLISHED" ? CHIP.done : CHIP.attention}>
-                      {course.status === "PUBLISHED" ? "Published" : "Draft"}
+                      {course.status === "PUBLISHED"
+                        ? "Published"
+                        : course.status === "HIDDEN"
+                          ? "Paused"
+                          : "Draft"}
                     </span>
                     {course.status === "PUBLISHED" && course.visibility === "OPEN" ? (
                       <span className={CHIP.navy}>Everyone</span>

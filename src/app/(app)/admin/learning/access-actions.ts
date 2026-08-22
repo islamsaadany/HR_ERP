@@ -5,7 +5,6 @@ import type { AudienceKind } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireLearningManager } from "@/lib/learning/managers";
 import { courseAccessFor } from "@/lib/learning/access";
-import { audienceReach } from "@/lib/learning/queries";
 
 /**
  * Who a course reaches (spec 038 US2). HR Admin + Super User.
@@ -16,7 +15,7 @@ import { audienceReach } from "@/lib/learning/queries";
  * platform does, every assigned person would be permanently grandfathered from day one.
  */
 
-export type AccessResult = { ok: true; reach?: number } | { ok: false; error: string };
+export type AccessResult = { ok: true } | { ok: false; error: string };
 
 function revalidate(courseId: string) {
   revalidatePath(`/admin/learning/${courseId}`);
@@ -61,79 +60,135 @@ async function validateRule(kind: AudienceKind, value: string | null): Promise<s
   }
 }
 
-export async function addAudience(
+export const ACCESS_FIELDS = [
+  "DEPARTMENT",
+  "BUSINESS_UNIT",
+  "EMPLOYMENT_TYPE",
+  "TENURE_BAND",
+  "REPORTS_TO",
+  "GROUP",
+  "PERSON",
+] as const;
+export type AccessField = (typeof ACCESS_FIELDS)[number];
+
+const AUDIENCE_FIELDS: AccessField[] = [
+  "DEPARTMENT",
+  "BUSINESS_UNIT",
+  "EMPLOYMENT_TYPE",
+  "TENURE_BAND",
+  "REPORTS_TO",
+];
+
+/**
+ * Add several choices to one field at once.
+ *
+ * All-or-nothing is deliberately NOT used here — unlike the course importer, where a half-imported
+ * curriculum would be worse than none. Here each choice stands alone, so a stale name in a list of
+ * eight must not throw the other seven away. Every fault is reported together, so the operator
+ * fixes them in one go rather than one refusal at a time.
+ */
+export async function addAccessChoices(
   courseId: string,
-  kind: AudienceKind,
-  value: string | null
+  field: AccessField,
+  values: string[]
 ): Promise<AccessResult> {
   const admin = await requireLearningManager();
-  const problem = await validateRule(kind, value);
-  if (problem) return { ok: false, error: problem };
+  if (!ACCESS_FIELDS.includes(field)) return { ok: false, error: "Unknown field." };
+  const wanted = [...new Set(values.map((v) => v.trim()).filter(Boolean))];
+  if (wanted.length === 0) return { ok: false, error: "Nothing selected." };
 
-  const stored = kind === "ALL_ACTIVE" ? null : (value?.trim() ?? null);
-  const existing = await prisma.courseAudience.count({
-    where: { courseId, kind, value: stored },
-  });
-  // Idempotent (FR-018): adding the same rule twice is a no-op, not a duplicate row.
-  if (existing > 0) return { ok: true };
+  const faults: string[] = [];
 
-  await prisma.courseAudience.create({
-    data: { courseId, kind, value: stored, createdById: admin.id },
-  });
-  revalidate(courseId);
-  return { ok: true, reach: await audienceReach(courseId) };
-}
+  for (const value of wanted) {
+    if (AUDIENCE_FIELDS.includes(field)) {
+      const kind = field as AudienceKind;
+      const problem = await validateRule(kind, value);
+      if (problem) {
+        faults.push(problem);
+        continue;
+      }
+      // Idempotent (FR-018): choosing the same thing twice is a no-op, not a duplicate.
+      const existing = await prisma.courseAudience.count({ where: { courseId, kind, value } });
+      if (existing > 0) continue;
+      await prisma.courseAudience.create({
+        data: { courseId, kind, value, createdById: admin.id },
+      });
+      continue;
+    }
 
-export async function removeAudience(courseId: string, audienceId: string): Promise<AccessResult> {
-  await requireLearningManager();
-  await prisma.courseAudience.delete({ where: { id: audienceId } });
-  revalidate(courseId);
-  return { ok: true };
-}
+    if (field === "GROUP") {
+      const group = await prisma.learnerGroup.count({ where: { id: value } });
+      if (group === 0) {
+        faults.push("One of those groups no longer exists.");
+        continue;
+      }
+      // Upsert, not create: re-adding a group whose grant was revoked REINSTATES it.
+      await prisma.courseAssignment.upsert({
+        where: { courseId_groupId: { courseId, groupId: value } },
+        create: { courseId, groupId: value, grantedById: admin.id },
+        update: { revokedAt: null, grantedById: admin.id, grantedAt: new Date() },
+      });
+      continue;
+    }
 
-export async function assignToUser(courseId: string, userId: string): Promise<AccessResult> {
-  const admin = await requireLearningManager();
-  const person = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { status: true },
-  });
-  if (!person) return { ok: false, error: "That employee doesn't exist." };
-  if (person.status !== "ACTIVE") {
-    return { ok: false, error: "That employee has left, so they can't be assigned a course." };
+    // PERSON
+    const person = await prisma.user.findUnique({
+      where: { id: value },
+      select: { status: true, name: true },
+    });
+    if (!person) {
+      faults.push("One of those employees no longer exists.");
+      continue;
+    }
+    if (person.status !== "ACTIVE") {
+      faults.push(`${person.name} has left, so they can't be given a course.`);
+      continue;
+    }
+    await prisma.courseAssignment.upsert({
+      where: { courseId_userId: { courseId, userId: value } },
+      create: { courseId, userId: value, grantedById: admin.id },
+      update: { revokedAt: null, grantedById: admin.id, grantedAt: new Date() },
+    });
   }
 
-  // Upsert rather than create: re-assigning someone whose grant was revoked should REINSTATE it,
-  // not fail on the unique key and not leave them stuck revoked.
-  await prisma.courseAssignment.upsert({
-    where: { courseId_userId: { courseId, userId } },
-    create: { courseId, userId, grantedById: admin.id },
-    update: { revokedAt: null, grantedById: admin.id, grantedAt: new Date() },
-  });
   revalidate(courseId);
-  return { ok: true };
+  return faults.length > 0 ? { ok: false, error: faults.join(" ") } : { ok: true };
 }
 
-export async function assignToGroup(courseId: string, groupId: string): Promise<AccessResult> {
-  const admin = await requireLearningManager();
-  await prisma.courseAssignment.upsert({
-    where: { courseId_groupId: { courseId, groupId } },
-    create: { courseId, groupId, grantedById: admin.id },
-    update: { revokedAt: null, grantedById: admin.id, grantedAt: new Date() },
-  });
-  revalidate(courseId);
-  return { ok: true };
-}
-
-/** Revocation is a STAMP, never a delete — the trail of who granted what survives. */
-export async function revokeAssignment(
+/**
+ * Remove one choice.
+ *
+ * An audience rule is DELETED (it is a rule, and an unwanted rule is just gone); an assignment is
+ * STAMPED revoked, because the trail of who granted a named person a course is worth keeping.
+ */
+export async function removeAccessChoice(
   courseId: string,
-  assignmentId: string
+  field: AccessField,
+  rowId: string
 ): Promise<AccessResult> {
   await requireLearningManager();
-  await prisma.courseAssignment.update({
-    where: { id: assignmentId },
-    data: { revokedAt: new Date() },
-  });
+  if (field === "GROUP" || field === "PERSON") {
+    await prisma.courseAssignment.update({
+      where: { id: rowId },
+      data: { revokedAt: new Date() },
+    });
+  } else {
+    await prisma.courseAudience.deleteMany({ where: { id: rowId, courseId } });
+  }
+  revalidate(courseId);
+  return { ok: true };
+}
+
+/**
+ * Clear a legacy "Everyone" audience rule.
+ *
+ * Courses created before 2026-08-22 can carry one: the old Add-a-route box offered "Everyone" as
+ * an audience, so a course could be set to RESTRICTED and still reach the whole company. The new
+ * form cannot create one; this removes the ones that exist.
+ */
+export async function clearEveryoneRule(courseId: string): Promise<AccessResult> {
+  await requireLearningManager();
+  await prisma.courseAudience.deleteMany({ where: { courseId, kind: "ALL_ACTIVE" } });
   revalidate(courseId);
   return { ok: true };
 }

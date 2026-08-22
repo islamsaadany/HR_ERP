@@ -188,6 +188,22 @@ date alongside its reopen date, and updates without a manual reload. Quickstart 
 
 ---
 
+## Phase 10: Course status ladder + access as a setup (added 2026-08-22, mockup-approved)
+
+- [X] T075 `LearningCourseStatus.HIDDEN` + `prisma/sql/066_course_hidden_status.sql` (ALTER TYPE ADD VALUE IF NOT EXISTS)
+- [X] T076 `hideCourse` / `unhideCourse`; un-pausing re-runs `firstPublishGap`
+- [X] T077 `resolveRoutes`: only PUBLISHED grants a learner route, so HIDDEN stops everyone including mid-course — no second rule
+- [X] T078 `CourseStatusControl` replaces `PublishToggle`; the duplicate status chip in the header goes. **Snapshot first**
+- [X] T079 Course list chip gains "Paused"
+- [X] T080 `audienceReachByRule` — per-rule counts; delete the unused `audienceReach` and the combined figure the page printed on every row
+- [X] T081 `addAccessChoices` / `removeAccessChoice` / `clearEveryoneRule`; drop `addAudience`, `removeAudience`, `assignToUser`, `assignToGroup` (superseded, and each was a public endpoint)
+- [X] T082 `AccessSetup` replaces `AudiencePicker` — seven fields, chips with own counts, searchable tick-list, staged then Add. **Snapshot first**
+- [X] T083 ALL_ACTIVE removed from the addable set; a legacy Everyone rule is flagged with a one-click fix
+- [X] T084 `scripts/verify-course-access.mts` against a throwaway Postgres; migration applied twice and diffed
+- [X] T085 `npx tsc --noEmit`, `npm run build`, `npm test` green; docs updated in the same commit
+
+---
+
 ## Dependencies
 
 ```
@@ -243,4 +259,5 @@ a half-built one.
 | 7 Polish | 7 |
 | 8 Materials (2026-08-22) | 12 |
 | 9 Learning manager (2026-08-22) | 11 |
-| **Total** | **74** |
+| 10 Status + access setup (2026-08-22) | 11 |
+| **Total** | **85** |

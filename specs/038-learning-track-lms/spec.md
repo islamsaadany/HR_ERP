@@ -334,6 +334,25 @@ roster updates without a manual reload.
   attribute a rating to a person.
 - **FR-061**: Putting the finish panel away MUST persist, so it does not reappear on the next visit.
 
+**Course status and access setup (added 2026-08-22)**
+
+- **FR-068**: A published course MUST be pausable — nobody can open it, including anyone partway
+  through — without returning it to draft, and its status MUST read as paused rather than as draft.
+- **FR-069**: Pausing MUST NOT alter anyone's progress; every lesson completion and watched second
+  MUST return intact when the course is put back.
+- **FR-070**: Putting a paused course back MUST re-run the publish completeness check, so pausing
+  cannot become a way round it.
+- **FR-071**: There MUST be exactly ONE way to give a course to every active employee. No audience
+  rule may express it, so a course marked as reaching only certain people can never in fact reach
+  everyone. Courses carrying such a rule from before this release MUST be flagged with a one-click
+  correction.
+- **FR-072**: Choosing who takes a course MUST be a setup of named fields — departments, groups,
+  specific people, business units, tenure, employment type, a manager's team — not a list of
+  records built one at a time, and MUST allow several values to be chosen per field in one action.
+- **FR-073**: Each choice MUST report how many people IT reaches today — never a figure shared with
+  the other choices — and a choice reaching nobody MUST be visibly distinct from one that works.
+- **FR-074**: The total MUST be the count of DISTINCT people reached, never the sum of the choices.
+
 **Who runs the module (added 2026-08-22)**
 
 - **FR-062**: An employee MUST be appointable to run the Learning module without any change to

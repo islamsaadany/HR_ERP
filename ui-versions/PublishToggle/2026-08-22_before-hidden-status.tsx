@@ -20,7 +20,7 @@ export function PublishToggle({
   status,
 }: {
   courseId: string;
-  status: "DRAFT" | "PUBLISHED";
+  status: "DRAFT" | "PUBLISHED" | "HIDDEN";
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();

@@ -506,6 +506,45 @@ seconds are cleared only when the learner reopens the course; `firstCompletedAt`
   `completionCount > ratingPromptDoneCount`, so a renewal asks again by itself — no flag to reset,
   no job.
 
+**Course status is a ladder of three** (added 2026-08-22, migration `066`): **Draft** (never been
+live — invisible to everyone, even on a direct link) → **Published** (live) → **Paused**
+(`HIDDEN` — was live, is meant to be again, but right now nobody can open it *including anyone
+partway through*). Nothing is deleted by a pause: every lesson tick and watched second is kept and
+returns the moment it goes back. Only `PUBLISHED` grants a learner route in `resolveRoutes`, so
+both other states fall out of the one existing rule rather than adding a second. Un-pausing re-runs
+`firstPublishGap`, so pausing cannot become the way round the completeness check. Behaviourally a
+pause is what returning to draft already did — it exists because the two mean different things to
+somebody reading a list of courses, and calling a course that ran for a year a "Draft" is a lie.
+
+**Access is a SETUP, not a list of routes** (added 2026-08-22, mockup-approved, no migration). The
+Access tab asks one question — *who takes this course?* — answered by **Everyone** or **Only certain
+people** plus seven named fields: Departments · Groups · Specific people · Business units · Tenure ·
+Employment type · A manager's team. Each field holds chips of what is chosen with **its own** live
+people count, and `+ add` opens a searchable tick-list where several can be picked and staged before
+one **Add**. `addAccessChoices` writes them (audience rules for five fields, assignments for groups
+and people); every fault is reported together rather than one refusal at a time, and unlike the
+course importer it is deliberately NOT all-or-nothing — one stale name must not throw away the other
+seven choices. Three defects were fixed with it:
+
+- **Two ways to say "everyone".** The old audience dropdown offered `ALL_ACTIVE`, so a course could
+  read RESTRICTED and still reach the whole company with nobody able to spot it. The form cannot
+  create one; a course carrying one from before is flagged with a one-click `clearEveryoneRule`.
+- **Every choice showed the same number.** The page counted everyone matched by ANY rule and printed
+  that total beside each one, so an empty business unit looked identical to a nine-person
+  department — defeating the only thing the column was for. `audienceReachByRule` counts each rule
+  on its own **through `audienceWhere`**, the same derivation the access check uses, so a count can
+  never disagree with who actually gets the course. The unused `audienceReach` went with it.
+- **One at a time, saving on mouse-up.** Group and person dropdowns committed the instant they
+  changed, with no way back but Remove. Nothing saves now until Add is pressed, and somebody the
+  course already reaches is shown but not tickable.
+
+The total is **distinct people** from the roster, never the sum of the chips, and excludes
+grandfathered-only holders — they have the course because they started it, not because of anything
+chosen here. The routes table is gone: the People tab already lists individuals, and a second,
+jargon-laden version of it was worse. `AudiencePicker` and `PublishToggle` were deleted
+(`ui-versions/` holds both), along with `addAudience`/`removeAudience`/`assignToUser`/
+`assignToGroup` — each an unused export from a `"use server"` file, and therefore a live endpoint.
+
 **Who runs the module** (`LearningManager`, added 2026-08-22, migration `065`, mockup-approved):
 an employee can be **appointed** to run Learning without becoming an HR Admin. It is an
 appointment, **not a `Role` member** — the person stays an `EMPLOYEE`, so there is no new role

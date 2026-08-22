@@ -16,7 +16,34 @@
 | 6 — Benefits (admin config) | 🟢 Complete |
 | 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |
-| 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment; migrations `060`–`065`) |
+| 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
+
+## Learning: course status ladder + access as a setup (built 2026-08-22 — migration `066`)
+- **Mockup-approved first** (`design-mockups/learning/2026-08-22_course-access-setup.html`). The
+  Excel template was deliberately left alone — who takes a course is set on the course, not in a
+  sheet.
+- **Three statuses**: Draft → Published → **Paused**. A pause stops everybody including anyone
+  partway through, keeps all their progress, and reads as "Paused" rather than "Draft" in every
+  list. Un-pausing re-runs the publish completeness check. Behaviourally identical to returning to
+  draft — bought for the clarity, and that was said plainly before building it.
+- **The Access tab is now a form**, not a routes table: Everyone / Only certain people, then seven
+  named fields with multi-select tick-lists (searchable where the list is long), staged before Add.
+  The word "route" is off the screen; the table is gone (the People tab already lists individuals).
+- **Three defects fixed**, all found while reading the panel rather than reported:
+  - a second "Everyone" lived in the audience dropdown, so a RESTRICTED course could reach the whole
+    company — the form cannot create one, and existing ones are flagged with a one-click fix;
+  - **every choice showed the same count** (everyone matched by ANY rule), so a choice reaching
+    nobody looked identical to one that worked — now counted per rule through the same derivation
+    the access check uses;
+  - `audienceReach` was queried on every page load and never used.
+- **Four dead public endpoints removed** — `addAudience`, `removeAudience`, `assignToUser`,
+  `assignToGroup` were unused exports from a `"use server"` file, which makes each a live POST route.
+- **Verified**: migration `066` applied twice on a throwaway Postgres 16 (`ADD VALUE IF NOT EXISTS`),
+  `prisma migrate diff` reports **no difference**, and `scripts/verify-course-access.mts` **17/17**
+  against a real database — including that an empty department counts 0 rather than widening, that
+  the total is distinct people (4) and not the sum of the chips (6), and that a pause stops a
+  mid-course learner while keeping their tick and their 42 watched seconds. `npm test` 105/105;
+  `npx tsc --noEmit` and `npm run build` clean.
 
 ## Learning: a manager who runs the module and nothing else (built 2026-08-22 — migration `065`)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_learning-manager.html`), option

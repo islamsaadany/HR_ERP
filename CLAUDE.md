@@ -141,6 +141,15 @@ four steering files (same commit).
   they get no Remove button that would lie about it); and **the appointment cannot appoint** —
   granting stays `requireAdmin()`, or the role hands itself out. A restricted admin home shows the
   ONE section they own, and the other modules' counts are not fetched at all.
+- **A count shown beside a choice must be THAT choice's count** — the Learning access panel counted
+  everyone matched by ANY audience rule and printed the same total beside every row, so a nine-person
+  department and an empty business unit both read 23. The column existed solely to expose a rule
+  reaching nobody, and it could not (found + fixed 2026-08-22, `audienceReachByRule`). Two rules:
+  compute per subject, and compute it **through the same derivation the real check uses**
+  (`audienceWhere`) — a count written separately to "look right" will eventually disagree with who
+  actually gets the thing, and then it is worse than no count. Related: **one way to say
+  "everyone"** — the same panel offered it as a course setting AND as an audience rule, so a course
+  could read RESTRICTED while reaching the whole company.
 - **A visibility rule needs ONE source and must be re-decided at the door** — the Learning
   materials tab labels three document slots and the employee page only ever selects one, but
   neither is a control: a URL is a URL, and somebody who has seen a slides link can guess an
@@ -321,4 +330,4 @@ TEST_DATABASE_URL="postgresql://…/hrerp_test" npm test
 
 ---
 
-*Last Updated: 2026-08-22 (Added: per-module authority is an appointment, never a new Role member — one derivation, role-holders are never rows, the appointment cannot appoint. Plus: a visibility rule needs one source and must be re-decided at the serving route, 404 not 403. Previously: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.))*
+*Last Updated: 2026-08-22 (Added: a count shown beside a choice must be that choice's count, computed through the same derivation the real check uses; one way to say "everyone". Plus: per-module authority is an appointment, never a new Role member — one derivation, role-holders are never rows, the appointment cannot appoint. Plus: a visibility rule needs one source and must be re-decided at the serving route, 404 not 403. Previously: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.))*

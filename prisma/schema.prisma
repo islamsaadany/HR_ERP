@@ -1203,8 +1203,16 @@ enum PoolExceptionKind {
 // already means "app area" here), and nothing here is called `Announcement`.
 
 enum LearningCourseStatus {
-  DRAFT // invisible to employees, including by direct link
-  PUBLISHED
+  DRAFT // never been live — still being built. Invisible to employees, including by direct link.
+  PUBLISHED // live; who actually sees it is `visibility` plus the course's access rules
+  /// Paused. Was live, and is meant to be live again — but right now NOBODY can open it, including
+  /// people who were halfway through. Nothing is deleted: every lesson tick and watched second is
+  /// kept and comes straight back when it is made visible again.
+  ///
+  /// Behaviourally this is what returning to DRAFT already did. It exists because the two mean
+  /// different things to an operator reading a list of courses — "unfinished" and "temporarily off
+  /// the shelf" are not the same thing, and calling a course that ran for a year a Draft is a lie.
+  HIDDEN
 }
 
 enum LearningVisibility {

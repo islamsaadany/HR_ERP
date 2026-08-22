@@ -47,7 +47,14 @@ export type AccessRoute =
   | "IN_PROGRESS"; // started and not finished — grandfathered (FR-042)
 
 export type AccessFacts = {
-  course: { status: "DRAFT" | "PUBLISHED"; visibility: "OPEN" | "RESTRICTED" };
+  course: {
+    /**
+     * DRAFT = never been live. HIDDEN = was live, paused. Only PUBLISHED grants a learner route,
+     * so both of the others fall out of the one rule below rather than needing a second one.
+     */
+    status: "DRAFT" | "PUBLISHED" | "HIDDEN";
+    visibility: "OPEN" | "RESTRICTED";
+  };
   /** The viewer may author courses — an HR Admin, a Super User, or an appointed learning manager. */
   viewerIsAdmin: boolean;
   /** The viewer is an ACTIVE employee. A leaver reaches nothing (FR-017). */
@@ -97,11 +104,14 @@ export type AccessResult = {
 export function resolveRoutes(facts: AccessFacts): AccessResult {
   const routes: AccessRoute[] = [];
 
-  // Admins may see anything, including drafts — they author them. This is the only route that
-  // survives DRAFT, which is what makes "invisible to employees" (FR-005) true without a separate
-  // preview back door that would then be a second access rule.
+  // Admins may see anything, including a draft or a paused course — they author them. This is the
+  // only route that survives a non-PUBLISHED status, which is what makes "invisible to employees"
+  // (FR-005) true without a separate preview back door that would then be a second access rule.
   if (facts.viewerIsAdmin) routes.push("ADMIN");
 
+  // PUBLISHED and nothing else. A HIDDEN course stops EVERYBODY, including someone halfway
+  // through — that is what "paused" means — and nothing of theirs is touched, so it all returns
+  // the moment it is visible again.
   const published = facts.course.status === "PUBLISHED";
 
   if (published && facts.viewerIsActive) {

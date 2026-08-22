@@ -245,20 +245,41 @@ export async function teamLearning(managerId: string): Promise<TeamMemberLearnin
 }
 
 /**
- * How many active employees this course's audience rules reach right now.
+ * How many active employees EACH rule reaches, keyed by rule id (spec 038 follow-up, 2026-08-22).
  *
- * A PLAIN query, deliberately not exported from a `"use server"` file. It used to live in
- * `access-actions.ts`, which made it a publicly callable endpoint — and it carried no
- * `requireAdmin()`, so anyone who knew the shape of the request could have enumerated audience
- * sizes. Nothing here is dangerous on its own, but "every export in this file is a public POST
- * endpoint" is exactly the property that is easy to forget, so the query moved instead of gaining
- * a guard. Callers do their own authorisation, as they already do for every other query here.
+ * This exists because the number shown beside each choice was wrong from the day the tab shipped:
+ * the page counted everyone matched by ANY rule and printed that same total on every row, so a
+ * department with nine people and a business unit with nobody both read the combined figure. The
+ * column exists precisely to expose a choice that reaches nobody, and it could not.
+ *
+ * A PLAIN query, deliberately not exported from a `"use server"` file. Its predecessor lived in
+ * `access-actions.ts`, which made it a publicly callable endpoint carrying no guard — anyone who
+ * knew the shape of the request could have enumerated audience sizes. Nothing here is dangerous on
+ * its own, but "every export in that file is a public POST endpoint" is exactly the property that
+ * is easy to forget, so the query lives here and callers do their own authorisation.
+ *
+ * Counted per rule, so each figure means what it says. Each rule is compiled through
+ * `audienceWhere` — the SAME derivation the access check uses — rather than a second query written
+ * to look right; a count that disagreed with who actually gets the course would be worse than no
+ * count at all.
  */
-export async function audienceReach(courseId: string): Promise<number> {
+export async function audienceReachByRule(
+  courseId: string,
+  now: Date = new Date()
+): Promise<Map<string, number>> {
   const rules = await prisma.courseAudience.findMany({
     where: { courseId },
-    select: { kind: true, value: true },
+    select: { id: true, kind: true, value: true },
   });
-  const where = audienceWhere(rules as AudienceRule[]);
-  return where ? prisma.user.count({ where }) : 0;
+
+  const counts = await Promise.all(
+    rules.map(async (rule) => {
+      const where = audienceWhere([rule as AudienceRule], now);
+      // `null` means the rule is not usable (a value that no longer exists). Zero, never everyone —
+      // widening a broken rule to the whole company is the failure this returns null to prevent.
+      const count = where ? await prisma.user.count({ where }) : 0;
+      return [rule.id, count] as const;
+    })
+  );
+  return new Map(counts);
 }

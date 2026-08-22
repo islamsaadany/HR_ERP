@@ -1,0 +1,21 @@
+-- HR_ERP — A third course status: HIDDEN (spec 038 follow-up, 2026-08-22).
+--
+-- WHY
+--   Taking a live course off the shelf meant returning it to DRAFT, which then read as "unfinished"
+--   in every list — a course that ran for a year, paused for a fortnight, looked identical to one
+--   nobody had written yet. HIDDEN says "was live, temporarily off".
+--
+-- WHAT IT DOES
+--   Nobody can open a HIDDEN course, including people who were halfway through. Nothing is
+--   deleted: progress is kept and returns intact when it is made visible again. Only the status
+--   check in `resolveRoutes` reads it — `PUBLISHED` is the only status that grants a learner
+--   route, so HIDDEN falls out of the existing rule rather than adding a second one.
+--
+-- SAFETY
+--   One new enum value. No existing row changes; nothing is HIDDEN until somebody chooses it.
+--   `ADD VALUE IF NOT EXISTS` makes it idempotent, and scripts/apply-sql.mjs runs each statement
+--   on its own connection, which is what Postgres requires for ALTER TYPE ... ADD VALUE.
+--
+-- ORDER: run after 065.
+
+ALTER TYPE "LearningCourseStatus" ADD VALUE IF NOT EXISTS 'HIDDEN';

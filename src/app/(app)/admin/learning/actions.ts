@@ -156,6 +156,62 @@ export async function unpublishCourse(courseId: string): Promise<CourseResult> {
   return { ok: true };
 }
 
+/**
+ * Pause a live course (FR-068).
+ *
+ * Nobody can open it — including somebody halfway through, which is what makes it a pause rather
+ * than a soft close. Nothing of theirs is touched: every lesson tick and watched second is kept
+ * and returns the moment it is visible again.
+ *
+ * Behaviourally the same as returning it to draft, and that is fine: the difference is what the
+ * two SAY. A course that ran for a year and is paused for a fortnight must not read as "Draft" in
+ * every list, because Draft means nobody has finished writing it.
+ */
+export async function hideCourse(courseId: string): Promise<CourseResult> {
+  const admin = await requireLearningManager();
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { status: true },
+  });
+  if (!course) return { ok: false, error: "That course no longer exists." };
+  if (course.status !== "PUBLISHED") {
+    return { ok: false, error: "Only a published course can be paused." };
+  }
+  await prisma.course.update({
+    where: { id: courseId },
+    data: { status: "HIDDEN", updatedById: admin.id },
+  });
+  revalidate(courseId);
+  return { ok: true };
+}
+
+/**
+ * Put a paused course back.
+ *
+ * The publish gate is re-run: content can have been emptied while it sat paused, and letting a
+ * course come back broken would make pausing the one way to get round the check.
+ */
+export async function unhideCourse(courseId: string): Promise<CourseResult> {
+  const admin = await requireLearningManager();
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { status: true },
+  });
+  if (!course) return { ok: false, error: "That course no longer exists." };
+  if (course.status !== "HIDDEN") {
+    return { ok: false, error: "That course isn't paused." };
+  }
+  const gap = await firstPublishGap(courseId);
+  if (gap) return { ok: false, error: gap };
+
+  await prisma.course.update({
+    where: { id: courseId },
+    data: { status: "PUBLISHED", updatedById: admin.id },
+  });
+  revalidate(courseId);
+  return { ok: true };
+}
+
 export async function deleteCourse(courseId: string): Promise<CourseResult> {
   await requireLearningManager();
   const enrolled = await prisma.courseEnrollment.count({ where: { courseId } });
