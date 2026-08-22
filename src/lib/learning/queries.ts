@@ -129,6 +129,7 @@ export async function coursePlayerData(courseId: string, userId: string) {
                 title: true,
                 isRequired: true,
                 estimatedMinutes: true,
+                videoDurationSec: true,
                 minWatchPercent: true,
                 blocks: {
                   orderBy: { order: "asc" },

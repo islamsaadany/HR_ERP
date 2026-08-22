@@ -12,6 +12,7 @@ import {
 import { ReopenDialog } from "@/components/learning/ReopenDialog";
 import { LessonEditor, type EditableLesson } from "@/components/learning/LessonEditor";
 import { RenewalSetting } from "@/components/learning/RenewalSetting";
+import { lessonLength } from "@/lib/learning/renewal";
 import { BTN_GHOST, BTN_NAVY, CHIP, INPUT } from "@/components/learning/ui";
 
 export type BuilderSection = { id: string; title: string; lessons: EditableLesson[] };
@@ -121,10 +122,14 @@ export function CourseBuilder({
 
       <div className="grid items-start gap-4 lg:grid-cols-[1.15fr_0.85fr]">
         <div>
-          {sections.map((section) => (
+          {sections.map((section, si) => (
             <div key={section.id} className="mb-2.5 overflow-hidden rounded-xl border border-line bg-surface">
               <div className="flex items-center gap-2 border-b border-line bg-navy-50 px-3 py-2.5">
-                <span className="text-[13.5px] font-bold text-navy-800">{section.title}</span>
+                {/* Numbering is DERIVED from position, never stored — so dragging a section to a
+                    new place renumbers everything automatically instead of leaving stale labels. */}
+                <span className="text-[13.5px] font-bold text-navy-800">
+                  <span className="tabular-nums text-navy-400">{si + 1}.</span> {section.title}
+                </span>
                 <span className="flex-1" />
                 <span className={CHIP.muted}>
                   {section.lessons.length} lesson{section.lessons.length === 1 ? "" : "s"}
@@ -139,7 +144,7 @@ export function CourseBuilder({
                 </button>
               </div>
 
-              {section.lessons.map((lesson) => (
+              {section.lessons.map((lesson, li) => (
                 <button
                   key={lesson.id}
                   type="button"
@@ -149,12 +154,21 @@ export function CourseBuilder({
                   }`}
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate">{lesson.title}</span>
+                    <span className="block truncate">
+                      <span className="tabular-nums text-muted">
+                        {si + 1}.{li + 1}
+                      </span>{" "}
+                      {lesson.title}
+                    </span>
                     <span className="block text-[11.5px] text-muted">
                       {lesson.blocks.length === 0
                         ? "No content yet"
                         : lesson.blocks.map((b) => b.type.toLowerCase()).join(" + ")}
-                      {lesson.estimatedMinutes ? ` · ${lesson.estimatedMinutes} min` : ""}
+                      {(() => {
+                        const len = lessonLength(lesson.estimatedMinutes, lesson.videoDurationSec);
+                        // "≈" marks a length the platform measured rather than one an author typed.
+                        return len ? ` · ${len.learned ? "≈" : ""}${len.minutes} min` : "";
+                      })()}
                       {lesson.minWatchPercent > 0 ? ` · watch ${lesson.minWatchPercent}%` : ""}
                     </span>
                   </span>

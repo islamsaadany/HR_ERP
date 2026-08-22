@@ -41,7 +41,9 @@ export function LearningTabs({
 
   return (
     <div>
-      <div className="mb-4 flex gap-0.5 border-b border-line">
+      {/* The bar is sticky in its own right and sits just under the page header, so the panel can
+          scroll while you can still see which tab you are on and switch without scrolling back. */}
+      <div className="sticky top-[62px] z-10 mb-4 flex gap-0.5 border-b border-line bg-paper/95 backdrop-blur-sm">
         <Tab id="content" label="Content" />
         <Tab id="access" label="Access" count={accessCount} />
         <Tab id="people" label="People" count={peopleCount} />

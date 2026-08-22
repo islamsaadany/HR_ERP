@@ -10,6 +10,7 @@ import { ensureEnrollment } from "@/lib/learning/enrollment";
 import { CoursePlayer, type PlayerSection } from "@/components/learning/CoursePlayer";
 import { LessonContent, type Block } from "@/components/learning/LessonContent";
 import { isTrackableSource, videoProvider } from "@/lib/learning/video";
+import { lessonLength } from "@/lib/learning/renewal";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,7 @@ export default async function CoursePlayerPage({
         id: l.id,
         title: l.title,
         isRequired: l.isRequired,
-        estimatedMinutes: l.estimatedMinutes,
+        estimatedMinutes: lessonLength(l.estimatedMinutes, l.videoDurationSec)?.minutes ?? null,
         minWatchPercent: l.minWatchPercent,
         completed: doneIds.has(l.id),
         watchedSec: p?.videoWatchedSec ?? 0,

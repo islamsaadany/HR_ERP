@@ -1235,21 +1235,21 @@ enum VideoSource {
 }
 
 model Course {
-  id           String               @id @default(cuid())
-  title        String
-  summary      String?
+  id               String               @id @default(cuid())
+  title            String
+  summary          String?
   /// Private blob URL, streamed like every other image in the app.
-  coverBlobUrl String?
-  category     String?
-  status       LearningCourseStatus @default(DRAFT)
-  visibility   LearningVisibility   @default(RESTRICTED)
+  coverBlobUrl     String?
+  category         String?
+  status           LearningCourseStatus @default(DRAFT)
+  visibility       LearningVisibility   @default(RESTRICTED)
   /// Optional renewal period in months. NULL (the default) = completion is permanent. When set,
   /// a completion older than this is treated as lapsed and the course returns to the learner's
   /// list. Lapsing is DERIVED from the completion date, never a stored flag and never a scheduled
   /// job, so nothing can be missed or run twice.
   renewAfterMonths Int?
-  order        Int                  @default(0)
-  publishedAt  DateTime?
+  order            Int                  @default(0)
+  publishedAt      DateTime?
 
   createdById String?
   createdBy   User?   @relation("CourseCreator", fields: [createdById], references: [id], onDelete: SetNull)
@@ -1296,6 +1296,10 @@ model Lesson {
   /// Gate completion until this % of the lesson's video is watched. 0 = no gate.
   /// Refused for a DRIVE video, which reports no playback (FR-031).
   minWatchPercent  Int           @default(0)
+  /// The video's real length, learned from the first person to watch it — nobody types it in.
+  /// Null until someone has played it, and forever on a source that reports no playback.
+  /// `estimatedMinutes` still wins when an author has deliberately set one.
+  videoDurationSec Int?
   /// Soft delete: removing a lesson must leave everyone's completions meaningful.
   deletedAt        DateTime?
 
@@ -1475,11 +1479,11 @@ model LessonProgress {
   lessonId     String
   lesson       Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
-  completedAt     DateTime?
-  lastPositionSec Int?
+  completedAt      DateTime?
+  lastPositionSec  Int?
   /// Credited watched seconds. Only ever INCREASES — advanced with SQL GREATEST so seeking
   /// backward cannot reduce it and two open tabs cannot lose an update (FR-028).
-  videoWatchedSec Int       @default(0)
+  videoWatchedSec  Int       @default(0)
   /// The video's length as the player reported it, kept so the SERVER can check the watch gate
   /// (watched / duration >= minWatchPercent) instead of trusting a percentage from the client.
   /// Also only ever increases, for the same reason. Note this figure still ORIGINATES from the

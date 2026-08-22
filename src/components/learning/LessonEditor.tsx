@@ -21,6 +21,7 @@ export type EditableLesson = {
   title: string;
   isRequired: boolean;
   estimatedMinutes: number | null;
+  videoDurationSec: number | null;
   minWatchPercent: number;
   blocks: EditableBlock[];
   checkpoints: CheckpointRow[];
@@ -107,7 +108,18 @@ export function LessonEditor({
             id="lesson-minutes"
             className={INPUT}
             inputMode="numeric"
-            placeholder="—"
+            // Left blank on purpose once a video has been watched: the measured length shows
+            // beneath, and typing over it should be a deliberate act, not the default.
+            placeholder={
+              lesson.videoDurationSec
+                ? `≈${Math.max(1, Math.ceil(lesson.videoDurationSec / 60))}`
+                : "—"
+            }
+            title={
+              lesson.videoDurationSec
+                ? "Measured from the video. Type a number only if you want to override it."
+                : "Optional. Once someone watches the video, its real length appears here."
+            }
             value={minutes}
             onChange={(e) => setMinutes(e.target.value.replace(/\D/g, ""))}
           />
@@ -226,31 +238,10 @@ export function LessonEditor({
         </p>
       ) : null}
 
-      {lesson.blocks.length > 0 ? (
-        <ul className="mt-2.5 space-y-1">
-          {lesson.blocks.map((b) => (
-            <li key={b.id} className="flex items-center gap-2 text-[12.5px] text-muted">
-              <span className={CHIP.muted}>{b.type}</span>
-              <span className="min-w-0 flex-1 truncate">
-                {b.type === "VIDEO" ? b.externalUrl : b.type === "FILE" ? b.fileName : "Notes"}
-              </span>
-              <button
-                type="button"
-                disabled={busy}
-                className="text-xs text-red-700 hover:underline"
-                onClick={() =>
-                  startBlock(async () => {
-                    await deleteBlock(courseId, b.id);
-                    router.refresh();
-                  })
-                }
-              >
-                Remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      {/* The per-block list that used to sit here is gone (2026-08-21). It listed the video and
+          the notes with their own Remove buttons — the same two things the Video link field and the
+          Notes box above already show and already edit. Two ways to delete the same thing, one of
+          them unlabelled, is worse than one. */}
 
       <div className="mt-3 flex justify-between gap-2">
         <button

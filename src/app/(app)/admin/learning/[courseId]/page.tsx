@@ -62,6 +62,7 @@ export default async function CourseBuilderPage({
               title: true,
               isRequired: true,
               estimatedMinutes: true,
+              videoDurationSec: true,
               minWatchPercent: true,
               blocks: {
                 orderBy: { order: "asc" },
@@ -180,6 +181,7 @@ export default async function CourseBuilderPage({
       title: l.title,
       isRequired: l.isRequired,
       estimatedMinutes: l.estimatedMinutes,
+      videoDurationSec: l.videoDurationSec,
       minWatchPercent: l.minWatchPercent,
       blocks: l.blocks,
       checkpoints: l.checkpoints,
@@ -190,9 +192,16 @@ export default async function CourseBuilderPage({
     <div>
       {/* Other admins assign courses and employees finish them while this sits open. */}
       <AutoRefresh />
-      {/* One header row (layout A, approved 2026-08-21). The back link, title, status chip and the
-          draft toggle used to occupy four stacked rows before any content appeared; they now share
-          a line, and the tabs below act as the divider so there is no separate status row at all. */}
+      {/* Sticky on scroll (2026-08-21). A long curriculum pushes the course name, its status and
+          Publish off the top, and the tabs with them — so you scroll back up just to know where you
+          are. This works only because /admin/learning/[courseId] is NOT a single-scroll route in
+          AppShell: an ancestor with `overflow-hidden` would silently kill `position: sticky`, which
+          is exactly the trap CLAUDE.md records. If this page is ever added to that list, this
+          header stops sticking and nothing will warn you.
+
+          The tabs sit INSIDE the sticky block, because a tab bar that scrolls away from its own
+          panel is worse than no sticky header at all. */}
+      <div className="sticky top-0 z-20 -mx-4 border-b border-line bg-paper/95 px-4 pb-2 pt-3 backdrop-blur-sm sm:-mx-6 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <Link href="/admin/learning" className="text-sm text-muted hover:text-ink">
@@ -219,6 +228,7 @@ export default async function CourseBuilderPage({
       {course.summary ? (
         <p className="mt-0.5 max-w-[70ch] text-sm text-muted">{course.summary}</p>
       ) : null}
+      </div>
 
       <div className="mt-3">
         <LearningTabs

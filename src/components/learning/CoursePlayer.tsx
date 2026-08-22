@@ -101,12 +101,12 @@ export function CoursePlayer({
   return (
     <div className="grid items-start gap-4 md:grid-cols-[250px_1fr]">
       <nav className="overflow-hidden rounded-xl border border-line bg-surface" aria-label="Lessons">
-        {sections.map((section) => (
+        {sections.map((section, si) => (
           <div key={section.id}>
             <p className="px-3 pb-1 pt-3 text-[10.5px] font-bold uppercase tracking-[0.07em] text-muted">
-              {section.title}
+              {si + 1}. {section.title}
             </p>
-            {section.lessons.map((lesson) => {
+            {section.lessons.map((lesson, li) => {
               const active = lesson.id === currentLessonId;
               return (
                 <Link
@@ -128,7 +128,12 @@ export function CoursePlayer({
                   >
                     ✓
                   </span>
-                  <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
+                  <span className="min-w-0 flex-1 truncate">
+                    <span className="tabular-nums text-muted">
+                      {si + 1}.{li + 1}
+                    </span>{" "}
+                    {lesson.title}
+                  </span>
                   {!lesson.isRequired ? <span className={CHIP.muted}>Optional</span> : null}
                 </Link>
               );

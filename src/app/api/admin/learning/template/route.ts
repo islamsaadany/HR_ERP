@@ -49,23 +49,17 @@ export async function GET() {
   course.getColumn(4).width = 22;
 
   const lessons = wb.addWorksheet("Lessons", { views: [{ state: "frozen", ySplit: 1 }] });
-  header(lessons, [
-    "Section",
-    "Lesson",
-    "Required",
-    "Minutes",
-    "Video link",
-    "Must watch %",
-    "Notes",
-  ]);
-  const example: Array<[string, string, string, string, string, string, string]> = [
-    ["Before the engagement", "Why scoping fails", "Yes", "8", "https://vimeo.com/948120774", "80", ""],
-    ["Before the engagement", "The kick-off checklist", "Yes", "12", "https://www.youtube.com/watch?v=nc51UwuL8pE", "", "Bring the signed SOW."],
-    ["Before the engagement", "Further reading", "No", "3", "", "", "See the **handbook** for the full policy."],
-    ["On site", "Running the first workshop", "Yes", "15", "", "", "Notes only — no video for this one yet."],
+  // No "Minutes" column on purpose: the platform learns a video's real length the first time
+  // anyone plays it, so asking an author to measure and type it is work for a worse answer.
+  header(lessons, ["Section", "Lesson", "Required", "Video link", "Must watch %", "Notes"]);
+  const example: Array<[string, string, string, string, string, string]> = [
+    ["Before the engagement", "Why scoping fails", "Yes", "https://vimeo.com/948120774", "80", ""],
+    ["Before the engagement", "The kick-off checklist", "Yes", "https://www.youtube.com/watch?v=nc51UwuL8pE", "", "Bring the signed SOW."],
+    ["Before the engagement", "Further reading", "No", "", "", "See the **handbook** for the full policy."],
+    ["On site", "Running the first workshop", "Yes", "", "", "Notes only — no video for this one yet."],
   ];
   example.forEach((r) => lessons.addRow(r));
-  [22, 30, 11, 10, 46, 14, 44].forEach((w, i) => (lessons.getColumn(i + 1).width = w));
+  [22, 30, 11, 46, 14, 44].forEach((w, i) => (lessons.getColumn(i + 1).width = w));
 
   const help = wb.addWorksheet("How to fill");
   const lines: Array<[string, boolean]> = [
@@ -80,7 +74,7 @@ export async function GET() {
     ["  • Section — repeat the same name on consecutive rows to group them. Sections appear in the order they first show up.", false],
     ["  • Lesson — the lesson title. Two lessons in the same section can't share a name.", false],
     ["  • Required — Yes (counts toward progress) or No (optional). Blank means Yes.", false],
-    ["  • Minutes — a rough length, optional.", false],
+    ["  • Length is NOT asked for — the platform learns a video's real length the first time someone plays it.", false],
     ["  • Video link — an unlisted Vimeo or YouTube link. Video is not uploaded here; it stays on Vimeo/YouTube.", false],
     ["  • Must watch % — 0 or blank for no requirement. Only works on Vimeo/YouTube; Google Drive can't report playback, so a percentage on a Drive link is rejected.", false],
     ["  • Notes — optional. Markdown is supported (**bold**, lists, links).", false],

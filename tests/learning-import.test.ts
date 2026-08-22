@@ -10,10 +10,12 @@ import assert from "node:assert/strict";
 import { parseCourseWorkbook, groupIntoSections } from "@/lib/learning/import";
 
 const course = ["Client Engagement", "How we run engagements", "Consulting", ""];
+// Section · Lesson · Required · Video link · Must watch % · Notes — no Minutes column: the
+// platform learns a video's real length from the first playback.
 const good = [
-  ["Before", "Why scoping fails", "Yes", "8", "https://vimeo.com/948120774", "80", ""],
-  ["Before", "Further reading", "No", "3", "", "", "Some **markdown**"],
-  ["On site", "First workshop", "Yes", "15", "https://www.youtube.com/watch?v=abc", "", ""],
+  ["Before", "Why scoping fails", "Yes", "https://vimeo.com/948120774", "80", ""],
+  ["Before", "Further reading", "No", "", "", "Some **markdown**"],
+  ["On site", "First workshop", "Yes", "https://www.youtube.com/watch?v=abc", "", ""],
 ];
 
 describe("a well-formed workbook", () => {
@@ -42,7 +44,7 @@ describe("a well-formed workbook", () => {
     assert.deepEqual(s.map((x) => x.lessons.length), [2, 1]);
   });
   test("blank spacer rows are ignored", () => {
-    const withGap = parseCourseWorkbook(course, [good[0], ["", "", "", "", "", "", ""], good[1]]);
+    const withGap = parseCourseWorkbook(course, [good[0], ["", "", "", "", "", ""], good[1]]);
     assert.ok(withGap.ok);
     assert.equal(withGap.course.lessons.length, 2);
   });
@@ -52,9 +54,9 @@ describe("every fault is reported at once, not just the first", () => {
   const r = parseCourseWorkbook(
     ["", "", "", "9"],
     [
-      ["", "", "maybe", "eight", "notaurl", "150", ""],
-      ["Before", "Dup", "Yes", "", "https://vimeo.com/1", "", ""],
-      ["Before", "dup", "Yes", "", "https://vimeo.com/2", "", ""],
+      ["", "", "maybe", "notaurl", "150", ""],
+      ["Before", "Dup", "Yes", "https://vimeo.com/1", "", ""],
+      ["Before", "dup", "Yes", "https://vimeo.com/2", "", ""],
     ]
   );
   test("rejects", () => assert.equal(r.ok, false));
@@ -66,11 +68,10 @@ describe("every fault is reported at once, not just the first", () => {
     assert.match(all, /Section is empty/i);
     assert.match(all, /Lesson is empty/i);
     assert.match(all, /Required should be Yes or No/i);
-    assert.match(all, /Minutes should be a whole number/i);
     assert.match(all, /http/i, "bad video link");
     assert.match(all, /Must watch/i);
     assert.match(all, /appears twice/i, "duplicate lesson in a section");
-    assert.ok(r.problems.length >= 8, `expected many problems, got ${r.problems.length}`);
+    assert.ok(r.problems.length >= 7, `expected many problems, got ${r.problems.length}`);
   });
   test("names where each problem is", () => {
     assert.ok(!r.ok);
@@ -82,24 +83,24 @@ describe("every fault is reported at once, not just the first", () => {
 describe("rules that must survive the importer", () => {
   test("a watch requirement on a Google Drive video is refused (FR-031)", () => {
     const r = parseCourseWorkbook(course, [
-      ["S", "L", "Yes", "", "https://drive.google.com/file/d/xyz/view", "80", ""],
+      ["S", "L", "Yes", "https://drive.google.com/file/d/xyz/view", "80", ""],
     ]);
     assert.ok(!r.ok);
     assert.match(r.problems[0].message, /Google Drive/);
   });
   test("...but a Drive video with no requirement is fine", () => {
     const r = parseCourseWorkbook(course, [
-      ["S", "L", "Yes", "", "https://drive.google.com/file/d/xyz/view", "", ""],
+      ["S", "L", "Yes", "https://drive.google.com/file/d/xyz/view", "", ""],
     ]);
     assert.equal(r.ok, true);
   });
   test("a watch % with no video is refused", () => {
-    const r = parseCourseWorkbook(course, [["S", "L", "Yes", "", "", "80", "notes"]]);
+    const r = parseCourseWorkbook(course, [["S", "L", "Yes", "", "80", "notes"]]);
     assert.ok(!r.ok);
     assert.match(r.problems.map((p) => p.message).join(" "), /no video link/i);
   });
   test("an empty lesson (no video, no notes) is refused", () => {
-    const r = parseCourseWorkbook(course, [["S", "L", "Yes", "", "", "", ""]]);
+    const r = parseCourseWorkbook(course, [["S", "L", "Yes", "", "", ""]]);
     assert.ok(!r.ok);
     assert.match(r.problems.map((p) => p.message).join(" "), /video link, notes, or both/i);
   });

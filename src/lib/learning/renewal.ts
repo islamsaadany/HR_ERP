@@ -76,3 +76,22 @@ export const RENEWAL_CHOICES = [
   { months: 24, label: "Every 2 years" },
   { months: 36, label: "Every 3 years" },
 ] as const;
+
+/**
+ * A lesson's length for display: the author's estimate if they set one, otherwise the real length
+ * the platform learned from the first playback. Null when neither is known — a lesson with no
+ * video that nobody has estimated genuinely has no length, and inventing one would be worse.
+ */
+export function lessonLength(
+  estimatedMinutes: number | null,
+  videoDurationSec: number | null
+): { minutes: number; learned: boolean } | null {
+  if (estimatedMinutes && estimatedMinutes > 0) {
+    return { minutes: estimatedMinutes, learned: false };
+  }
+  if (videoDurationSec && videoDurationSec > 0) {
+    // Round up: a 90-second video is "2 min" to a learner deciding whether to start it now.
+    return { minutes: Math.max(1, Math.ceil(videoDurationSec / 60)), learned: true };
+  }
+  return null;
+}

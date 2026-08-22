@@ -17,7 +17,6 @@ export type ParsedLesson = {
   section: string;
   title: string;
   isRequired: boolean;
-  estimatedMinutes: number | null;
   videoUrl: string | null;
   videoSource: VideoSource | null;
   minWatchPercent: number;
@@ -111,10 +110,9 @@ export function parseCourseWorkbook(
     const required = parseRequired(row[2]);
     if (required === null) add(where, `Required should be Yes or No — got "${row[2]}".`);
 
-    const minutes = parseInteger(row[3]);
-    if (minutes === "bad") add(where, `Minutes should be a whole number — got "${row[3]}".`);
-
-    const videoUrl = row[4] || null;
+    // No Minutes column: the platform learns a video's real length from the first playback, so
+    // asking an author to measure and type it is work for a worse answer.
+    const videoUrl = row[3] || null;
     let videoSource: VideoSource | null = null;
     if (videoUrl) {
       if (!/^https?:\/\//i.test(videoUrl)) {
@@ -124,9 +122,9 @@ export function parseCourseWorkbook(
       }
     }
 
-    const watch = parseInteger(row[5]);
+    const watch = parseInteger(row[4]);
     if (watch === "bad" || (typeof watch === "number" && watch > 100)) {
-      add(where, `Must watch % should be a whole number from 0 to 100 — got "${row[5]}".`);
+      add(where, `Must watch % should be a whole number from 0 to 100 — got "${row[4]}".`);
     }
     const minWatchPercent = typeof watch === "number" ? watch : 0;
 
@@ -141,7 +139,7 @@ export function parseCourseWorkbook(
       );
     }
 
-    const notes = row[6] || null;
+    const notes = row[5] || null;
     if (!videoUrl && !notes) {
       add(where, "A lesson needs a video link, notes, or both — this row has neither.");
     }
@@ -150,7 +148,6 @@ export function parseCourseWorkbook(
       section,
       title: lessonTitle,
       isRequired: required ?? true,
-      estimatedMinutes: typeof minutes === "number" ? minutes : null,
       videoUrl,
       videoSource,
       minWatchPercent,

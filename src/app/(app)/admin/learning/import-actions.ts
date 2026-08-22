@@ -84,7 +84,7 @@ export async function importCourseFromWorkbook(formData: FormData): Promise<Impo
   }
 
   const courseRows = sheetRows(courseSheet, 4);
-  const parsed = parseCourseWorkbook(courseRows[0] ?? [], sheetRows(lessonSheet, 7));
+  const parsed = parseCourseWorkbook(courseRows[0] ?? [], sheetRows(lessonSheet, 6));
   if (!parsed.ok) {
     return {
       ok: false,
@@ -116,7 +116,6 @@ export async function importCourseFromWorkbook(formData: FormData): Promise<Impo
                 title: lesson.title,
                 order: li + 1,
                 isRequired: lesson.isRequired,
-                estimatedMinutes: lesson.estimatedMinutes,
                 minWatchPercent: lesson.minWatchPercent,
                 blocks: {
                   create: [

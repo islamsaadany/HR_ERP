@@ -276,6 +276,18 @@ export async function saveVideoProgress(
             "videoDurationSec" = GREATEST(COALESCE("LessonProgress"."videoDurationSec", 0), ${duration}),
             "updatedAt" = NOW()
     `;
+    // Teach the LESSON its real length the first time anyone plays it, so nobody has to type it.
+    // GREATEST, and only when we have a figure, so a player reporting 0 before metadata loads
+    // can't erase a good one. This is per-lesson, unlike the per-learner figure above — it is a
+    // property of the video, not of who watched it.
+    if (duration > 0) {
+      await prisma.$executeRaw`
+        UPDATE "Lesson"
+           SET "videoDurationSec" = GREATEST(COALESCE("videoDurationSec", 0), ${duration})
+         WHERE "id" = ${lessonId}
+      `;
+    }
+
     return { ok: true as const };
   });
 }
