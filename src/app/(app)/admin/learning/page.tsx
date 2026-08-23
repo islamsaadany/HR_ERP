@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireLearningManager } from "@/lib/learning/managers";
+import { isAdmin } from "@/lib/roles";
 import { formatDate } from "@/lib/labels";
 import { BackLink } from "@/components/admin/BackLink";
 import { NewCourseForm } from "@/components/learning/NewCourseForm";
@@ -12,7 +13,10 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 export const dynamic = "force-dynamic";
 
 export default async function AdminLearningPage() {
-  await requireLearningManager();
+  const actor = await requireLearningManager();
+  // A learning manager has no admin home to go back to — their sidebar door lands here. Showing
+  // "← Admin" would offer a way out that just bounces them straight back (2026-08-22).
+  const hrAdmin = isAdmin(actor.role);
 
   const courses = await prisma.course.findMany({
     orderBy: [{ status: "asc" }, { order: "asc" }],
@@ -58,7 +62,7 @@ export default async function AdminLearningPage() {
     <div>
       {/* Employees suggest resources and finish courses while this page sits open. */}
       <AutoRefresh />
-      <BackLink href="/admin" label="Admin" />
+      {hrAdmin ? <BackLink href="/admin" label="Admin" /> : null}
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin</p>
       <h1 className="mt-1 font-serif text-3xl text-ink">Learning</h1>
       <p className="mt-1 max-w-[70ch] text-muted">

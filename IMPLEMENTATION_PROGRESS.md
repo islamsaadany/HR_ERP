@@ -45,6 +45,21 @@
   mid-course learner while keeping their tick and their 42 watched seconds. `npm test` 105/105;
   `npx tsc --noEmit` and `npm run build` clean.
 
+## Learning: a direct "Manage Learning" door (built 2026-08-22 — no migration)
+- **Mockup-approved first** (`design-mockups/learning/2026-08-22_manage-learning-nav.html`). A
+  learning manager now reaches the module in ONE click from a gold sidebar entry carrying the
+  suggested-resources count, instead of passing through an admin home that held a single row.
+- **HR's sidebar is untouched** — the two doors are mutually exclusive, so nobody ever sees both.
+  Proven, including the odd case of an HR Admin holding a stray appointment row.
+- **The dead end is closed**: `/admin` redirects a manager to the module, `/admin/learning` drops
+  its "← Admin" link for them, and the one-section admin home was **retired** rather than left
+  unreachable.
+- **The icon is new, not reused** — the Admin shield with a mortarboard inside. `AppShell` already
+  carried a comment about what a lookalike nav glyph cost once before.
+- **Verified**: `scripts/verify-learning-manager.mts` **26/26** against a real database, using the
+  same expressions the layout uses so the test cannot drift from the door it checks. `npm test`
+  105/105; `npx tsc --noEmit` and `npm run build` clean.
+
 ## Learning: a manager who runs the module and nothing else (built 2026-08-22 — migration `065`)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_learning-manager.html`), option
   **A** chosen: **HR oversees, it does not gate.** A learning manager publishes their own courses;

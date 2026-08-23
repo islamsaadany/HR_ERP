@@ -204,6 +204,18 @@ date alongside its reopen date, and updates without a manual reload. Quickstart 
 
 ---
 
+## Phase 11: A direct Manage Learning door (added 2026-08-22, mockup-approved)
+
+- [X] T086 `NavIcon` gains `manage-learning` — the Admin shield with a mortarboard inside, deliberately unlike the employee cap. **Snapshot `AppShell` first**
+- [X] T087 `AppShell` renders it in the gold block with the gold count pill, collapsed and expanded
+- [X] T088 `(app)/layout.tsx`: `showAdmin` = HR only again; `showManageLearning` = appointment and NOT HR; the pending-suggestion count wrapped for a pre-064 database
+- [X] T089 `/admin` redirects a learning manager to `/admin/learning`; the one-section admin home is retired (unreachable)
+- [X] T090 `/admin/learning` hides "← Admin" for a non-HR manager — there is nothing above it
+- [X] T091 `verify-learning-manager.mts` extended: exactly one door per person, including an HR Admin holding a stray appointment
+- [X] T092 `npx tsc --noEmit`, `npm run build`, `npm test` green; docs updated in the same commit
+
+---
+
 ## Dependencies
 
 ```
@@ -260,4 +272,5 @@ a half-built one.
 | 8 Materials (2026-08-22) | 12 |
 | 9 Learning manager (2026-08-22) | 11 |
 | 10 Status + access setup (2026-08-22) | 11 |
-| **Total** | **85** |
+| 11 Manage Learning door (2026-08-22) | 7 |
+| **Total** | **92** |

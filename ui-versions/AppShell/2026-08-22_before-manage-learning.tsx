@@ -64,7 +64,6 @@ export function AppShell({
   name,
   email,
   showAdmin,
-  showManageLearning = false,
   showIncentive,
   showPayments = false,
   hiddenNav = [],
@@ -80,12 +79,6 @@ export function AppShell({
   name?: string | null;
   email?: string | null;
   showAdmin: boolean;
-  /**
-   * An appointed learning manager gets a DIRECT door to the module instead of the generic Admin
-   * one — the admin home would be a single row they came from. Never true for an HR Admin: their
-   * door is Admin, and a second entry for one module would beg the question of why not Benefits.
-   */
-  showManageLearning?: boolean;
   showIncentive: boolean;
   showPayments?: boolean;
   hiddenNav?: string[];
@@ -258,34 +251,6 @@ export function AppShell({
                   <NavIcon name="admin" />
                 </Link>
               ) : null}
-              {showManageLearning ? (
-                <Link
-                  href="/admin/learning"
-                  title={
-                    badgeFor("/admin/learning") > 0
-                      ? `Manage Learning (${badgeFor("/admin/learning")})`
-                      : "Manage Learning"
-                  }
-                  aria-label={
-                    badgeFor("/admin/learning") > 0
-                      ? `Manage Learning, ${badgeFor("/admin/learning")} waiting`
-                      : "Manage Learning"
-                  }
-                  className={
-                    "relative mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive("/admin/learning")
-                      ? "bg-navy-800 text-gold-300"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  <NavIcon name="manage-learning" />
-                  {badgeFor("/admin/learning") > 0 ? (
-                    <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                      {badgeFor("/admin/learning")}
-                    </span>
-                  ) : null}
-                </Link>
-              ) : null}
             </nav>
             {liveDataRequestCount > 0 ? (
               <div className="px-2 pb-2">
@@ -410,25 +375,6 @@ export function AppShell({
                   }
                 >
                   Admin
-                </Link>
-              ) : null}
-              {showManageLearning ? (
-                <Link
-                  href="/admin/learning"
-                  aria-current={isActive("/admin/learning") ? "page" : undefined}
-                  className={
-                    "relative mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/admin/learning")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  Manage Learning
-                  {badgeFor("/admin/learning") > 0 ? (
-                    <span className="ml-auto grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                      {badgeFor("/admin/learning")}
-                    </span>
-                  ) : null}
                 </Link>
               ) : null}
             </nav>
@@ -635,17 +581,6 @@ function NavIcon({ name }: { name: string }) {
     case "admin":
       return (
         <svg {...common}><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" /></svg>
-      );
-    case "manage-learning":
-      // The Admin shield with a mortarboard inside — because that is exactly what it is: the
-      // admin door, for Learning. Deliberately NOT the plain cap used by the employee "learning"
-      // item three rows above it; the file already records what a lookalike glyph costs.
-      return (
-        <svg {...common}>
-          <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
-          <path d="M12 7.6 15.2 9.2 12 10.8 8.8 9.2z" />
-          <path d="M9.9 10.2v1.6c0 .8.9 1.3 2.1 1.3s2.1-.5 2.1-1.3v-1.6" />
-        </svg>
       );
     case "signout":
       return (

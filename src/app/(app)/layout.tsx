@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser, getImpersonation } from "@/lib/roles";
-import { canManageLearning } from "@/lib/learning/managers";
-import { isFinance, canAccessIncentive } from "@/lib/roles";
+import { hasLearningAppointment } from "@/lib/learning/managers";
+import { isAdmin, isFinance, canAccessIncentive } from "@/lib/roles";
 import { getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
 import { prisma } from "@/lib/prisma";
@@ -23,10 +23,24 @@ export default async function AppLayout({
   const user = await requireUser();
   const impersonation = await getImpersonation();
 
-  // The Admin door. HR Admins and Super Users as before, plus anyone appointed to run Learning —
-  // their admin home shows that one section (spec 038 follow-up, 2026-08-22). Asked through the
-  // one derivation so the door and the pages behind it can never disagree.
-  const showAdmin = await canManageLearning(user);
+  // Two different doors, never both (spec 038 follow-up, 2026-08-22):
+  //   • HR Admins and Super Users get "Admin", exactly as they always have;
+  //   • an appointed learning manager gets "Manage Learning", straight to the module, because the
+  //     admin home would be one row they had just come from.
+  const hrAdmin = isAdmin(user.role);
+  const showManageLearning = !hrAdmin && (await hasLearningAppointment(user.id));
+
+  // The count on that entry: resources employees have suggested and nobody has reviewed. It is the
+  // only thing in Learning that waits on a person — a badge whose number never reaches zero stops
+  // being read. Wrapped, because before migration 064 this table does not exist.
+  let learningBadge = 0;
+  if (showManageLearning) {
+    try {
+      learningBadge = await prisma.courseResource.count({ where: { status: "PENDING" } });
+    } catch {
+      learningBadge = 0;
+    }
+  }
 
   // Gate anyone on a temporary password to /set-password until they choose their own.
   // Guarded so a pre-migration DB (no mustChangePassword column) never breaks the shell.
@@ -116,11 +130,12 @@ export default async function AppLayout({
     <AppShell
       name={user.name}
       email={user.email}
-      showAdmin={showAdmin}
+      showAdmin={hrAdmin}
+      showManageLearning={showManageLearning}
       showIncentive={canAccessIncentive(user.role)}
       showPayments={isFinance(user.role)}
       hiddenNav={hiddenNav}
-      navBadges={{ "/time-off": timeoffBadge }}
+      navBadges={{ "/time-off": timeoffBadge, "/admin/learning": learningBadge }}
       dataRequestCount={dataRequests?.pendingCount ?? 0}
       companyName={brand.platformName}
       shortName={brand.shortName}

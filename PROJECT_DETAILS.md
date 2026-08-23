@@ -567,6 +567,17 @@ home shows **one section**, and the other modules' counts are not merely unrende
 fetched. Surface: `/admin/learning/settings` ("Setup: who runs Learning"), readable by a manager,
 editable only by HR.
 
+**Their door is direct** (added 2026-08-22, mockup-approved): a learning manager gets a gold
+**Manage Learning** entry in the sidebar going straight to `/admin/learning`, carrying the
+pending-suggestion count in the same gold pill the nav already uses. Named "Manage Learning", not
+"Learning", because they also have the employee Learning item three rows above; its icon is the
+Admin shield with a mortarboard inside rather than a second graduation cap. **HR gets no such
+entry** — a module-specific door for them would beg the question of why not Benefits. The two doors
+are mutually exclusive (`showAdmin` = HR; `showManageLearning` = appointment AND not HR), so nobody
+sees both. `/admin` redirects a learning manager to the module, `/admin/learning` hides its
+"← Admin" link for them, and the one-section admin home was retired — unreachable, and a branch
+nobody can open is worse than no branch.
+
 **Not in this release**: quizzes, gradable assignments, certificates, discussions, analytics,
 roster export, learning paths, resource categorisation (worth doing once a course has more than a
 handful). No email, no cron, no new env var, no new runtime dependency.
