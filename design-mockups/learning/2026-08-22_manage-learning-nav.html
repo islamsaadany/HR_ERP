@@ -1,0 +1,173 @@
+<title>Manage Learning Entry</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-400:#4f6d97;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-200:#f0dea0;--gold-300:#e0c05a;--gold-400:#d4ad3c;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .proposal{margin-top:36px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:78ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .decision{margin-top:34px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:860px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:5px 0}
+  .note{font-size:11.5px;color:var(--muted);margin-top:9px}
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:840px){.cols{grid-template-columns:1fr}}
+
+  /* the real sidebar, in miniature */
+  .bar{background:var(--navy-900);border-radius:12px;padding:10px 8px;width:196px;font-size:12.5px}
+  .bar.slim{width:58px;padding:10px 6px}
+  .brand{display:flex;align-items:center;gap:8px;color:#fff;font-weight:700;font-size:12px;padding:2px 6px 10px;border-bottom:1px solid rgba(255,255,255,.09);margin-bottom:8px}
+  .logo{width:22px;height:22px;border-radius:6px;background:var(--gold-500);color:var(--navy-900);display:grid;place-items:center;font-size:11px;font-weight:900;flex:none}
+  .it{position:relative;display:flex;align-items:center;gap:9px;color:var(--navy-100);border-radius:8px;padding:6px 8px;margin-bottom:1px}
+  .it .g{width:17px;text-align:center;flex:none;opacity:.9}
+  .it.on{background:var(--navy-800);color:#fff}
+  .it.gold{color:var(--gold-300);margin-top:8px}
+  .it.gold.on{background:var(--navy-800);color:var(--gold-200)}
+  .sep{height:1px;background:rgba(255,255,255,.09);margin:8px 4px}
+  .pill{margin-left:auto;display:inline-grid;place-items:center;height:16px;min-width:16px;border-radius:999px;background:var(--gold-500);color:var(--navy-900);font-size:10px;font-weight:800;padding:0 5px}
+  .slim .it{justify-content:center;padding:7px 0}
+  .slim .pill{position:absolute;top:2px;right:4px;margin:0;height:15px;min-width:15px;font-size:9px}
+  .cap{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 7px}
+  .arrow{font-size:12px;color:var(--muted);text-align:center;padding:6px 0}
+  .screen{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:11px;font-size:12.5px}
+  .gone{text-decoration:line-through;opacity:.45}
+  .side{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 038 · learning manager nav</p>
+  <h1>One click to Manage Learning</h1>
+  <p class="lede">An appointed learning manager gets their own gold sidebar entry that goes straight to the module, carrying the same gold count the rest of the sidebar uses. HR&rsquo;s sidebar does not change at all. Illustrative content throughout.</p>
+
+  <!-- 1 -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Their sidebar</h2>
+    <p class="sub">It sits in the gold block at the bottom, where Admin sits today, separated from their ordinary employee nav by the same divider. <b>Manage Learning</b>, not &ldquo;Learning&rdquo; — they already have a <b>Learning</b> item above it for the courses they take themselves, and two entries with one word would be a worse problem than an extra click ever was.</p>
+
+    <div class="frame">
+      <div class="side">
+        <div>
+          <p class="cap">Sara — learning manager</p>
+          <div class="bar">
+            <div class="brand"><span class="logo">F</span> Forefront</div>
+            <div class="it"><span class="g">⌂</span> Home</div>
+            <div class="it"><span class="g">◆</span> Benefits</div>
+            <div class="it"><span class="g">▤</span> Time-Off <span class="pill">1</span></div>
+            <div class="it"><span class="g">☰</span> Team Directory</div>
+            <div class="it"><span class="g">▣</span> Handbook</div>
+            <div class="it"><span class="g">▶</span> Learning</div>
+            <div class="it"><span class="g">◉</span> My Profile</div>
+            <div class="sep"></div>
+            <div class="it gold on"><span class="g">◎</span> Manage Learning <span class="pill">2</span></div>
+          </div>
+          <p class="note"><b>Learning</b> (navy) is her own courses. <b>Manage Learning</b> (gold, below the line) is the module she runs. Gold has meant &ldquo;this is an admin door&rdquo; here since the beginning.</p>
+        </div>
+
+        <div>
+          <p class="cap">Collapsed</p>
+          <div class="bar slim">
+            <div class="brand" style="justify-content:center;padding-left:0;padding-right:0"><span class="logo">F</span></div>
+            <div class="it"><span class="g">⌂</span></div>
+            <div class="it"><span class="g">◆</span></div>
+            <div class="it"><span class="g">▤</span><span class="pill">1</span></div>
+            <div class="it"><span class="g">☰</span></div>
+            <div class="it"><span class="g">▣</span></div>
+            <div class="it"><span class="g">▶</span></div>
+            <div class="it"><span class="g">◉</span></div>
+            <div class="sep"></div>
+            <div class="it gold on"><span class="g">◎</span><span class="pill">2</span></div>
+          </div>
+          <p class="note">The count sits top-right on the icon, exactly as Time-Off&rsquo;s already does. Hovering says &ldquo;Manage Learning (2)&rdquo;.</p>
+        </div>
+
+        <div>
+          <p class="cap">Nada — HR Admin · unchanged</p>
+          <div class="bar">
+            <div class="brand"><span class="logo">F</span> Forefront</div>
+            <div class="it"><span class="g">⌂</span> Home</div>
+            <div class="it"><span class="g">◆</span> Benefits</div>
+            <div class="it"><span class="g">▤</span> Time-Off</div>
+            <div class="it"><span class="g">☰</span> Team Directory</div>
+            <div class="it"><span class="g">▣</span> Handbook</div>
+            <div class="it"><span class="g">▶</span> Learning</div>
+            <div class="it"><span class="g">◉</span> My Profile</div>
+            <div class="sep"></div>
+            <div class="it gold"><span class="g">⊞</span> Admin</div>
+          </div>
+          <p class="note">HR gets no second entry. Why Learning and not Benefits or Time-Off? Their door is Admin, and it always was.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="proposal">
+    <h2><span class="num">2</span> What the badge counts</h2>
+    <p class="sub">The same thing the gold badge on the admin home counts today: <b>resources employees have suggested and nobody has reviewed</b>. It is the only thing in Learning that waits on a person, which is what a badge is for — a number that never falls to zero stops being read.</p>
+    <div class="frame">
+      <div class="screen" style="max-width:520px">
+        <p style="margin:0 0 8px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">clicking it lands here</p>
+        <p style="margin:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--gold-600)">Admin</p>
+        <p style="font-family:Georgia,serif;font-size:19px;margin:2px 0 3px">Learning</p>
+        <p style="margin:0 0 11px;font-size:12px;color:var(--muted)">Build training courses and choose who they reach.</p>
+        <div style="border:1px solid var(--gold-300);border-radius:9px;padding:9px 11px;background:#fdfaf0;font-size:12.5px">
+          <b style="color:var(--navy-800)">Suggested resources</b> <span class="chip c-gold">2 waiting</span>
+        </div>
+        <p class="note">Straight to the course list and the review queue. No stop on the way.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="proposal">
+    <h2><span class="num">3</span> The dead end this closes</h2>
+    <p class="sub">Once she has a direct door, the single-section admin home is a page she can only reach by accident — a bookmark, or the &ldquo;← Admin&rdquo; link at the top of the Learning page. Both would land her on one row she just came from.</p>
+    <div class="frame">
+      <div class="cols">
+        <div class="screen">
+          <p style="margin:0 0 7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Today</p>
+          <p style="margin:0 0 5px">Sidebar <b>Admin</b> → a page with one row → <b>Learning</b></p>
+          <p style="margin:0;font-size:12px;color:var(--muted)">Two clicks, and a page that exists only to be passed through.</p>
+        </div>
+        <div class="screen">
+          <p style="margin:0 0 7px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Proposed</p>
+          <p style="margin:0 0 5px">Sidebar <b>Manage Learning</b> → <b>Learning</b></p>
+          <p style="margin:0 0 8px;font-size:12px;color:var(--muted)">One click. And <code style="font-size:11.5px">/admin</code> sends a learning manager straight here too, so a stray bookmark cannot strand them.</p>
+          <p style="margin:0;font-size:12px"><span class="chip c-off">also</span> the <span class="gone">&ldquo;← Admin&rdquo;</span> link at the top of the Learning page is hidden for them — there is nothing above it any more.</p>
+        </div>
+      </div>
+      <p class="note">Which makes the one-section admin home unreachable, so it goes. That is a <b>simplification</b>, not extra work: a branch nobody can open is worse than no branch. HR&rsquo;s admin home is untouched.</p>
+    </div>
+  </section>
+
+  <div class="decision">
+    <h3>What I&rsquo;m assuming — correct me and I&rsquo;ll change it</h3>
+    <ul>
+      <li><b>Only appointed learning managers get the entry.</b> HR&rsquo;s sidebar is exactly as it is today — their door is Admin.</li>
+      <li><b>It replaces their Admin entry</b> rather than sitting beside it, and <code>/admin</code> redirects them to <code>/admin/learning</code>.</li>
+      <li><b>The badge counts suggested resources awaiting review</b> — the same figure the admin home shows now. Nothing else in Learning waits on a person.</li>
+      <li><b>Gold, below the divider</b>, in the same block as Admin / Incentive / Payments — that block has meant &ldquo;a door you hold, not a page everyone has&rdquo; from the start.</li>
+      <li><b>Called &ldquo;Manage Learning&rdquo;</b> so it cannot be confused with their own <b>Learning</b> above it.</li>
+      <li><b>Nothing about permissions changes.</b> Every page and action still asks the same one derivation; this is a shortcut, not a grant.</li>
+    </ul>
+  </div>
+
+  <footer>Spec 038 · learning manager nav · 22/08/2026 · illustrative content. Nothing is built until you approve.</footer>
+</div>
