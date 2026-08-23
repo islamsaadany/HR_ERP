@@ -17,7 +17,8 @@ import {
   medicalCycleCharge,
   amountForBand,
 } from "@/lib/benefits/config";
-import { classifyEligibility, hasKnownStartDate, poolCycleFraction, prorate } from "@/lib/benefits/proration";
+import { classifyEligibility, hasKnownStartDate } from "@/lib/benefits/proration";
+import { poolCeiling } from "@/lib/benefits/pool";
 import { overlapWholeMonths } from "@/lib/benefits/policy-year";
 import { commitmentAttention } from "@/lib/benefits/attention";
 import { deriveTenureBand } from "@/lib/tenure";
@@ -150,6 +151,14 @@ export default async function AdminBenefitsPage({
     poolCeilings.find(
       (c) => c.employmentType === t && c.tenureBand === (deriveTenureBand(startDate).band ?? "BAND_6MO_2Y")
     )?.amount ?? null;
+  /** The lookup `poolCeiling` asks — band in, annual amount out. No proration of its own. */
+  const ceilingForBand = (t: EmploymentType, band: TenureBand) =>
+    poolCeilings.find((c) => c.employmentType === t && c.tenureBand === band)?.amount ?? null;
+  // Guarded for a database that predates migration 059, exactly as `poolStateFor` guards it.
+  const poolExceptions = active
+    ? await prisma.poolCeilingException.findMany({ where: { planYearId: active.id } }).catch(() => [])
+    : [];
+  const poolExceptionByUser = new Map(poolExceptions.map((e) => [e.userId, e]));
 
   // Medical unlocks at 3 months (spec 019) and needs a known start date to be judged at all.
   const eligibleForMedical = activeEmployees.filter(
@@ -266,22 +275,31 @@ export default async function AdminBenefitsPage({
       }
     }
   }
-  // Every non-rejected claim holds allowance (lib/benefits/claims.tracker) — a rejected one
-  // releases it.
+  // Every non-rejected FLEXIBLE claim holds pool allowance (lib/benefits/claims.tracker) — a
+  // rejected one releases it.
+  //
+  // ONLY flexible claims. This used to sum every claim in the cycle, guaranteed ones included, so
+  // a 90,000 salary-driven Loans request read as 90,000 of pool spend and painted the employee's
+  // meter red at "EGP 0 left" — for that row and every other row of theirs (2026-08-23). Nothing
+  // was ever wrongly paid: every write path (claim, HR record entry, reopen, medical) already
+  // asks `poolStateFor`, which counts `catalogItemId` claims alone. It was this screen, and only
+  // this screen, telling HR that approving a loan would empty someone's benefits pool.
   const claimedByUser = new Map<string, number>();
   for (const c of pendingClaims) {
-    if (c.status === "REJECTED") continue;
+    if (c.status === "REJECTED" || !c.catalogItemId) continue;
     claimedByUser.set(c.userId, (claimedByUser.get(c.userId) ?? 0) + c.amount);
   }
 
+  // THE ceiling, from `poolCeiling` — the same function the report and every write path use.
+  // A local copy lived here and disagreed with all of them for anyone under six months (it
+  // returned nothing at all where the report showed a full entry-tier pool), and it never knew
+  // about a Super User's raised ceiling.
   const poolFor = (u: { id: string; employmentType: EmploymentType | null; startDate: Date | null }) => {
-    if (!u.employmentType) return null;
-    const ceilingAmount = ceilingFor(u.employmentType, u.startDate);
-    if (ceilingAmount == null) return null;
-    const fraction = poolCycleFraction(classifyEligibility(u.startDate, 6, planWindow), planWindow);
-    const ceiling = prorate(ceilingAmount, fraction);
+    const ex = poolExceptionByUser.get(u.id) ?? null;
+    const derived = poolCeiling(u, ceilingForBand, planWindow, ex?.kind === "RAISED" ? ex.amount : null);
+    if (derived.ceiling == null) return null;
     const used = (medicalDrawnByUser.get(u.id) ?? 0) + (claimedByUser.get(u.id) ?? 0);
-    return { ceiling, remaining: Math.max(0, ceiling - used) };
+    return { ceiling: derived.ceiling, remaining: Math.max(0, derived.ceiling - used) };
   };
 
   const DAY_MS = 24 * 60 * 60 * 1000;
@@ -316,7 +334,10 @@ export default async function AdminBenefitsPage({
         note: c.note,
         proofHref: c.proofUrl ? `/api/claims/${c.id}/proof` : null,
         proofName: c.proofName,
-        pool: poolFor(c.user),
+        // Only a flexible (catalog) claim spends the pool; a guaranteed one is paid from its own
+        // budget and is bounded by that benefit's allocation instead.
+        poolFunded: c.catalogItemId != null,
+        pool: c.catalogItemId != null ? poolFor(c.user) : null,
       };
     });
 

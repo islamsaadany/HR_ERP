@@ -18,6 +18,34 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
 
+## Benefits: two reported wrong numbers, one cause each (fixed 2026-08-23 — no migration)
+Both reported from live data; neither needed a schema change, and neither had mispaid anyone.
+
+- **A newcomer's pool was not prorated.** On a short cycle every banded employee's ceiling scales to
+  the cycle, but `poolCeiling`'s **sub-6-month branch** scaled by the **mid-joiner** fraction instead
+  — which is **1** whenever a person's 3-month medical mark falls on or before the cycle's first day.
+  Result: an employee under six months carried the **whole annual ceiling**, roughly double their
+  colleagues, and the report showed no *prorated* tag to give it away. Reproduced with the real
+  functions before touching anything (6-month cycle: banded 10,000 vs newcomer 20,000). Both branches
+  now use the one `poolCycleFraction`; the 3-month vs 6-month threshold still decides *whether* there
+  is a pool, never *how big*. Medical keeps its own ÷12 mid-joiner reduction on the **premium**.
+  Fixed in `lib/benefits/pool.ts`, with the same figure now feeding the employee's own medical-only
+  view (`benefits/page.tsx`) and **both** medical clamps (`benefits/actions.ts`,
+  `admin/benefits/manual-actions.ts` → `ceilingCap`) — the clamp and the affordability refusal used
+  to quote different ceilings. New regression test in `tests/pool-rules.test.ts` (106 pass).
+- **A Loans claim read as if it emptied the pool.** The claims queue's *"their pool after this"*
+  meter summed **every** non-rejected claim, so a 90,000 salary-driven Loans request showed "EGP 0
+  left of EGP 22,500" in red — on that row and every other row of that employee's. Display only:
+  every write path (submit, approve, HR record entry, reopen, medical) asks `poolStateFor`, which
+  counts `catalogItemId` claims alone. The meter now counts flexible claims only, a guaranteed claim
+  shows **"Not from the pool"** in that column instead of a meter, and the ceiling comes from
+  `poolCeiling` rather than a local copy that disagreed with the report for anyone under six months
+  and ignored raised ceilings. `admin/benefits/page.tsx` + `components/admin/ClaimsPanel.tsx`
+  (snapshot: `ui-versions/ClaimsPanel/2026-08-23_before-not-from-the-pool-note.tsx`).
+- **Watch for:** any under-six-month employee whose committed medical exceeds their now-correct
+  smaller ceiling will start showing **over pool** in Reporting. Nothing new was spent — the old
+  ceiling was wrong — and a Super User can RAISE the ceiling to accept it.
+
 ## Learning: course status ladder + access as a setup (built 2026-08-22 — migration `066`)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_course-access-setup.html`). The
   Excel template was deliberately left alone — who takes a course is set on the course, not in a
@@ -1244,4 +1272,4 @@ limit from claim clamping each make it fail. The first attempt did NOT catch the
 
 ---
 
-*Last Updated: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*
+*Last Updated: 2026-08-23 — Sub-6-month pool ceilings now scale to the cycle like everyone else's; the claims queue's pool meter counts only pool-funded claims (a Loans request no longer reads as an emptied pool). Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*

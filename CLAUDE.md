@@ -150,6 +150,20 @@ four steering files (same commit).
   actually gets the thing, and then it is worse than no count. Related: **one way to say
   "everyone"** — the same panel offered it as a course setting AND as an audience rule, so a course
   could read RESTRICTED while reaching the whole company.
+- **A GATE IS NOT A SCALE, and a meter must count only what the decision moves** — one money rule
+  broke twice on the same screen family (2026-08-23). (a) `poolCeiling` has two doors — 6 months for
+  the pool, 3 months for medical — and the sub-6 branch mistook its door for a *scale*, prorating by
+  the mid-joiner fraction, which is **1** whenever the 3-month mark lands on or before the cycle's
+  first day. A newcomer on a six-month cycle therefore carried the WHOLE annual ceiling — double
+  their colleagues — and the report printed no *prorated* tag, so nothing looked wrong. Ask the two
+  questions separately: *may they have it* (threshold) and *how much of the window is this*
+  (`poolCycleFraction`, one scale for everybody); a reduction that belongs to the thing bought
+  (medical's ÷12 premium) never belongs on the container that bounds it. (b) The claims queue's
+  "their pool after this" meter summed EVERY claim, so a 90,000 salary-driven Loans request read as
+  an emptied pool — a number the enforcement path (`poolStateFor`, `catalogItemId` only) never
+  agreed with. A figure shown next to a decision must be computed from exactly what that decision
+  changes, through the same derivation the write uses; when the decision moves nothing, say so in
+  words ("Not from the pool") rather than drawing a meter at zero.
 - **A visibility rule needs ONE source and must be re-decided at the door** — the Learning
   materials tab labels three document slots and the employee page only ever selects one, but
   neither is a control: a URL is a URL, and somebody who has seen a slides link can guess an
@@ -330,4 +344,4 @@ TEST_DATABASE_URL="postgresql://…/hrerp_test" npm test
 
 ---
 
-*Last Updated: 2026-08-22 (Added: a count shown beside a choice must be that choice's count, computed through the same derivation the real check uses; one way to say "everyone". Plus: per-module authority is an appointment, never a new Role member — one derivation, role-holders are never rows, the appointment cannot appoint. Plus: a visibility rule needs one source and must be re-decided at the serving route, 404 not 403. Previously: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.))*
+*Last Updated: 2026-08-23 (Added: a gate is not a scale — the sub-6-month pool ceiling now scales to the cycle like everyone else's, and a figure shown beside a decision counts only what that decision moves, through the derivation the write uses. Previously: 2026-08-22 (Added: a count shown beside a choice must be that choice's count, computed through the same derivation the real check uses; one way to say "everyone". Plus: per-module authority is an appointment, never a new Role member — one derivation, role-holders are never rows, the appointment cannot appoint. Plus: a visibility rule needs one source and must be re-decided at the serving route, 404 not 403. Previously: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.)))*

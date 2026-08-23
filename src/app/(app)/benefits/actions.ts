@@ -123,11 +123,6 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
   const people: PricedPerson[] = [{ dob: user.dateOfBirth }, ...covered.map((d) => ({ dob: d.dateOfBirth }))];
   const { annualEGP, lines, anyOverTop } = sumMedicalPremium(people, bands, refDate);
 
-  // Prorate the annual premium and the pool cap by the medical eligibility fraction (1 for a full year).
-  const proratedCeiling = prorate(ceilingAmount, medicalEligibility.fraction);
-  const proratedPremium = proratedPremiumEGP(annualEGP, medicalEligibility.fraction);
-  const premium = Math.min(proratedPremium, proratedCeiling);
-
   // THE CEILING IS AN INVARIANT, NOT AN ORDERING ACCIDENT (2026-08-20).
   // This used to cap the premium at the WHOLE ceiling and never look at flexible claims, so
   // whether the pool held depended purely on which came first: claim-then-medical overran it
@@ -138,6 +133,18 @@ export async function commitMedical(payload: MedicalPayload): Promise<CommitResu
   // with the write, so a claim landing in between cannot slip past it.
   const pool = await poolStateFor(me.id, planYear);
   const free = spendable(pool);
+
+  // The cap the premium is trimmed to is THE pool ceiling (`poolCeiling`), not a second one
+  // derived here (2026-08-23). This line used to prorate the raw annual figure by the MEDICAL
+  // eligibility fraction, which ignores the cycle's length entirely — so on a six-month cycle it
+  // capped at 20,000 while the pool this is checked against held 10,000: the clamp said yes and
+  // the very next check said no, with a warning quoting a ceiling nobody actually has. The
+  // fallback keeps the old figure for the one case `poolCeiling` cannot measure (no ceiling row
+  // for their band) — a gap that must not silently become "no cap at all".
+  const proratedCeiling = pool.ceiling ?? prorate(ceilingAmount, medicalEligibility.fraction);
+  const proratedPremium = proratedPremiumEGP(annualEGP, medicalEligibility.fraction);
+  const premium = Math.min(proratedPremium, proratedCeiling);
+
   if (pool.ceiling != null && premium > free) {
     return {
       ok: false,

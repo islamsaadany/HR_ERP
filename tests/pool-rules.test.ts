@@ -49,6 +49,36 @@ describe("poolCeiling — one derivation, used by the report AND every write", (
     assert.equal(r.reason, "under 3 months — nothing unlocked yet");
   });
 
+  // 2026-08-23: a sub-6-month employee on a six-month cycle was handed the WHOLE annual ceiling —
+  // double their banded colleagues — because that branch prorated by the MID-JOINER fraction,
+  // which is 1 whenever the three-month mark falls on or before the cycle's first day. The cycle
+  // is one scale for everybody; only the 3-month vs 6-month DOOR differs.
+  test("under six months, half-year cycle: scaled to the cycle exactly like a banded colleague", () => {
+    const now = new Date();
+    // Joined five months ago: no tenure band yet, but medical unlocked three months in — two
+    // months before this cycle opened, so the mid-joiner fraction would say "full year".
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 5, 15);
+    const window = {
+      start: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+      end: new Date(now.getFullYear(), now.getMonth() + 5, 0), // six whole months
+    };
+    const newcomer = poolCeiling({ employmentType: "FULL_TIME", startDate }, lookup, window);
+    assert.equal(newcomer.band, null, "five months of service is still below the first band");
+    assert.equal(newcomer.ceiling, 7500, "half a cycle, half the entry-tier pool — not the full 15,000");
+    assert.equal(newcomer.proratedFrom, 15000, "and the report must be able to say what it was cut from");
+
+    const colleague = poolCeiling(
+      { employmentType: "FULL_TIME", startDate: new Date(now.getFullYear() - 1, now.getMonth(), 15) },
+      lookup,
+      window
+    );
+    assert.equal(
+      colleague.ceiling! / (CEILINGS["FULL_TIME|BAND_6MO_2Y"] ?? 1),
+      newcomer.ceiling! / (CEILINGS["FULL_TIME|BAND_6MO_2Y"] ?? 1),
+      "the newcomer and the banded colleague are cut by the same fraction of their own tier"
+    );
+  });
+
   test("a ceiling is never negative and never above the configured annual amount", () => {
     for (const w of [FULL_YEAR, HALF_YEAR, null]) {
       for (const s of ["2015-01-01", "2021-06-15", "2024-03-01", "2026-05-01"]) {

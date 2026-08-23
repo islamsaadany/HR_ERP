@@ -37,17 +37,8 @@ export type QueueRow = {
   note: string | null;
   proofHref: string | null;
   proofName: string | null;
-  /**
-   * Their allowance after this claim — the context a decision needs and the old panel lacked.
-   * Null on a claim the pool doesn't fund (see `poolFunded`) and when no ceiling can be derived.
-   */
+  /** Their allowance after this claim — the context a decision needs and the old panel lacked. */
   pool: { ceiling: number; remaining: number } | null;
-  /**
-   * Whether this claim is paid FROM the flexible pool. A guaranteed benefit (Loans, gifts,
-   * Professional development) is paid from its own budget and can never move the pool, so there
-   * is no "after this" to show — printing one meant a 90,000 loan read as an emptied pool.
-   */
-  poolFunded: boolean;
 };
 
 export type LedgerRow = {
@@ -296,7 +287,7 @@ export function ClaimsPanel({
                           ) : null}
                         </td>
                         <td className={TD}>
-                          <PoolMeter pool={r.pool} poolFunded={r.poolFunded} />
+                          <PoolMeter pool={r.pool} />
                         </td>
                         <td className={TD}>
                           {r.proofHref ? (
@@ -475,12 +466,7 @@ export function ClaimsPanel({
 }
 
 /** How much of their pool is left once this claim is counted. */
-function PoolMeter({ pool, poolFunded }: { pool: QueueRow["pool"]; poolFunded: boolean }) {
-  // A guaranteed benefit is paid from its own budget — the pool is not part of this decision,
-  // so say that rather than drawing a meter this claim can't move.
-  if (!poolFunded) {
-    return <span className="text-xs text-muted">Not from the pool</span>;
-  }
+function PoolMeter({ pool }: { pool: QueueRow["pool"] }) {
   if (!pool || pool.ceiling <= 0) {
     return <span className="text-xs text-muted">No pool ceiling set</span>;
   }

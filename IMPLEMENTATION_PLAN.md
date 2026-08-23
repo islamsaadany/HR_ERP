@@ -27,6 +27,30 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ## Decisions log
 
+- **2026-08-23 — A threshold decides IF, the cycle decides HOW MUCH (fix, no migration).** Reported
+  issue: one employee's pool ceiling was not prorated "despite the cycle being prorated for all".
+  Traced and reproduced with the engine's own functions: `poolCeiling`'s **sub-6-month** branch
+  scaled by the **mid-joiner** fraction, which is **1** whenever a person's 3-month medical mark
+  falls on or before the cycle's first day — so on a six-month cycle a newcomer held the full annual
+  ceiling (20,000) beside colleagues on half theirs (10,000), and the report's *prorated* tag stayed
+  off, hiding it. **Decision (Option A of two offered, user confirmed):** the ceiling scales to the
+  cycle in **both** branches — the 3-month and 6-month thresholds gate *eligibility only*. The
+  conservative alternative (keep the mid-joiner reduction where it is smaller) was rejected as a
+  second scale for the same rule. Medical's ÷12 mid-joiner proration is untouched: it belongs to the
+  **premium**, not to the ceiling that caps it. The same figure now feeds both medical clamps, which
+  had been quoting a ceiling the affordability check would then refuse. Consequence accepted: a
+  newcomer whose committed medical exceeds the corrected, smaller ceiling now shows **over pool** on
+  the report, where a Super User can raise or accept it.
+
+- **2026-08-23 — A figure beside a decision counts only what that decision moves (fix, no migration).**
+  Reported issue: a 90,000 **Loans** claim made the review queue read *"EGP 0 left of EGP 22,500"* in
+  red, "as if the loan is taking from the pool". It never was: every write path asks `poolStateFor`,
+  which counts flexible (`catalogItemId`) claims alone — the queue page had its own local sum that
+  counted **all** claims, and its own ceiling derivation that disagreed with the report for anyone
+  under six months and ignored raised ceilings. **Decision:** the meter counts pool-funded claims
+  only and reads its ceiling from `poolCeiling`; on a guaranteed claim it shows the words **"Not from
+  the pool"** rather than a meter at zero — a decision that moves nothing gets a sentence, not a bar.
+
 - **2026-08-20 — The pool ceiling is an invariant, not an ordering accident (fix, no migration).**
   Reported issue: an employee (Yosra) ended a cycle **2,093 over** a 10,000 pool — 6,093 medical +
   6,000 flexible — while the report showed "Remaining 0 · Pool exhausted". Two wrong diagnoses were
