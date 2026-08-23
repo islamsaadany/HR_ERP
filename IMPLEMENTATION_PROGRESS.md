@@ -45,6 +45,14 @@
   mid-course learner while keeping their tick and their 42 watched seconds. `npm test` 105/105;
   `npx tsc --noEmit` and `npm run build` clean.
 
+## Learning: a settings gear on the module page (built 2026-08-22 — no migration)
+- **Mockup-approved first** (`design-mockups/learning/2026-08-22_learning-settings-menu.html`).
+  *Who runs Learning* and *Manage groups* were grey text links between the page description and the
+  buttons — reported as unfindable, and fairly: unadorned, no border, no icon, sitting where a page
+  puts prose. They now live behind a gear at the top right, each with a line saying what it is.
+- The grey links are **removed**, not kept alongside — two doors to one page would leave the same
+  confusion. Menu closes on an outside click and on Escape; nothing else on the page moved.
+
 ## Learning: a direct "Manage Learning" door (built 2026-08-22 — no migration)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_manage-learning-nav.html`). A
   learning manager now reaches the module in ONE click from a gold sidebar entry carrying the

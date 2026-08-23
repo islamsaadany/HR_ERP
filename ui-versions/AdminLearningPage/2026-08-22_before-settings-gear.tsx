@@ -7,7 +7,6 @@ import { BackLink } from "@/components/admin/BackLink";
 import { NewCourseForm } from "@/components/learning/NewCourseForm";
 import { CHIP } from "@/components/learning/ui";
 import { SuggestionQueue, type Suggestion } from "@/components/learning/SuggestionQueue";
-import { LearningSettingsMenu } from "@/components/learning/LearningSettingsMenu";
 import { averageStars } from "@/lib/learning/materials";
 import { AutoRefresh } from "@/components/AutoRefresh";
 
@@ -64,19 +63,20 @@ export default async function AdminLearningPage() {
       {/* Employees suggest resources and finish courses while this page sits open. */}
       <AutoRefresh />
       {hrAdmin ? <BackLink href="/admin" label="Admin" /> : null}
-      {/* The module's own settings live behind the gear (mockup-approved 2026-08-22). They used to
-          be two grey text links under this description and were reported as unfindable — grey,
-          unadorned, and sitting exactly where a page puts explanatory prose. */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin</p>
-          <h1 className="mt-1 font-serif text-3xl text-ink">Learning</h1>
-          <p className="mt-1 max-w-[70ch] text-muted">
-            Build training courses and choose who they reach. A course stays a draft — invisible to
-            everyone — until you publish it.
-          </p>
-        </div>
-        <LearningSettingsMenu />
+      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin</p>
+      <h1 className="mt-1 font-serif text-3xl text-ink">Learning</h1>
+      <p className="mt-1 max-w-[70ch] text-muted">
+        Build training courses and choose who they reach. A course stays a draft — invisible to
+        everyone — until you publish it.
+      </p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
+        <Link href="/admin/learning/groups" className="text-muted hover:text-ink">
+          Manage groups →
+        </Link>
+        <Link href="/admin/learning/settings" className="text-muted hover:text-ink">
+          Setup: who runs Learning →
+        </Link>
       </div>
 
       <NewCourseForm />

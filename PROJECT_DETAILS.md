@@ -567,6 +567,12 @@ home shows **one section**, and the other modules' counts are not merely unrende
 fetched. Surface: `/admin/learning/settings` ("Setup: who runs Learning"), readable by a manager,
 editable only by HR.
 
+**The module's settings sit behind a gear** at the top right of `/admin/learning` (mockup-approved
+2026-08-22): *Who runs Learning* (first — reached for least often, needed most urgently) and
+*Manage groups*, each with a line saying what it is. They were previously two grey text links under
+the page description and were reported as unfindable — unadorned, no border, no icon, and placed
+exactly where a page puts explanatory prose. The menu closes on an outside click **and** on Escape.
+
 **Their door is direct** (added 2026-08-22, mockup-approved): a learning manager gets a gold
 **Manage Learning** entry in the sidebar going straight to `/admin/learning`, carrying the
 pending-suggestion count in the same gold pill the nav already uses. Named "Manage Learning", not

@@ -213,6 +213,7 @@ date alongside its reopen date, and updates without a manual reload. Quickstart 
 - [X] T090 `/admin/learning` hides "← Admin" for a non-HR manager — there is nothing above it
 - [X] T091 `verify-learning-manager.mts` extended: exactly one door per person, including an HR Admin holding a stray appointment
 - [X] T092 `npx tsc --noEmit`, `npm run build`, `npm test` green; docs updated in the same commit
+- [X] T093 `LearningSettingsMenu` — a gear at the top right of `/admin/learning` holding "Who runs Learning" and "Manage groups"; the two grey text links removed. Closes on outside click AND Escape. **Snapshot the page first**
 
 ---
 
@@ -272,5 +273,5 @@ a half-built one.
 | 8 Materials (2026-08-22) | 12 |
 | 9 Learning manager (2026-08-22) | 11 |
 | 10 Status + access setup (2026-08-22) | 11 |
-| 11 Manage Learning door (2026-08-22) | 7 |
-| **Total** | **92** |
+| 11 Manage Learning door (2026-08-22) | 8 |
+| **Total** | **93** |
