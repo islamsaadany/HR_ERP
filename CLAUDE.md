@@ -350,6 +350,34 @@ TEST_DATABASE_URL="postgresql://…/hrerp_test" npx prisma db push
 TEST_DATABASE_URL="postgresql://…/hrerp_test" npm test
 ```
 
+#### `scripts/verify-*.mts` — and the two things that make them lie
+The 21 verification scripts prove a feature against a real Postgres. Set one up **the way a real
+deploy does**, or they fail for reasons that have nothing to do with the code:
+
+```bash
+POSTGRES_URL=$DB DATABASE_URL_UNPOOLED=$DB npx prisma db push --skip-generate --accept-data-loss
+POSTGRES_URL=$DB DATABASE_URL_UNPOOLED=$DB node scripts/apply-sql.mjs   # ← the step that gets missed
+POSTGRES_URL=$DB DATABASE_URL_UNPOOLED=$DB AUTH_SECRET=anything npx tsx scripts/verify-<x>.mts
+```
+
+`prisma db push` builds the tables and nothing else. The reference data several scripts read — the
+department list above all — arrives in the numbered `prisma/sql/` files, so without `apply-sql` they
+fail looking for rows that a real database has had since migration 022. Replaying the whole history
+onto an already-current schema makes four historical files fail (`023`, `025`, `030`, `055`); that is
+an artefact of replaying them out of order, not a deploy problem — on Neon they ran in sequence years
+of commits ago and are recorded in `_sql_migrations`. And `AUTH_SECRET` must be set for anything
+touching sign-in, because minting a ticket without a signing secret correctly refuses.
+
+**They share one database, so a script must never assert a number about the whole of it.** Four
+separate order-dependent failures came from this in one sweep: two scripts both used a "Consulting"
+department, and two both used the ids `alice`/`bob`, so each cleaned up its own rows and inherited
+the other's. Whichever ran second failed, and the failure looked exactly like a real one. The rules:
+**namespace every shared string** a script writes (its own email domain, its own department names,
+its own ids), and where a value can't be namespaced — an enum like `PART_TIME` — **count the
+expected figure from the database through the same derivation** rather than writing down a number
+that was true on the day. A script that asserts "reaches its 3" is asserting something about every
+other script too.
+
 ### Before Committing
 1. `npx tsc --noEmit` — no TypeScript errors.
 2. Review all changed files.
@@ -366,4 +394,4 @@ TEST_DATABASE_URL="postgresql://…/hrerp_test" npm test
 
 ---
 
-*Last Updated: 2026-08-23 (Added: a gate is not a scale — the sub-6-month pool ceiling now scales to the cycle like everyone else's, and a figure shown beside a decision counts only what that decision moves, through the derivation the write uses. Previously: 2026-08-22 (Added: a count shown beside a choice must be that choice's count, computed through the same derivation the real check uses; one way to say "everyone". Plus: per-module authority is an appointment, never a new Role member — one derivation, role-holders are never rows, the appointment cannot appoint. Plus: a visibility rule needs one source and must be re-decided at the serving route, 404 not 403. Previously: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.)))*
+*Last Updated: 2026-08-24 (Added: how to actually run the `verify-*.mts` scripts — `apply-sql.mjs` after `db push`, or the reference data several of them read is simply absent; and the rule that a script sharing a database must never assert a number about the whole of it, because four order-dependent failures in one sweep all came from two scripts reaching for the same department name or the same fixture ids. Previously: 2026-08-23 (Added: a gate is not a scale — the sub-6-month pool ceiling now scales to the cycle like everyone else's, and a figure shown beside a decision counts only what that decision moves, through the derivation the write uses. Previously: 2026-08-22 (Added: a count shown beside a choice must be that choice's count, computed through the same derivation the real check uses; one way to say "everyone". Plus: per-module authority is an appointment, never a new Role member — one derivation, role-holders are never rows, the appointment cannot appoint. Plus: a visibility rule needs one source and must be re-decided at the serving route, 404 not 403. Previously: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.))))*

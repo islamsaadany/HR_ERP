@@ -24,8 +24,16 @@ await db.course.deleteMany({});
 await db.user.deleteMany({ where: { email: { contains: "@u24.test" } } });
 
 const YEAR = 365.25 * 24 * 3600 * 1000;
-const mk = (id: string, over: Record<string, unknown> = {}) =>
-  db.user.create({ data: { id, email: `${id}@u24.test`, name: id, status: "ACTIVE", ...over } });
+// Every user this script makes, so a roster assertion can be scoped to its own people. Other
+// verification scripts leave their fixtures behind and several also use a "Consulting"
+// department, so "the roster is exactly these two" was a claim about the whole database rather
+// than about the rule, and it failed purely on which script ran first.
+const mine = new Set<string>();
+const mk = (id: string, over: Record<string, unknown> = {}) => {
+  mine.add(id);
+  return db.user.create({ data: { id, email: `${id}@u24.test`, name: id, status: "ACTIVE", ...over } });
+};
+const ours = (rows: { userId: string }[]) => rows.map(r => r.userId).filter(id => mine.has(id)).sort();
 
 const cons1 = await mk("cons1", { department: "Consulting", startDate: new Date(Date.now() - 3 * YEAR) });
 const cons2 = await mk("cons2", { department: "Consulting", startDate: new Date(Date.now() - 1 * YEAR) });
@@ -48,7 +56,7 @@ await db.lessonBlock.create({ data: { lessonId: l1.id, type: "VIDEO", order: 1, 
 // ── US2: audiences ──
 check("no routes yet → nobody reaches it", (await courseRoster(course.id)).length, 0);
 await db.courseAudience.create({ data: { courseId: course.id, kind: "DEPARTMENT", value: "Consulting" } });
-check("Consulting audience reaches both consultants", (await courseRoster(course.id)).map(r => r.userId).sort(), ["cons1", "cons2"]);
+check("Consulting audience reaches both consultants", ours(await courseRoster(course.id)), ["cons1", "cons2"]);
 check("Finance is not reached", (await courseAccessFor(fin.id, course.id)).allowed, false);
 check("employee with NO department is not reached and does not error", (await courseAccessFor(nodept.id, course.id)).allowed, false);
 
@@ -103,7 +111,7 @@ const acc = await courseAccessFor(cons1.id, course.id);
 check("last route revoked mid-course → grandfathered", acc.routes, ["IN_PROGRESS"]);
 check("...and flagged grandfathered-only for the roster", acc.grandfatheredOnly, true);
 const roster = await courseRoster(course.id);
-check("roster still lists them", roster.map(r => r.userId), ["cons1"]);
+check("roster still lists them", ours(roster), ["cons1"]);
 await db.courseEnrollment.update({ where: { id: enr.id }, data: { accessWithdrawnAt: new Date() } });
 check("FR-044: withdraw ends it", (await courseAccessFor(cons1.id, course.id)).allowed, false);
 check("roster is now empty", (await courseRoster(course.id)).length, 0);
