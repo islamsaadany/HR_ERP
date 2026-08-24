@@ -5,8 +5,12 @@
       "schedule": "0 6 * * *"
     },
     {
-      "path": "/api/cron/confirmations",
+      "path": "/api/cron/communications",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/confirmations",
+      "schedule": "0 8 * * *"
     }
   ]
 }

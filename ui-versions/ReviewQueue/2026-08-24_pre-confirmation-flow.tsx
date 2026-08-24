@@ -36,13 +36,13 @@ export type ReviewRow = {
 };
 
 /**
- * Finance's payback queue (spec 039): what needs a decision, then what needs paying, then the
+ * Finance's payback queue (spec 040): what needs a decision, then what needs paying, then the
  * history. Ordered that way because it is a list that should reach zero, not an archive.
  */
 export function ReviewQueue({ rows }: { rows: ReviewRow[] }) {
   const waiting = rows.filter((r) => r.status === "SUBMITTED");
   const toPay = rows.filter((r) => r.status === "APPROVED");
-  // Created in the bank, waiting on the confirmation there (spec 040). Its own group, because
+  // Created in the bank, waiting on the confirmation there (spec 041). Its own group, because
   // there is nothing for Finance to do with these but wait — mixing them into "awaiting payment"
   // would invite somebody to pay the same thing twice.
   const atBank = rows.filter((r) => r.status === "PAYMENT_SUBMITTED");

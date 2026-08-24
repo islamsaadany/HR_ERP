@@ -15,7 +15,7 @@ export type WaitingRow = {
 };
 
 /**
- * One thing waiting on the confirmer (spec 040).
+ * One thing waiting on the confirmer (spec 041).
  *
  * The amount is the largest thing on the card because it is what he is deciding about. The age
  * chip is gold — somebody is waiting — and reads "today" until a full day has passed, so it never

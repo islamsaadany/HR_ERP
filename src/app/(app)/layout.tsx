@@ -32,7 +32,7 @@ export default async function AppLayout({
   const hrAdmin = isAdmin(user.role);
   const showManageLearning = !hrAdmin && (await hasLearningAppointment(user.id));
 
-  // The confirmations door (spec 040): the appointment and nothing else — no role fallback, so the
+  // The confirmations door (spec 041): the appointment and nothing else — no role fallback, so the
   // door tells the same truth the page behind it does.
   const showConfirmations = await canConfirmBatches(user.id);
   let confirmationsWaiting = 0;
@@ -44,10 +44,10 @@ export default async function AppLayout({
     }
   }
 
-  // Petty cash door (spec 039): Finance/Super User, or somebody who actually holds a float. The
+  // Petty cash door (spec 040): Finance/Super User, or somebody who actually holds a float. The
   // SAME derivation the page and the actions use — a door that opens on a different rule from the
   // room behind it is how a nav entry ends up leading to a redirect. Wrapped, because before
-  // migration 067 this table does not exist.
+  // migration 068 this table does not exist.
   let showPettyCash = canManagePettyCash(user.role);
   if (!showPettyCash) {
     try {
@@ -63,6 +63,21 @@ export default async function AppLayout({
   // The count on that entry: resources employees have suggested and nobody has reviewed. It is the
   // only thing in Learning that waits on a person — a badge whose number never reaches zero stops
   // being read. Wrapped, because before migration 064 this table does not exist.
+  // Congratulations waiting for THIS person to send. Wrapped, because before migration 067 the
+  // table does not exist — and a shell that cannot render is worse than a missing count.
+  let messagesWaiting = 0;
+  try {
+    messagesWaiting = await prisma.message.count({
+      where: {
+        assignedToId: user.id,
+        state: "DRAFT",
+        kind: { in: ["BIRTHDAY", "WORK_ANNIVERSARY"] },
+      },
+    });
+  } catch {
+    messagesWaiting = 0;
+  }
+
   let learningBadge = 0;
   if (showManageLearning) {
     try {
@@ -162,6 +177,7 @@ export default async function AppLayout({
       email={user.email}
       showAdmin={hrAdmin}
       showManageLearning={showManageLearning}
+      messagesWaiting={messagesWaiting}
       showIncentive={canAccessIncentive(user.role)}
       showPayments={isFinance(user.role)}
       showPettyCash={showPettyCash}

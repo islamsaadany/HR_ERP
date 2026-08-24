@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 type Row = { id: string; name: string; archivedAt: Date | null };
 
 /**
- * Sections and categories for expenses (spec 039). Super User only.
+ * Sections and categories for expenses (spec 040). Super User only.
  *
  * The two lists are INDEPENDENT: the source workbook pairs them freely (Team/office supply,
  * Community/Media coverage) and leaves category blank on half its rows, so a line requires a

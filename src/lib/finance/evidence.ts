@@ -1,7 +1,7 @@
 import { put } from "@vercel/blob";
 
 /**
- * Evidence upload for petty cash lines and payback requests (spec 039).
+ * Evidence upload for petty cash lines and payback requests (spec 040).
  *
  * The limits are deliberately the SAME as the benefit-claim proof upload: 10 MB, images and
  * PDF. A receipt proving a payment is the same kind of artefact whichever feature it arrives

@@ -66,6 +66,12 @@ const CATEGORIES: Category[] = [
       { href: "/admin/handbook", title: "Handbook & Resources", body: "Author handbook sections and upload resources.", ready: true },
       { href: "/admin/knowledge", title: "Knowledge Base", body: "Author consulting reads & references (paste from the Claude prompt).", ready: true },
       { href: "/admin/announcements", title: "Announcements", body: "Post company announcements.", ready: true },
+      {
+        href: "/admin/communications",
+        title: "Communications",
+        body: "Email the team — announcements, and birthday or anniversary notes a manager sends.",
+        ready: true,
+      },
     ],
   },
   {
@@ -139,6 +145,7 @@ const GLYPH: Record<string, string> = {
   "/admin/handbook": "▣",
   "/admin/knowledge": "◈",
   "/admin/announcements": "✦",
+  "/admin/communications": "✉",
   "/admin/impersonate": "◉",
   "/admin/modules": "⊞",
   "/admin/brand": "◐",
@@ -255,6 +262,16 @@ export default async function AdminPage() {
 
   // Resources employees have suggested and HR has not yet approved or declined (spec 038
   // materials). Wrapped like the others: before migration 064 runs, this table does not exist.
+  // Congratulations waiting for somebody to send. HR's card carries the count because a message
+  // that misses its day is closed, not sent late — so an unnoticed queue is a missed birthday.
+  const pendingCongrats = await safe(
+    () =>
+      prisma.message.count({
+        where: { state: "DRAFT", kind: { in: ["BIRTHDAY", "WORK_ANNIVERSARY"] } },
+      }),
+    0
+  );
+
   const pendingSuggestions = await safe(
     () => prisma.courseResource.count({ where: { status: "PENDING" } }),
     0
@@ -281,6 +298,18 @@ export default async function AdminPage() {
             tags: [
               {
                 label: `${pendingChangeRequests} correction${pendingChangeRequests === 1 ? "" : "s"} to approve`,
+                tone: "warn",
+              },
+            ],
+          }
+        : null,
+    "/admin/communications":
+      pendingCongrats > 0
+        ? {
+            count: pendingCongrats,
+            tags: [
+              {
+                label: `${pendingCongrats} ${pendingCongrats === 1 ? "message" : "messages"} waiting to send`,
                 tone: "warn",
               },
             ],

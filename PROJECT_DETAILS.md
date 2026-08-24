@@ -318,7 +318,7 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 ### Module release switch (super user)
 - `ModuleFlag { key, enabled }` (migration `015`) + Admin → **Modules**. A module switched off is hidden from everyone's nav (`AppShell.hiddenNav`) and its pages redirect home (`requireModuleEnabled`). Lets a super user build in the background and release when ready.
 
-### Finance: petty cash & payback (spec 039, migration `067`)
+### Finance: petty cash & payback (spec 040, migration `068`)
 Replaces the MARCOM Expenses workbook. Routes: `/petty-cash` (accounts), `/petty-cash/[accountId]`
 (reconciliation + lines), `/payback` (an employee's own requests), the **Payback requests** sub-tab
 on `/finance`, and `/admin/expense-lists` (Super User).
@@ -355,7 +355,7 @@ never 403.
 **Email.** The third permitted workflow: `paybackSubmittedToFinance`, `paybackRejectedToEmployee`,
 `paybackPaidToEmployee`. Fire-and-forget, master-toggleable. Petty cash sends none.
 
-### Finance: bank confirmations & salary runs (spec 040, migrations `068` + `069`)
+### Finance: bank confirmations & salary runs (spec 041, migrations `069` + `070`)
 Finance creates transactions in the bank and submits them here; the appointed confirmer confirms
 them at the bank and marks them **Transaction complete**. Nothing in the app releases money.
 
@@ -661,3 +661,95 @@ nobody can open is worse than no branch.
 **Not in this release**: quizzes, gradable assignments, certificates, discussions, analytics,
 roster export, learning paths, resource categorisation (worth doing once a course has more than a
 handful). No email, no cron, no new env var, no new runtime dependency.
+
+---
+
+## Team Communications (spec 039, built 2026-08-24)
+
+Email to employees from the admin: **announcements** to a chosen audience, and **personal
+congratulations** for birthdays and joining anniversaries. The platform's third email workflow and
+the first that is **broadcast** — the two before it are transactional, one person receiving one
+message because of something they did.
+
+**Identity: the unit leads, the group endorses** (mockup-approved,
+`design-mockups/communications/2026-08-24_ffg-email-design-v2.html`). One template, brand as data —
+never a template per unit. The header carries the GROUP name in small caps above the recipient's
+BUSINESS UNIT name in large type, with the unit's own colour behind both and on the button; a fixed
+gold hairline under the header is the group's constant thread across every unit. The **body is
+always dark on white** whatever the unit: brand colours the frame, never the reading.
+
+**Contrast is derived, never assumed** (`src/lib/comms/brand.ts`). An operator picks a brand
+colour with no thought for text on it. `surfaceFor` tries white **and** dark and returns the brand
+**unchanged** whenever either clears 4.5:1 — five of six real brands, `#450059` at 15.03:1 — moving
+the colour only when neither does, and then toward whichever end it is already closer to. The naive
+single-threshold rule is kept as a failing-case test so nobody reintroduces it. A 336-colour sweep
+asserts nothing ever comes back illegible.
+
+**Sending** (`sendBatch` in `src/lib/email/client.ts`): one **separate** message per person,
+chunked at 100 per request. Never a shared `to`, never BCC — nobody sees another address, each copy
+carries its own unit branding, and a failure names *which* person. Unlike the transactional path
+this **reports** rather than swallowing: somebody pressed send and has to know whether it went.
+
+**The send's four guards.** The DRAFT state is CLAIMED with a conditional `updateMany` before
+anything is dispatched (two operators, one send). `confirmedCount` must still equal the server's
+count — somebody joining the department between the dialog and the click refuses the send. An empty
+audience is refused with the reason. Email off is refused plainly. **A partial failure is still a
+send**: the message does not roll back, because the people who received it did.
+
+**The audience is the SAME derivation Learning uses** — extracted to `src/lib/audience/`
+(`rules.ts`, `reach.ts`, `types.ts`) with `src/lib/learning/audience.ts` left as a thin re-export,
+and the chips-and-ticklist picker shared as `src/components/audience/AudienceFields.tsx`. Proven
+rather than asserted: the existing course-access and learning-manager checks were re-run after the
+move. The wrappers are deliberately NOT shared — a course has an Everyone/Only-certain switch, a
+message has a send confirmation.
+
+**Congratulations: nothing sends itself.** A second daily cron
+(`/api/cron/communications`, 07:00, `CRON_SECRET`) prepares drafts `congratsLeadDays` ahead
+(default 3), assigns each to the employee's **line manager** — falling back to HR when they have
+none *or when the manager is the subject* — and sends **one** nudge per assignee per run. It
+**never emails an employee**; that is asserted directly in the verification script, not left as an
+intention. The manager rewrites the words and sends; the message is signed with their name, which
+is honest only because they read it first. HR sees the whole queue and can send any of them.
+
+**Two rules the model enforces rather than remembers.** `Occasion` is unique on
+`(userId, kind, occasionYear)`, so a repeat cron run creates nothing. `MessageRecipient` is unique
+on `(messageId, userId)`, so somebody matched by their department *and* by name gets one email.
+
+**A birthday never states an age** — `Occasion.years` is null for one, so the model refuses to hold
+an age rather than declining to print it. An anniversary states years, because years of service is
+the thing being thanked. A **29 February** birthday is observed on the 28th in non-leap years.
+
+**A missed congratulation closes.** Past its day, a draft becomes `MISSED` and cannot be sent — a
+late birthday message reads worse than none. Stored, not derived, so a late send is refused at the
+write rather than hidden at the read.
+
+**Delivery readiness is asked, not assumed** (`deliveryReadiness`). Until a sending domain is
+verified, Resend delivers **only to the account owner** — so a test that "worked" fails silently
+for everyone else. The setup page reports four distinct states, and says **"could not check"**
+rather than inventing a verdict. A refused key is reported as a refused key: Resend answers an
+invalid key with **400, not 401**, and mislabelling it as an unverified domain sends an operator to
+fix DNS for a week.
+
+**The preview IS the builder.** `/api/admin/communications/preview` renders through
+`renderMessage`, the same function every send calls, into an `<iframe srcdoc>`. It defaults to
+previewing as **somebody with no business unit** — a real case, and the one most likely to look
+wrong if nobody checks it.
+
+**Email is not the web** (`src/lib/comms/render.ts`): tables for layout (Outlook renders through
+Word), every style inline (Gmail strips `<style>` on some clients), colours written literally
+(`var()` is unsupported), `color-scheme: light` declared. **No logo**: unit logos are private blobs
+behind a sign-in check and a mail client fetches unauthenticated, while `data:` images are blocked
+outright by Gmail and Outlook — so the header is typographic. Serving logos publicly is a separate
+decision and was not assumed.
+
+**One display name for the whole platform.** Setting it re-brands the claim and holiday emails too;
+the settings page says so out loud rather than letting it be discovered.
+
+**Surfaces**: `/admin/communications` (list + compose), `/admin/communications/[id]` (edit,
+audience, preview, send — or the delivery record once sent), `/admin/communications/queue` (HR's
+view of every waiting congratulation), `/admin/communications/settings` (sender, lead days,
+readiness, test send).
+
+**Not in this release**: marketing email, external recipients, scheduling a send for later,
+per-unit sending addresses (each brand's domain would need verifying), an employee opt-out
+(deliberately none — a congratulation may carry a gift).

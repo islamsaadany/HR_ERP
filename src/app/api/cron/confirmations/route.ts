@@ -8,7 +8,7 @@ import { formatEGP2 } from "@/lib/labels";
 import { toPiastres, fromPiastres, sumPiastres } from "@/lib/finance/money";
 
 /**
- * The daily nudge (spec 040): anything still waiting for confirmation beyond the configured lead.
+ * The daily nudge (spec 041): anything still waiting for confirmation beyond the configured lead.
  *
  * Transactions sitting unconfirmed are money that has not moved and somebody who has not been
  * paid, with nobody watching. This is the only thing in the feature that speaks without being

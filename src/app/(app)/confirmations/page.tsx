@@ -11,7 +11,7 @@ import { WaitingCard, type WaitingRow } from "@/components/confirmations/Waiting
 export const dynamic = "force-dynamic";
 
 /**
- * The confirmer's whole screen (spec 040).
+ * The confirmer's whole screen (spec 041).
  *
  * Deliberately its own small surface rather than a tab inside Finance: he is not a Finance user,
  * the email links straight here, and the job is meant to take ten seconds. What is waiting, what it

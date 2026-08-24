@@ -18,7 +18,7 @@ export type LineRow = {
 };
 
 /**
- * The period's lines (spec 039).
+ * The period's lines (spec 040).
  *
  * Two flags are derived, never stored: **No receipt** (the line has no evidence) and **Outside
  * this period** (paid outside the window). The second is information, not a fault — receipts

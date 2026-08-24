@@ -192,3 +192,166 @@ export async function sendReportedEmail(input: {
     return { ok: false, error: err instanceof Error ? err.message : "The send failed." };
   }
 }
+
+// ─── Broadcast sending (spec 039, research D1 + D2) ─────────────────────────────────────────
+//
+// Everything above this line is the TRANSACTIONAL path: one person, one message, because of
+// something they did, fire-and-forget so a claim's state change is never blocked by email.
+//
+// Everything below is the BROADCAST path, and it is different in the one way that matters: the
+// caller has to know what happened. A broadcast that quietly half-failed is worse than one that
+// failed loudly, so these REPORT rather than swallow.
+
+/** The most separate messages Resend accepts in one batch request. */
+export const BATCH_MAX = 100;
+
+export type BatchMessage = {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+  /** Whatever the caller needs to match a result back to a row. Not sent anywhere. */
+  ref: string;
+};
+
+export type BatchResult =
+  | { ref: string; ok: true; providerId: string | null }
+  | { ref: string; ok: false; error: string };
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+/**
+ * Send many SEPARATE messages — one per person — reporting per person.
+ *
+ * NEVER a shared `to` and never BCC. Three things follow from that, and all three are
+ * requirements rather than preferences:
+ *   · nobody sees anybody else's address;
+ *   · each copy can carry its own branding, which is the whole point of the unit design;
+ *   · a failure names WHICH person, instead of one verdict for the whole send.
+ *
+ * That is normally the choice between privacy and 148 HTTP calls — which a serverless function
+ * does not have the seconds for, and which would die halfway with no record of where it stopped.
+ * Resend's batch endpoint takes up to 100 separate messages in one request, so it is neither.
+ *
+ * Unlike `sendEmail`, this does NOT consult the master toggle: the caller checks that before it
+ * writes any recipient rows, so that a refusal is reported to the operator rather than discovered
+ * as silence. It does still require the env secrets, and says so.
+ */
+export async function sendBatch(messages: BatchMessage[]): Promise<BatchResult[]> {
+  if (messages.length === 0) return [];
+  if (!resend || !from) {
+    const error = "Email isn't configured — set RESEND_API_KEY and EMAIL_FROM in the environment.";
+    return messages.map((m) => ({ ref: m.ref, ok: false as const, error }));
+  }
+
+  const settings = await getNotificationSettings();
+  const fromHeader = settings.fromName ? `${settings.fromName} <${from}>` : from;
+  const results: BatchResult[] = [];
+
+  for (const group of chunk(messages, BATCH_MAX)) {
+    try {
+      const res = await resend.batch.send(
+        group.map((m) => ({
+          from: fromHeader,
+          to: m.to,
+          subject: m.subject,
+          html: m.html,
+          ...(m.text ? { text: m.text } : {}),
+        }))
+      );
+
+      if (res.error) {
+        // The whole chunk was refused. Every message in it failed, and each says why — a chunk
+        // failing must not leave 100 rows sitting at PENDING forever with nothing recorded.
+        const error = res.error.message ?? "Resend rejected the batch.";
+        group.forEach((m) => results.push({ ref: m.ref, ok: false, error }));
+        continue;
+      }
+
+      // Resend returns ids positionally. Anything without one is reported as failed rather than
+      // assumed successful — an unmatched send is exactly the case worth knowing about.
+      const data = (res.data?.data ?? []) as Array<{ id?: string }>;
+      group.forEach((m, i) => {
+        const id = data[i]?.id;
+        if (id) results.push({ ref: m.ref, ok: true, providerId: id });
+        else results.push({ ref: m.ref, ok: false, error: "Resend accepted the batch but returned no id for this message." });
+      });
+    } catch (err) {
+      const error = err instanceof Error ? err.message : "Send failed.";
+      group.forEach((m) => results.push({ ref: m.ref, ok: false, error }));
+    }
+  }
+
+  return results;
+}
+
+export type Readiness =
+  | { state: "READY"; detail: string }
+  | { state: "OWNER_ONLY"; detail: string }
+  | { state: "KEY_REFUSED"; detail: string }
+  | { state: "NOT_CONFIGURED"; detail: string }
+  | { state: "UNKNOWN"; detail: string };
+
+/**
+ * Whether email will actually reach people — asked of Resend, not assumed.
+ *
+ * THE TRAP THIS EXISTS FOR: until a sending domain is verified, Resend delivers only to the
+ * address the account was opened with. An administrator testing with their own address sees
+ * success and concludes it works; the first real broadcast reaches nobody and reports no error.
+ *
+ * A REFUSED KEY IS NOT A VERDICT ON THE DOMAIN. Saying so is the difference between "your domain
+ * is not verified" — which sends somebody to fix DNS for a week — and the truth, which is that
+ * nothing about the domain was learned. Resend answers an invalid key with 400, NOT 401, so the
+ * message is matched as well as the status.
+ *
+ * And a network answer we did not get is not a verdict either: UNKNOWN says we could not ask,
+ * rather than reporting a domain unverified on no evidence.
+ */
+export async function deliveryReadiness(): Promise<Readiness> {
+  if (!apiKey || !from) {
+    return {
+      state: "NOT_CONFIGURED",
+      detail: "RESEND_API_KEY and EMAIL_FROM are not both set, so nothing can be sent.",
+    };
+  }
+  const domain = from.includes("@") ? from.slice(from.lastIndexOf("@") + 1).toLowerCase() : "";
+  if (!domain) {
+    return { state: "NOT_CONFIGURED", detail: `EMAIL_FROM (${from}) is not an address.` };
+  }
+
+  try {
+    const res = await resend!.domains.list();
+    if (res.error) {
+      const message = res.error.message ?? "";
+      if (/api[_ ]?key/i.test(message) || /unauthor/i.test(message)) {
+        return {
+          state: "KEY_REFUSED",
+          detail: "Resend does not accept this API key. That says nothing about the domain.",
+        };
+      }
+      return { state: "UNKNOWN", detail: `Resend answered: ${message || "an error"}.` };
+    }
+
+    const list = (res.data?.data ?? []) as Array<{ name?: string; status?: string }>;
+    const hit = list.find((d) => String(d.name ?? "").toLowerCase() === domain);
+    if (!hit) {
+      return {
+        state: "OWNER_ONLY",
+        detail: `${domain} is not a domain on this Resend account, so mail reaches only the account owner.`,
+      };
+    }
+    if (hit.status === "verified") {
+      return { state: "READY", detail: `${domain} is verified — messages reach everyone.` };
+    }
+    return {
+      state: "OWNER_ONLY",
+      detail: `${domain} is on the account but not verified (${hit.status ?? "pending"}), so mail reaches only the account owner. Everyone else silently receives nothing.`,
+    };
+  } catch {
+    return { state: "UNKNOWN", detail: "Could not reach Resend just now, so this is unchecked." };
+  }
+}

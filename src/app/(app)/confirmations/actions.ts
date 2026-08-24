@@ -13,7 +13,7 @@ import { sendEmail } from "@/lib/email/client";
 import { paybackPaidToEmployee, claimReimbursedToEmployee } from "@/lib/email/templates";
 
 /**
- * What the confirmer does (spec 040).
+ * What the confirmer does (spec 041).
  *
  * He has already confirmed the transactions at the bank. Pressing "Transaction complete" records
  * that here — and it is the ONLY moment anybody is told they have been paid, because it is the

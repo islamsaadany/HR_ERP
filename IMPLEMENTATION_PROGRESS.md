@@ -16,11 +16,12 @@
 | 6 — Benefits (admin config) | 🟢 Complete |
 | 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |
-| 10 — Finance: petty cash & payback | 🟢 **Built** (spec 039 — custodian floats, period reconciliation, evidence, payback requests; migration `067`) |
-| 11 — Finance: bank confirmations & salaries | 🟢 **Built** (spec 040 — the confirmer appointment, submissions with a frozen total, the CEO's confirmation screen, monthly salary runs, the daily nudge; migrations `068` + `069`) |
+| 10 — Finance: petty cash & payback | 🟢 **Built** (spec 040 — custodian floats, period reconciliation, evidence, payback requests; migration `068`) |
+| 11 — Finance: bank confirmations & salaries | 🟢 **Built** (spec 041 — the confirmer appointment, submissions with a frozen total, the CEO's confirmation screen, monthly salary runs, the daily nudge; migrations `069` + `070`) |
 | 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
+| 12 — Team Communications | 🟢 **Built** (spec 039 — announcements to a chosen audience, birthday & work-anniversary congratulations drafted by the platform and sent by a human; migration `067`) |
 
-## Spec 040 — Bank confirmations & monthly salary runs (built 2026-08-24 — migrations `068` + `069`)
+## Spec 041 — Bank confirmations & monthly salary runs (built 2026-08-24 — migrations `069` + `070`)
 Finance creates transactions in the bank and submits them here; the CEO confirms them at the bank
 and marks them **Transaction complete**. The app notifies and records; it never gates money.
 
@@ -47,7 +48,7 @@ prevents lock-out.
 
 **Two things the database caught that reasoning had not:** inserting the new status "before PAID"
 put it after REJECTED, because the live type's order is not the order the schema declares; and a
-database that had applied an earlier version of migration `068` would keep the old column names
+database that had applied an earlier version of migration `069` would keep the old column names
 forever, since an applied file never re-runs. `069` repairs such a database and `068` guards the
 statements that would abort against a half-renamed table. Verified by building both a fresh and a
 deliberately stale database and applying to each, twice.
@@ -57,7 +58,7 @@ deliberately stale database and applying to each, twice.
 in email never says "batch" and structurally cannot carry a payee name. **Not yet exercised in a
 running app**, and the migrations have not run on the live database.
 
-## Spec 039 — Finance: petty cash floats & payback requests (built 2026-08-24 — migration `067`)
+## Spec 040 — Finance: petty cash floats & payback requests (built 2026-08-24 — migration `068`)
 Replaces the MARCOM Expenses workbook the marketing manager emails Finance monthly.
 
 **What it does.** A **petty cash account** has a named custodian and a signed balance: Finance
@@ -96,7 +97,7 @@ request and answers **404, never 403**.
 **Email.** The **third** permitted workflow (constitution amended 2026-08-24 at the CEO's request):
 submitted → Finance inbox, declined and paid → the requester. Petty cash sends none.
 
-**Verified:** migration `067` applied twice against a throwaway local Postgres (second run a clean
+**Verified:** migration `068` applied twice against a throwaway local Postgres (second run a clean
 no-op), the partial index proven to refuse a second open period while allowing a closed one, the
 check constraint proven to refuse evidence with two parents and with none, seeds landing 3 sections
 and 15 categories; `npx tsc --noEmit` and `npm run build` clean; 133 tests pass, including the
@@ -165,6 +166,43 @@ Both reported from live data; neither needed a schema change, and neither had mi
   puts prose. They now live behind a gear at the top right, each with a line saying what it is.
 - The grey links are **removed**, not kept alongside — two doors to one page would leave the same
   confusion. Menu closes on an outside click and on Escape; nothing else on the page moved.
+
+## Spec 039 — Team Communications (built 2026-08-24 — migration `067`)
+- **Announcements** to a chosen audience and **personal congratulations** for birthdays and joining
+  anniversaries. The third email workflow and the first BROADCAST one.
+- **Specced, planned and tasked first** (spec → plan → tasks → implement), design approved as a
+  mockup before any component was written.
+- **The unit leads, the group endorses**: one template, the unit's colour on the header and button,
+  the group above it in small caps and a gold hairline below. Body always dark on white.
+- **Contrast is derived**: `surfaceFor` tries both inks and leaves five of six real brands
+  untouched. The naive rule is kept as a failing-case test — it puts white on a coral at 3.44:1.
+- **Nothing sends itself**: a second daily cron prepares drafts and nudges the line manager; it
+  never emails an employee, and that is asserted rather than intended. A missed congratulation
+  CLOSES rather than going out late.
+- **The audience derivation is SHARED with Learning**, extracted to `src/lib/audience/` — not
+  copied. Learning re-verified after the move (17/17 access, 35/35 materials, 26/26 manager).
+- **Two constitution-level changes**, both recorded: email widened to three workflows (v1.3.0), and
+  a second daily cron. The load-bearing half — no scheduled process emails an employee — untouched.
+- **The manager self-serves** (G2 approved 2026-08-24,
+  `design-mockups/communications/2026-08-24_manager-messages.html`): `/messages` shows only the
+  drafts assigned to the person asking (`assignedToId: me.id`), so it needs no admin gate — and
+  Communications is deliberately **not** a `MODULES` entry, because a listed module puts a nav
+  door in front of everybody. The sidebar count renders only when something is actually waiting.
+- **Verified**: migration `067` applied twice on a throwaway Postgres, diffed against the schema
+  (only the house `updatedAt` line); `scripts/verify-communications.mts` **51/51**; `npm test`
+  136/136; `npx tsc --noEmit` and `npm run build` clean.
+- **Three test failures were real findings**, not noise: one caught a genuine bug (`surfaceFor`
+  returned the input string rather than a normalised hex, so `#036` and `#003366` compared
+  unequal); two were my own assertions testing the fixture rather than the rule, and were rewritten.
+- **A fourth finding was a collision, not a failure**: this script's fixture ids (`alice`, `bob`)
+  matched `verify-learning-us1`'s, and each script cleans only its own `@x.test` addresses — so the
+  suite passed or failed depending on the order it was run in. Namespaced to `comms-*`, and both
+  orders re-run clean.
+- **Still the user's own**: gate **G3** — confirm each business unit's real brand colour is on its
+  record in Admin → Brand (Visual Shift should read `#450059`). The email reads `primaryColor` from
+  there, so a wrong record brands the mail with whatever it carries. And a **real test send** to a
+  real inbox before the first announcement: how the HTML renders in Outlook, Gmail and Apple Mail
+  is observed, not derived.
 
 ## Learning: a direct "Manage Learning" door (built 2026-08-22 — no migration)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_manage-learning-nav.html`). A

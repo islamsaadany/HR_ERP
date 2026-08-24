@@ -17,7 +17,7 @@ export type PaymentRow = {
 import { formatEGP as egp } from "@/lib/labels";
 
 /**
- * Finance's benefit-claim payments (spec 020, amended by spec 040).
+ * Finance's benefit-claim payments (spec 020, amended by spec 041).
  *
  * The inline "confirm payment" that used to sit here is GONE. It set a claim to Reimbursed and
  * emailed the employee the moment Finance recorded a transfer — before the money had actually

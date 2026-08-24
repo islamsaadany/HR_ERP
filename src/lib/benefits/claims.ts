@@ -33,7 +33,7 @@ export const REIMBURSED_STATUSES: ClaimStatus[] = ["REIMBURSED"];
 /**
  * In-progress statuses that still consume allowance.
  *
- * `PAYMENT_SUBMITTED` (spec 040) belongs here, and getting it wrong would have been expensive:
+ * `PAYMENT_SUBMITTED` (spec 041) belongs here, and getting it wrong would have been expensive:
  * a claim sitting at the bank is committed money, and leaving it out of both this list and
  * `REIMBURSED_STATUSES` would have shown the employee allowance they had already spent. The
  * server-side pool rules ask for `status: { not: "REJECTED" }` and so were never at risk — this

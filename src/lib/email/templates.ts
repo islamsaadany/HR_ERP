@@ -5,7 +5,11 @@ import { appBaseUrl } from "@/lib/email/client";
 // styles only (email clients ignore <style>), light navy/gold.
 
 const NAVY = "#0f2444";
-const GOLD = "#a8821e";
+// gold-500, not gold-600. MEASURED 2026-08-24: #a8821e on navy-800 #0f2444 is 4.33:1, below the
+// 4.5:1 AA requires for text under 18px — and the eyebrow below is 12px. #c9a227 is 6.40:1.
+// (spec 039 FR-042. The same trap is why the new Communications header puts the accent in a BAR,
+// which is a fill and has no ratio to meet, rather than in type.)
+const GOLD = "#c9a227";
 const INK = "#16202e";
 const MUTED = "#5f6472";
 const LINE = "#e7e3da";
@@ -413,7 +417,7 @@ export function renderHolidayAnnouncement(d: {
   };
 }
 
-// ─── Payback requests (spec 039) ───────────────────────────────────────────
+// ─── Payback requests (spec 040) ───────────────────────────────────────────
 //
 // The THIRD email workflow. Email in this product was limited to benefit claims (spec 020) and
 // the holiday workflow (spec 037); the CEO asked for this one on 2026-08-24 and the constitution
@@ -469,7 +473,7 @@ export function paybackPaidToEmployee(d: { amount: string; transferDate: string;
   };
 }
 
-// ─── Bank confirmations (spec 040) ─────────────────────────────────────────
+// ─── Bank confirmations (spec 041) ─────────────────────────────────────────
 //
 // SC-007: no payee name and no individual amount may appear in either of these. The CEO's
 // choice, and the right default — an emailed list of who was paid what lives in an inbox

@@ -13,7 +13,7 @@ import { submitSalaryRun } from "@/app/(app)/finance/batch-actions";
 export const dynamic = "force-dynamic";
 
 /**
- * The monthly salary run (spec 040).
+ * The monthly salary run (spec 041).
  *
  * Four figures and a reference. There is no field for an individual's pay, which is how the
  * promise "no per-person salary is stored or shown" is kept — not by remembering, but because

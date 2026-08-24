@@ -5,7 +5,7 @@ import { canManagePettyCash, canReviewPayback } from "@/lib/finance/access";
 import { streamPrivateBlob } from "@/lib/blob-serve";
 
 /**
- * Serve one evidence file — a petty cash receipt or a payback request's proof (spec 039).
+ * Serve one evidence file — a petty cash receipt or a payback request's proof (spec 040).
  *
  * A URL is not a permission. The decision is re-made HERE, on every request, from the same
  * derivation the pages use, because somebody who has seen one receipt link can guess at others.

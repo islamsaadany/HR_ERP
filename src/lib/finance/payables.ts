@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { toPiastres } from "@/lib/finance/money";
 
 /**
- * What Finance can put into a submission (spec 040).
+ * What Finance can put into a submission (spec 041).
  *
  * Three kinds of payable, one shape. Each is money the company owes that Finance has created a
  * bank transaction for:

@@ -6,7 +6,7 @@ import { toDateInput } from "@/lib/labels";
 type Option = { id: string; name: string };
 
 /**
- * Log a spend (spec 039). The screen that gets used daily, often on a phone in a shop — so the
+ * Log a spend (spec 040). The screen that gets used daily, often on a phone in a shop — so the
  * receipt is attached here rather than emailed to Finance later, and only the five fields that
  * genuinely matter are required.
  *

@@ -12,7 +12,7 @@ import { markComplete, returnToFinance } from "@/app/(app)/confirmations/actions
 export const dynamic = "force-dynamic";
 
 /**
- * What is actually in front of the confirmer before he decides (spec 040): who is being paid, what
+ * What is actually in front of the confirmer before he decides (spec 041): who is being paid, what
  * for, how much, and the receipt. Nothing here can change while it waits on him — that is what
  * makes the total he was emailed the total he confirms.
  */

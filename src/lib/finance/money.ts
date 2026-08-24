@@ -1,5 +1,5 @@
 /**
- * Two-decimal EGP money for the Finance module (spec 039).
+ * Two-decimal EGP money for the Finance module (spec 040).
  *
  * THE RULE: money is stored as `Decimal(10,2)` in Postgres (readable to anyone querying
  * the ledger directly, matching `MedicalRateBand.annualPremium`), and every calculation is

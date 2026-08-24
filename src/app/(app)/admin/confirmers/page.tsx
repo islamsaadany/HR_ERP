@@ -8,7 +8,7 @@ import { appointConfirmer, removeConfirmer } from "./actions";
 export const dynamic = "force-dynamic";
 
 /**
- * Who confirms transactions at the bank (spec 040). Super User only.
+ * Who confirms transactions at the bank (spec 041). Super User only.
  *
  * The page states the unusual rule plainly, because somebody will eventually wonder why their
  * admin account cannot confirm anything.

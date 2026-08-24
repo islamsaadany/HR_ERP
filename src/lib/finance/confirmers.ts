@@ -3,7 +3,7 @@ import type { Role } from "@prisma/client";
 import { isSuperUser } from "@/lib/roles";
 
 /**
- * Who may confirm a batch (spec 040).
+ * Who may confirm a batch (spec 041).
  *
  * THE ONE DERIVATION — asked by the pages, the actions, the email recipient list, the sidebar door
  * and the daily reminder alike.

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperUser } from "@/lib/roles";
 
 /**
- * The section and category lists behind petty cash lines and payback requests (spec 039).
+ * The section and category lists behind petty cash lines and payback requests (spec 040).
  *
  * Super User only. These are the words the whole expense record is filed under, and a rename
  * changes every historical row's label at once — that is governance, not day-to-day Finance.

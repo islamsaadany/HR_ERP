@@ -18,7 +18,7 @@ import { submitPeriod } from "@/app/(app)/petty-cash/actions";
 export const dynamic = "force-dynamic";
 
 /**
- * One petty cash account, one period at a time (spec 039).
+ * One petty cash account, one period at a time (spec 040).
  *
  * The custodian and Finance look at exactly this screen. That is deliberate: when they disagree
  * about a figure, they are disagreeing about a receipt, not about arithmetic.

@@ -89,7 +89,7 @@ export default async function FinancePage({
       settledBy: r.settledBy?.name ?? null,
     }));
 
-  // Payback requests (spec 039). The duplicate hint is looked up per submitted request: if the
+  // Payback requests (spec 040). The duplicate hint is looked up per submitted request: if the
   // requester holds a float, a line of theirs for the same amount within a week either side is
   // shown beside the request. Information for the reviewer — it blocks nothing.
   const paybacks = await prisma.paybackRequest.findMany({
@@ -187,14 +187,14 @@ export default async function FinancePage({
           >
             Data requests
           </Link>
-          {/* The monthly salary run (spec 040) — Finance, the confirmer and Super User only. */}
+          {/* The monthly salary run (spec 041) — Finance, the confirmer and Super User only. */}
           <Link
             href="/finance/salary"
             className="rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
           >
             Salaries
           </Link>
-          {/* Petty cash floats, the other half of the Finance module (spec 039). */}
+          {/* Petty cash floats, the other half of the Finance module (spec 040). */}
           <Link
             href="/petty-cash"
             className="rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"

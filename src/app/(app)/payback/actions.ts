@@ -12,7 +12,7 @@ import { sendEmail } from "@/lib/email/client";
 import { paybackSubmittedToFinance } from "@/lib/email/templates";
 
 /**
- * What the person who paid out of their own pocket can do (spec 039). Reviewing and paying are
+ * What the person who paid out of their own pocket can do (spec 040). Reviewing and paying are
  * Finance's, in `app/(app)/finance/payback-actions.ts`.
  */
 

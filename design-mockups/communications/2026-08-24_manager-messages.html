@@ -1,0 +1,189 @@
+<title>Manager Messages Queue</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .proposal{margin-top:34px}
+  .proposal>h2{font-family:Georgia,serif;font-size:19px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:25px;height:25px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 13px 35px;max-width:78ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:18px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .decision{margin-top:32px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:860px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:6px 0}
+  .note{font-size:11.5px;color:var(--muted);margin-top:10px}
+  footer{margin-top:42px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:11px 12px}
+  .card{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:9px;overflow:hidden}
+  .bar{width:3px;height:36px;border-radius:2px;flex:none}
+  .who{font-size:13.5px;font-weight:700;color:var(--navy-800)}
+  .meta{display:block;font-size:11.5px;color:var(--muted)}
+  .link{font-size:12px;font-weight:600;color:var(--navy-700)}
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:9px}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px}
+  .quiet{font-size:12px;font-weight:600;color:var(--muted)}
+  .fld{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:3px;font-weight:700}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--ink)}
+  .open{border-top:1px solid var(--line);padding:12px}
+  .side{background:var(--navy-900);border-radius:11px;padding:9px 7px;width:190px;font-size:12.5px}
+  .si{display:flex;align-items:center;gap:9px;color:var(--navy-100);border-radius:8px;padding:6px 8px}
+  .si.on{background:var(--navy-800);color:#fff}
+  .si.gold{color:var(--gold-300);margin-top:7px}
+  .sep{height:1px;background:rgba(255,255,255,.09);margin:7px 4px}
+  .pill{margin-left:auto;display:inline-grid;place-items:center;height:16px;min-width:16px;border-radius:999px;background:var(--gold-500);color:var(--navy-900);font-size:10px;font-weight:800;padding:0 5px}
+  .cap{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 8px}
+  .built{border:1px solid var(--green-line);background:var(--green-bg);border-radius:11px;padding:12px 14px;font-size:12.5px;color:#14532d;margin-top:14px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 039 · gate G2</p>
+  <h1>The manager's own messages</h1>
+  <p class="lede">The last piece of Communications, and the only one still unbuilt — everything else is on <code>main</code>. A manager needs to reach their own waiting congratulations without going through the admin. Two surfaces: a sidebar entry with a count, and the page behind it. Illustrative content.</p>
+
+  <div class="built">
+    <b>Already built and working:</b> HR&rsquo;s queue at <code>/admin/communications/queue</code> reaches exactly the same drafts, with the same editor and the same Send. So the feature works end to end today — a manager just cannot yet self-serve, and has to be sent a link.
+  </div>
+
+  <!-- 1 -->
+  <section class="proposal">
+    <h2><span class="num">1</span> The sidebar entry</h2>
+    <p class="sub">Below the divider, in the gold block where Admin and Manage Learning already sit — that block has meant &ldquo;a door you hold, not a page everyone has&rdquo; since the beginning. Only somebody with a draft waiting sees it: an entry that is empty most of the year trains you to ignore it.</p>
+
+    <div class="frame">
+      <div style="display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start">
+        <div>
+          <p class="cap">A manager with two waiting</p>
+          <div class="side">
+            <div class="si">⌂ Home</div>
+            <div class="si">◆ Benefits</div>
+            <div class="si">▤ Time-Off <span class="pill">1</span></div>
+            <div class="si">☰ Team Directory</div>
+            <div class="si">▶ Learning</div>
+            <div class="si">◉ My Profile</div>
+            <div class="sep"></div>
+            <div class="si gold on">✉ Messages to send <span class="pill">2</span></div>
+          </div>
+          <p class="note">Same gold count the sidebar already uses for Time-Off. Collapsed, it is one icon with the number top-right.</p>
+        </div>
+
+        <div>
+          <p class="cap">The same manager, nothing waiting</p>
+          <div class="side">
+            <div class="si">⌂ Home</div>
+            <div class="si">◆ Benefits</div>
+            <div class="si">▤ Time-Off</div>
+            <div class="si">☰ Team Directory</div>
+            <div class="si">▶ Learning</div>
+            <div class="si">◉ My Profile</div>
+          </div>
+          <p class="note">The entry is simply not there. Nothing to click, nothing to explain.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="proposal">
+    <h2><span class="num">2</span> The page — closed</h2>
+    <p class="sub">Rows open closed. The common case is a glance at three of them and sending the one due tomorrow; a queue of expanded editors is unreadable. The coloured bar on the left is that person&rsquo;s business-unit colour, so the email&rsquo;s branding is visible before you open anything.</p>
+
+    <div class="frame">
+      <p style="margin:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--gold-600)">Your team</p>
+      <p style="font-family:Georgia,serif;font-size:24px;margin:3px 0 3px">Messages to send</p>
+      <p style="margin:0 0 16px;font-size:13px;color:var(--muted);max-width:64ch">Written for you already. Read them, change anything that does not sound like you, and send. Nothing goes out on its own.</p>
+
+      <div class="card">
+        <div class="row">
+          <span class="bar" style="background:#450059"></span>
+          <span style="flex:1;min-width:0">
+            <span class="who">Karim Hassan — 5 years</span>
+            <span class="meta">07/09/2026 · Visual Shift</span>
+          </span>
+          <span class="chip c-gold">in 3 days</span>
+          <span class="link">Review →</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <span class="bar" style="background:#0f2444"></span>
+          <span style="flex:1;min-width:0">
+            <span class="who">Mona Selim — birthday</span>
+            <span class="meta">05/09/2026 · Forefront Consulting</span>
+          </span>
+          <span class="chip c-gold">tomorrow</span>
+          <span class="link">Review →</span>
+        </div>
+      </div>
+      <p class="note">&ldquo;tomorrow&rdquo; and &ldquo;in 3 days&rdquo; rather than only a date — a date alone makes you count, and the whole point is knowing what is urgent at a glance.</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="proposal">
+    <h2><span class="num">3</span> The page — one row open</h2>
+    <p class="sub">The words are already there. Everything is editable, because it goes out signed with the manager&rsquo;s name — and signing somebody&rsquo;s name to words they did not read is the thing this design exists to avoid.</p>
+
+    <div class="frame">
+      <div class="card">
+        <div class="row">
+          <span class="bar" style="background:#450059"></span>
+          <span style="flex:1;min-width:0">
+            <span class="who">Karim Hassan — 5 years</span>
+            <span class="meta">07/09/2026 · Visual Shift</span>
+          </span>
+          <span class="chip c-gold">in 3 days</span>
+          <span class="link">Close</span>
+        </div>
+        <div class="open">
+          <div><span class="fld">Subject</span><input class="inp" value="Five years, Karim" readonly></div>
+          <div style="margin-top:9px">
+            <span class="fld">Message</span>
+            <textarea class="inp" rows="5" readonly>Five years ago today you joined us. Thank you for every one of them — the work you have done and the way you have done it.
+
+Here is to the next stretch.</textarea>
+            <p class="note" style="margin-top:5px">Change anything. It goes out signed with your name, so it should sound like you.</p>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-top:11px">
+            <span class="btn-ghost">Save</span>
+            <span class="link">Preview the email →</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+            <span class="btn-navy">Send to Karim</span>
+            <span class="quiet">Not this one</span>
+          </div>
+        </div>
+      </div>
+      <p class="note"><b>&ldquo;Not this one&rdquo;</b> closes a draft without sending — for somebody on compassionate leave, or a person who has asked not to be marked. A manager needs a way to say no that is not silence. It asks once before closing.</p>
+    </div>
+  </section>
+
+  <div class="decision">
+    <h3>What I&rsquo;m assuming — correct me and I&rsquo;ll change it</h3>
+    <ul>
+      <li><b>The entry appears only when something is waiting</b>, and disappears again. An always-present entry that is empty eleven months of the year is one nobody looks at.</li>
+      <li><b>Called &ldquo;Messages to send&rdquo;</b>, not &ldquo;Congratulations&rdquo; — it says what is being asked of them.</li>
+      <li><b>Rows open closed</b>, one at a time.</li>
+      <li><b>Everything is editable</b>, including the subject. It carries their name.</li>
+      <li><b>This is the SAME row component HR&rsquo;s queue already uses</b> — already built, already working. The only difference is that HR&rsquo;s shows whose draft it is, and a manager&rsquo;s does not need to.</li>
+      <li><b>No new permission.</b> A manager sees exactly the drafts assigned to them, which the server already enforces; this is a shortcut to them, not a grant.</li>
+    </ul>
+    <p style="margin:10px 0 0">Approve and it is two small files — the page and the sidebar entry. Everything behind them is built and verified.</p>
+  </div>
+
+  <footer>Spec 039 · gate G2 · 24/08/2026 · illustrative content. Nothing is built until you approve.</footer>
+</div>

@@ -18,7 +18,7 @@ export type MyRequestRow = {
 };
 
 /**
- * The employee's own requests (spec 039) — the answer to "where has my money got to", so that
+ * The employee's own requests (spec 040) — the answer to "where has my money got to", so that
  * nobody has to ask Finance.
  *
  * Colour follows the house rule: gold means someone still has to act, green means done, red

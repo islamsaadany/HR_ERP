@@ -10,7 +10,7 @@ import { submitRequest } from "@/app/(app)/payback/actions";
 export const dynamic = "force-dynamic";
 
 /**
- * Ask for your money back (spec 039).
+ * Ask for your money back (spec 040).
  *
  * Open to everyone — a custodian's own overspend is settled through petty cash reconciliation,
  * but everyone else needs somewhere to send a receipt. A person sees only their own requests.

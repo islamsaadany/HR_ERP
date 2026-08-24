@@ -1,5 +1,5 @@
 /**
- * THE petty cash derivation (spec 039).
+ * THE petty cash derivation (spec 040).
  *
  * Every screen, every server action and every future export reads its figures from here, so
  * two surfaces can never quote totals that disagree — which is exactly what the workbook this

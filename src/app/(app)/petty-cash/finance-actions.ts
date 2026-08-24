@@ -10,7 +10,7 @@ import { withAccountLock, periodFiguresFor, linesMissingEvidence } from "@/lib/f
 import { refuse, isRefusal } from "@/lib/finance/refusal";
 
 /**
- * Finance-only petty cash actions (spec 039): accounts, custodians, funding, and the period
+ * Finance-only petty cash actions (spec 040): accounts, custodians, funding, and the period
  * lifecycle. Everything a custodian may do lives in `actions.ts` next door.
  *
  * House style here: a check inside a lock `refuse()`s, the caller catches it once the

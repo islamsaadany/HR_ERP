@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperUser } from "@/lib/roles";
 
 /**
- * Appointing who confirms transactions at the bank (spec 040).
+ * Appointing who confirms transactions at the bank (spec 041).
  *
  * Super User only, and — unusually for this codebase — holding Super User does NOT itself let you
  * confirm. The CEO's instruction was that transactions wait for him and nobody stands in, so the

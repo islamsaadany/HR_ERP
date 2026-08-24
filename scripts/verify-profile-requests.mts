@@ -130,7 +130,7 @@ async function main() {
       name: "Verify Employee",
       emergencyContactName: "Nadia Rashad",
       emergencyContactRelationship: "Sister",
-      emergencyContactPhone: "+20 122 987 6543",
+      emergencyContactPhone: "+201229876543",
       dateOfBirth: new Date("1990-05-05T00:00:00.000Z"),
       maritalStatus: "MARRIED",
       updatedAt: new Date(),
@@ -173,7 +173,7 @@ async function main() {
     {
       emergencyContactName: "Nadia Rashad-Fouad",
       emergencyContactRelationship: "Sister",
-      emergencyContactPhone: "+20 100 555 0199",
+      emergencyContactPhone: "+201005550199",
       dateOfBirth: "1990-05-03",
       maritalStatus: "MARRIED",
     },
@@ -194,7 +194,7 @@ async function main() {
   check(
     "submitting does NOT touch the employee record",
     after!.emergencyContactName === "Nadia Rashad" &&
-      after!.emergencyContactPhone === "+20 122 987 6543" &&
+      after!.emergencyContactPhone === "+201229876543" &&
       after!.dateOfBirth?.toISOString() === "1990-05-05T00:00:00.000Z"
   );
 
@@ -212,7 +212,7 @@ async function main() {
   check("…writes that column", afterOne!.emergencyContactName === "Nadia Rashad-Fouad");
   check(
     "…and leaves every undecided field untouched",
-    afterOne!.emergencyContactPhone === "+20 122 987 6543" &&
+    afterOne!.emergencyContactPhone === "+201229876543" &&
       afterOne!.dateOfBirth?.toISOString() === "1990-05-05T00:00:00.000Z"
   );
   check("re-approving a decided field is refused", "error" in (await approve(nameField.id, hr.id)));
@@ -236,17 +236,17 @@ async function main() {
   // HR edits the record directly while the last field sits in the queue.
   await prisma.user.update({
     where: { id: emp.id },
-    data: { emergencyContactPhone: "+20 111 000 1111" },
+    data: { emergencyContactPhone: "+201110001111" },
   });
   const nowUser = await prisma.user.findUnique({ where: { id: emp.id }, select: SELECT });
   check(
     "the 'was' side shows HR's newer value, not the one at submission",
-    currentValue("emergencyContactPhone", nowUser!) === "+20 111 000 1111"
+    currentValue("emergencyContactPhone", nowUser!) === "+201110001111"
   );
   check(
     "the stored request still holds what the employee asked for",
     (await prisma.profileChangeField.findUnique({ where: { id: phoneField.id } }))!.requestedValue ===
-      "+20 100 555 0199"
+      "+201005550199"
   );
 
   console.log("\nClosing out");
@@ -256,7 +256,7 @@ async function main() {
   check(
     "the record holds the approved values and not the declined one",
     closed!.emergencyContactName === "Nadia Rashad-Fouad" &&
-      closed!.emergencyContactPhone === "+20 100 555 0199" &&
+      closed!.emergencyContactPhone === "+201005550199" &&
       closed!.dateOfBirth?.toISOString() === "1990-05-05T00:00:00.000Z"
   );
   check("a new request is now allowed", "ok" in (await submit(emp.id, { maritalStatus: "DIVORCED" })));

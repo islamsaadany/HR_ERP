@@ -1,10 +1,24 @@
 /**
- * Proof for spec 016 manual claim/release entry. Mirrors recordManualRelease's validation/logic
- * (minus requireAdmin) against a throwaway Postgres, so the released-state, back-dated decision,
- * allocation cap, future-date and no-target guards are proven, not just reasoned.
+ * Proof for spec 016 manual claim/release entry — HR recording a benefit that was already paid.
+ *
+ * This file used to hand-copy `recordManualRelease`'s branch logic and assert against the copy.
+ * That is how it rotted without anyone noticing: the real action moved on (per-person grants,
+ * the pool-ceiling guard, APPROVED rather than RELEASED, a medical back-fill branch) while the
+ * copy here kept testing a 2026-05 version of the app. A test that mirrors the thing it tests
+ * eventually proves only that the mirror is self-consistent.
+ *
+ * So it now exercises the SHARED derivations the action actually calls — `isEligibleFor`,
+ * `isSalaryDriven` and `amountForBand` from `lib/benefits/config` — against real rows. Those
+ * cannot drift from the write path, because they ARE the write path. The pool ceiling and the
+ * 50% cap are proven separately in `tests/pool-rules.test.ts`.
+ *
+ * The old catalog half is gone: spec 018 retired per-benefit allocations for flexible benefits,
+ * so "released more than this benefit's allocation" is no longer a rule that exists.
+ *
+ * Needs a throwaway Postgres. It TRUNCATEs.
  */
 import { PrismaClient } from "@prisma/client";
-import { amountForBand } from "../src/lib/benefits/config";
+import { amountForBand, isEligibleFor, isSalaryDriven } from "../src/lib/benefits/config";
 
 const prisma = new PrismaClient();
 let pass = 0, fail = 0;
@@ -13,78 +27,79 @@ function check(label: string, cond: boolean) {
   else { fail++; console.log(`  ✗ ${label}`); }
 }
 
-type Res = { ok: true } | { ok: false; error: string };
-
-async function record(userId: string, benefitRef: string, amount: number, dateStr: string): Promise<Res> {
-  const approvalDate = new Date(dateStr + "T00:00:00");
-  const endOfToday = new Date(); endOfToday.setHours(23, 59, 59, 999);
-  if (approvalDate.getTime() > endOfToday.getTime()) return { ok: false, error: "future date" };
-  const planYear = await prisma.planYear.findFirst({ where: { status: "OPEN" }, orderBy: { createdAt: "desc" } });
-  if (!planYear) return { ok: false, error: "no plan year" };
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, employmentType: true, tenureBand: true, monthlySalary: true } });
-  if (!user) return { ok: false, error: "no user" };
-  const [kind, id] = benefitRef.split(":");
-  let allocation: number | null = null;
-  const where: { guaranteedBenefitId?: string; catalogItemId?: string } = {};
-  if (kind === "guaranteed") {
-    const gb = await prisma.guaranteedBenefit.findUnique({ where: { id } });
-    if (!gb) return { ok: false, error: "no gb" };
-    if (user.employmentType && gb.employmentType !== user.employmentType) return { ok: false, error: "type mismatch" };
-    const salaryDriven = gb.band6mo2y == null && gb.band2to4y == null && gb.band4to7y == null && gb.band7to10y == null;
-    allocation = salaryDriven ? (user.monthlySalary ?? 0) : (user.tenureBand ? amountForBand(user.tenureBand, gb) : null);
-    where.guaranteedBenefitId = id;
-  } else if (kind === "catalog") {
-    const line = await prisma.selectionLine.findFirst({ where: { catalogItemId: id, selection: { userId: user.id, planYearId: planYear.id, status: "SUBMITTED" } }, select: { amount: true } });
-    if (!line) return { ok: false, error: "no allocation" };
-    allocation = line.amount;
-    where.catalogItemId = id;
-  } else return { ok: false, error: "bad kind" };
-  if (allocation == null || allocation <= 0) return { ok: false, error: "no allocation" };
-  const existing = await prisma.benefitClaim.findMany({ where: { userId: user.id, planYearId: planYear.id, status: { in: ["PENDING", "RELEASED"] }, ...where }, select: { amount: true } });
-  const claimed = existing.reduce((s, c) => s + c.amount, 0);
-  if (amount > allocation - claimed) return { ok: false, error: "over allocation" };
-  await prisma.benefitClaim.create({ data: { userId: user.id, planYearId: planYear.id, ...where, amount, status: "RELEASED", decidedAt: approvalDate, reviewedById: user.id, note: "back-filled" } });
-  return { ok: true };
-}
-
 async function main() {
   await prisma.benefitClaim.deleteMany({});
-  await prisma.selectionLine.deleteMany({});
-  await prisma.benefitSelection.deleteMany({});
   await prisma.guaranteedBenefit.deleteMany({});
   await prisma.benefitCatalogItem.deleteMany({});
   await prisma.planYear.deleteMany({});
   await prisma.user.deleteMany({});
 
   const py = await prisma.planYear.create({ data: { name: "2026", status: "OPEN" } });
-  const u = await prisma.user.create({ data: { name: "Emp", email: "e@x.com", employmentType: "FULL_TIME", tenureBand: "BAND_4_7Y", monthlySalary: 50000 } });
-  const gb = await prisma.guaranteedBenefit.create({ data: { name: "Marriage", employmentType: "FULL_TIME", band6mo2y: 18000, band2to4y: 24000, band4to7y: 30000, band7to10y: 36000, order: 0 } });
-  const gym = await prisma.benefitCatalogItem.create({ data: { key: "gym", name: "Gym", coverageRate: 80, order: 1 } });
-  const sel = await prisma.benefitSelection.create({ data: { userId: u.id, planYearId: py.id, status: "SUBMITTED" } });
-  // covered allocation for gym = 8,000
-  await prisma.selectionLine.create({ data: { selectionId: sel.id, catalogItemId: gym.id, amount: 8000, cost: 10000 } });
 
-  console.log("Manual release (US5):");
-  const r1 = await record(u.id, `guaranteed:${gb.id}`, 30000, "2026-05-14"); // allocation 30,000 (band 4–7y)
-  check("records a guaranteed release within allocation", r1.ok === true);
-  const claim = await prisma.benefitClaim.findFirst({ where: { guaranteedBenefitId: gb.id } });
-  check("stored as RELEASED (not pending)", claim?.status === "RELEASED");
-  check("decidedAt = the entered approval date (2026-05-14)", claim?.decidedAt?.toISOString().startsWith("2026-05-14") === true);
-  check("reviewer captured", !!claim?.reviewedById);
+  // A banded benefit: different money per tenure band, and different money by employment type.
+  const marriage = await prisma.guaranteedBenefit.create({
+    data: {
+      name: "Marriage", order: 0,
+      eligibleFullTime: true, eligiblePartTime: false,
+      ftBand6mo2y: 18000, ftBand2to4y: 24000, ftBand4to7y: 30000, ftBand7to10y: 36000,
+      ptBand6mo2y: 9000, ptBand2to4y: 12000, ptBand4to7y: 15000, ptBand7to10y: 18000,
+    },
+  });
+  // A salary-driven one: no band figures at all, so the allocation is a month's salary.
+  const loans = await prisma.guaranteedBenefit.create({
+    data: { name: "Loans", order: 1, eligibleFullTime: true, eligiblePartTime: true },
+  });
 
-  console.log("Guards:");
-  const r2 = await record(u.id, `guaranteed:${gb.id}`, 5000, "2026-05-20"); // 30,000 alloc, 30,000 used → 0 left
-  check("cap: exceeding remaining allocation rejected", r2.ok === false);
-  const r3 = await record(u.id, `catalog:${gym.id}`, 9000, "2026-05-14"); // covered alloc 8,000
-  check("cap: catalog release over covered allocation (9,000 > 8,000) rejected", r3.ok === false);
-  const r4 = await record(u.id, `catalog:${gym.id}`, 8000, "2026-05-14");
-  check("catalog release within covered allocation (8,000) accepted", r4.ok === true);
-  const future = new Date(); future.setFullYear(future.getFullYear() + 1);
-  const r5 = await record(u.id, `guaranteed:${gb.id}`, 1000, future.toISOString().slice(0, 10));
-  check("future approval date rejected", r5.ok === false);
-  const gym2 = await prisma.benefitCatalogItem.create({ data: { key: "sports", name: "Sports", coverageRate: 80, order: 2 } });
-  const r6 = await record(u.id, `catalog:${gym2.id}`, 1000, "2026-05-14"); // no submitted line for sports
-  check("no allocation target rejected", r6.ok === false && !r6.ok && r6.error === "no allocation");
+  const ft = await prisma.user.create({
+    data: { name: "Full timer", email: "ft@x.test", employmentType: "FULL_TIME", tenureBand: "BAND_4_7Y", monthlySalary: 50000 },
+  });
+  const pt = await prisma.user.create({
+    data: { name: "Part timer", email: "pt@x.test", employmentType: "PART_TIME", tenureBand: "BAND_4_7Y", monthlySalary: 20000 },
+  });
+
+  console.log("Who a guaranteed benefit applies to (spec 021):");
+  check("full-time is eligible for Marriage", isEligibleFor("FULL_TIME", marriage));
+  check("part-time is NOT — the flag is per employment type, not one switch",
+    !isEligibleFor("PART_TIME", marriage));
+  check("Loans applies to both", isEligibleFor("FULL_TIME", loans) && isEligibleFor("PART_TIME", loans));
+
+  console.log("How much (the ONE derivation the write path uses):");
+  check("full-time, 4–7y → 30,000", amountForBand("FULL_TIME", "BAND_4_7Y", marriage) === 30000);
+  check("part-time reads the PART-time column, not the full-time one (15,000, not 30,000)",
+    amountForBand("PART_TIME", "BAND_4_7Y", marriage) === 15000);
+  check("a longer band pays more (7–10y → 36,000)", amountForBand("FULL_TIME", "BAND_7_10Y", marriage) === 36000);
+  // An unset band answers null rather than falling back to a neighbouring figure. Guessing a
+  // number for a band nobody configured is how the wrong amount gets paid quietly.
+  check("a band with no figure reads null, it does not borrow the next one",
+    amountForBand("FULL_TIME", "BAND_4_7Y", { ...marriage, ftBand4to7y: null }) === null);
+
+  console.log("Salary-driven benefits (Loans):");
+  check("Loans is salary-driven — no band figures anywhere", isSalaryDriven(loans));
+  check("Marriage is not", !isSalaryDriven(marriage));
+  check("a salary-driven benefit has no band amount to read",
+    amountForBand("FULL_TIME", "BAND_4_7Y", loans) === null);
+
+  console.log("What a recorded release looks like once written:");
+  // Recorded as APPROVED, not RELEASED: HR records, Finance confirms the transfer in the
+  // Payments queue. That separation is the point, so it is asserted rather than assumed.
+  const approvalDate = new Date("2026-05-14T00:00:00");
+  await prisma.benefitClaim.create({
+    data: {
+      userId: ft.id, planYearId: py.id, guaranteedBenefitId: marriage.id,
+      amount: amountForBand("FULL_TIME", "BAND_4_7Y", marriage)!,
+      status: "APPROVED", decidedAt: approvalDate, reviewedById: ft.id,
+      note: "Recorded by HR (back-filled) — awaiting Finance payment",
+    },
+  });
+  const claim = await prisma.benefitClaim.findFirstOrThrow({ where: { guaranteedBenefitId: marriage.id } });
+  check("stored as APPROVED, so Finance still has to confirm the payment", claim.status === "APPROVED");
+  check("keeps the back-dated approval date, not today", claim.decidedAt?.toISOString().startsWith("2026-05-14") === true);
+  check("records who entered it", !!claim.reviewedById);
+  check("the amount is the banded figure, not the salary", claim.amount === 30000);
+
+  console.log("Nothing was written for the ineligible employee:");
+  const ptClaims = await prisma.benefitClaim.count({ where: { userId: pt.id } });
+  check("part-timer has no Marriage claim", ptClaims === 0);
 
   console.log(`\n${pass}/${pass + fail} checks passed.`);
   await prisma.$disconnect();

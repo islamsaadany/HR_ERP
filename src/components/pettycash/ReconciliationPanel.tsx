@@ -3,7 +3,7 @@ import { fromPiastres } from "@/lib/finance/money";
 import { describeBalance, describeBudget, type PeriodFigures } from "@/lib/finance/pettycash";
 
 /**
- * Where an account stands, for one period (spec 039).
+ * Where an account stands, for one period (spec 040).
  *
  * This component computes NOTHING. Every figure arrives from `lib/finance/pettycash.ts`, which
  * is the only place the arithmetic exists — including the sentence under the headline number,

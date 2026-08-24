@@ -6,7 +6,7 @@ import { canConfirmBatches } from "@/lib/finance/confirmers";
 import { streamPrivateBlob } from "@/lib/blob-serve";
 
 /**
- * The bank's file attached to a monthly salary run (spec 040).
+ * The bank's file attached to a monthly salary run (spec 041).
  *
  * Narrower than the expense-evidence route on purpose: a payroll document is Finance, the
  * appointed confirmer, and top-level access — never HR Admin, and never the people it covers.

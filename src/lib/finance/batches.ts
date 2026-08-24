@@ -1,5 +1,5 @@
 /**
- * What a submission totals, and what it may become (spec 040).
+ * What a submission totals, and what it may become (spec 041).
  *
  * Pure: no Prisma, no I/O. These rules decide who can mark company money as released, so they are
  * testable without a database and cannot quietly fork into a second copy.

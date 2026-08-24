@@ -1,20 +1,33 @@
 <!--
-SYNC IMPACT REPORT — 2026-08-24 (second amendment of the day)
-Version change: 1.3.0 → 1.4.0 (MINOR — the scheduled-work audience widens, and one documented
-exception to the appointment pattern is recorded)
+SYNC IMPACT REPORT — 2026-08-24 (merge of two same-day amendments)
+Version change: 1.2.1 → 1.3.0 → 1.4.0 (MINOR ×2, merged here — the email limit widens twice
+in one day, from two workflows to four: Team Communications (spec 039) and the payback
+workflow (spec 040). The load-bearing half of the rule is unchanged: no scheduled process may
+email an employee at large. Three daily crons are now recorded, and one documented exception to
+the appointment pattern (spec 041). Previously 1.2.0 → 1.2.1 (PATCH — accuracy corrections and
+one clarification of existing practice; no principle added, removed, or redefined).
+
+NOTE ON NUMBERING: Team Communications and Petty cash & payback were specified in parallel and
+both claimed 039. Communications reached `main` first and keeps it; the finance pair was
+renumbered on merge to 040 (petty cash & payback) and 041 (bank confirmations & salary runs),
+and its migrations to 068/069/070.
 
 Modified sections:
-  - Technology & Data Constraints, scheduled work — TWO daily cron jobs now, the second nudging
-    appointed transaction confirmers (spec 040). The audience a scheduled job may nudge widens
-    from "HR" to "HR, or an appointed confirmer"; the hard rule — never employees at large —
-    is untouched.
-  - Technology & Data Constraints, roles — records spec 040's deliberate exception: role-holders
-    do NOT implicitly hold the transaction-confirmer capability. Documented rather than applied
-    silently, because it reverses the reasoning used for Learning managers. Lock-out is prevented
-    by self-appointment instead.
-  - Technology & Data Constraints, email — the two "your money has arrived" messages in the whole
-    application now fire on the confirmer's completion, never on Finance recording a transfer.
-    The CEO's correction: before that moment the money has not moved, so the email was untrue.
+  - Technology & Data Constraints, email — FOUR permitted workflows now: benefit claims (spec 020),
+    holidays (spec 037), Team Communications (spec 039) and payback (spec 040). Communications is
+    the first BROADCAST workflow and reports per recipient, unlike the transactional three.
+    Separately, the two "your money has arrived" messages in the whole application now fire on the
+    confirmer's completion, never on Finance recording a transfer — the CEO's correction: before
+    that moment the money has not moved, so the email was untrue.
+  - Technology & Data Constraints, scheduled work — THREE daily cron jobs now: holidays (spec 037),
+    communications drafts (spec 039) and confirmation nudges (spec 041). The audience a scheduled
+    job may nudge widens from "HR" to "HR, or an appointed confirmer"; the hard rule — never
+    employees at large — is untouched.
+  - Technology & Data Constraints, roles — `FINANCE` is recorded (it has existed since spec 020 and
+    was missing from this line). Records spec 041's deliberate exception: role-holders do NOT
+    implicitly hold the transaction-confirmer capability. Documented rather than applied silently,
+    because it reverses the reasoning used for Learning managers. Lock-out is prevented by
+    self-appointment instead.
 
 Added sections: none
 Removed sections: none
@@ -87,35 +100,46 @@ holds. Reach for it then; it is never an obligation.
   the provider stays env-gated so it can return). Admin-issued passwords are temporary — the
   employee is forced to `/set-password` on next sign-in (`mustChangePassword`). No emails in v1 for
   recovery: a forgotten password is reset by HR, with no self-service path.
-- Email: limited to **three** workflows —
-  the benefit-claim workflow (spec 020), the holiday/vacation workflow
-  (spec 037: HR verification reminders, team announcements, and the
-  "your day was returned" notice), and the **payback workflow** (spec 039:
-  request submitted → Finance, declined and paid → the requester) — via Resend,
-  env-gated (`RESEND_API_KEY`/`EMAIL_FROM`), fire-and-forget, master-toggleable.
-  (Amends "no email in v1", approved 2026-08-10; widened to the holiday
-  workflow, approved 2026-08-19; widened to the payback workflow, requested by
-  the CEO and approved 2026-08-24.) No other emails. Petty cash itself sends
-  none: the custodian and Finance are both looking at a live screen, and nobody
-  is waiting on a ledger. Within the finance workflow, the two messages that tell somebody money
-  has reached them — a reimbursed benefit claim and a paid payback — fire **only** when the
-  appointed confirmer marks the bank transaction complete, never when Finance records a transfer
-  (the CEO's correction, 2026-08-24: before that moment the money has not moved).
-- Scheduled work: **two** daily Vercel Cron jobs, both authenticated with `CRON_SECRET` —
-  `/api/cron/holidays` (spec 037) and `/api/cron/confirmations` (spec 040, added 2026-08-24),
-  which nudges the appointed transaction confirmers about anything still waiting. A scheduled
-  job may nudge **HR, or an appointed confirmer**; it may never send anything to employees at
-  large — company-wide messages are reviewed and sent by a human. The confirmation nudge logs
-  each send, so a job that runs twice cannot email twice.
+- Email: limited to **four** workflows — the benefit-claim workflow (spec 020), the
+  holiday/vacation workflow (spec 037: HR verification reminders, team announcements, and the
+  "your day was returned" notice), **Team Communications** (spec 039: announcements to a chosen
+  audience, and personal congratulations for birthdays and joining anniversaries), and the
+  **payback workflow** (spec 040: request submitted → Finance, declined and paid → the requester)
+  — via Resend, env-gated (`RESEND_API_KEY`/`EMAIL_FROM`), master-toggleable.
+  (Amends "no email in v1", approved 2026-08-10; widened to the holiday workflow, approved
+  2026-08-19; widened to Communications and to the payback workflow, both approved 2026-08-24.)
+  Still **no** marketing email, no external recipients, no invitations, and no scheduling a send
+  for later. Petty cash itself sends none: the custodian and Finance are both looking at a live
+  screen, and nobody is waiting on a ledger.
+  - The transactional workflows (benefit claims, holidays, payback) are fire-and-forget: one
+    person, because of something they did, and a mail failure must never block a state change.
+    Communications is **broadcast** and is deliberately the opposite — a send REPORTS, per
+    recipient, because somebody pressed send and has to know whether it went. A broadcast cannot
+    be recalled.
+  - Within the finance workflows, the two messages that tell somebody money has reached them — a
+    reimbursed benefit claim and a paid payback — fire **only** when the appointed confirmer marks
+    the bank transaction complete, never when Finance records a transfer (the CEO's correction,
+    2026-08-24: before that moment the money has not moved).
+  - **NON-NEGOTIABLE, and untouched by the widening: no scheduled process may email an EMPLOYEE.**
+    Scheduled work prepares drafts and nudges operators. Every message that reaches an employee is
+    the result of a person reading it and choosing to send.
+- Scheduled work: **three** daily Vercel Cron jobs, all authenticated with `CRON_SECRET` —
+  `/api/cron/holidays` (spec 037), `/api/cron/communications` (spec 039) and
+  `/api/cron/confirmations` (spec 041, added 2026-08-24), which nudges the appointed transaction
+  confirmers about anything still waiting. A scheduled job may nudge **HR, or an appointed
+  confirmer**; it may never send anything to employees at large — company-wide messages are
+  reviewed and sent by a human. The confirmation nudge logs each send, so a job that runs twice
+  cannot email twice.
 - Roles: `EMPLOYEE`, `HR_ADMIN`, `FINANCE`, `SUPER_USER` (superset of both). A `manager`
   capability derives from the org chart (an employee with direct reports). `FINANCE` has existed
   since spec 020 and was missing from this line until 2026-08-24 — a spec/code drift found while
-  writing spec 039, corrected here rather than silently. Per-module authority beyond these is an
-  **appointment**, never a new `Role` member (Learning managers, spec 038; transaction confirmers,
-  spec 040). Role-holders normally hold an appointment's capability implicitly, so emptying the
-  table cannot lock anyone out — **spec 040 is the one documented exception**: only appointed
-  confirmers may confirm a bank transaction, because the instruction was that transactions wait
-  for that person and nobody stands in. Lock-out is prevented there by allowing self-appointment.
+  writing the finance specs, corrected here rather than silently. Per-module authority beyond
+  these is an **appointment**, never a new `Role` member (Learning managers, spec 038; transaction
+  confirmers, spec 041). Role-holders normally hold an appointment's capability implicitly, so
+  emptying the table cannot lock anyone out — **spec 041 is the one documented exception**: only
+  appointed confirmers may confirm a bank transaction, because the instruction was that
+  transactions wait for that person and nobody stands in. Lock-out is prevented there by allowing
+  self-appointment.
 - **Migrations are Claude's job, not the user's** (settled 2026-08-20). Whenever
   `prisma/schema.prisma` or `prisma/seed.ts` changes, the matching numbered **idempotent**
   `prisma/sql/0NN_*.sql` MUST be written and committed in the **same commit** — it may be retried,
@@ -142,7 +166,7 @@ This constitution supersedes conflicting practices. Amendments require explicit 
 approval and must be reflected in `CLAUDE.md` and any dependent spec-kit templates in the
 same change. All spec-kit commands and reviews check work against these principles.
 
-**Version**: 1.2.1 | **Ratified**: 2026-07-27 | **Last Amended**: 2026-08-21
+**Version**: 1.4.0 | **Ratified**: 2026-07-27 | **Last Amended**: 2026-08-24
 (1.1.0 — email allowed for the spec 020 benefit-claim workflow.
 1.2.0 — email widened to the spec 037 holiday/vacation workflow, and the first
 scheduled job admitted, with the rule that a cron may nudge HR but never email

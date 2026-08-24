@@ -16,7 +16,7 @@ export type SubmissionRow = {
 };
 
 /**
- * Finance's side of the confirmation flow (spec 040): tick what you have created in the bank, and
+ * Finance's side of the confirmation flow (spec 041): tick what you have created in the bank, and
  * see what is waiting on the CEO.
  *
  * The three kinds of payable sit in one list because they are one question — "what did I just

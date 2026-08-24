@@ -16,7 +16,7 @@ import { sendEmail } from "@/lib/email/client";
 import { transactionsAwaitingConfirmation } from "@/lib/email/templates";
 
 /**
- * Finance's side of the confirmation flow (spec 040).
+ * Finance's side of the confirmation flow (spec 041).
  *
  * Finance CREATES the transactions in the bank and then records them here — nothing in this file
  * moves money or asks anyone's permission to. Submitting freezes the total and locks the payables,
@@ -33,7 +33,7 @@ function fail(msg: string): never {
 /**
  * The salary screen's own refusal. A separate function DECLARATION rather than an arrow inside
  * the action: only a declaration takes part in TypeScript's control-flow analysis, so the checks
- * that follow actually narrow (the same lesson spec 039 recorded, re-learned here).
+ * that follow actually narrow (the same lesson spec 040 recorded, re-learned here).
  */
 function failSalary(msg: string): never {
   redirect(`/finance/salary?error=${q(msg)}`);

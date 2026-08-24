@@ -2,7 +2,7 @@ import type { Role } from "@prisma/client";
 import { isFinance, isSuperUser } from "@/lib/roles";
 
 /**
- * THE access derivation for the Finance module (spec 039).
+ * THE access derivation for the Finance module (spec 040).
  *
  * One source, asked by the pages, the server actions, the sidebar door and the evidence
  * serving route alike. The Learning module cost us this lesson: a rule written twice is a rule
@@ -64,7 +64,7 @@ export function canWritePettyCashLine(
 }
 
 /**
- * Submit transactions for confirmation, and see the monthly salary runs (spec 040).
+ * Submit transactions for confirmation, and see the monthly salary runs (spec 041).
  *
  * `canSeeSalaryRuns` takes the appointment as a separate argument rather than looking it up,
  * because the caller has usually already asked `canConfirmBatches` and a second query for the same

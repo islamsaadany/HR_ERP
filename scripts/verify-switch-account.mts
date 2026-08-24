@@ -77,7 +77,14 @@ async function main() {
     linkKey(null) === null && linkKey("   ") === null && linkKey(" E-1042 ") === "E-1042");
 
   console.log("\nTicket integrity");
-  const key = process.env.AUTH_SECRET ?? "";
+  // Read the SAME chain the library reads. This said AUTH_SECRET only, so a run with just
+  // NEXTAUTH_SECRET set signed with an empty key and reported 26/27 — a failure that was the
+  // script's, not the code's, and read exactly like a real one.
+  const key = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "";
+  if (!key) {
+    console.error("Set AUTH_SECRET (or NEXTAUTH_SECRET) before running this — tickets cannot be signed without one.");
+    process.exit(1);
+  }
   const sign = (p: string) => createHmac("sha256", key).update(p).digest("hex");
   const good = mintTicket(A!.id, V!.id);
   check("a valid ticket names its actor and target",

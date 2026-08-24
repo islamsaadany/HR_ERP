@@ -27,7 +27,7 @@ export type MissingLine = {
 };
 
 /**
- * The Finance-only half of an account page (spec 039): funding, and the period lifecycle.
+ * The Finance-only half of an account page (spec 040): funding, and the period lifecycle.
  *
  * A custodian never sees this block — they log spend and hand the period over; the money going
  * in, and the decision to freeze a month, belong to Finance.

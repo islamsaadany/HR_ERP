@@ -12,7 +12,7 @@ import { claimReimbursedToEmployee } from "@/lib/email/templates";
 const q = (s: string) => encodeURIComponent(s);
 
 /*
- * `confirmPayment` USED TO LIVE HERE, and is deliberately gone (spec 040, 2026-08-24).
+ * `confirmPayment` USED TO LIVE HERE, and is deliberately gone (spec 041, 2026-08-24).
  *
  * It set a claim to REIMBURSED and emailed the employee "you have been reimbursed" the moment
  * Finance recorded a transfer — but the money moves when the CEO confirms it at the bank, which

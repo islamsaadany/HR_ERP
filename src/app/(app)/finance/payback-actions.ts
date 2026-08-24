@@ -11,9 +11,9 @@ import { sendEmail } from "@/lib/email/client";
 import { paybackRejectedToEmployee, paybackPaidToEmployee } from "@/lib/email/templates";
 
 /**
- * Finance's side of a payback request (spec 039): approve, decline, pay, correct.
+ * Finance's side of a payback request (spec 040): approve, decline, pay, correct.
  *
- * Approve and pay are deliberately two steps. That is what leaves room for spec 040, where the
+ * Approve and pay are deliberately two steps. That is what leaves room for spec 041, where the
  * CEO's approval of the payment run — not Finance recording the transfer — is what makes a
  * request PAID and tells the requester.
  */
@@ -93,7 +93,7 @@ export async function rejectRequest(formData: FormData): Promise<void> {
 }
 
 /*
- * `recordPayment` USED TO LIVE HERE, and is deliberately gone (spec 040, 2026-08-24).
+ * `recordPayment` USED TO LIVE HERE, and is deliberately gone (spec 041, 2026-08-24).
  *
  * Same reason as the benefit-claim confirm it sat beside: it marked a request PAID and emailed the
  * requester when Finance recorded a transfer, before the bank had released anything. Finance now

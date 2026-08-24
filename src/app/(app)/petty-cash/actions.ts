@@ -12,7 +12,7 @@ import { storeEvidenceFiles, evidenceFilesFrom } from "@/lib/finance/evidence";
 
 /**
  * Spend lines and evidence — what the custodian does, and what Finance can do alongside them
- * (spec 039). The period lifecycle and funding live in `finance-actions.ts`.
+ * (spec 040). The period lifecycle and funding live in `finance-actions.ts`.
  */
 
 const q = (s: string) => encodeURIComponent(s);

@@ -20,7 +20,7 @@ const STATUS_CHIP: Record<string, string> = {
 };
 
 /**
- * Petty cash accounts (spec 039).
+ * Petty cash accounts (spec 040).
  *
  * ONE surface for Finance and custodians: Finance sees every float and the controls, a custodian
  * sees the one they hold. Two parallel pages would be a second copy of the access rule, which is
