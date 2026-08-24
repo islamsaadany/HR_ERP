@@ -189,6 +189,13 @@ model User {
   paybackRequestsPaid       PaybackRequest[]        @relation("PaybackPayer")
   expenseEvidenceUploaded   ExpenseEvidence[]       @relation("ExpenseEvidenceUploader")
 
+  // Bank confirmations (spec 040) — back-relations only; no column is added to User. Who may
+  // confirm is a row in TransactionConfirmer, never an attribute of the person.
+  transactionConfirmer  TransactionConfirmer?  @relation("TransactionConfirmerSubject")
+  confirmersAppointed   TransactionConfirmer[] @relation("TransactionConfirmerAppointer")
+  paymentBatchesSent    PaymentBatch[]         @relation("PaymentBatchSender")
+  paymentBatchesDecided PaymentBatch[]         @relation("PaymentBatchDecider")
+
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   poolExceptions        PoolCeilingException[] @relation("PoolExceptionSubject")
@@ -1706,6 +1713,9 @@ enum PettyCashFundingType {
 enum PaybackStatus {
   SUBMITTED
   APPROVED
+  /// Sent to the bank in a batch, waiting on the confirmer (spec 040). A request reaches PAID
+  /// only when that batch is confirmed — not when Finance records the transfer.
+  PAYMENT_SUBMITTED
   REJECTED
   PAID
 }
@@ -1813,8 +1823,7 @@ model PettyCashFunding {
   recordedById String?
   recordedBy   User?   @relation("PettyCashFundingRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
 
-  /// RESERVED for spec 040 (payment runs). No relation, no index, not written by this feature.
-  paymentRunId String?
+  batchItems PaymentBatchItem[]
 
   createdAt DateTime @default(now())
 
@@ -1907,10 +1916,8 @@ model PaybackRequest {
   amountTransferred Decimal?  @db.Decimal(10, 2)
   paymentReference  String?
 
-  /// RESERVED for spec 040 (payment runs). No relation, not written by this feature.
-  paymentRunId String?
-
-  evidence ExpenseEvidence[]
+  evidence   ExpenseEvidence[]
+  batchItems PaymentBatchItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1977,4 +1984,133 @@ model ExpenseCategory {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── Finance: bank confirmations & salary runs (spec 040) ──────────────
+//
+// The bank releases money on two signatures: Finance enters a transfer, the CEO confirms it.
+// This is NOT an approval gate — the gate is the bank's. These tables are the notification and
+// the record: what Finance sent, what it totalled, who confirmed it, and when.
+
+enum PaymentBatchType {
+  EXPENSES
+  SALARY
+}
+
+enum PaymentBatchStatus {
+  SENT // entered at the bank, waiting on the confirmer — the only state that waits on anybody
+  CONFIRMED // confirmed at the bank and ticked off here; immutable
+  SENT_BACK // returned to Finance with a note; its items are released
+  WITHDRAWN // Finance pulled it back before a decision; its items are released
+}
+
+/// Who may confirm a batch.
+///
+/// UNLIKE `LearningManager`, holding HR Admin or Super User does NOT confer this implicitly.
+/// That is deliberate and was the CEO's instruction: payments wait for him and nobody else, and
+/// an implicit power held by every top-level account would make that promise false. The lock-out
+/// this pattern normally guards against is covered instead by letting a Super User appoint
+/// THEMSELVES — an empty table is a pause, not a wall. Do not "fix" this into consistency.
+model TransactionConfirmer {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation("TransactionConfirmerSubject", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Only a Super User can write this row — an appointed confirmer appointing another one would
+  /// let the appointment hand itself out.
+  appointedById String?
+  appointedBy   User?   @relation("TransactionConfirmerAppointer", fields: [appointedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+}
+
+/// One bank session: the transfers Finance entered together.
+///
+/// A batch is created ALREADY SENT — there is no draft, because it describes something that has
+/// already happened at the bank.
+model PaymentBatch {
+  id        String             @id @default(cuid())
+  reference String /// human-facing, e.g. "AUG-26-01"
+  type      PaymentBatchType
+  status    PaymentBatchStatus @default(SENT)
+
+  bankReference String?
+  valueDate     DateTime
+  note          String?
+
+  /// FROZEN AT SEND, and the one figure in this module that is stored rather than derived.
+  /// The confirmer acts on the number he was emailed, possibly hours earlier; recomputing it on
+  /// read would let the emailed figure and the confirmed figure diverge at exactly the moment it
+  /// matters. Items are locked while the batch stands, so it cannot go stale either.
+  totalAmount Decimal @db.Decimal(10, 2)
+  itemCount   Int
+
+  sentById String?
+  sentBy   User?    @relation("PaymentBatchSender", fields: [sentById], references: [id], onDelete: SetNull)
+  sentAt   DateTime @default(now())
+
+  decidedById  String?
+  decidedBy    User?     @relation("PaymentBatchDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt    DateTime?
+  decisionNote String? /// required when sending back or withdrawing
+
+  /// What the confirmer was shown at the moment he confirmed. Equal to `totalAmount` by
+  /// construction — stored so "what did he actually confirm?" is answerable without inference.
+  confirmedTotal Decimal? @db.Decimal(10, 2)
+
+  // ── Salary runs only ──
+  /// First day of the month covered. Null for an expenses batch.
+  salaryMonth    DateTime?
+  headcount      Int?
+  isExtraRun     Boolean   @default(false)
+  extraRunReason String?
+
+  attachmentUrl  String?
+  attachmentName String?
+
+  items PaymentBatchItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([sentAt])
+}
+
+/// One payable inside a batch. Two optional parents, exactly one set (check constraint in SQL).
+///
+/// The payee, purpose and amount are SNAPSHOTS taken when the batch was sent, so the record of
+/// what went to the bank survives a later correction to the source record.
+model PaymentBatchItem {
+  id      String       @id @default(cuid())
+  batchId String
+  batch   PaymentBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  paybackRequestId String?
+  paybackRequest   PaybackRequest? @relation(fields: [paybackRequestId], references: [id], onDelete: SetNull)
+
+  pettyCashFundingId String?
+  pettyCashFunding   PettyCashFunding? @relation(fields: [pettyCashFundingId], references: [id], onDelete: SetNull)
+
+  amountAtSend Decimal @db.Decimal(10, 2)
+  payeeName    String
+  purpose      String
+
+  createdAt DateTime @default(now())
+
+  @@index([batchId])
+}
+
+/// One row per reminder email, so a daily job cannot pester somebody twice about the same batch
+/// on the same day — and so "was he actually told?" is answerable.
+model ConfirmationReminderLog {
+  id      String   @id @default(cuid())
+  batchId String
+  userId  String
+  sentOn  DateTime @db.Date
+
+  createdAt DateTime @default(now())
+
+  @@unique([batchId, userId, sentOn])
 }

@@ -25,7 +25,7 @@ export type ReviewRow = {
   description: string;
   category: string | null;
   payee: string | null;
-  status: "SUBMITTED" | "APPROVED" | "REJECTED" | "PAID";
+  status: "SUBMITTED" | "APPROVED" | "PAYMENT_SUBMITTED" | "REJECTED" | "PAID";
   decidedBy: string | null;
   decidedAt: Date | null;
   decisionReason: string | null;
@@ -42,6 +42,10 @@ export type ReviewRow = {
 export function ReviewQueue({ rows }: { rows: ReviewRow[] }) {
   const waiting = rows.filter((r) => r.status === "SUBMITTED");
   const toPay = rows.filter((r) => r.status === "APPROVED");
+  // Sent to the bank, waiting on the second signature (spec 040). Its own group, because there is
+  // nothing for Finance to do with these but wait — mixing them into "awaiting payment" would
+  // invite somebody to pay the same thing twice.
+  const atBank = rows.filter((r) => r.status === "PAYMENT_SUBMITTED");
   const done = rows.filter((r) => r.status === "PAID" || r.status === "REJECTED");
 
   if (rows.length === 0) {
@@ -56,6 +60,7 @@ export function ReviewQueue({ rows }: { rows: ReviewRow[] }) {
     <div className="flex flex-col gap-6">
       <Group title="Waiting on you" rows={waiting} empty="Nothing to review." />
       <Group title="Approved — awaiting payment" rows={toPay} empty="Nothing awaiting payment." />
+      <Group title="Sent to the bank" rows={atBank} empty="Nothing at the bank." muted />
       <Group title="Settled" rows={done} empty="Nothing settled yet." muted />
     </div>
   );

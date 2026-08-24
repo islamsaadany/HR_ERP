@@ -9,7 +9,7 @@ export type MyRequestRow = {
   submittedAt: Date;
   description: string;
   category: string | null;
-  status: "SUBMITTED" | "APPROVED" | "REJECTED" | "PAID";
+  status: "SUBMITTED" | "APPROVED" | "PAYMENT_SUBMITTED" | "REJECTED" | "PAID";
   decisionReason: string | null;
   decidedBy: string | null;
   transferDate: Date | null;
@@ -37,6 +37,13 @@ const STATUS: Record<
     label: "Awaiting payment",
     chip: "border-navy-200 bg-navy-50 text-navy-700",
     say: (r) => `Approved${r.decidedBy ? ` by ${r.decidedBy}` : ""}. Waiting on the transfer.`,
+  },
+  // Spec 040: Finance has entered the transfer at the bank and it is waiting on the second
+  // signature. Deliberately NOT called "paid" — until the bank releases it, nobody has been paid.
+  PAYMENT_SUBMITTED: {
+    label: "At the bank",
+    chip: "border-gold-300 bg-gold-100 text-gold-800",
+    say: () => "Finance has sent this to the bank. It needs one more signature there.",
   },
   PAID: {
     label: "Paid",
