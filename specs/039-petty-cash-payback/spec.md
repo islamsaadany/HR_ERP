@@ -336,11 +336,13 @@ on a new spend line while an archived one does not.
   reviewed by Finance alone (confirmed with the CEO, 2026-08-24).
 - **Payment itself is recorded, not executed.** Nothing in this feature moves money; transfers
   happen in the bank and are recorded here.
-- **The CEO's final transaction approval is spec 040** and is layered on top of the payment records
-  this feature creates. The payment records are deliberately shaped for it: 040 changes exactly one
-  transition — a payback request reaches **Paid** when the CEO approves the run carrying it rather
-  than the moment Finance records the transfer, inserting a single *payment submitted, awaiting
-  approval* state. Nothing else in this feature is reworked by it.
+- **The CEO's bank confirmation is spec 040** and is layered on top of the payment records this
+  feature creates. The payment records are deliberately shaped for it: 040 changes exactly one
+  transition — a payback request reaches **Paid**, and its requester is told, when the CEO confirms
+  the transaction at the bank and marks it complete, rather than when Finance records the transfer.
+  A single *at the bank, awaiting confirmation* state is inserted. Nothing else here is reworked.
+  (040 later applied the same rule to benefit-claim reimbursements from spec 020, at the CEO's
+  instruction on 2026-08-24 — the same confusion, in an older module.)
 - **Existing platform capabilities are reused**: the Finance role and its page, the file-storage and
   access-checked serving pattern already used for benefit-claim proof, the company email settings
   with their master toggle and Finance inbox, and the navy/gold design language.

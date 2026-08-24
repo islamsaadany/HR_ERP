@@ -102,7 +102,16 @@ CREATE TABLE IF NOT EXISTS "PaymentBatch" (
 );
 CREATE INDEX IF NOT EXISTS "PaymentBatch_status_idx" ON "PaymentBatch" ("status");
 CREATE INDEX IF NOT EXISTS "PaymentBatch_type_idx" ON "PaymentBatch" ("type");
-CREATE INDEX IF NOT EXISTS "PaymentBatch_submittedAt_idx" ON "PaymentBatch" ("submittedAt");
+-- Guarded on the column existing: on a database that applied the FIRST version of this file the
+-- column is still called "sentAt" until 069 renames it, and an unguarded CREATE INDEX would abort
+-- the rest of this file. 069 creates the index too, so either path ends up with it.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'PaymentBatch' AND column_name = 'submittedAt') THEN
+    CREATE INDEX IF NOT EXISTS "PaymentBatch_submittedAt_idx" ON "PaymentBatch" ("submittedAt");
+  END IF;
+END $$;
 
 -- ONE ORDINARY SALARY RUN PER MONTH. A second transfer for the same month is possible, but only
 -- as an explicitly flagged extra run with a reason — so nobody can quietly pay a month twice.
@@ -174,6 +183,13 @@ BEGIN
       ('PaymentBatchItem_pettyCashFundingId_fkey',   'PaymentBatchItem',     'pettyCashFundingId', 'PettyCashFunding', 'SET NULL')
     ) AS t(conname, tbl, col, ref, on_delete)
   LOOP
+    -- Skip a key whose column is not there yet: on a database that applied the FIRST version of
+    -- this file the columns still carry their old names until 069 renames them, and one failure
+    -- inside this block would abandon every remaining key.
+    CONTINUE WHEN NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name = fk.tbl AND column_name = fk.col
+    );
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = fk.conname) THEN
       EXECUTE format(
         'ALTER TABLE %I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES %I("id") ON DELETE %s ON UPDATE CASCADE',

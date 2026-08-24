@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-24
 
-**Status**: Draft (rewritten twice on 2026-08-24 — the CEO corrected the framing, then the verbs)
+**Status**: Draft (2026-08-24 — the CEO corrected the framing, then the verbs, then widened the scope to benefit claims)
 
 **Input**: User description: "Finance informs the CEO of any payment they make so the CEO can give the final transaction approval — the CEO performs the final confirmation in the bank, so an email is needed the moment Finance has entered a transaction. The same is needed for the monthly salaries: when Finance records the payroll on the banking side, they submit it on the platform and the CEO receives an email to approve the transactions. This may need a new authority in the release of amounts."
 
@@ -31,6 +31,32 @@ The vocabulary, settled:
 The transactions Finance created in one sitting have **no collective noun on screen** — the UI says
 "3 transactions". (`PaymentBatch` survives as an internal model name and must never appear in
 anything a person reads.)
+
+### A third correction, which widened the scope
+
+*"Previously the employee would receive the email of their benefit or any transaction when the
+finance confirm, but actually this notification should be connected to my financial confirmation to
+avoid confusion."*
+
+Since spec 020, a benefit claim became **Reimbursed** and the employee was emailed *"you have been
+reimbursed"* the moment **Finance** recorded a transfer. At that moment the money has not moved — it
+moves when he confirms at the bank. Anybody emailed in between has been told something untrue, and
+then asks Finance where their money is.
+
+So **benefit-claim reimbursements are a third kind of payable** in this feature, alongside payback
+requests and petty cash float movements. A claim gains the same waiting state, and the employee is
+told when the CEO marks the submission complete.
+
+Two consequences, both accepted:
+- **His list gets longer.** Every benefit reimbursement now passes through him, not just paybacks
+  and float top-ups.
+- **Finance's existing "confirm payment" step on the claims queue goes away.** They tick approved
+  claims into a submission instead, exactly as they do for paybacks — one flow, not two.
+
+An audit of every email the app sends found exactly **two** that tell somebody money reached them:
+the benefit reimbursement and the payback. Both now wait for his confirmation. The others announce
+decisions (submitted, approved, declined, reopened) and are unaffected — a decision is true when it
+is made.
 
 ## Overview
 
@@ -242,9 +268,14 @@ confirm exactly one summary email reaches the confirmer and none reaches anyone 
 
 **Submitting**
 
-- **FR-006**: Finance MUST be able to tick payables — approved payback requests and petty cash
-  funding movements from spec 039 — and submit them for confirmation with a bank reference, a value
-  date, an optional note and an optional attachment.
+- **FR-006**: Finance MUST be able to tick payables — approved payback requests, petty cash funding
+  movements (spec 039) and **approved benefit claims awaiting reimbursement** (spec 020) — and
+  submit them for confirmation with a bank reference, a value date, an optional note and an optional
+  attachment.
+- **FR-006a**: A benefit claim MUST reach **Reimbursed**, and its employee MUST be emailed, only
+  when the submission carrying it is marked complete — never when Finance records a transfer. The
+  single-step "confirm payment" on the claims queue MUST be removed, so there is one path and not
+  two.
 - **FR-007**: Submitting MUST fix the total and lock the items: nothing may be added, removed,
   altered, or submitted twice while it stands.
 - **FR-008**: A payable MUST be awaiting confirmation in at most one submission at a time.
@@ -316,7 +347,9 @@ confirm exactly one summary email reaches the confirmer and none reaches anyone 
 - **SC-003**: Nothing can be marked complete by the person who submitted it, in any combination of
   Finance and confirmer rights; only top-level access can, and the record then shows both halves as
   theirs.
-- **SC-004**: Somebody is told they have been paid only after the money was released, never before.
+- **SC-004**: Somebody is told they have been paid only after the money was released, never before —
+  for benefit claims and paybacks alike. No email in the whole application announces money reaching
+  a person before the CEO has confirmed it at the bank.
 - **SC-005**: The total in the email always equals the total on the record that is confirmed.
 - **SC-006**: No individual salary figure is stored, shown or exported by this feature, verifiable
   by inspecting what a salary run holds.

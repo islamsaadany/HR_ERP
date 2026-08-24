@@ -555,6 +555,11 @@ enum ClaimType {
 enum ClaimStatus {
   SUBMITTED
   APPROVED
+  /// Finance has created the transaction in the bank and submitted it for confirmation (spec 040).
+  /// A claim reaches REIMBURSED — and the employee is told — only when the CEO confirms it at the
+  /// bank and marks it complete. Before that nobody has actually been paid, and telling them so
+  /// was the confusion this state removes.
+  PAYMENT_SUBMITTED
   REIMBURSED
   REJECTED
 }
@@ -946,6 +951,9 @@ model BenefitClaim {
   paidAt              DateTime? // when Finance confirmed the transfer
   transferDate        DateTime? // actual date money was transferred (Finance-entered)
   amountTransferred   Int? // actual amount transferred (Finance-entered)
+
+  /// Submissions this claim's reimbursement was included in (spec 040).
+  batchItems PaymentBatchItem[]
 
   @@index([userId, planYearId])
   @@index([status])
@@ -2097,6 +2105,11 @@ model PaymentBatchItem {
   pettyCashFundingId String?
   pettyCashFunding   PettyCashFunding? @relation(fields: [pettyCashFundingId], references: [id], onDelete: SetNull)
 
+  /// Benefit-claim reimbursements travel the same path (added 2026-08-24 at the CEO's note): the
+  /// employee is told when HE confirms at the bank, not when Finance records a transfer.
+  benefitClaimId String?
+  benefitClaim   BenefitClaim? @relation(fields: [benefitClaimId], references: [id], onDelete: SetNull)
+
   amountAtSubmission Decimal @db.Decimal(10, 2)
   payeeName          String
   purpose            String
@@ -2104,6 +2117,7 @@ model PaymentBatchItem {
   createdAt DateTime @default(now())
 
   @@index([batchId])
+  @@index([benefitClaimId])
 }
 
 /// One row per reminder email, so a daily job cannot pester somebody twice about the same batch
