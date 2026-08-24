@@ -412,3 +412,59 @@ export function renderHolidayAnnouncement(d: {
     }),
   };
 }
+
+// ─── Payback requests (spec 039) ───────────────────────────────────────────
+//
+// The THIRD email workflow. Email in this product was limited to benefit claims (spec 020) and
+// the holiday workflow (spec 037); the CEO asked for this one on 2026-08-24 and the constitution
+// was amended to match. Amounts arrive pre-formatted here because petty cash money is
+// two-decimal EGP (`formatEGP2`), not the whole-EGP `egp()` the benefits templates use.
+
+/** P1 — payback request submitted → Finance inbox. */
+export function paybackSubmittedToFinance(d: {
+  requesterName: string;
+  amount: string;
+  datePaid: string;
+  description: string;
+}) {
+  return {
+    subject: `Payback request to review — ${d.requesterName}`,
+    html: layout(
+      "Someone is out of pocket",
+      para("An employee paid for something themselves and has sent the receipt. Review it to approve or decline.") +
+        row("Who", d.requesterName) +
+        row("Amount", d.amount) +
+        row("Paid on", d.datePaid) +
+        row("What for", d.description),
+      { href: link("/finance"), label: "Review the request" }
+    ),
+  };
+}
+
+/** P2 — payback request declined → the requester. */
+export function paybackRejectedToEmployee(d: { amount: string; description: string; reason: string }) {
+  return {
+    subject: "Your payback request was declined",
+    html: layout(
+      "Your payback request was declined",
+      para(`Your request for <strong>${d.amount}</strong> (${d.description}) was reviewed and declined.`) +
+        row("Reason", d.reason) +
+        para("If that isn't right, reply to Finance and they'll take another look."),
+      { href: link("/payback"), label: "View my requests" }
+    ),
+  };
+}
+
+/** P3 — payback paid → the requester. */
+export function paybackPaidToEmployee(d: { amount: string; transferDate: string; description: string }) {
+  return {
+    subject: `You've been paid back — ${d.amount}`,
+    html: layout(
+      "Your money is on its way back",
+      para(`Finance has transferred your payback for <strong>${d.description}</strong>.`) +
+        row("Amount transferred", d.amount) +
+        row("Transferred on", d.transferDate),
+      { href: link("/payback"), label: "View my requests" }
+    ),
+  };
+}

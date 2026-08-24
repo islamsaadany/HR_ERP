@@ -11,7 +11,6 @@ const NAV = [
   { href: "/dashboard", label: "Home", icon: "home" },
   { href: "/onboarding", label: "Onboarding", icon: "onboarding" },
   { href: "/benefits", label: "Benefits", icon: "benefits" },
-  { href: "/payback", label: "Payback", icon: "payback" },
   { href: "/directory", label: "Team Directory", icon: "directory" },
   { href: "/handbook", label: "Handbook & Resources", icon: "handbook" },
   { href: "/knowledge", label: "Knowledge Base", icon: "knowledge" },
@@ -68,7 +67,6 @@ export function AppShell({
   showManageLearning = false,
   showIncentive,
   showPayments = false,
-  showPettyCash = false,
   hiddenNav = [],
   navBadges = {},
   dataRequestCount = 0,
@@ -90,8 +88,6 @@ export function AppShell({
   showManageLearning?: boolean;
   showIncentive: boolean;
   showPayments?: boolean;
-  /** Finance/Super User, or the custodian of an active float — the same derivation the page uses. */
-  showPettyCash?: boolean;
   hiddenNav?: string[];
   navBadges?: Record<string, number>;
   /** Pending data-request fields (spec 033) — >0 renders the gold sidebar notice. */
@@ -247,21 +243,6 @@ export function AppShell({
                   <NavIcon name="payments" />
                 </Link>
               ) : null}
-              {showPettyCash ? (
-                <Link
-                  href="/petty-cash"
-                  title="Petty cash"
-                  aria-label="Petty cash"
-                  className={
-                    "mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive("/petty-cash")
-                      ? "bg-navy-800 text-gold-300"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  <NavIcon name="pettycash" />
-                </Link>
-              ) : null}
               {showAdmin ? (
                 <Link
                   href="/admin"
@@ -415,20 +396,6 @@ export function AppShell({
                   }
                 >
                   Payments
-                </Link>
-              ) : null}
-              {showPettyCash ? (
-                <Link
-                  href="/petty-cash"
-                  aria-current={isActive("/petty-cash") ? "page" : undefined}
-                  className={
-                    "relative mt-2 block rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/petty-cash")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  Petty cash
                 </Link>
               ) : null}
               {showAdmin ? (
@@ -664,16 +631,6 @@ function NavIcon({ name }: { name: string }) {
     case "payments":
       return (
         <svg {...common}><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6 9v6M18 9v6" /></svg>
-      );
-    case "payback":
-      // A receipt with a return arrow — money going back to the person who paid.
-      return (
-        <svg {...common}><path d="M7 3h10v16l-2.5-1.6L12 19l-2.5-1.6L7 19z" /><path d="M13.5 8.5h-3a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3h-3" /></svg>
-      );
-    case "pettycash":
-      // A cash box with a slot: a float somebody physically holds.
-      return (
-        <svg {...common}><rect x="3" y="7" width="18" height="12" rx="2" /><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7" /><path d="M9.5 12.5h5" /></svg>
       );
     case "admin":
       return (

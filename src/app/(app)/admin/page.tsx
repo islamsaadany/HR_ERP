@@ -91,6 +91,12 @@ const CATEGORIES: Category[] = [
         body: "Claim-workflow emails: HR/Finance inboxes, on/off, and a test send.",
         ready: true,
       },
+      {
+        href: "/admin/expense-lists",
+        title: "Expense lists",
+        body: "Sections and categories for petty cash lines and payback requests.",
+        ready: true,
+      },
     ],
   },
 ];
@@ -131,6 +137,7 @@ const GLYPH: Record<string, string> = {
   "/admin/modules": "⊞",
   "/admin/brand": "◐",
   "/admin/notifications": "✉",
+  "/admin/expense-lists": "☰",
 };
 
 /**

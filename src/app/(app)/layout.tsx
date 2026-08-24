@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requireUser, getImpersonation } from "@/lib/roles";
 import { hasLearningAppointment } from "@/lib/learning/managers";
 import { isAdmin, isFinance, canAccessIncentive } from "@/lib/roles";
+import { canManagePettyCash } from "@/lib/finance/access";
 import { getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
 import { prisma } from "@/lib/prisma";
@@ -29,6 +30,22 @@ export default async function AppLayout({
   //     admin home would be one row they had just come from.
   const hrAdmin = isAdmin(user.role);
   const showManageLearning = !hrAdmin && (await hasLearningAppointment(user.id));
+
+  // Petty cash door (spec 039): Finance/Super User, or somebody who actually holds a float. The
+  // SAME derivation the page and the actions use — a door that opens on a different rule from the
+  // room behind it is how a nav entry ends up leading to a redirect. Wrapped, because before
+  // migration 067 this table does not exist.
+  let showPettyCash = canManagePettyCash(user.role);
+  if (!showPettyCash) {
+    try {
+      showPettyCash =
+        (await prisma.pettyCashAccount.count({
+          where: { custodianId: user.id, status: "ACTIVE" },
+        })) > 0;
+    } catch {
+      showPettyCash = false;
+    }
+  }
 
   // The count on that entry: resources employees have suggested and nobody has reviewed. It is the
   // only thing in Learning that waits on a person — a badge whose number never reaches zero stops
@@ -134,6 +151,7 @@ export default async function AppLayout({
       showManageLearning={showManageLearning}
       showIncentive={canAccessIncentive(user.role)}
       showPayments={isFinance(user.role)}
+      showPettyCash={showPettyCash}
       hiddenNav={hiddenNav}
       navBadges={{ "/time-off": timeoffBadge, "/admin/learning": learningBadge }}
       dataRequestCount={dataRequests?.pendingCount ?? 0}
