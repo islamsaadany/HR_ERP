@@ -184,6 +184,20 @@ four steering files (same commit).
 - **Explain reasoning** — give the rationale behind suggestions.
 - **Ask clarifying questions** — better to ask than assume.
 
+### 5b. CRITICAL: Talk like a person, not a system (added 2026-08-24)
+- **Write to the user in plain English.** No file paths, function names, table or column names,
+  status enums, migration numbers, or framework terms in the reply — those belong in the code and
+  the commit message, not in a sentence someone reads on their phone.
+- **Say what it does, not how it is wired.** "Finance gets an email the moment someone sends a
+  receipt" — not "the submit action dispatches `paybackSubmittedToFinance` via the Resend client".
+- **Name a file only when the user has to open it themselves**, and then say what it is for.
+- **Describe a decision by its consequence.** "Nobody can close the month with a receipt missing
+  unless they sign for it" beats "closing refuses unless `acknowledgeMissing` is set".
+- **The same goes for questions.** Ask about the business, not the schema: "who holds the cash
+  today?" — not "which user should be the `custodianId`?"
+- This is about the **reply**, not the work. Code comments, commit messages, specs and the four
+  steering files stay as precise and technical as they need to be.
+
 ---
 
 ## Project Context
@@ -349,4 +363,4 @@ TEST_DATABASE_URL="postgresql://…/hrerp_test" npm test
 
 ---
 
-*Last Updated: 2026-08-24 (Added: the Finance module — a reconciliation figure is derived once, kept signed and stated in words, because the source workbook inverted its own sign between tabs; money to the cent is Decimal in Postgres and integer piastres in TypeScript; a lock protects an invariant you can name (petty cash has no ceiling — it guards state, not a limit); an acknowledgement must say what was accepted; and a TypeScript refusal helper only narrows as a function declaration. Email widened to a THIRD workflow (payback), and the constitution's roles line corrected to include FINANCE, missing since spec 020. Previously: 2026-08-23 (a threshold decides IF, the cycle decides HOW MUCH; a figure beside a decision counts only what that decision moves.))*
+*Last Updated: 2026-08-24 (Added: talk like a person, not a system — replies to the user are plain English, with no file paths, function names or schema terms; the technical precision stays in the code, commits and specs. Plus: the Finance module — a reconciliation figure is derived once, kept signed and stated in words, because the source workbook inverted its own sign between tabs; money to the cent is Decimal in Postgres and integer piastres in TypeScript; a lock protects an invariant you can name (petty cash has no ceiling — it guards state, not a limit); an acknowledgement must say what was accepted; and a TypeScript refusal helper only narrows as a function declaration. Email widened to a THIRD workflow (payback), and the constitution's roles line corrected to include FINANCE, missing since spec 020. Previously: 2026-08-23 (a threshold decides IF, the cycle decides HOW MUCH; a figure beside a decision counts only what that decision moves.))*
