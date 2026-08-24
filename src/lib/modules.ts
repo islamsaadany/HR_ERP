@@ -14,6 +14,7 @@ export const MODULES = [
   { key: "knowledge", label: "Knowledge Base", href: "/knowledge" },
   { key: "timeoff", label: "Time-Off", href: "/time-off" },
   { key: "learning", label: "Learning", href: "/learning" },
+  { key: "reviews", label: "Reviews & 1:1s", href: "/reviews" },
 ] as const;
 
 export type ModuleKey = (typeof MODULES)[number]["key"];

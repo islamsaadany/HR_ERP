@@ -753,3 +753,82 @@ readiness, test send).
 **Not in this release**: marketing email, external recipients, scheduling a send for later,
 per-unit sending addresses (each brand's domain would need verifying), an employee opt-out
 (deliberately none — a congratulation may carry a gift).
+## Reviews & 1:1s (spec 042)
+
+A quarterly performance review that is filled **across** the quarter rather than the night before,
+plus the ad-hoc 1:1s that feed it. Private to each manager↔report pair.
+
+### Shape
+
+| Object | What it is |
+|---|---|
+| **Journal** (`JournalEntry`) | One person's dated private notes. Joined to nothing — there is no query by which another person's entry can be reached. |
+| **1:1** (`OneOnOne`, `OneOnOneNote`) | An ad-hoc meeting between a pair. Both write notes freely; the **outcome** needs both to acknowledge, then the record locks. |
+| **Review sheet** (`ReviewSheet`, `ReviewSheetItem`) | One per pair per quarter, on the agreed agenda. Two independently authored halves. |
+| **Agreed outcome** (`ReviewOutcome`) | Priorities, risks, what a good next review looks like, and each side's commitments. Carries into the next quarter once **both** acknowledge. |
+| **Strengths** (`StrengthsTheme`, `StrengthsProfile`, `StrengthsProfileTheme`) | The fixed 34 CliftonStrengths themes, plus each employee's own ordered profile. |
+
+### The seal
+
+Both halves stay hidden from each other until **both parties submit AND both confirm the meeting
+happened**. Submitting means "I am ready to meet", not "you may read me"; requiring **both**
+confirmations is what stops one party unsealing the other's half by declaring a meeting that never
+took place. `openedAt` is stamped in one place only (`confirmMeetingHeld`), inside a transaction
+holding `SELECT … FOR UPDATE` on the sheet row, and it means visible **and** frozen at once — the
+halves are what each person brought, and the meeting's own content goes in the outcome.
+
+A quarter that ends with `openedAt` still null stays sealed permanently: no outcome, no
+carry-forward, nothing published. An unheld review leaves no record that it happened.
+
+### Who can read
+
+Nobody but the two people. **HR Admins and Super Users have no access** — not the contents, not the
+existence, and there is no break-glass. Two mechanisms:
+
+- `requireRealUser()` (`src/lib/reviews/access.ts`) resolves the **auth session user only** and
+  refuses while impersonating. `requireUser()` from `lib/roles.ts` honours impersonation by design,
+  so it is never used in this module — a Super User "viewing as" an employee would otherwise read
+  that person's private journal.
+- Every record **stores its pair** and is authorised against those two ids, never the live org
+  chart. A new manager does not inherit records written with a previous one. (Deliberately the
+  opposite of Time-Off's current-chart approval routing.)
+
+No monetary value appears anywhere in the module, and nothing here reads or writes a benefits table.
+
+### Cycles
+
+Calendar quarters, derived in `src/lib/reviews/quarters.ts`. **There is no cycle table and no admin
+screen** — nothing opens or closes a quarter, because the module has no operator.
+
+### Gallup strengths
+
+HR uploads the CliftonStrengths PDF on the employee's admin page. One parse rule reads both report
+formats with no format detection: page 1 only, numbered rank lines, resolved against the fixed
+34-theme vocabulary, stopping at the first gap — which yields 5 from a Top 5 report and 34 from a
+CliftonStrengths 34 report. Verified against two real reports.
+
+Page 1 only is load-bearing: page 2 of a Top 5 report carries the full 34-theme domain grid, so
+reading the whole document would silently turn a Top 5 profile into a 34-theme one.
+
+Extraction is a **suggestion**: the themes, plus the name and assessment date printed in the report,
+are shown for a human to confirm, and nothing is saved before that. The printed name is displayed so
+a report uploaded against the wrong person is caught — never matched automatically (extraction
+kerning produced "ISLAM SA ADANY" in a real sample). A report that cannot be read drops the operator
+into manual entry rather than onto an error page.
+
+The uploaded PDF is employee-record data, not part of the private module: it is readable by the
+employee and by HR/Super User, served through `/api/reviews/strengths/[profileId]`, which answers
+**404 rather than 403** to anyone else and re-checks permission on every request.
+
+### System pack
+
+Facts the platform already holds for the quarter — working days taken, onboarding status while it is
+in progress, learning activity. Facts only: no score, rating, ranking, or comparison. The
+working-day figure routes through `workingDaysInWindow` in `src/lib/workdays.ts`, the same counter
+Time-Off uses, so the two can never disagree.
+
+### Not in this release
+
+No email, no cron, no notification, no reminder — a reminder mechanism would reintroduce the
+overseer this design excludes. No completion, compliance, or analytics reporting to anyone. No
+peer-to-peer 1:1s. Runtime dependency added: `unpdf` (Node runtime only).

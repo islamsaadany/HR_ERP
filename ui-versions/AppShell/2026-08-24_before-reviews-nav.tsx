@@ -11,13 +11,11 @@ const NAV = [
   { href: "/dashboard", label: "Home", icon: "home" },
   { href: "/onboarding", label: "Onboarding", icon: "onboarding" },
   { href: "/benefits", label: "Benefits", icon: "benefits" },
-  { href: "/payback", label: "Payback", icon: "payback" },
   { href: "/directory", label: "Team Directory", icon: "directory" },
   { href: "/handbook", label: "Handbook & Resources", icon: "handbook" },
   { href: "/knowledge", label: "Knowledge Base", icon: "knowledge" },
   { href: "/time-off", label: "Time-Off", icon: "timeoff" },
   { href: "/learning", label: "Learning", icon: "learning" },
-  { href: "/reviews", label: "Reviews & 1:1s", icon: "reviews" },
   { href: "/profile", label: "My Profile", icon: "profile" },
 ];
 
@@ -66,13 +64,8 @@ export function AppShell({
   name,
   email,
   showAdmin,
-  showManageLearning = false,
-  messagesWaiting = 0,
   showIncentive,
   showPayments = false,
-  showPettyCash = false,
-  showConfirmations = false,
-  confirmationsWaiting = 0,
   hiddenNav = [],
   navBadges = {},
   dataRequestCount = 0,
@@ -86,25 +79,8 @@ export function AppShell({
   name?: string | null;
   email?: string | null;
   showAdmin: boolean;
-  /**
-   * An appointed learning manager gets a DIRECT door to the module instead of the generic Admin
-   * one — the admin home would be a single row they came from. Never true for an HR Admin: their
-   * door is Admin, and a second entry for one module would beg the question of why not Benefits.
-   */
-  showManageLearning?: boolean;
-  /**
-   * Congratulations waiting for this person to send (spec 039). The entry appears ONLY when this
-   * is above zero and disappears again — an entry that is empty eleven months of the year is one
-   * nobody looks at, so it is not a permanent fixture of the nav.
-   */
-  messagesWaiting?: number;
   showIncentive: boolean;
   showPayments?: boolean;
-  /** Finance/Super User, or the custodian of an active float — the same derivation the page uses. */
-  showPettyCash?: boolean;
-  /** Holds the transaction-confirmer appointment. NOT implied by any role (spec 041). */
-  showConfirmations?: boolean;
-  confirmationsWaiting?: number;
   hiddenNav?: string[];
   navBadges?: Record<string, number>;
   /** Pending data-request fields (spec 033) — >0 renders the gold sidebar notice. */
@@ -260,41 +236,6 @@ export function AppShell({
                   <NavIcon name="payments" />
                 </Link>
               ) : null}
-              {showPettyCash ? (
-                <Link
-                  href="/petty-cash"
-                  title="Petty cash"
-                  aria-label="Petty cash"
-                  className={
-                    "mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive("/petty-cash")
-                      ? "bg-navy-800 text-gold-300"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  <NavIcon name="pettycash" />
-                </Link>
-              ) : null}
-              {showConfirmations ? (
-                <Link
-                  href="/confirmations"
-                  title="Confirmations"
-                  aria-label="Confirmations"
-                  className={
-                    "relative mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive("/confirmations")
-                      ? "bg-navy-800 text-gold-300"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  <NavIcon name="confirmations" />
-                  {confirmationsWaiting > 0 ? (
-                    <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                      {confirmationsWaiting}
-                    </span>
-                  ) : null}
-                </Link>
-              ) : null}
               {showAdmin ? (
                 <Link
                   href="/admin"
@@ -308,52 +249,6 @@ export function AppShell({
                   }
                 >
                   <NavIcon name="admin" />
-                </Link>
-              ) : null}
-              {showManageLearning ? (
-                <Link
-                  href="/admin/learning"
-                  title={
-                    badgeFor("/admin/learning") > 0
-                      ? `Manage Learning (${badgeFor("/admin/learning")})`
-                      : "Manage Learning"
-                  }
-                  aria-label={
-                    badgeFor("/admin/learning") > 0
-                      ? `Manage Learning, ${badgeFor("/admin/learning")} waiting`
-                      : "Manage Learning"
-                  }
-                  className={
-                    "relative mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive("/admin/learning")
-                      ? "bg-navy-800 text-gold-300"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  <NavIcon name="manage-learning" />
-                  {badgeFor("/admin/learning") > 0 ? (
-                    <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                      {badgeFor("/admin/learning")}
-                    </span>
-                  ) : null}
-                </Link>
-              ) : null}
-              {messagesWaiting > 0 ? (
-                <Link
-                  href="/messages"
-                  title={`Messages to send (${messagesWaiting})`}
-                  aria-label={`Messages to send, ${messagesWaiting} waiting`}
-                  className={
-                    "relative mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive("/messages")
-                      ? "bg-navy-800 text-gold-300"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  <NavIcon name="messages" />
-                  <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                    {messagesWaiting}
-                  </span>
                 </Link>
               ) : null}
             </nav>
@@ -468,39 +363,6 @@ export function AppShell({
                   Payments
                 </Link>
               ) : null}
-              {showPettyCash ? (
-                <Link
-                  href="/petty-cash"
-                  aria-current={isActive("/petty-cash") ? "page" : undefined}
-                  className={
-                    "relative mt-2 block rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/petty-cash")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  Petty cash
-                </Link>
-              ) : null}
-              {showConfirmations ? (
-                <Link
-                  href="/confirmations"
-                  aria-current={isActive("/confirmations") ? "page" : undefined}
-                  className={
-                    "relative mt-2 flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/confirmations")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  Confirmations
-                  {confirmationsWaiting > 0 ? (
-                    <span className="ml-2 grid h-5 min-w-5 place-items-center rounded-full bg-gold-500 px-1 text-[11px] font-bold text-navy-900">
-                      {confirmationsWaiting}
-                    </span>
-                  ) : null}
-                </Link>
-              ) : null}
               {showAdmin ? (
                 <Link
                   href="/admin"
@@ -513,42 +375,6 @@ export function AppShell({
                   }
                 >
                   Admin
-                </Link>
-              ) : null}
-              {showManageLearning ? (
-                <Link
-                  href="/admin/learning"
-                  aria-current={isActive("/admin/learning") ? "page" : undefined}
-                  className={
-                    "relative mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/admin/learning")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  Manage Learning
-                  {badgeFor("/admin/learning") > 0 ? (
-                    <span className="ml-auto grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                      {badgeFor("/admin/learning")}
-                    </span>
-                  ) : null}
-                </Link>
-              ) : null}
-              {messagesWaiting > 0 ? (
-                <Link
-                  href="/messages"
-                  aria-current={isActive("/messages") ? "page" : undefined}
-                  className={
-                    "relative mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/messages")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  Messages to send
-                  <span className="ml-auto grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                    {messagesWaiting}
-                  </span>
                 </Link>
               ) : null}
             </nav>
@@ -740,13 +566,6 @@ function NavIcon({ name }: { name: string }) {
       return (
         <svg {...common}><path d="M12 4 2.5 8.5 12 13l9.5-4.5z" /><path d="M6.5 10.7V16c0 1.4 2.5 2.6 5.5 2.6s5.5-1.2 5.5-2.6v-5.3" /><path d="M21.5 8.5V14" /></svg>
       );
-    case "reviews":
-      // Two speech bubbles — a conversation between two people, which is exactly what
-      // this module is. Deliberately unlike the calendar (Time-Off) and the cap
-      // (Learning): two nav glyphs that read alike is a real cost, as Incentive proved.
-      return (
-        <svg {...common}><path d="M4 5h10a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H8l-4 3z" /><path d="M20 10v6a2 2 0 0 1-2 2h-4l-2 2" /></svg>
-      );
     case "profile":
       return (
         <svg {...common}><circle cx="12" cy="8" r="3.5" /><path d="M5 20a7 7 0 0 1 14 0" /></svg>
@@ -759,42 +578,9 @@ function NavIcon({ name }: { name: string }) {
       return (
         <svg {...common}><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /><path d="M6 9v6M18 9v6" /></svg>
       );
-    case "payback":
-      // A receipt with a return arrow — money going back to the person who paid.
-      return (
-        <svg {...common}><path d="M7 3h10v16l-2.5-1.6L12 19l-2.5-1.6L7 19z" /><path d="M13.5 8.5h-3a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3h-3" /></svg>
-      );
-    case "confirmations":
-      // A bank stamp: something checked and marked done.
-      return (
-        <svg {...common}><path d="M4 20h16" /><path d="M6 20V10h12v10" /><path d="M9 10V6.5A3 3 0 0 1 12 4a3 3 0 0 1 3 2.5V10" /><path d="M9.5 15.5l1.8 1.8 3.2-3.6" /></svg>
-      );
-    case "pettycash":
-      // A cash box with a slot: a float somebody physically holds.
-      return (
-        <svg {...common}><rect x="3" y="7" width="18" height="12" rx="2" /><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7" /><path d="M9.5 12.5h5" /></svg>
-      );
     case "admin":
       return (
         <svg {...common}><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" /></svg>
-      );
-    case "messages":
-      // An envelope with the flap drawn open — distinct from every other glyph in this nav, and
-      // from the closed rectangle a "mail" icon usually is, because this one is asking to be sent
-      // rather than reporting something received.
-      return (
-        <svg {...common}><rect x="3" y="5.5" width="18" height="13" rx="2" /><path d="m3.6 6.6 8.4 6 8.4-6" /></svg>
-      );
-    case "manage-learning":
-      // The Admin shield with a mortarboard inside — because that is exactly what it is: the
-      // admin door, for Learning. Deliberately NOT the plain cap used by the employee "learning"
-      // item three rows above it; the file already records what a lookalike glyph costs.
-      return (
-        <svg {...common}>
-          <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" />
-          <path d="M12 7.6 15.2 9.2 12 10.8 8.8 9.2z" />
-          <path d="M9.9 10.2v1.6c0 .8.9 1.3 2.1 1.3s2.1-.5 2.1-1.3v-1.6" />
-        </svg>
       );
     case "signout":
       return (

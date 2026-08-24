@@ -34,6 +34,26 @@ export function countWorkingDays(start: Date, end: Date, holidays: ReadonlySet<s
 }
 
 /**
+ * Working days of [start, end] that fall inside [windowStart, windowEnd].
+ *
+ * The generic clip. `workingDaysInYear` and the quarter count used by the review
+ * system pack (spec 042) both go through here, so a figure shown on a review can
+ * never disagree with the one Time-Off shows for the same dates — there is only
+ * one counter.
+ */
+export function workingDaysInWindow(
+  start: Date,
+  end: Date,
+  windowStart: Date,
+  windowEnd: Date,
+  holidays: ReadonlySet<string>
+): number {
+  const from = start.getTime() > windowStart.getTime() ? start : windowStart;
+  const to = end.getTime() < windowEnd.getTime() ? end : windowEnd;
+  return countWorkingDays(from, to, holidays);
+}
+
+/**
  * The part of [start, end] that falls inside `year`, counted in working days. A request
  * spanning New Year contributes each year's days to that year only (spec 035 edge case).
  */
@@ -43,11 +63,13 @@ export function workingDaysInYear(
   year: number,
   holidays: ReadonlySet<string>
 ): number {
-  const yearStart = new Date(Date.UTC(year, 0, 1));
-  const yearEnd = new Date(Date.UTC(year, 11, 31));
-  const from = start.getTime() > yearStart.getTime() ? start : yearStart;
-  const to = end.getTime() < yearEnd.getTime() ? end : yearEnd;
-  return countWorkingDays(from, to, holidays);
+  return workingDaysInWindow(
+    start,
+    end,
+    new Date(Date.UTC(year, 0, 1)),
+    new Date(Date.UTC(year, 11, 31)),
+    holidays
+  );
 }
 
 /**
@@ -60,4 +82,21 @@ export function takenInYear(
   holidays: ReadonlySet<string>
 ): number {
   return requests.reduce((n, r) => n + workingDaysInYear(r.startDate, r.endDate, year, holidays), 0);
+}
+
+/**
+ * Sum a person's approved working days inside an arbitrary window — the quarter
+ * figure on a review sheet (spec 042). Same engine as the yearly count above, so
+ * the two can never drift apart.
+ */
+export function takenInWindow(
+  requests: { startDate: Date; endDate: Date }[],
+  windowStart: Date,
+  windowEnd: Date,
+  holidays: ReadonlySet<string>
+): number {
+  return requests.reduce(
+    (n, r) => n + workingDaysInWindow(r.startDate, r.endDate, windowStart, windowEnd, holidays),
+    0
+  );
 }

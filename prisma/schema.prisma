@@ -179,7 +179,20 @@ model User {
   messagesCreated  Message[]          @relation("MessageAuthor")
   messagesSent     Message[]          @relation("MessageSender")
   messagesReceived MessageRecipient[] @relation("MessageAddressee")
-  occasions        Occasion[]         @relation("OccasionSubject")
+
+  // Performance reviews & 1:1s (spec 042) — back-relations only; this feature adds NO column to User.
+  reviewSheetsAsEmployee ReviewSheet[]      @relation("ReviewSheetEmployee")
+  reviewSheetsAsManager  ReviewSheet[]      @relation("ReviewSheetManager")
+  reviewSheetItems       ReviewSheetItem[]  @relation("ReviewItemAuthor")
+  reviewOutcomesAuthored ReviewOutcome[]    @relation("ReviewOutcomeAuthor")
+  journalEntries         JournalEntry[]     @relation("JournalAuthor")
+  oneOnOnesAsEmployee    OneOnOne[]         @relation("OneOnOneEmployee")
+  oneOnOnesAsManager     OneOnOne[]         @relation("OneOnOneManager")
+  oneOnOnesCreated       OneOnOne[]         @relation("OneOnOneCreator")
+  oneOnOneNotes          OneOnOneNote[]     @relation("OneOnOneNoteAuthor")
+  strengthsProfile       StrengthsProfile?  @relation("StrengthsProfileSubject")
+  strengthsConfirmed     StrengthsProfile[] @relation("StrengthsProfileConfirmer")
+  occasions              Occasion[]         @relation("OccasionSubject")
 
   // Finance: petty cash & payback (spec 040) — back-relations only; this feature adds NO
   // column to User. Custody is an attribute of the ACCOUNT, not of the person.
@@ -2309,4 +2322,282 @@ model Occasion {
 
   @@unique([userId, kind, occasionYear])
   @@index([occasionDate])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Performance reviews & 1:1s (spec 040)
+//
+// This module is private to each manager↔report pair. HR Admins and Super Users
+// read NOTHING here — not the contents and not the existence — and there is no
+// break-glass. Two consequences are visible in the shapes below:
+//
+//   1. Every record STORES its pair (`employeeId` + `managerId`) and is
+//      authorised against those two ids, never against the live org chart. This
+//      is the deliberate opposite of the Time-Off rule (`pendingApprovalWhere`
+//      resolves approvals against the CURRENT chart, on purpose) — a leave
+//      request must reach whoever can approve it today, but a review belongs to
+//      the two people who had it, so a new manager never inherits the previous
+//      manager's conversations.
+//
+//   2. `JournalEntry` has no relation to any sheet, pair or manager. There is no
+//      join by which another person's entry can be reached, so leaking one would
+//      have to be written deliberately rather than by forgetting a filter.
+//
+// There is no ReviewCycle table: a quarter is derived from the calendar
+// (`src/lib/reviews/quarters.ts`), because nobody opens or closes one.
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum ReviewJournalSection {
+  WENT_WELL
+  DIDNT_GO_WELL
+  LEARNING
+  BLOCKER
+  EXPECTATION
+}
+
+enum ReviewItemSource {
+  TYPED
+  JOURNAL
+  ONE_ON_ONE
+  STRENGTH
+}
+
+enum StrengthsDomain {
+  EXECUTING
+  INFLUENCING
+  RELATIONSHIP_BUILDING
+  STRATEGIC_THINKING
+}
+
+enum StrengthsProfileSource {
+  PARSED
+  MANUAL
+}
+
+/// One review per pair per quarter.
+///
+/// The seal: both halves stay hidden from each other until BOTH parties have
+/// submitted AND BOTH have confirmed the meeting happened. Submitting means "I
+/// am ready to meet", not "you may read me". Requiring both confirmations is
+/// what stops one party unsealing the other's half by declaring a meeting that
+/// never took place.
+///
+/// A quarter that ends with `openedAt` still null stays sealed forever: no
+/// outcome, no carry-forward, nothing published. A review that did not happen
+/// leaves no record that it did.
+model ReviewSheet {
+  id      String @id @default(cuid())
+  year    Int
+  quarter Int // 1–4
+
+  employeeId String
+  employee   User   @relation("ReviewSheetEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  /// Their manager AT THE TIME THE SHEET WAS CREATED. Access is checked against
+  /// this, not against `User.reportsToId` as it stands today.
+  managerId  String
+  manager    User   @relation("ReviewSheetManager", fields: [managerId], references: [id], onDelete: Cascade)
+
+  employeeSubmittedAt    DateTime?
+  managerSubmittedAt     DateTime?
+  employeeMetConfirmedAt DateTime?
+  managerMetConfirmedAt  DateTime?
+
+  /// Stamped once all four timestamps above are present, under a row lock so two
+  /// simultaneous confirmations cannot both read "not yet complete". This single
+  /// field is what every read and write consults: visible and frozen are the
+  /// same state, deliberately — the halves are what each person BROUGHT to the
+  /// meeting, and the meeting's own content belongs in the outcome.
+  openedAt DateTime?
+
+  items   ReviewSheetItem[]
+  outcome ReviewOutcome?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// A mid-quarter manager change produces a SECOND sheet rather than a
+  /// collision — which is correct, because it is a different pair.
+  @@unique([year, quarter, employeeId, managerId])
+  @@index([employeeId, year, quarter])
+  @@index([managerId, year, quarter])
+}
+
+/// Every answer on the agenda is a LIST — the source template is bullets and
+/// numbered lists throughout — so one table holds all of them.
+///
+/// `body` is always a COPY. Editing or deleting the journal entry it came from,
+/// or replacing the author's strengths profile, cannot reach it. That is why a
+/// strengths pick stores the theme NAME rather than a foreign key.
+model ReviewSheetItem {
+  id      String      @id @default(cuid())
+  sheetId String
+  sheet   ReviewSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  /// Which half this belongs to — always the sheet's employee or manager.
+  authorId String
+  author   User   @relation("ReviewItemAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  /// From the agenda registry in `src/lib/reviews/agenda.ts` — code, not a table:
+  /// there is no operator for this module, so an editable question table would be
+  /// a screen nobody is allowed to have.
+  questionKey String
+  position    Int
+  body        String
+
+  sourceKind ReviewItemSource @default(TYPED)
+  /// The journal entry or 1:1 it was promoted from; the theme code for STRENGTH.
+  sourceId   String?
+
+  createdAt DateTime @default(now())
+  // A partial unique index on (sheetId, authorId, questionKey, sourceKind, sourceId)
+  // WHERE sourceId IS NOT NULL makes re-promoting the same source a no-op. Prisma
+  // cannot express a partial index — it lives in prisma/sql/067.
+
+  @@index([sheetId, authorId])
+}
+
+/// The only thing that outlives the meeting, and the next quarter's carry-forward.
+model ReviewOutcome {
+  id      String      @id @default(cuid())
+  sheetId String      @unique
+  sheet   ReviewSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  priorities          String
+  risks               String
+  successDefinition   String
+  employeeCommitments String
+  managerCommitments  String
+
+  authoredById String
+  authoredBy   User   @relation("ReviewOutcomeAuthor", fields: [authoredById], references: [id], onDelete: Cascade)
+
+  employeeAckAt DateTime?
+  managerAckAt  DateTime?
+  /// Stamped when both acknowledgements are present. Only a final outcome carries
+  /// forward. Any edit before this clears BOTH acks — nobody's agreement should
+  /// stay attached to text they never saw.
+  finalAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Private to its author, permanently. Deliberately joined to nothing.
+model JournalEntry {
+  id       String @id @default(cuid())
+  authorId String
+  author   User   @relation("JournalAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  /// The day it happened — not the day it was typed.
+  occurredOn DateTime
+  section    ReviewJournalSection?
+  body       String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId, occurredOn])
+}
+
+/// An ad-hoc conversation, held whenever it is needed rather than waiting for the
+/// quarter. Nothing is sealed here — the value of a 1:1 is being quick — but the
+/// outcome needs both parties to acknowledge it, and then the record freezes.
+model OneOnOne {
+  id String @id @default(cuid())
+
+  employeeId String
+  employee   User   @relation("OneOnOneEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  managerId  String
+  manager    User   @relation("OneOnOneManager", fields: [managerId], references: [id], onDelete: Cascade)
+
+  heldOn      DateTime
+  createdById String
+  createdBy   User     @relation("OneOnOneCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  outcome       String?
+  employeeAckAt DateTime?
+  managerAckAt  DateTime?
+  finalAt       DateTime?
+
+  notes OneOnOneNote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId, heldOn])
+  @@index([managerId, heldOn])
+}
+
+model OneOnOneNote {
+  id         String   @id @default(cuid())
+  oneOnOneId String
+  oneOnOne   OneOnOne @relation(fields: [oneOnOneId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation("OneOnOneNoteAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  body     String
+
+  createdAt DateTime @default(now())
+
+  @@index([oneOnOneId])
+}
+
+/// The fixed CliftonStrengths vocabulary — 34 rows, seeded by the migration, not
+/// by a screen. `name` is the exact spelling Gallup prints, which is what the PDF
+/// parser matches against and what a sheet item stores.
+model StrengthsTheme {
+  code      String          @id
+  name      String          @unique
+  domain    StrengthsDomain
+  sortOrder Int
+
+  profileThemes StrengthsProfileTheme[]
+}
+
+/// One employee's own ordered themes. An ordered list of any length covers both a
+/// Top 5 report and a CliftonStrengths 34 report, so there is no "which report
+/// type" setting to get wrong.
+///
+/// The uploaded PDF is employee-record data, NOT part of the private review
+/// module: HR uploads it and confirms the themes, and it is served through an
+/// authorising route that answers 404 (never 403) to anyone else.
+model StrengthsProfile {
+  id         String @id @default(cuid())
+  employeeId String @unique
+  employee   User   @relation("StrengthsProfileSubject", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  source         StrengthsProfileSource @default(PARSED)
+  /// As printed in the report footer.
+  assessmentDate DateTime?
+  /// The name as PRINTED in the report, shown at confirmation so a report uploaded
+  /// against the wrong person is caught. Never used to match an employee
+  /// automatically — extraction kerning produced "ISLAM SA ADANY" in a real sample.
+  printedName    String?
+
+  blobUrl  String?
+  fileName String?
+
+  confirmedById String
+  confirmedBy   User     @relation("StrengthsProfileConfirmer", fields: [confirmedById], references: [id], onDelete: Cascade)
+  /// Nothing is saved before a human confirms the extracted themes.
+  confirmedAt   DateTime @default(now())
+
+  themes StrengthsProfileTheme[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StrengthsProfileTheme {
+  id        String           @id @default(cuid())
+  profileId String
+  profile   StrengthsProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  rank      Int
+  themeCode String
+  theme     StrengthsTheme @relation(fields: [themeCode], references: [code], onDelete: Cascade)
+
+  @@unique([profileId, rank])
+  @@unique([profileId, themeCode])
+  @@index([profileId])
 }
