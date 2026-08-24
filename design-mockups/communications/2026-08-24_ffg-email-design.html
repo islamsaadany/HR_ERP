@@ -1,0 +1,253 @@
+<title>Group Email Design</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;--red-line:#f3c6c6;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .proposal{margin-top:36px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 14px 36px;max-width:78ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:#eef0f4;padding:20px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-red{border:1px solid var(--red-line);background:#fdf3f3;color:var(--red)}
+  .decision{margin-top:34px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:880px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:6px 0}
+  .note{font-size:11.5px;color:var(--muted);margin-top:10px}
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){.two{grid-template-columns:1fr}}
+
+  /* an email, as it actually renders */
+  .mail{width:100%;max-width:440px;background:#fff;border:1px solid #E3E8EF;border-radius:10px;overflow:hidden;font-family:Helvetica,Arial,sans-serif;box-shadow:0 2px 10px rgba(10,26,48,.05)}
+  .m-head{padding:17px 22px}
+  .m-org{font:700 15px/1.3 Helvetica,Arial,sans-serif;color:#fff;letter-spacing:.01em}
+  .m-unit{font:600 10px/1.4 Helvetica,Arial,sans-serif;letter-spacing:.15em;text-transform:uppercase;padding-top:4px}
+  .m-bar{height:3px;font-size:0;line-height:0}
+  .m-body{padding:22px 22px 6px}
+  .m-title{margin:0 0 12px;font:700 19px/1.3 Helvetica,Arial,sans-serif;color:#1B2330}
+  .m-p{margin:0 0 13px;font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#1B2330}
+  .m-cta{display:inline-block;padding:10px 19px;border-radius:6px;font:600 13px/1 Helvetica,Arial,sans-serif;color:#fff;text-decoration:none;background:#0f2444;margin:2px 0 18px}
+  .m-rule{margin:0 22px;border-top:1px solid #E3E8EF}
+  .m-foot{padding:14px 22px 20px;font:400 11.5px/1.55 Helvetica,Arial,sans-serif;color:#6B7686}
+  .m-outer{font:400 11px/1.5 Helvetica,Arial,sans-serif;color:#626C7C;padding:11px 6px 0;text-align:center}
+  .gift{margin:2px 0 16px;padding:11px 13px;border-radius:7px;background:#FBF7EC;border:1px solid #EADFBF;font:400 13px/1.55 Helvetica,Arial,sans-serif;color:#5C4A1E}
+
+  /* anatomy callouts */
+  .anat{display:grid;grid-template-columns:minmax(0,440px) 1fr;gap:22px;align-items:start}
+  @media(max-width:820px){.anat{grid-template-columns:1fr}}
+  .leg{list-style:none;margin:0;padding:0;font-size:13px}
+  .leg li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .leg li:last-child{border-bottom:0}
+  .leg .k{flex:none;width:20px;height:20px;border-radius:999px;background:var(--navy-800);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:800}
+  .leg b{display:block;color:var(--navy-800);font-size:12.5px}
+  .leg span{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+  .fixed{color:var(--green);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em}
+  .varies{color:var(--gold-800);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em}
+  table.rat{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--surface);border-radius:9px;overflow:hidden}
+  table.rat th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px;background:var(--paper);border-bottom:1px solid var(--line)}
+  table.rat td{padding:7px 10px;border-bottom:1px solid var(--line)}
+  table.rat tr:last-child td{border-bottom:0}
+  .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px;border:1px solid rgba(0,0,0,.12)}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Communications · email design</p>
+  <h1>One group, many units, one email</h1>
+  <p class="lede">Taking the approach from the SMP platform rather than plain text. <b>Forefront Group is the shell</b> — same navy header, same shape, every message. <b>The unit lives inside it</b> as a name in the kicker and a band of its own colour. One template; the brand is data. Illustrative content and placeholder unit colours throughout.</p>
+
+  <!-- 1 -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Where FFG sits, and where the unit sits</h2>
+    <p class="sub">Two identities need two slots, and the SMP shell already has them. The group takes the line people read first; the unit takes the kicker beneath it and the colour band under the header — <b>a fill, not type</b>, which is the whole reason it works (see §4).</p>
+
+    <div class="frame">
+      <div class="anat">
+        <div>
+          <div class="mail">
+            <div class="m-head" style="background:#0f2444">
+              <div class="m-org">Forefront Group</div>
+              <div class="m-unit" style="color:#B9C4D6">Visual Shift</div>
+            </div>
+            <div class="m-bar" style="background:#E0653F">&nbsp;</div>
+            <div class="m-body">
+              <h1 class="m-title">A new Learning module is open</h1>
+              <p class="m-p">Coaching Conversations is now on the platform — four lessons, about an hour in total, and yours to take whenever suits.</p>
+              <a class="m-cta">Open the course</a>
+            </div>
+            <div class="m-rule"></div>
+            <div class="m-foot">Forefront Group · sent by People of Forefront Group<br>You are receiving this because you work here.</div>
+          </div>
+          <p class="m-outer">Forefront Group</p>
+        </div>
+
+        <ul class="leg">
+          <li><span class="k">1</span><span><b>Header background — the group's navy</b><span>The same on every email the platform sends. <span class="fixed">fixed</span></span></span></li>
+          <li><span class="k">2</span><span><b>&ldquo;Forefront Group&rdquo; — spelled out</b><span>Not &ldquo;FFG&rdquo;. An abbreviation reads as internal shorthand in an inbox. <span class="fixed">fixed</span></span></span></li>
+          <li><span class="k">3</span><span><b>The kicker — the recipient's unit</b><span>&ldquo;VISUAL SHIFT&rdquo;. Softened toward the navy so it reads as second, not shouted. <span class="varies">varies</span></span></span></li>
+          <li><span class="k">4</span><span><b>3px band — the unit's accent</b><span>The unit's mark on the message, with no word in it. <span class="varies">varies</span></span></span></li>
+          <li><span class="k">5</span><span><b>Body — always the same ink on white</b><span>The message is the message. Brand does not tint the reading. <span class="fixed">fixed</span></span></span></li>
+          <li><span class="k">6</span><span><b>Button — the group's navy</b><span>Never the unit accent: an accent that works as a fill often fails as type. <span class="fixed">fixed</span></span></span></li>
+          <li><span class="k">7</span><span><b>Footer + the line under the card</b><span>Group, always. It is who actually sent it. <span class="fixed">fixed</span></span></span></li>
+        </ul>
+      </div>
+      <p class="note">Somebody with no unit set gets the kicker filled with the message type — <b>ANNOUNCEMENT</b> — rather than &ldquo;Forefront Group&rdquo; twice, and the band takes the group's gold.</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="proposal">
+    <h2><span class="num">2</span> The same announcement, two people</h2>
+    <p class="sub">One message, written once. Each person's copy carries their own unit — which means the send is <b>one message per person</b>, not one mail to a list. SMP already solved that: Resend's batch endpoint takes up to 100 <i>separate</i> messages in a single request, so nobody is in anybody else's To line and a failure names who.</p>
+
+    <div class="frame">
+      <div class="two">
+        <div>
+          <p style="margin:0 0 9px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Karim — Visual Shift</p>
+          <div class="mail">
+            <div class="m-head" style="background:#0f2444">
+              <div class="m-org">Forefront Group</div>
+              <div class="m-unit" style="color:#B9C4D6">Visual Shift</div>
+            </div>
+            <div class="m-bar" style="background:#E0653F">&nbsp;</div>
+            <div class="m-body">
+              <h1 class="m-title">Public holiday: Eid al-Adha</h1>
+              <p class="m-p">The office is closed Sunday 7 to Wednesday 10 June. With the weekend either side, that is nine days away from your desk.</p>
+              <a class="m-cta">See the holiday calendar</a>
+            </div>
+            <div class="m-rule"></div>
+            <div class="m-foot">Forefront Group · sent by People of Forefront Group</div>
+          </div>
+        </div>
+
+        <div>
+          <p style="margin:0 0 9px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Mona — Forefront Consulting</p>
+          <div class="mail">
+            <div class="m-head" style="background:#0f2444">
+              <div class="m-org">Forefront Group</div>
+              <div class="m-unit" style="color:#B9C4D6">Forefront Consulting</div>
+            </div>
+            <div class="m-bar" style="background:#c9a227">&nbsp;</div>
+            <div class="m-body">
+              <h1 class="m-title">Public holiday: Eid al-Adha</h1>
+              <p class="m-p">The office is closed Sunday 7 to Wednesday 10 June. With the weekend either side, that is nine days away from your desk.</p>
+              <a class="m-cta">See the holiday calendar</a>
+            </div>
+            <div class="m-rule"></div>
+            <div class="m-foot">Forefront Group · sent by People of Forefront Group</div>
+          </div>
+        </div>
+      </div>
+      <p class="note">Identical words, identical shape — one band of colour and one line of type apart. That is enough for someone to feel their unit in it without the group disappearing.</p>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="proposal">
+    <h2><span class="num">3</span> Congrats — to the person, never the team</h2>
+    <p class="sub">Same shell, warmer words, and the gift sits in a panel of its own so it cannot be missed. It goes to one person; nobody else is on it, which is why the gift can be named at all.</p>
+
+    <div class="frame">
+      <div style="max-width:440px">
+        <div class="mail">
+          <div class="m-head" style="background:#0f2444">
+            <div class="m-org">Forefront Group</div>
+            <div class="m-unit" style="color:#B9C4D6">Visual Shift</div>
+          </div>
+          <div class="m-bar" style="background:#E0653F">&nbsp;</div>
+          <div class="m-body">
+            <h1 class="m-title">Five years, Karim</h1>
+            <p class="m-p">Five years ago today you joined us. Thank you for every one of them — the work you have done and the way you have done it.</p>
+            <div class="gift">🎁 &nbsp;There is something waiting for you at reception. Ask for Nada.</div>
+            <p class="m-p" style="margin-bottom:18px">Here is to the next stretch.</p>
+          </div>
+          <div class="m-rule"></div>
+          <div class="m-foot">Forefront Group · sent by People of Forefront Group</div>
+        </div>
+      </div>
+      <p class="note">Drafted by the platform from the start date it already holds — and <b>only ever sent by a human</b>, the same rule the holiday announcements follow. Nothing auto-sends.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="proposal">
+    <h2><span class="num">4</span> What we take from SMP <span class="chip c-ok">already proven there</span></h2>
+    <p class="sub">Six things, each of which SMP paid for once already.</p>
+    <div class="frame">
+      <div class="two" style="gap:14px">
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px 15px">
+          <p style="margin:0 0 4px;font-size:12.5px;font-weight:800;color:var(--navy-800)">Email is not the web</p>
+          <p style="margin:0;font-size:12.5px;color:var(--muted)">Tables not divs (Outlook renders through Word — no flexbox, no grid). Every style inline (Gmail strips <code>&lt;style&gt;</code> on some clients). Colours written literally — <code>var()</code> is not supported.</p>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px 15px">
+          <p style="margin:0 0 4px;font-size:12.5px;font-weight:800;color:var(--navy-800)">The preview IS the builder</p>
+          <p style="margin:0;font-size:12.5px;color:var(--muted)">One function makes the HTML; the on-screen preview and the real send call it. A preview drawn any other way is a picture of an email nobody receives.</p>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px 15px">
+          <p style="margin:0 0 4px;font-size:12.5px;font-weight:800;color:var(--navy-800)">Send yourself one first</p>
+          <p style="margin:0;font-size:12.5px;color:var(--muted)">A test send on the setup page, showing the real design, the real sender name and the real address — before anybody else gets one.</p>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px 15px">
+          <p style="margin:0 0 4px;font-size:12.5px;font-weight:800;color:var(--navy-800)">Ask Resend if the domain is verified</p>
+          <p style="margin:0;font-size:12.5px;color:var(--muted)">Until it is, Resend delivers <i>only</i> to the account owner — so a test that &ldquo;worked&rdquo; fails for everyone else, silently. The page should say <b>ready</b> or <b>ready, for you only</b>.</p>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px 15px">
+          <p style="margin:0 0 4px;font-size:12.5px;font-weight:800;color:var(--navy-800)">One message per person, one request</p>
+          <p style="margin:0;font-size:12.5px;color:var(--muted)">Batch of up to 100 separate messages. Never a shared To, never BCC: nobody sees anybody's address, and a failure says <i>which</i> person. It is also what lets each copy carry its own unit.</p>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px 15px">
+          <p style="margin:0 0 4px;font-size:12.5px;font-weight:800;color:var(--navy-800)">The address and the name live apart</p>
+          <p style="margin:0;font-size:12.5px;color:var(--muted)">Address in the environment (tied to the verified domain — a deployment decision). Display name in settings (changeable on a Tuesday). Already how this app works.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="proposal">
+    <h2><span class="num">5</span> Two things I measured <span class="chip c-red">findings</span></h2>
+    <p class="sub">Both are in the emails this platform already sends today.</p>
+    <div class="frame">
+      <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:var(--navy-800)">The gold eyebrow on the navy bar is below AA</p>
+      <table class="rat">
+        <thead><tr><th>Eyebrow colour on <span class="swatch" style="background:#0f2444"></span>navy-800</th><th style="width:90px">Ratio</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td><span class="swatch" style="background:#a8821e"></span>gold-600 <code>#a8821e</code> — <b>what we send today</b></td><td>4.33:1</td><td style="color:var(--red);font-weight:700">fails small text</td></tr>
+          <tr><td><span class="swatch" style="background:#c9a227"></span>gold-500 <code>#c9a227</code></td><td>6.40:1</td><td style="color:var(--green);font-weight:700">passes</td></tr>
+          <tr><td><span class="swatch" style="background:#e0c05a"></span>gold-300 <code>#e0c05a</code></td><td>8.74:1</td><td style="color:var(--green);font-weight:700">passes</td></tr>
+        </tbody>
+      </table>
+      <p class="note">AA wants 4.5:1 for text under 18px; our eyebrow is 12px. This is exactly the trap SMP records walking into five times — which is why in the design above the <b>accent is a band, not type</b>: a fill has no ratio to meet.</p>
+
+      <p style="margin:18px 0 6px;font-size:13px;font-weight:700;color:var(--navy-800)">The unit logos cannot go in the email as things stand</p>
+      <p style="margin:0;font-size:12.5px;color:var(--muted)">Unit logos are stored as <b>private</b> blobs and streamed through the server behind a sign-in check. A mail client fetching that URL is not signed in, so it gets a broken-image box. (Data-URI images do not rescue it — Gmail and Outlook block those outright.) Two ways out: stay <b>typographic</b>, as drawn above, or <b>serve unit logos from a public URL</b> — which is a decision about making a logo public, and yours rather than mine.</p>
+    </div>
+  </section>
+
+  <div class="decision">
+    <h3>What I&rsquo;m assuming — correct me and I&rsquo;ll change it</h3>
+    <ul>
+      <li><b>&ldquo;Forefront Group&rdquo; is written out</b> in the email, not &ldquo;FFG&rdquo;. On the sender name you said <b>People of FFG</b> — I&rsquo;d suggest <b>People of Forefront Group</b> for the same reason, since an inbox often truncates the sender line and an abbreviation is the worst thing to be left with. Your call; it is one setting either way.</li>
+      <li><b>The group is a real business unit</b> named Forefront Group, marked as the default — not a new layer above the units. Everything an email needs is already on the unit record.</li>
+      <li><b>One template, brand as data.</b> Not a template per unit — that is how two brands drift apart.</li>
+      <li><b>The unit never touches the body or the button</b>, only the kicker and the band. Anything else means a unit choosing a pale colour makes its own email unreadable.</li>
+      <li><b>Congrats goes to the person only</b>, gift included, drafted and sent by a human.</li>
+      <li><b>The from-name change affects the two existing workflows too</b> — a benefit-claim email would also arrive from People of Forefront Group. I think that is right (one voice), but it is a visible change to something already live.</li>
+    </ul>
+  </div>
+
+  <footer>Communications · FFG email design · 24/08/2026 · illustrative content, placeholder unit colours. Nothing is built until you approve.</footer>
+</div>
