@@ -16,7 +16,6 @@ const NAV = [
   { href: "/knowledge", label: "Knowledge Base", icon: "knowledge" },
   { href: "/time-off", label: "Time-Off", icon: "timeoff" },
   { href: "/learning", label: "Learning", icon: "learning" },
-  { href: "/reviews", label: "Reviews & 1:1s", icon: "reviews" },
   { href: "/profile", label: "My Profile", icon: "profile" },
 ];
 
@@ -566,13 +565,6 @@ function NavIcon({ name }: { name: string }) {
       // Benefits gift icon and had to be redrawn; two nav items that look alike is a real cost.
       return (
         <svg {...common}><path d="M12 4 2.5 8.5 12 13l9.5-4.5z" /><path d="M6.5 10.7V16c0 1.4 2.5 2.6 5.5 2.6s5.5-1.2 5.5-2.6v-5.3" /><path d="M21.5 8.5V14" /></svg>
-      );
-    case "reviews":
-      // Two speech bubbles — a conversation between two people, which is exactly what
-      // this module is. Deliberately unlike the calendar (Time-Off) and the cap
-      // (Learning): two nav glyphs that read alike is a real cost, as Incentive proved.
-      return (
-        <svg {...common}><path d="M4 5h10a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H8l-4 3z" /><path d="M20 10v6a2 2 0 0 1-2 2h-4l-2 2" /></svg>
       );
     case "profile":
       return (

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { realUserForAction, isOpen, myHalf, readyToOpen } from "@/lib/reviews/access";
 import { isAgendaQuestion, isStrengthsQuestion } from "@/lib/reviews/agenda";
-import { isQuarter, quarterRange, type QuarterRef } from "@/lib/reviews/quarters";
+import { isQuarter } from "@/lib/reviews/quarters";
 import { isCurrentPair, sheetForRead } from "@/lib/reviews/queries";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -463,9 +463,4 @@ export async function acknowledgeOutcome(formData: FormData): Promise<ActionResu
 
   refreshSheet(sheetId);
   return OK;
-}
-
-/** Exposed for the page's "which quarter am I looking at" links. */
-export function quarterWindow(ref: QuarterRef) {
-  return quarterRange(ref);
 }

@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { EmployeeForm } from "@/components/admin/EmployeeForm";
 import { AdminPasswordCard } from "@/components/admin/AdminPasswordCard";
 import { ResetBenefitsCard } from "@/components/admin/ResetBenefitsCard";
-import { StrengthsPanel } from "@/components/admin/StrengthsPanel";
-import { allThemes, strengthsProfileOf } from "@/lib/reviews/queries";
 import { getDepartments } from "@/lib/departments";
 import { getBusinessUnits } from "@/lib/business-units";
 import { BackLink } from "@/components/admin/BackLink";
@@ -22,8 +20,7 @@ export default async function EditEmployeePage({
   const actor = await requireAdmin();
   const { id } = await params;
 
-  const [employee, managers, departments, businessUnits, claimRows, medicalAgg, themes, strengths] =
-    await Promise.all([
+  const [employee, managers, departments, businessUnits, claimRows, medicalAgg] = await Promise.all([
     prisma.user.findUnique({
       where: { id },
       include: { dependants: { orderBy: { dateOfBirth: "asc" } } },
@@ -47,12 +44,7 @@ export default async function EditEmployeePage({
       },
     }),
     prisma.medicalCommitment.aggregate({ where: { userId: id }, _count: true, _sum: { premium: true } }),
-    // Strengths (spec 039). HR administers the CliftonStrengths profile — the
-    // exclusion that keeps HR out of reviews, 1:1s and journals covers the
-    // private conversation, not this employee-record data.
-    allThemes(),
-    strengthsProfileOf(id),
-    ]);
+  ]);
 
   if (!employee) notFound();
 
@@ -139,23 +131,6 @@ export default async function EditEmployeePage({
 
       <div className="mt-8">
         <AdminPasswordCard userId={employee.id} name={employee.name} />
-      </div>
-
-      <div className="mt-8">
-        <StrengthsPanel
-          employeeId={employee.id}
-          employeeName={employee.name}
-          allThemes={themes.map((t) => ({ code: t.code, name: t.name, domain: t.domain }))}
-          saved={(strengths?.themes ?? []).map((t) => ({
-            rank: t.rank,
-            code: t.theme.code,
-            name: t.theme.name,
-            domain: t.theme.domain,
-          }))}
-          profileId={strengths?.id ?? null}
-          assessmentDateISO={strengths?.assessmentDate?.toISOString().slice(0, 10) ?? null}
-          fileName={strengths?.fileName ?? null}
-        />
       </div>
 
       <div className="mt-8">
