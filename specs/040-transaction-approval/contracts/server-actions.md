@@ -7,37 +7,37 @@ shows. Same shape as spec 039, including the module-level `function fail(back, m
 
 | Guard | True for |
 |---|---|
-| `canSendBatch(role)` | `FINANCE` ∨ `SUPER_USER` |
+| `canSubmitTransactions(role)` | `FINANCE` ∨ `SUPER_USER` |
 | `canConfirmBatches(userId)` | holds the appointment — **no role fallback** (research R1) |
 | `canSeeSalaryRuns(role, userId)` | `FINANCE` ∨ `SUPER_USER` ∨ a confirmer. **Never `HR_ADMIN`** |
 | `canAppointConfirmers(role)` | `SUPER_USER` only |
 
 ---
 
-## Finance — sending (`app/(app)/finance/batch-actions.ts`)
+## Finance — submitting (`app/(app)/finance/batch-actions.ts`)
 
-### `sendBatch(formData)`
-**Guard**: `canSendBatch`.
+### `submitTransactions(formData)`
+**Guard**: `canSubmitTransactions`.
 
 | Input | Rule |
 |---|---|
-| `itemIds[]` | ≥ 1 payable; each must be awaiting payment and **not** already in a live batch |
+| `itemIds[]` | ≥ 1 payable; each must be awaiting payment and **not** already awaiting confirmation |
 | `valueDate` | required, not in the future |
 | `bankReference` | optional, ≤ 100 chars |
 | `note` | optional |
 | `reference` | auto-generated (e.g. `AUG-26-01`), overridable |
 
 Inside one transaction: re-check each payable's state, snapshot payee/purpose/amount onto the items,
-compute the total **once**, create the batch as `SENT`, and move each payback request to
+compute the total **once**, create the submission as `SUBMITTED`, and move each payback request to
 `PAYMENT_SUBMITTED`. Then, outside it, email the confirmers.
 
-**Refusals**: `"Two of those are already in a batch sent to the bank."` · `"Nothing selected."` ·
-`"The value date can't be in the future."` · `"Nobody is appointed to confirm transfers yet — ask a
-Super User to appoint someone, or the batch will just sit here."` *(this one warns, and still sends —
-the batch is a record of something that already happened at the bank)*
+**Refusals**: `"Two of those are already awaiting confirmation."` · `"Nothing selected."` ·
+`"The value date can't be in the future."` · `"Nobody is appointed to confirm transactions yet — ask
+a Super User to appoint someone, or this will just sit here."` *(this one warns and still submits —
+it records transactions that already exist in the bank)*
 
-### `sendSalaryRun(formData)`
-**Guard**: `canSendBatch`.
+### `submitSalaryRun(formData)`
+**Guard**: `canSubmitTransactions`.
 
 | Input | Rule |
 |---|---|
@@ -48,32 +48,32 @@ the batch is a record of something that already happened at the bank)*
 | `isExtraRun` + `extraRunReason` | a second ordinary run for a month is refused; an extra run requires a reason |
 | `attachment` | optional, image/PDF, ≤ 10 MB, private blob |
 
-**Refusals**: `"A salary run for August 2026 has already been sent. Tick 'extra run' and say why if
-this is a second transfer for that month."` · `"Enter how many people this run covers."`
+**Refusals**: `"A salary run for August 2026 has already been submitted. Tick 'extra run' and say
+why if this is a second transfer for that month."` · `"Enter how many people this run covers."`
 
 **Never accepts** any per-person figure. There is no field for one.
 
-### `withdrawBatch(formData)`
-**Guard**: `canSendBatch`. Only from `SENT`. Reason required. Deletes the items, returns each payback
+### `withdrawSubmission(formData)`
+**Guard**: `canSubmitTransactions`. Only from `SUBMITTED`. Reason required. Deletes the items, returns each payback
 request to `APPROVED`, records who withdrew it and why.
 
 ---
 
 ## The confirmer (`app/(app)/confirmations/actions.ts`)
 
-### `confirmBatch(formData)`
-**Guard**: `canConfirmBatches`, **plus** `canDecide` — the sender may not confirm their own batch
+### `markComplete(formData)`
+**Guard**: `canConfirmSubmissions`, **plus** `canDecide` — the sender may not confirm their own batch
 unless they hold top-level access (FR-011).
 
-Inside one transaction: re-check the batch is still `SENT`, set `CONFIRMED`, store `confirmedTotal`,
-`decidedById`, `decidedAt`, and move every payback item to `PAID` with the transfer date taken from
-the batch's value date. Then, outside it, email each payback requester.
+Inside one transaction: re-check it is still `SUBMITTED`, set `COMPLETE`, store `confirmedTotal`,
+`decidedById` and `decidedAt`, and move every payback item to `PAID` with the transfer date taken
+from the value date. Then, outside it, email each payback requester.
 
 **Refusals**: `"That batch has already been decided."` · `"You sent this batch, so somebody else has
 to confirm it."`
 
-### `sendBatchBack(formData)`
-**Guard**: same. Note required. Sets `SENT_BACK`, deletes the items, returns each payback request to
+### `returnToFinance(formData)`
+**Guard**: same. Note required. Sets `RETURNED`, deletes the items, returns each payback request to
 `APPROVED`. **Nobody is told they were paid.**
 
 ---
@@ -92,8 +92,8 @@ actions at all.
 | Route | Who | What |
 |---|---|---|
 | `/confirmations` | appointed confirmers | What is waiting, newest first, with totals. Nothing else. |
-| `/confirmations/[batchId]` | appointed confirmers | Each item — payee, purpose, amount, evidence — then Confirm or Send back. |
-| `/finance` → *Sent to the bank* tab | Finance | Batches by state; select payables and send; withdraw. |
+| `/confirmations/[batchId]` | appointed confirmers | Each item — payee, purpose, amount, evidence — then Confirm or Return to Finance. |
+| `/finance` → *Awaiting confirmation* tab | Finance | Records by state; tick payables and submit; withdraw. |
 | `/finance/salary` | Finance, confirmers, Super User (**never HR Admin**) | Monthly runs and the form to send one. |
 | `/admin/confirmers` | Super User | Who may confirm. |
 
@@ -106,17 +106,16 @@ of what is waiting — the same derivation the page uses.
 
 | Trigger | To | Contains |
 |---|---|---|
-| Batch sent | every eligible confirmer | type, item count, total, who sent it, link. **No payee names, no amounts per person** |
+| Transactions submitted | every eligible confirmer | kind, count, total, who submitted, link. **No payee names, no per-person amounts** |
 | Batch confirmed | each payback requester in it | their own amount and the transfer date (the existing paid template) |
-| Daily, if anything waits beyond the lead | every eligible confirmer | how many batches, their combined total, link. Logged so nobody is told twice in a day |
+| Daily, if anything waits beyond the lead | every eligible confirmer | how many are waiting, their combined total, link. Logged so nobody is told twice in a day |
 
-All fire-and-forget, honouring the master switch. Nothing about a batch's state depends on an email
-being delivered.
+All fire-and-forget, honouring the master switch. No state depends on an email being delivered.
 
 ---
 
 ## Cron
 
-`GET /api/cron/confirmations`, authenticated with `CRON_SECRET`, daily. Finds `SENT` batches older
+`GET /api/cron/confirmations`, authenticated with `CRON_SECRET`, daily. Finds `SUBMITTED` submissions older
 than the configured lead, emails eligible confirmers once per batch per day, writes a reminder log
 row. **It may never email anyone who is not an appointed confirmer.**

@@ -191,10 +191,10 @@ model User {
 
   // Bank confirmations (spec 040) — back-relations only; no column is added to User. Who may
   // confirm is a row in TransactionConfirmer, never an attribute of the person.
-  transactionConfirmer  TransactionConfirmer?  @relation("TransactionConfirmerSubject")
-  confirmersAppointed   TransactionConfirmer[] @relation("TransactionConfirmerAppointer")
-  paymentBatchesSent    PaymentBatch[]         @relation("PaymentBatchSender")
-  paymentBatchesDecided PaymentBatch[]         @relation("PaymentBatchDecider")
+  transactionConfirmer    TransactionConfirmer?  @relation("TransactionConfirmerSubject")
+  confirmersAppointed     TransactionConfirmer[] @relation("TransactionConfirmerAppointer")
+  paymentBatchesSubmitted PaymentBatch[]         @relation("PaymentBatchSubmitter")
+  paymentBatchesDecided   PaymentBatch[]         @relation("PaymentBatchDecider")
 
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -1997,10 +1997,13 @@ enum PaymentBatchType {
   SALARY
 }
 
+/// The words are the CEO's own (2026-08-24). Finance CREATES a transaction in the bank and
+/// submits it here for confirmation; he confirms it in the bank, and marks it COMPLETE — the
+/// transaction is done, the money has moved. Nothing here "approves" or "sends" anything.
 enum PaymentBatchStatus {
-  SENT // entered at the bank, waiting on the confirmer — the only state that waits on anybody
-  CONFIRMED // confirmed at the bank and ticked off here; immutable
-  SENT_BACK // returned to Finance with a note; its items are released
+  SUBMITTED // created in the bank, submitted here for confirmation — the only state that waits
+  COMPLETE // confirmed in the bank; the money has moved. Immutable
+  RETURNED // handed back to Finance with a note; its items are released
   WITHDRAWN // Finance pulled it back before a decision; its items are released
 }
 
@@ -2024,35 +2027,36 @@ model TransactionConfirmer {
   createdAt DateTime @default(now())
 }
 
-/// One bank session: the transfers Finance entered together.
+/// The transactions Finance created in the bank in one sitting, submitted here for confirmation.
 ///
-/// A batch is created ALREADY SENT — there is no draft, because it describes something that has
-/// already happened at the bank.
+/// NOTE ON WORDS: the UI never calls this a "batch" — screens say "3 transactions". The model
+/// name is internal shorthand only. It is created ALREADY SUBMITTED: there is no draft, because
+/// it records something that already exists in the bank.
 model PaymentBatch {
   id        String             @id @default(cuid())
   reference String /// human-facing, e.g. "AUG-26-01"
   type      PaymentBatchType
-  status    PaymentBatchStatus @default(SENT)
+  status    PaymentBatchStatus @default(SUBMITTED)
 
   bankReference String?
   valueDate     DateTime
   note          String?
 
-  /// FROZEN AT SEND, and the one figure in this module that is stored rather than derived.
+  /// FROZEN AT SUBMISSION, and the one figure in this module that is stored rather than derived.
   /// The confirmer acts on the number he was emailed, possibly hours earlier; recomputing it on
   /// read would let the emailed figure and the confirmed figure diverge at exactly the moment it
   /// matters. Items are locked while the batch stands, so it cannot go stale either.
   totalAmount Decimal @db.Decimal(10, 2)
   itemCount   Int
 
-  sentById String?
-  sentBy   User?    @relation("PaymentBatchSender", fields: [sentById], references: [id], onDelete: SetNull)
-  sentAt   DateTime @default(now())
+  submittedById String?
+  submittedBy   User?    @relation("PaymentBatchSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+  submittedAt   DateTime @default(now())
 
   decidedById  String?
   decidedBy    User?     @relation("PaymentBatchDecider", fields: [decidedById], references: [id], onDelete: SetNull)
   decidedAt    DateTime?
-  decisionNote String? /// required when sending back or withdrawing
+  decisionNote String? /// required when returning to Finance or withdrawing
 
   /// What the confirmer was shown at the moment he confirmed. Equal to `totalAmount` by
   /// construction — stored so "what did he actually confirm?" is answerable without inference.
@@ -2075,13 +2079,13 @@ model PaymentBatch {
 
   @@index([status])
   @@index([type])
-  @@index([sentAt])
+  @@index([submittedAt])
 }
 
 /// One payable inside a batch. Two optional parents, exactly one set (check constraint in SQL).
 ///
-/// The payee, purpose and amount are SNAPSHOTS taken when the batch was sent, so the record of
-/// what went to the bank survives a later correction to the source record.
+/// The payee, purpose and amount are SNAPSHOTS taken at submission, so the record of what was
+/// actually created in the bank survives a later correction to the source record.
 model PaymentBatchItem {
   id      String       @id @default(cuid())
   batchId String
@@ -2093,9 +2097,9 @@ model PaymentBatchItem {
   pettyCashFundingId String?
   pettyCashFunding   PettyCashFunding? @relation(fields: [pettyCashFundingId], references: [id], onDelete: SetNull)
 
-  amountAtSend Decimal @db.Decimal(10, 2)
-  payeeName    String
-  purpose      String
+  amountAtSubmission Decimal @db.Decimal(10, 2)
+  payeeName          String
+  purpose            String
 
   createdAt DateTime @default(now())
 

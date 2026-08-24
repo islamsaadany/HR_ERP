@@ -38,12 +38,12 @@ const STATUS: Record<
     chip: "border-navy-200 bg-navy-50 text-navy-700",
     say: (r) => `Approved${r.decidedBy ? ` by ${r.decidedBy}` : ""}. Waiting on the transfer.`,
   },
-  // Spec 040: Finance has entered the transfer at the bank and it is waiting on the second
-  // signature. Deliberately NOT called "paid" — until the bank releases it, nobody has been paid.
+  // Spec 040: Finance has created the transaction in the bank and it is waiting on the second
+  // signature there. Deliberately NOT called "paid" — until the bank releases it, nobody has been.
   PAYMENT_SUBMITTED: {
     label: "At the bank",
     chip: "border-gold-300 bg-gold-100 text-gold-800",
-    say: () => "Finance has sent this to the bank. It needs one more signature there.",
+    say: () => "Finance has created this in the bank. It needs one more signature there.",
   },
   PAID: {
     label: "Paid",

@@ -121,9 +121,10 @@
 <div class="wrap">
   <p class="eyebrow">Spec 040 · Mockups for sign-off</p>
   <h1>Bank confirmations &amp; salaries</h1>
-  <p class="lede">Your half of the Finance module. Finance enters transfers at the bank and sends them
-    here; you get an email, confirm at the bank as you always have, and tick them off. Nothing in
-    this app releases money — it tells you and keeps the record.</p>
+  <p class="lede">Your half of the Finance module. Finance creates the transactions in the bank and
+    submits them here for confirmation; you get an email, confirm them in the bank as you always
+    have, and mark them complete. Nothing in this app releases money — it tells you, and keeps the
+    record of what was done.</p>
   <div class="meta">
     <span class="tag">Your screen is one list and one button</span>
     <span class="tag">Emails carry totals, never names</span>
@@ -133,16 +134,16 @@
   <div class="flow">
     <h2>Where you sit in it</h2>
     <div class="steps">
-      <div class="step"><b>1 · Enter at the bank</b><span>Finance keys the transfers into the bank as normal.</span><span class="who">Finance</span></div>
-      <div class="step"><b>2 · Send here</b><span>They tick which payments went, add the bank reference, and send. The total is frozen at that moment.</span><span class="who">Finance</span></div>
-      <div class="step here"><b>3 · You get an email</b><span>How many, what they total, who sent it, and a link. No names.</span><span class="who">You</span></div>
-      <div class="step here"><b>4 · Confirm &amp; tick off</b><span>You confirm at the bank, then tap Confirmed here. Only now is anyone told they've been paid.</span><span class="who">You</span></div>
+      <div class="step"><b>1 · Create in the bank</b><span>Finance creates the transactions in the bank, the way they do now.</span><span class="who">Finance</span></div>
+      <div class="step"><b>2 · Submit for confirmation</b><span>They tick which ones they created, add the bank reference, and submit. The total is frozen at that moment.</span><span class="who">Finance</span></div>
+      <div class="step here"><b>3 · You get an email</b><span>How many, what they total, who created them, and a link. No names.</span><span class="who">You</span></div>
+      <div class="step here"><b>4 · Confirm, then mark complete</b><span>You confirm in the bank, then tap <b>Transaction complete</b> here. Only now is anyone told they've been paid.</span><span class="who">You</span></div>
     </div>
   </div>
 
   <!-- ══ 1 ══ -->
   <section class="screen">
-    <h2>1 · The email you get <span class="who">The moment Finance sends</span></h2>
+    <h2>1 · The email you get <span class="who">The moment Finance submits</span></h2>
     <p class="sub">Short enough to act on from your phone. The detail is one tap away, deliberately —
       an emailed list of who was paid what lives in an inbox forever.</p>
     <div class="two">
@@ -150,13 +151,13 @@
         <div class="m-head"><div class="m-org">Forefront People</div><div class="m-unit">Finance</div></div>
         <div class="m-bar"></div>
         <div class="m-body">
-          <p class="m-title">3 transfers are waiting for you at the bank</p>
-          <p class="m-p">Mohamed Selim has entered these and sent them for confirmation.</p>
-          <p class="m-row"><span>Batch:</span> <b>AUG-26-04</b></p>
-          <p class="m-row"><span>Transfers:</span> <b>3</b></p>
+          <p class="m-title">3 transactions are waiting for your confirmation</p>
+          <p class="m-p">Mohamed Selim has created these in the bank and submitted them for confirmation.</p>
+          <p class="m-row"><span>Reference:</span> <b>AUG-26-04</b></p>
+          <p class="m-row"><span>Transactions:</span> <b>3</b></p>
           <p class="m-row"><span>Total:</span> <b>EGP 12,450.00</b></p>
           <p class="m-row"><span>Value date:</span> <b>24/08/2026</b></p>
-          <a class="m-cta" href="#">See what's in it</a>
+          <a class="m-cta" href="#">See the transactions</a>
         </div>
         <div class="m-foot">You're receiving this because you're appointed to confirm transfers.</div>
       </div>
@@ -168,8 +169,8 @@
             same sign-in as everything else.</li>
           <li>The salary email is the same shape: <i>"Salaries for August 2026 — EGP 89,000.00
             covering 5 people."</i> Never a person's pay.</li>
-          <li>If a batch sits unconfirmed for a few days, you get one summary reminder. Nobody else
-            is ever emailed by that.</li>
+          <li>If something sits unconfirmed for a few days, you get one summary reminder. Nobody
+            else is ever emailed by that.</li>
         </ul>
       </div>
     </div>
@@ -185,23 +186,23 @@
       <div class="page">
         <p class="page-eyebrow">Waiting on you</p>
         <h3>Confirmations</h3>
-        <p class="hint">Finance has entered these at the bank. Confirm them there, then tick them off
-          here — that's what tells the person they've been paid.</p>
+        <p class="hint">Finance created these in the bank. Confirm them there, then mark them
+          complete here — that's what tells the person they've been paid.</p>
 
         <div class="waiting">
           <div class="wcard">
             <div class="top">
               <div>
                 <span class="chip c-wait">Waiting 2 days</span>
-                <p class="what" style="margin-top:8px">3 transfers · expenses</p>
-                <p class="when">Sent by Mohamed Selim on 22/08/2026 · value date 24/08/2026 · ref AUG-26-04</p>
+                <p class="what" style="margin-top:8px">3 transactions · expenses</p>
+                <p class="when">Created by Mohamed Selim on 22/08/2026 · value date 24/08/2026 · ref AUG-26-04</p>
               </div>
               <div style="text-align:right"><p class="amt">EGP 12,450.00</p></div>
             </div>
             <div class="act">
-              <span class="btn primary big">Confirmed at the bank</span>
-              <span class="btn ghost">Send back…</span>
-              <span class="btn ghost" style="margin-left:auto">See the 3 transfers</span>
+              <span class="btn primary big">Transaction complete</span>
+              <span class="btn ghost">Return to Finance…</span>
+              <span class="btn ghost" style="margin-left:auto">See the 3 transactions</span>
             </div>
           </div>
 
@@ -210,29 +211,29 @@
               <div>
                 <span class="chip c-wait">Waiting today</span>
                 <p class="what" style="margin-top:8px">Salaries — August 2026</p>
-                <p class="when">Sent by Mohamed Selim today · covering 5 people · ref AUG-26-SAL</p>
+                <p class="when">Created by Mohamed Selim today · covering 5 people · ref AUG-26-SAL</p>
               </div>
               <div style="text-align:right"><p class="amt">EGP 89,000.00</p></div>
             </div>
             <div class="act">
-              <span class="btn primary big">Confirmed at the bank</span>
-              <span class="btn ghost">Send back…</span>
+              <span class="btn primary big">Transaction complete</span>
+              <span class="btn ghost">Return to Finance…</span>
               <span class="btn ghost" style="margin-left:auto">See the run</span>
             </div>
           </div>
         </div>
 
         <p style="margin-top:22px;font-size:12.5px;color:var(--muted)">
-          <b style="color:var(--ink)">Recently confirmed</b> · AUG-26-03, 2 transfers, EGP 3,180.00,
-          confirmed 19/08/2026 <span class="chip c-done" style="margin-left:6px">Done</span>
+          <b style="color:var(--ink)">Recently completed</b> · AUG-26-03, 2 transactions, EGP 3,180.00,
+          completed 19/08/2026 <span class="chip c-done" style="margin-left:6px">Complete</span>
         </p>
       </div>
     </div></div>
     <div class="notes"><b>What to check</b><ul>
-      <li>The button says <b>“Confirmed at the bank”</b>, not “Approve” — it records what you did
-        elsewhere, it doesn't authorise anything here.</li>
-      <li><b>Send back</b> returns it to Finance with your note, and the payments go back to waiting.
-        Nobody is told they were paid.</li>
+      <li>The button says <b>“Transaction complete”</b> — it records that the money has actually
+        moved, not that you've authorised anything here.</li>
+      <li><b>Return to Finance</b> hands it back with your note, and the payments go back to
+        waiting. Nobody is told they were paid.</li>
       <li><span class="q">For you:</span> is <b>“Waiting 2 days”</b> useful, or would you rather just
         see the date it was sent?</li>
     </ul></div>
@@ -240,14 +241,14 @@
 
   <!-- ══ 3 ══ -->
   <section class="screen">
-    <h2>3 · What's inside a batch <span class="who">One tap from the email</span></h2>
-    <p class="sub">Who's being paid, what for, and the receipt — before you tick it off.</p>
+    <h2>3 · The transactions themselves <span class="who">One tap from the email</span></h2>
+    <p class="sub">Who's being paid, what for, and the receipt — before you mark it complete.</p>
     <div class="frame"><div class="app">
       <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / confirmations / AUG-26-04</span></div>
       <div class="page">
-        <p class="page-eyebrow">Batch AUG-26-04 · sent by Mohamed Selim</p>
-        <h3>3 transfers · EGP 12,450.00</h3>
-        <p class="hint">Value date 24/08/2026 · bank reference NBE-88213 · sent 22/08/2026</p>
+        <p class="page-eyebrow">AUG-26-04 · created by Mohamed Selim</p>
+        <h3>3 transactions · EGP 12,450.00</h3>
+        <p class="hint">Value date 24/08/2026 · bank reference NBE-88213 · submitted 22/08/2026</p>
 
         <div class="scroll"><table>
           <thead><tr><th>Paying</th><th>For</th><th>Receipt</th><th class="num">Amount</th></tr></thead>
@@ -256,45 +257,45 @@
             <tr><td>Hussein Kamel</td><td>AlMentor annual subscription</td><td><span class="paperclip">1 receipt</span></td><td class="num">1,199.50</td></tr>
             <tr><td>Raneem Sarhaan</td><td>Marketing float — August top-up</td><td><span class="chip c-flat">Float</span></td><td class="num">10,846.50</td></tr>
           </tbody>
-          <tfoot><tr><td colspan="3">Total sent to the bank</td><td class="num">12,450.00</td></tr></tfoot>
+          <tfoot><tr><td colspan="3">Total created in the bank</td><td class="num">12,450.00</td></tr></tfoot>
         </table></div>
 
         <div class="row" style="margin-top:20px">
-          <span style="font-size:12px;color:var(--muted)">This total was fixed when Finance sent it — it can't change while it's with you.</span>
+          <span style="font-size:12px;color:var(--muted)">This total was fixed when Finance submitted it — it can't change while it's with you.</span>
           <div class="btns">
-            <span class="btn ghost">Send back…</span>
-            <span class="btn primary big">Confirmed at the bank</span>
+            <span class="btn ghost">Return to Finance…</span>
+            <span class="btn primary big">Transaction complete</span>
           </div>
         </div>
       </div>
     </div></div>
     <div class="notes"><b>What to check</b><ul>
       <li>Nothing here can change while it's waiting on you. If a figure was wrong, Finance has to
-        withdraw the whole batch and send a fresh one — so what you confirm is always what you were
-        emailed.</li>
-      <li>The people in it are told they've been paid the moment you tick it, and not before.</li>
+        withdraw the lot and submit fresh — so what you confirm is always what you were emailed.</li>
+      <li>The people in it are told they've been paid the moment you mark it complete, and not
+        before.</li>
     </ul></div>
   </section>
 
   <!-- ══ 4 ══ -->
   <section class="screen">
-    <h2>4 · Finance sends a batch <span class="who">Finance</span></h2>
-    <p class="sub">They tick what they've just keyed into the bank. This is a record of something
-      that already happened — there's no draft.</p>
+    <h2>4 · Finance submits for confirmation <span class="who">Finance</span></h2>
+    <p class="sub">They tick what they've just created in the bank. This is a record of something
+      that already exists there — there's no draft.</p>
     <div class="frame"><div class="app">
-      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / finance — sent to the bank</span></div>
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / finance — awaiting confirmation</span></div>
       <div class="page">
         <p class="page-eyebrow">Finance · Payments</p>
-        <h3>Sent to the bank</h3>
+        <h3>Awaiting confirmation</h3>
         <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap">
           <span class="btn ghost">Confirmation queue</span>
           <span class="btn ghost">Medical recoveries</span>
           <span class="btn ghost">Payback requests</span>
-          <span class="btn primary">Sent to the bank · 2</span>
+          <span class="btn primary">Awaiting confirmation · 2</span>
         </div>
 
-        <p class="hint" style="margin-top:16px">Tick what you've entered at the bank, then send. Islam
-          gets an email straight away.</p>
+        <p class="hint" style="margin-top:16px">Tick what you've created in the bank, then submit.
+          Islam gets an email straight away.</p>
 
         <div class="scroll"><table>
           <thead><tr><th style="width:34px"></th><th>Paying</th><th>For</th><th class="num">Amount</th></tr></thead>
@@ -314,14 +315,14 @@
 
         <div class="row" style="margin-top:18px">
           <span style="font-size:12.5px"><b>3 selected · EGP 12,450.00</b></span>
-          <span class="btn primary big">Send to Islam for confirmation</span>
+          <span class="btn primary big">Submit for confirmation</span>
         </div>
       </div>
     </div></div>
     <div class="notes"><b>What to check</b><ul>
-      <li>Once sent, those three are locked — Finance can't edit them, and can't put them in another
-        batch. To change something they withdraw the batch and start again.</li>
-      <li>If nobody is appointed to confirm, this screen says so plainly rather than sending into
+      <li>Once submitted, those three are locked — Finance can't edit them, and can't submit them
+        twice. To change something they withdraw and start again.</li>
+      <li>If nobody is appointed to confirm, this screen says so plainly rather than submitting into
         silence.</li>
     </ul></div>
   </section>
@@ -335,9 +336,9 @@
       <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / finance / salary</span></div>
       <div class="page">
         <p class="page-eyebrow">Finance · Salaries</p>
-        <h3>Send the monthly run</h3>
-        <p class="hint">After you've entered payroll at the bank. Islam gets the email and confirms
-          there.</p>
+        <h3>Submit the monthly run</h3>
+        <p class="hint">After you've created the payroll transactions in the bank. Islam gets the
+          email and confirms them there.</p>
         <div class="form">
           <div class="field"><label>Month</label><div class="input">August 2026</div></div>
           <div class="field"><label>Total transferred (EGP)</label><div class="input">89,000.00</div></div>
@@ -348,23 +349,24 @@
             <span class="help">Kept private — only Finance, Islam and top-level access can open it.</span></div>
           <div class="field wide">
             <div class="check"><span class="box"></span><span>This is a second run for August (I'll say why)</span></div>
-            <span class="help">A month can only be sent once, so nobody pays it twice by accident.</span></div>
+            <span class="help">A month can only be submitted once, so nobody pays it twice by accident.</span></div>
         </div>
         <div class="row" style="margin-top:18px">
           <span style="font-size:12px;color:var(--muted)">Nothing here identifies anyone.</span>
-          <span class="btn primary big">Send for confirmation</span>
+          <span class="btn primary big">Submit for confirmation</span>
         </div>
 
         <p style="margin-top:24px;font-size:12.5px;color:var(--muted)">
           <b style="color:var(--ink)">Earlier runs</b> · July 2026 · EGP 89,000.00 · 5 people ·
-          confirmed by Islam 28/07/2026 <span class="chip c-done" style="margin-left:6px">Done</span>
+          completed 28/07/2026 <span class="chip c-done" style="margin-left:6px">Complete</span>
         </p>
       </div>
     </div></div>
     <div class="notes"><b>What to check</b><ul>
       <li><b>No individual salary exists in this flow</b> — not stored, not shown, not exported. HR
         can't open this screen at all.</li>
-      <li>Sending August twice is refused unless it's explicitly flagged a second run with a reason.</li>
+      <li>Submitting August twice is refused unless it's explicitly flagged a second run with a
+        reason.</li>
       <li><span class="q">For you:</span> do you want the bank's file attached to salary runs, or is
         the reference enough?</li>
     </ul></div>

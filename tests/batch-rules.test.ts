@@ -1,9 +1,10 @@
 /**
- * Who can release company money — pure, no database.
+ * Who can mark company money as released — pure, no database.
  *
- * The rule these protect is the one nobody asked for: whoever SENT a batch to the bank may not be
- * the one who confirms it. Two signatures is the whole point of the feature, and without this a
- * single person holding both Finance and the confirmer appointment could release money alone.
+ * The rule these protect is the one nobody asked for: whoever CREATED the transactions in the bank
+ * may not be the one who confirms them. Two signatures is the whole point of the feature, and
+ * without this a single person holding both Finance and the confirmer appointment could release
+ * money alone.
  */
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
@@ -21,58 +22,58 @@ import { toPiastres, fromPiastres } from "@/lib/finance/money";
 const FINANCE: Viewer = { id: "u_finance", isConfirmer: false, isSuperUser: false };
 const CEO: Viewer = { id: "u_ceo", isConfirmer: true, isSuperUser: false };
 const BOSS: Viewer = { id: "u_boss", isConfirmer: false, isSuperUser: true };
-const SENT = { status: "SENT" as const, sentById: "u_finance" };
+const OPEN = { status: "SUBMITTED" as const, submittedById: "u_finance" };
 
-describe("the sender may not confirm their own batch", () => {
-  test("an appointed confirmer who didn't send it: allowed", () => {
-    assert.deepEqual(canDecide(SENT, CEO), { ok: true });
+describe("whoever created them in the bank may not confirm them", () => {
+  test("an appointed confirmer who didn't create them: allowed", () => {
+    assert.deepEqual(canDecide(OPEN, CEO), { ok: true });
   });
 
-  test("the person who sent it: refused, and told why", () => {
-    const d = canDecide({ status: "SENT", sentById: CEO.id }, CEO);
+  test("the person who created them: refused, and told why", () => {
+    const d = canDecide({ status: "SUBMITTED", submittedById: CEO.id }, CEO);
     assert.equal(d.ok, false);
-    assert.match((d as { reason: string }).reason, /somebody else has to confirm it/);
+    assert.match((d as { reason: string }).reason, /somebody else has to confirm them/);
   });
 
   test("holding BOTH Finance and the appointment is still not enough", () => {
     const both: Viewer = { id: "u_x", isConfirmer: true, isSuperUser: false };
-    assert.equal(canDecide({ status: "SENT", sentById: "u_x" }, both).ok, false);
+    assert.equal(canDecide({ status: "SUBMITTED", submittedById: "u_x" }, both).ok, false);
   });
 
   test("top-level access is the single exception the CEO allowed", () => {
-    assert.deepEqual(canDecide({ status: "SENT", sentById: BOSS.id }, BOSS), { ok: true });
+    assert.deepEqual(canDecide({ status: "SUBMITTED", submittedById: BOSS.id }, BOSS), { ok: true });
   });
 
   test("somebody with no appointment at all: refused", () => {
-    const d = canDecide(SENT, FINANCE);
+    const d = canDecide(OPEN, FINANCE);
     assert.equal(d.ok, false);
     assert.match((d as { reason: string }).reason, /aren't appointed/);
   });
 });
 
-describe("a decided batch is finished", () => {
-  for (const status of ["CONFIRMED", "SENT_BACK", "WITHDRAWN"] as const) {
+describe("once decided, it is finished", () => {
+  for (const status of ["COMPLETE", "RETURNED", "WITHDRAWN"] as const) {
     test(`${status}: no further decision, whoever asks`, () => {
-      assert.equal(canDecide({ status, sentById: "u_finance" }, CEO).ok, false);
-      assert.equal(canDecide({ status, sentById: "u_finance" }, BOSS).ok, false);
-      assert.equal(nextStatus(status, "confirm"), null);
+      assert.equal(canDecide({ status, submittedById: "u_finance" }, CEO).ok, false);
+      assert.equal(canDecide({ status, submittedById: "u_finance" }, BOSS).ok, false);
+      assert.equal(nextStatus(status, "complete"), null);
     });
   }
 
-  test("the moves that are allowed from SENT", () => {
-    assert.equal(nextStatus("SENT", "confirm"), "CONFIRMED");
-    assert.equal(nextStatus("SENT", "sendBack"), "SENT_BACK");
-    assert.equal(nextStatus("SENT", "withdraw"), "WITHDRAWN");
+  test("the moves allowed while it is waiting", () => {
+    assert.equal(nextStatus("SUBMITTED", "complete"), "COMPLETE");
+    assert.equal(nextStatus("SUBMITTED", "returnToFinance"), "RETURNED");
+    assert.equal(nextStatus("SUBMITTED", "withdraw"), "WITHDRAWN");
   });
 });
 
 describe("what happens to the payables", () => {
-  test("sending back or withdrawing releases them; confirming keeps them", () => {
-    assert.equal(releasesItems("SENT_BACK"), true);
+  test("returning or withdrawing releases them; completing keeps them", () => {
+    assert.equal(releasesItems("RETURNED"), true);
     assert.equal(releasesItems("WITHDRAWN"), true);
-    // A confirmed batch is the historical record of what went to the bank.
-    assert.equal(releasesItems("CONFIRMED"), false);
-    assert.equal(releasesItems("SENT"), false);
+    // A completed record is the history of what actually moved.
+    assert.equal(releasesItems("COMPLETE"), false);
+    assert.equal(releasesItems("SUBMITTED"), false);
   });
 });
 
@@ -90,15 +91,16 @@ describe("the total the confirmer is shown", () => {
 });
 
 describe("what the email and the screen say — the same sentence, from one place", () => {
-  test("an expenses batch counts transfers", () => {
+  test("expenses count transactions — and it is never called a batch on screen", () => {
     assert.equal(
       describeBatch({ type: "EXPENSES", itemCount: 3 }, "EGP 12,450.00"),
-      "3 transfers totalling EGP 12,450.00",
+      "3 transactions totalling EGP 12,450.00",
     );
-    assert.match(describeBatch({ type: "EXPENSES", itemCount: 1 }, "EGP 10.00"), /1 transfer /);
+    assert.match(describeBatch({ type: "EXPENSES", itemCount: 1 }, "EGP 10.00"), /1 transaction /);
+    assert.equal(/batch/i.test(describeBatch({ type: "EXPENSES", itemCount: 2 }, "EGP 1.00")), false);
   });
 
-  test("a salary run counts PEOPLE, not transfers", () => {
+  test("a salary run counts PEOPLE, not transactions", () => {
     const s = describeBatch(
       { type: "SALARY", itemCount: 0, salaryMonth: new Date("2026-08-01"), headcount: 5 },
       "EGP 89,000.00",
@@ -114,7 +116,7 @@ describe("what the email and the screen say — the same sentence, from one plac
   });
 });
 
-describe("batch references read like a bank statement", () => {
+describe("references read like a bank statement", () => {
   test("month, year, sequence", () => {
     assert.equal(nextBatchReference(new Date("2026-08-24"), 1), "AUG-26-01");
     assert.equal(nextBatchReference(new Date("2026-12-02"), 12), "DEC-26-12");

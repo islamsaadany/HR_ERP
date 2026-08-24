@@ -32,9 +32,9 @@ The Finance screen must say so plainly rather than silently queueing.
 
 ---
 
-## R2 — Is a batch's total stored or derived?
+## R2 — Is the total stored or derived?
 
-**Decision**: **Stored**, computed once when the batch is sent, alongside the item count.
+**Decision**: **Stored**, computed once at submission, alongside the count.
 
 **Rationale**: Everywhere else in this module a figure is derived on read, precisely so two screens
 cannot disagree (`pettycash.ts` exists for that reason). This is the one place where the opposite is
@@ -43,20 +43,26 @@ release of real money against it. If the total were recomputed on read, a change
 between the email and the tap would silently alter what he is confirming — the exact drift the
 feature exists to prevent, reintroduced at the only moment it actually matters.
 
-Items are locked while a batch stands, so the stored total cannot drift from its items either; the
-two protections are complementary, not redundant.
+Items are locked while it stands, so the stored total cannot drift from them either; the two
+protections are complementary, not redundant.
 
 **Alternatives considered**:
 - *Derive like everything else*: rejected above.
-- *Store the total and re-derive as a cross-check, warning on mismatch*: a warning nobody can act on,
-  for a state that locking already makes impossible. Rejected as machinery.
+- *Store the total and re-derive as a cross-check, warning on mismatch*: a warning nobody can act
+  on, for a state that locking already makes impossible. Rejected as machinery.
 
 ---
 
 ## R3 — How does `PaybackStatus` gain a member mid-list?
 
-**Decision**: `ALTER TYPE "PaybackStatus" ADD VALUE IF NOT EXISTS 'PAYMENT_SUBMITTED' BEFORE 'PAID'`,
-run **outside** a transaction block, and guarded so a re-run is a no-op.
+**Decision**: `ALTER TYPE "PaybackStatus" ADD VALUE IF NOT EXISTS 'PAYMENT_SUBMITTED' BEFORE
+'REJECTED'`, run **outside** a transaction block, and guarded so a re-run is a no-op.
+
+**Corrected during verification**: the obvious `BEFORE 'PAID'` is wrong. The type as created in 067
+runs `SUBMITTED, APPROVED, REJECTED, PAID`, so inserting before `PAID` lands the new member *after*
+`REJECTED` — leaving the database's order disagreeing with the order `schema.prisma` declares, and
+trapping the first person who sorts by that column. Caught by querying `pg_enum` on a throwaway
+database rather than trusting the statement's wording.
 
 **Rationale**: Spec 039 wrote the enum in an order that leaves room for this and said so in the
 schema comment, so the position is already agreed. The operational catch is that Postgres refuses
@@ -81,20 +87,20 @@ only for people who actually hold the appointment.
 ten-second job would mean either giving him Finance's navigation or building a Finance page that
 hides most of itself — and it would put payroll and expense screens in front of someone who has no
 reason to browse them. A separate small surface also makes the email's promise literal: tap the link,
-see what is waiting, tick it off.
+see what is waiting, mark it complete.
 
 Finance sees the same batches from their own side, as a tab on the Payments page they already use,
 because for them it is one more state of work they already track.
 
 **Alternatives considered**:
 - *A tab inside `/finance`*: rejected above.
-- *Email-only, no screen*: the CEO chose to tick batches off, which needs somewhere to tick.
+- *Email-only, no screen*: the CEO chose to record completion himself, which needs somewhere to do it.
 
 ---
 
 ## R5 — What may the email contain?
 
-**Decision**: Batch type, item count, total, who sent it, and a link. **No payee names, no individual
+**Decision**: The kind, how many transactions, the total, who submitted it, and a link. **No payee names, no individual
 amounts, no salary detail.**
 
 **Rationale**: The CEO's choice (2026-08-24), and the right default regardless: an emailed list of

@@ -37,7 +37,7 @@
   screen, state name and email in the spec now says send / confirm / tick off rather than approve.
   Worth keeping in view: the wrong word had produced a design that implied the app held the power to
   release money, which it never does.
-- **Decisions taken by the CEO on 2026-08-24**: he ticks a batch off after confirming in the bank
+- **Decisions taken by the CEO on 2026-08-24**: he ticks a submission off after confirming in the bank
   (so the platform can show what is outstanding and hold the record); nobody stands in for him, so
   payments wait; the email carries totals and a link, never payee names or amounts; and the
   marketing float opens owing 9,726.26, the closing figure of the latest workbook tab, with earlier

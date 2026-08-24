@@ -1,13 +1,14 @@
 -- HR_ERP — Finance: bank confirmations & monthly salary runs (spec 040, 2026-08-24).
 --
 -- WHY
---   The bank releases money on two signatures: Finance enters a transfer, the CEO confirms it.
+--   The bank releases money on two signatures: Finance CREATES the transaction in the bank, the
+--   CEO CONFIRMS it there. (His words, 2026-08-24 — nothing here approves or sends anything.)
 --   Nothing connected that to the company's records — the confirmation left no trace against the
 --   request it settled. These tables are the notification and the record. They do NOT gate a
 --   payment; the gate is the bank's.
 --
 -- THE ONE STORED FIGURE
---   `PaymentBatch.totalAmount` is frozen when the batch is sent, unlike every other money figure
+--   `PaymentBatch.totalAmount` is frozen at submission, unlike every other money figure
 --   in this module, which is derived on read. The confirmer acts on the number he was emailed,
 --   possibly hours earlier; recomputing on read would let the emailed figure and the confirmed
 --   figure diverge at exactly the moment that matters.
@@ -51,7 +52,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-  CREATE TYPE "PaymentBatchStatus" AS ENUM ('SENT', 'CONFIRMED', 'SENT_BACK', 'WITHDRAWN');
+  CREATE TYPE "PaymentBatchStatus" AS ENUM ('SUBMITTED', 'COMPLETE', 'RETURNED', 'WITHDRAWN');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ─── Who may confirm ───────────────────────────────────────────────────────
@@ -77,14 +78,14 @@ CREATE TABLE IF NOT EXISTS "PaymentBatch" (
   "id"             TEXT NOT NULL,
   "reference"      TEXT NOT NULL,
   "type"           "PaymentBatchType" NOT NULL,
-  "status"         "PaymentBatchStatus" NOT NULL DEFAULT 'SENT',
+  "status"         "PaymentBatchStatus" NOT NULL DEFAULT 'SUBMITTED',
   "bankReference"  TEXT,
   "valueDate"      TIMESTAMP(3) NOT NULL,
   "note"           TEXT,
   "totalAmount"    NUMERIC(10,2) NOT NULL,
   "itemCount"      INTEGER NOT NULL,
-  "sentById"       TEXT,
-  "sentAt"         TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "submittedById"  TEXT,
+  "submittedAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "decidedById"    TEXT,
   "decidedAt"      TIMESTAMP(3),
   "decisionNote"   TEXT,
@@ -101,7 +102,7 @@ CREATE TABLE IF NOT EXISTS "PaymentBatch" (
 );
 CREATE INDEX IF NOT EXISTS "PaymentBatch_status_idx" ON "PaymentBatch" ("status");
 CREATE INDEX IF NOT EXISTS "PaymentBatch_type_idx" ON "PaymentBatch" ("type");
-CREATE INDEX IF NOT EXISTS "PaymentBatch_sentAt_idx" ON "PaymentBatch" ("sentAt");
+CREATE INDEX IF NOT EXISTS "PaymentBatch_submittedAt_idx" ON "PaymentBatch" ("submittedAt");
 
 -- ONE ORDINARY SALARY RUN PER MONTH. A second transfer for the same month is possible, but only
 -- as an explicitly flagged extra run with a reason — so nobody can quietly pay a month twice.
@@ -115,7 +116,7 @@ CREATE TABLE IF NOT EXISTS "PaymentBatchItem" (
   "batchId"            TEXT NOT NULL,
   "paybackRequestId"   TEXT,
   "pettyCashFundingId" TEXT,
-  "amountAtSend"       NUMERIC(10,2) NOT NULL,
+  "amountAtSubmission" NUMERIC(10,2) NOT NULL,
   "payeeName"          TEXT NOT NULL,
   "purpose"            TEXT NOT NULL,
   "createdAt"          TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -133,8 +134,8 @@ BEGIN
   END IF;
 END $$;
 
--- ONE PAYABLE, ONE LIVE BATCH. Sending back or withdrawing deletes the items, which is exactly
--- what "released" means — the payable becomes selectable again.
+-- ONE PAYABLE, ONE LIVE SUBMISSION. Returning to Finance or withdrawing deletes the items, which
+-- is exactly what "released" means — the payable becomes selectable again.
 CREATE UNIQUE INDEX IF NOT EXISTS "PaymentBatchItem_one_live_payback"
   ON "PaymentBatchItem" ("paybackRequestId") WHERE "paybackRequestId" IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS "PaymentBatchItem_one_live_funding"
@@ -166,7 +167,7 @@ BEGIN
     SELECT * FROM (VALUES
       ('TransactionConfirmer_userId_fkey',           'TransactionConfirmer', 'userId',             'User',             'CASCADE'),
       ('TransactionConfirmer_appointedById_fkey',    'TransactionConfirmer', 'appointedById',      'User',             'SET NULL'),
-      ('PaymentBatch_sentById_fkey',                 'PaymentBatch',         'sentById',           'User',             'SET NULL'),
+      ('PaymentBatch_submittedById_fkey',            'PaymentBatch',         'submittedById',      'User',             'SET NULL'),
       ('PaymentBatch_decidedById_fkey',              'PaymentBatch',         'decidedById',        'User',             'SET NULL'),
       ('PaymentBatchItem_batchId_fkey',              'PaymentBatchItem',     'batchId',            'PaymentBatch',     'CASCADE'),
       ('PaymentBatchItem_paybackRequestId_fkey',     'PaymentBatchItem',     'paybackRequestId',   'PaybackRequest',   'SET NULL'),
