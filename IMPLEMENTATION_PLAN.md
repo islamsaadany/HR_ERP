@@ -314,6 +314,19 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 - **2026-08-18 — Dashboard = cards only.** Quick links removed (duplicated cards + nav); cards are Benefits · Time-Off · Approvals (managers) · Onboarding (while in progress).
 - **2026-08-18 — Campaign popup submits, not finishes.** "Finish" → **Submit**, blocked until every listed field is confirmed/filled; "Later" still dismisses. Monitoring pages (tracker, campaign list) auto-refresh on focus + 30s.
 - **2026-08-22 — Backlog: regular reviews + 1:1s with the team (parked, nothing specced, nothing built).** Requested so it is on record for future alignment: the platform should host the **recurring performance/check-in reviews and manager↔report 1:1s** — a place to schedule them, log what was discussed, and keep the history alongside the employee record. Scope, cadence, who can read what, and how it relates to the org chart are **all still open** — the requester will come back with the detail. **No spec, no schema, no UI until that alignment happens.**
+- **2026-08-24 — Communications module specced (spec 039), not yet built.** A third email
+  workflow and the FIRST broadcast one: announcements to a chosen audience, plus personal
+  congratulations for birthdays and joining anniversaries. Settled: **Forefront Group is a business
+  unit marked default, not a new parent layer** (the unit record already holds name and colours);
+  **the unit leads the design** — its name large, FOREFRONT GROUP small above, its colour on the
+  header and button, with text colour DERIVED from that colour so any brand stays legible;
+  **nothing sends itself** — a daily job drafts congratulations 3 days ahead (configurable) and
+  notifies the line manager, who edits and sends, signed with their name; **HR sees the whole
+  queue**; **a missed congratulation closes rather than sending late**; **no employee opt-out**
+  (a congratulation may carry a gift). The audience picker is SHARED with Learning, never copied.
+  Two constraints recorded rather than assumed away: unit logos cannot appear in email while they
+  are served privately (design is typographic), and the single sender display name means changing
+  it re-brands the two existing workflows too.
 
 ### Resolved earlier / Open
 - **A · Design language** — *resolved 2026-07-27:* **navy/gold** (Forefront reference tool) product-wide. The benefits selector's layout/interaction is preserved but recolored to navy/gold (not paper/pine).
@@ -322,4 +335,4 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ---
 
-*Last Updated: 2026-08-22 (parked backlog item: regular reviews + 1:1s).*
+*Last Updated: 2026-08-24 (Communications module specced — spec 039).*
