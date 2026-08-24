@@ -172,13 +172,41 @@ extracts the ordered themes onto the employee's profile. (My recommendation was 
 requester chose parsing, so parsing it is.)
 
 Constraints the spec must carry:
-- **A real sample PDF is required before the parser can be built** — the extraction is written
-  against an actual report layout, not a guess.
 - **Extraction is a suggestion until confirmed.** The parsed themes are shown for review and saved
   only on confirmation — same rule as the Nager.Date holiday fetch (spec 037): nothing stored from
   an outside source without a human agreeing to it.
 - **A parse failure must fall back to manual entry**, never block the profile. Gallup can change
   their report format at any time and we would not know until it broke.
+
+### Parse rule — validated 2026-08-24 against two real reports
+
+Samples: a **CliftonStrengths 34** report (26 pages, 2020) and a **Top 5** report (16 pages, 2025).
+One rule reads both, no per-format branching:
+
+1. Extract text from **page 1 only**.
+2. Keep lines matching `^\s*(\d{1,2})\.\s*(NAME)\s*®?\s*$`.
+3. Resolve each name against the **fixed 34-theme vocabulary** (case-insensitive); discard anything
+   that is not a real theme.
+4. Order by rank and **stop at the first gap** — that alone yields 5 from a Top 5 report and 34 from
+   a CliftonStrengths 34 report, with no format detection.
+
+Traps this survives, confirmed on the samples:
+- The 34 report's page-1 list is interrupted by `STRENGTHEN` / `NAVIGATE` headings between ranks 10
+  and 11 — non-matching lines are simply skipped.
+- Page 2 of the Top 5 report carries the full 34-theme **domain grid** (Executing / Influencing /
+  Relationship Building / Strategic Thinking). It is **unnumbered**, so reading page 1 only *and*
+  requiring a rank number both independently exclude it. Reading the whole document would silently
+  turn a Top 5 profile into a 34-theme one — page 1 only is load-bearing.
+- Theme names carry `®` inconsistently (page 1 has it, page 2 does not) — stripped.
+- `Self-Assurance` is the one hyphenated theme; the name pattern must allow it.
+
+Also available, for a confirmation step rather than for matching: the page footer carries
+`<NAME> | <MM-DD-YYYY>` — the assessment date is worth storing, and the name is worth **showing**
+("this report says ISLAM SAADANY — you selected …"). Do **not** auto-match on it: kerning in the
+extracted text produced `ISLAM SA ADANY` in one sample.
+
+Implementation note: extraction needs a Node PDF text library (`pdf-parse` / `pdfjs-dist`); the rule
+above was prototyped in Python only to validate it against the samples.
 
 ## 7. Resolved with a recommendation (raise only if wrong)
 
