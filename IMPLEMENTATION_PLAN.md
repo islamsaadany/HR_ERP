@@ -314,7 +314,7 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 - **2026-08-18 — Dashboard = cards only.** Quick links removed (duplicated cards + nav); cards are Benefits · Time-Off · Approvals (managers) · Onboarding (while in progress).
 - **2026-08-18 — Campaign popup submits, not finishes.** "Finish" → **Submit**, blocked until every listed field is confirmed/filled; "Later" still dismisses. Monitoring pages (tracker, campaign list) auto-refresh on focus + 30s.
 - **2026-08-22 — Backlog: regular reviews + 1:1s with the team (parked, nothing specced, nothing built).** Requested so it is on record for future alignment: the platform should host the **recurring performance/check-in reviews and manager↔report 1:1s** — a place to schedule them, log what was discussed, and keep the history alongside the employee record. Scope, cadence, who can read what, and how it relates to the org chart are **all still open** — the requester will come back with the detail. **No spec, no schema, no UI until that alignment happens.**
-- **2026-08-24 — Communications module specced (spec 039), not yet built.** A third email
+- **2026-08-24 — Communications module BUILT (spec 039, migration `067`).** Constitution to v1.3.0: email widened to three workflows, a second daily cron recorded, and "no scheduled process emails an employee" explicitly preserved. Announcements ship complete; congratulations ship complete except the manager's own screen and sidebar count, which are new UI awaiting a mockup (gate G2) — HR's queue covers the same drafts meanwhile. Original entry: **specced (spec 039), not yet built.** A third email
   workflow and the FIRST broadcast one: announcements to a chosen audience, plus personal
   congratulations for birthdays and joining anniversaries. Settled: **Forefront Group is a business
   unit marked default, not a new parent layer** (the unit record already holds name and colours);
@@ -335,4 +335,4 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ---
 
-*Last Updated: 2026-08-24 (Communications module specced — spec 039).*
+*Last Updated: 2026-08-24 (Communications module built — spec 039, migration 067, constitution v1.3.0).*

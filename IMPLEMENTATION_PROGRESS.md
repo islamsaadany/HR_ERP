@@ -81,6 +81,33 @@ Both reported from live data; neither needed a schema change, and neither had mi
 - The grey links are **removed**, not kept alongside — two doors to one page would leave the same
   confusion. Menu closes on an outside click and on Escape; nothing else on the page moved.
 
+## Spec 039 — Team Communications (built 2026-08-24 — migration `067`)
+- **Announcements** to a chosen audience and **personal congratulations** for birthdays and joining
+  anniversaries. The third email workflow and the first BROADCAST one.
+- **Specced, planned and tasked first** (spec → plan → tasks → implement), design approved as a
+  mockup before any component was written.
+- **The unit leads, the group endorses**: one template, the unit's colour on the header and button,
+  the group above it in small caps and a gold hairline below. Body always dark on white.
+- **Contrast is derived**: `surfaceFor` tries both inks and leaves five of six real brands
+  untouched. The naive rule is kept as a failing-case test — it puts white on a coral at 3.44:1.
+- **Nothing sends itself**: a second daily cron prepares drafts and nudges the line manager; it
+  never emails an employee, and that is asserted rather than intended. A missed congratulation
+  CLOSES rather than going out late.
+- **The audience derivation is SHARED with Learning**, extracted to `src/lib/audience/` — not
+  copied. Learning re-verified after the move (17/17 access, 35/35 materials, 26/26 manager).
+- **Two constitution-level changes**, both recorded: email widened to three workflows (v1.3.0), and
+  a second daily cron. The load-bearing half — no scheduled process emails an employee — untouched.
+- **Verified**: migration `067` applied twice on a throwaway Postgres, diffed against the schema
+  (only the house `updatedAt` line); `scripts/verify-communications.mts` **44/44**; `npm test`
+  136/136; `npx tsc --noEmit` and `npm run build` clean.
+- **Three test failures were real findings**, not noise: one caught a genuine bug (`surfaceFor`
+  returned the input string rather than a normalised hex, so `#036` and `#003366` compared
+  unequal); two were my own assertions testing the fixture rather than the rule, and were rewritten.
+- **NOT built, and blocked deliberately**: the manager's own `/messages` screen and the sidebar
+  count. They are new UI and the constitution requires an approved mockup first (gate G2). HR's
+  queue at `/admin/communications/queue` covers the same drafts in the meantime, so the feature
+  works end to end without them.
+
 ## Learning: a direct "Manage Learning" door (built 2026-08-22 — no migration)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_manage-learning-nav.html`). A
   learning manager now reaches the module in ONE click from a gold sidebar entry carrying the

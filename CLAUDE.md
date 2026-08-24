@@ -258,7 +258,29 @@ HR_ERP/
 - **Time-Off counts WORKING days, never limits (spec 035, 2026-08-18)** — weekend is **Friday + Saturday**, the HR-managed public-holidays list also never counts (`src/lib/workdays.ts` is the ONE counting engine, shared server + client preview); there is **no entitlement/limit — only a per-calendar-year taken count** visible to employee/manager/HR; no leave types. Approvals resolve against the **current** org chart (`pendingApprovalWhere`/`canDecideLeave`), never the stored approver snapshot.
 - **A guaranteed benefit is paid at most once per cycle (2026-08-18)** — claims and bulk releases are mutually aware in every payment path (employee claim, HR Record entry, Release sheet); employee cards show the true state (gold in-review / green received) instead of a dead button. **Eligibility exceptions are per-person GRANTS (spec 036)**: a Super User grants one person one benefit for the open cycle at a typed amount (Exceptional releases tab); the person then uses the completely normal request→approve→pay flow — never widen a benefit's general eligibility for one person, and never pay around the flow via sheet overrides (one was shipped and reverted same-day).
 - **Official holidays are a lifecycle, not a date list (spec 037, 2026-08-19)** — a holiday is ONE entry covering a **date range** (Eid included) with an **announced** range and an **actual/observed** range; all working-day counting reads the actual one, so moving a holiday re-counts every request live. Status is `TENTATIVE | VERIFIED | MOVED`; HR fetches a year from Nager.Date as **suggestions only** (nothing stored without confirmation) and actual ranges may never overlap (enforced in the server actions — Prisma can't express it). A **daily Vercel Cron** (`/api/cron/holidays`, `CRON_SECRET`) nudges HR to verify a tentative date within a configurable lead (default 14 days) — it can **never** email employees. Team announcements are **drafted deterministically** (English then Arabic, warm, with bridge/long-weekend callouts) and **only ever sent by a human**; each send snapshots the dates it went out with, which is what flags "announced with an outdated date" and makes the next draft a correction. A **bridge is exactly ONE working day** between off-days. Moving a holiday onto someone's booked leave emails them the day was returned.
-- **Email is limited to TWO workflows (specs 020 + 037)** — the original "no emails, ever (v1)" rule was reversed for the benefit-claim workflow (approved 2026-08-10) and widened to the holiday/vacation workflow (approved 2026-08-19). Transactional claim notifications (submit→HR, approve→Finance, reject/reimburse→employee) send via **Resend**, **env-gated** (`RESEND_API_KEY`/`EMAIL_FROM`) and **fire-and-forget** (never block a state change), configurable + master-toggleable at **Admin → Notifications**. Still **no** invitations, marketing, or other notifications outside these two workflows.
+- **A colour an operator CHOOSES must carry its own legibility rule** — the Communications email
+  paints its header and button in the recipient's business-unit colour, which somebody picked for
+  brand reasons with no thought for text. The obvious rule (one luminance threshold picking black
+  or white) FAILS: measured, it puts white on a coral at 3.44:1 and on a mid teal at 4.08:1, both
+  under AA. `surfaceFor` (`src/lib/comms/brand.ts`) tries BOTH inks and returns the brand
+  **untouched** whenever either clears 4.5:1 — five of six real brands, including Visual Shift
+  `#450059` at 15.03:1 — and moves the colour only when neither does, toward whichever end it is
+  already closer to (an earlier always-deepen variant turned a pale gold into olive). Never make
+  the operator responsible for contrast; derive it, leave the brand alone where you can, and
+  **put an accent in a FILL rather than in type** — a fill has no ratio to meet. The same measure
+  found the existing emails' eyebrow at 4.33:1 and fixed it.
+- **A broadcast is not a transactional email and must not inherit its stance** — the claim and
+  holiday emails are fire-and-forget so a mail failure never blocks a state change. A broadcast is
+  the opposite: somebody pressed send and has to know whether it went, so `sendBatch` REPORTS per
+  recipient. Never a shared `to` and never BCC (nobody sees another address, each copy can carry
+  its own branding, and a failure names *who*). And the confirmation carries the **count**, which
+  the server re-checks — a confirmation that can silently cover more people than it named is not a
+  confirmation.
+- **Email is limited to THREE workflows (specs 020 + 037 + 039)** — the original "no emails, ever (v1)" rule was reversed for the benefit-claim workflow (approved 2026-08-10) and widened to the holiday/vacation workflow (approved 2026-08-19), and widened again to Team
+  Communications (approved 2026-08-24 — announcements to a chosen audience, plus personal
+  congratulations for birthdays and joining anniversaries). **No scheduled process may email an
+  EMPLOYEE** — that half is untouched: cron prepares drafts and nudges operators, a human sends.
+  Transactional claim notifications (submit→HR, approve→Finance, reject/reimburse→employee) send via **Resend**, **env-gated** (`RESEND_API_KEY`/`EMAIL_FROM`) and **fire-and-forget** (never block a state change), configurable + master-toggleable at **Admin → Notifications**. Still **no** invitations, marketing, external recipients, or scheduling a send for later.
 
 ---
 

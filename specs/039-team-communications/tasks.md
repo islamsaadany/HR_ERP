@@ -28,7 +28,7 @@ here has been.
 
 Three things are **not** decided and must not be assumed by whoever implements this.
 
-- [ ] **G1** Product owner approves the **constitution change** from "email is limited to two
+- [X] **G1** Product owner approves the **constitution change** from "email is limited to two
       workflows" to three. Recorded in [plan.md](./plan.md) as a formal deviation. **The code must
       not ship while the governing document says two** — run `/speckit-constitution` in the same
       change as T090.
@@ -98,7 +98,7 @@ with their own unit.
 - [X] T035 [US1] Create `src/app/(app)/admin/communications/page.tsx` — the message list and a compose form, in the existing admin idiom
 - [X] T036 [US1] Create `src/app/(app)/admin/communications/[id]/page.tsx` — edit, the audience picker from `src/components/audience/`, the live total, and the preview in an `<iframe srcdoc>`
 - [X] T037 [US1] Create `src/components/comms/SendConfirm.tsx` — names the count and passes it as `confirmedCount`. The one irreversible action in the feature gets a dialog, not a button
-- [ ] T038 [P] [US1] Snapshot then add a Communications card to `src/app/(app)/admin/page.tsx`
+- [X] T038 [P] [US1] Snapshot then add a Communications card to `src/app/(app)/admin/page.tsx`
 
 **Checkpoint**: US1 alone is a shippable product — HR can announce things to chosen people.
 
@@ -114,15 +114,20 @@ without a way to test it first is how the first announcement goes wrong in publi
 **Independent test**: open the setup page, read the readiness statement, send yourself a test,
 compare against the preview.
 
-- [ ] T040 [US3] Create `src/app/(app)/admin/communications/settings-actions.ts` — `setDisplayName`, `setCongratsLeadDays` (0–30), `sendTestToSelf()`. **`sendTestToSelf` takes no recipient parameter**, so it cannot become a way to mail an arbitrary address
-- [ ] T041 [US3] Create `src/app/(app)/admin/communications/settings/page.tsx` — display name, lead days, the four-state readiness readout, and the test-send button
-- [ ] T042 [US3] The display-name field **must warn in the UI** that it also re-brands the claim and holiday emails (research D10). A setting that quietly changes something else is how trust goes
+- [X] T040 [US3] Create `src/app/(app)/admin/communications/settings-actions.ts` — `setDisplayName`, `setCongratsLeadDays` (0–30), `sendTestToSelf()`. **`sendTestToSelf` takes no recipient parameter**, so it cannot become a way to mail an arbitrary address
+- [X] T041 [US3] Create `src/app/(app)/admin/communications/settings/page.tsx` — display name, lead days, the four-state readiness readout, and the test-send button
+- [X] T042 [US3] The display-name field **must warn in the UI** that it also re-brands the claim and holiday emails (research D10). A setting that quietly changes something else is how trust goes
 
 **Checkpoint**: an operator can prove delivery works without sending anything to the company.
 
 ---
 
 ## Phase 5: User Story 2 — a manager sends a prepared congratulation (P2)
+
+> **Status 2026-08-24**: everything except T055/T056 is built. Those two are the manager's own
+> `/messages` screen and the sidebar count — new UI, blocked on **G2**. HR's queue at
+> `/admin/communications/queue` reaches the same drafts, so the feature works end to end without
+> them; a manager simply cannot yet self-serve.
 
 **Goal**: the part that runs without anyone remembering a date.
 
@@ -132,14 +137,14 @@ mockup first.
 **Independent test**: set a joining date three days out, run the preparation, confirm a draft
 appears for the manager with the right years, edit it, send it, confirm only that employee got it.
 
-- [ ] T050 [US2] Create `src/app/api/cron/communications/route.ts` — `Bearer $CRON_SECRET`, **refusing when the secret is unset**. Upsert `Occasion` on `(userId, kind, occasionYear)`; create a DRAFT per new occasion; assign to the line manager, falling back to HR when there is none **or when the manager is the subject**; close passed drafts as MISSED; **at most one nudge per assignee per run**. Choose work **by date**, never by "did yesterday's run happen"
-- [ ] T051 [US2] **Assert in the route's own verification that no employee was emailed by it.** FR-028 is the line spec 037 drew; it is proved, not trusted
-- [ ] T052 [US2] Add the second cron entry to `vercel.json`
-- [ ] T053 [US2] Add `updateCongratulation`, `sendCongratulation`, `dismissCongratulation` to `actions.ts` with `requireAssignee(id)`. `sendCongratulation` guards: DRAFT re-read in the transaction · the subject is still **active** · **not past the occasion date** · email configured
-- [ ] T054 [P] [US2] Add `pendingForAssignee(userId)` and `pendingQueue()` to `src/lib/comms/` as plain functions
+- [X] T050 [US2] Create `src/app/api/cron/communications/route.ts` — `Bearer $CRON_SECRET`, **refusing when the secret is unset**. Upsert `Occasion` on `(userId, kind, occasionYear)`; create a DRAFT per new occasion; assign to the line manager, falling back to HR when there is none **or when the manager is the subject**; close passed drafts as MISSED; **at most one nudge per assignee per run**. Choose work **by date**, never by "did yesterday's run happen"
+- [X] T051 [US2] **Assert in the route's own verification that no employee was emailed by it.** FR-028 is the line spec 037 drew; it is proved, not trusted
+- [X] T052 [US2] Add the second cron entry to `vercel.json`
+- [X] T053 [US2] Add `updateCongratulation`, `sendCongratulation`, `dismissCongratulation` to `actions.ts` with `requireAssignee(id)`. `sendCongratulation` guards: DRAFT re-read in the transaction · the subject is still **active** · **not past the occasion date** · email configured
+- [X] T054 [P] [US2] Add `pendingForAssignee(userId)` and `pendingQueue()` to `src/lib/comms/` as plain functions
 - [ ] T055 [US2] Create `src/app/(app)/messages/page.tsx` — the manager's own pending drafts, edit and send **(after G2)**
 - [ ] T056 [US2] Snapshot then add the pending count to `src/components/AppShell.tsx`, reusing the existing `navBadges` machinery **(after G2)**
-- [ ] T057 [US2] Sign the sent message with `sentById`'s name in `renderMessage` — honest only because the manager rewrote the words first
+- [X] T057 [US2] Sign the sent message with `sentById`'s name in `renderMessage` — honest only because the manager rewrote the words first
 
 **Checkpoint**: birthdays and anniversaries no longer depend on anyone remembering.
 
@@ -151,27 +156,27 @@ appears for the manager with the right years, edit it, send it, confirm only tha
 
 **Independent test**: create drafts for two managers' reports, confirm HR sees both, send one as HR.
 
-- [ ] T060 [US4] Create `src/app/(app)/admin/communications/queue/page.tsx` — every pending draft, whose it is, when it is due
-- [ ] T061 [US4] Allow HR through `requireAssignee` so they can send any draft; the record shows HR sent it
+- [X] T060 [US4] Create `src/app/(app)/admin/communications/queue/page.tsx` — every pending draft, whose it is, when it is due
+- [X] T061 [US4] Allow HR through `requireAssignee` so they can send any draft; the record shows HR sent it
 
 ---
 
 ## Phase 7: Verification
 
-- [ ] T070 Write `scripts/verify-communications.mts` covering every assertion in [quickstart.md](./quickstart.md) Scenario 4 — including that overlapping audience choices produce **one** recipient row per person, that two units produce **different** `businessUnitId`s, that a second send is refused, that a stale `confirmedCount` is refused, and that the rendered HTML contains no `<style>`, no `var(`, and no `src="data:"`
-- [ ] T071 Run it against a throwaway Postgres and record the pass count honestly
-- [ ] T072 Run `npm test` and confirm the existing 105 still pass alongside the new pure-function tests
-- [ ] T073 `npx tsc --noEmit` and `npm run build` clean
+- [X] T070 Write `scripts/verify-communications.mts` covering every assertion in [quickstart.md](./quickstart.md) Scenario 4 — including that overlapping audience choices produce **one** recipient row per person, that two units produce **different** `businessUnitId`s, that a second send is refused, that a stale `confirmedCount` is refused, and that the rendered HTML contains no `<style>`, no `var(`, and no `src="data:"`
+- [X] T071 Run it against a throwaway Postgres and record the pass count honestly
+- [X] T072 Run `npm test` and confirm the existing 105 still pass alongside the new pure-function tests
+- [X] T073 `npx tsc --noEmit` and `npm run build` clean
 
 ---
 
 ## Phase 8: Polish & documentation
 
-- [ ] T080 [P] Update `PROJECT_DETAILS.md` — the module, the four tables, the shared audience derivation, the contrast rule, and both recorded constraints (private logos, the single display name)
-- [ ] T081 [P] Update `IMPLEMENTATION_PROGRESS.md` with what was built and what was verified
-- [ ] T082 [P] Update `IMPLEMENTATION_PLAN.md`'s decisions log
-- [ ] T083 [P] Add to `CLAUDE.md` the pattern this feature establishes: **a colour an operator chooses must carry its own legibility rule** — derive the ink, leave the brand alone where you can, and never make the operator responsible for contrast
-- [ ] T090 **Run `/speckit-constitution`** to change the email limit from two workflows to three, naming what is still excluded (marketing, external recipients, invitations) and keeping "no scheduled process emails an employee" intact. **Same commit as the code (G1)**
+- [X] T080 [P] Update `PROJECT_DETAILS.md` — the module, the four tables, the shared audience derivation, the contrast rule, and both recorded constraints (private logos, the single display name)
+- [X] T081 [P] Update `IMPLEMENTATION_PROGRESS.md` with what was built and what was verified
+- [X] T082 [P] Update `IMPLEMENTATION_PLAN.md`'s decisions log
+- [X] T083 [P] Add to `CLAUDE.md` the pattern this feature establishes: **a colour an operator chooses must carry its own legibility rule** — derive the ink, leave the brand alone where you can, and never make the operator responsible for contrast
+- [X] T090 **Run `/speckit-constitution`** to change the email limit from two workflows to three, naming what is still excluded (marketing, external recipients, invitations) and keeping "no scheduled process emails an employee" intact. **Same commit as the code (G1)**
 
 ---
 

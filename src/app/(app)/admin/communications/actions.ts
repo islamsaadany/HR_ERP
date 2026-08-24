@@ -315,3 +315,179 @@ export async function deleteDraft(id: string): Promise<Result> {
   revalidate();
   return { ok: true };
 }
+
+// ─── Congratulations (spec 039 US2) ─────────────────────────────────────
+//
+// Different guards from an announcement, because a congratulation is different in three ways: it
+// goes to ONE person, it is sent by their MANAGER rather than HR, and it has a DAY it is for.
+
+import { requireUser } from "@/lib/roles";
+import { canActOn } from "@/lib/comms/drafts";
+import { hasPassed } from "@/lib/comms/occasions";
+
+/** HR, or the person the draft is assigned to. Returns the actor — never takes an id. */
+async function requireAssignee(messageId: string) {
+  const user = await requireUser();
+  const allowed = await canActOn(user, messageId);
+  if (!allowed) return null;
+  return user;
+}
+
+export async function updateCongratulation(id: string, formData: FormData): Promise<Result> {
+  const actor = await requireAssignee(id);
+  if (!actor) return { ok: false, error: "This isn't yours to send." };
+
+  const subject = clean(formData.get("subject"));
+  const body = clean(formData.get("body"));
+  if (!subject) return { ok: false, error: "Give it a subject." };
+  if (!body) return { ok: false, error: "Write something to send." };
+
+  const message = await prisma.message.findUnique({ where: { id }, select: { state: true } });
+  if (!message) return { ok: false, error: "That message no longer exists." };
+  if (message.state === "SENT") return { ok: false, error: "This has already been sent." };
+  if (message.state === "MISSED") return { ok: false, error: "The day has passed, so this is closed." };
+
+  await prisma.message.update({ where: { id }, data: { subject, body } });
+  revalidatePath("/messages");
+  revalidatePath("/admin/communications/queue");
+  return { ok: true };
+}
+
+/**
+ * Send one congratulation.
+ *
+ * Four guards, and the third is the one that only exists here: a message for a day that has gone
+ * is REFUSED, not sent. You cannot wish somebody a happy birthday three days afterwards, and a
+ * platform that tries is worse than one that stays quiet.
+ */
+export async function sendCongratulation(id: string): Promise<Result> {
+  const actor = await requireAssignee(id);
+  if (!actor) return { ok: false, error: "This isn't yours to send." };
+
+  const settings = await getCommsSettings();
+  if (!settings.emailEnabled) {
+    return { ok: false, error: "Email sending is switched off in Notification settings, so nothing was sent." };
+  }
+
+  const message = await prisma.message.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      kind: true,
+      state: true,
+      subject: true,
+      body: true,
+      subjectUserId: true,
+      occasion: { select: { occasionDate: true } },
+      subjectUser: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          status: true,
+          businessUnit: { select: { id: true, name: true, primaryColor: true } },
+        },
+      },
+    },
+  });
+  if (!message) return { ok: false, error: "That message no longer exists." };
+  if (message.state === "SENT") return { ok: false, error: "This has already been sent." };
+  if (message.state === "MISSED") return { ok: false, error: "The day has passed, so this is closed." };
+
+  const person = message.subjectUser;
+  if (!person) return { ok: false, error: "The person this was for is no longer on the system." };
+  // A leaver receives nothing. Checked at SEND, not only at preparation — three days is long
+  // enough for somebody to leave.
+  if (person.status !== "ACTIVE") {
+    return { ok: false, error: `${person.name} has left, so this can't be sent.` };
+  }
+  if (!person.email) return { ok: false, error: `${person.name} has no email address on record.` };
+
+  if (message.occasion && hasPassed(message.occasion.occasionDate, new Date())) {
+    return {
+      ok: false,
+      error: "That day has passed. A late birthday message reads worse than none, so this one is closed.",
+    };
+  }
+
+  // Claim it before sending. Two people looking at the same queue, and only one gets past here.
+  const claimed = await prisma.message.updateMany({
+    where: { id, state: "DRAFT" },
+    data: { state: "SENT", sentById: actor.id, sentAt: new Date(), recipientCount: 1 },
+  });
+  if (claimed.count === 0) return { ok: false, error: "This has already been sent." };
+
+  const group = await groupName();
+  const { html, text } = renderMessage({
+    unit: person.businessUnit
+      ? { name: person.businessUnit.name, primaryColor: person.businessUnit.primaryColor }
+      : null,
+    groupName: group,
+    fallbackLabel: "A note for you",
+    subject: message.subject,
+    body: message.body,
+    cta: null,
+    // Signed with whoever actually pressed send — honest only because they rewrote the words first.
+    signedBy: actor.name ?? null,
+    preheader: message.subject,
+  });
+
+  const recipient = await prisma.messageRecipient.create({
+    data: {
+      messageId: id,
+      userId: person.id,
+      email: person.email,
+      businessUnitId: person.businessUnit?.id ?? null,
+      state: "PENDING",
+    },
+    select: { id: true },
+  });
+
+  const [result] = await sendBatch([
+    { to: person.email, subject: message.subject, html, text, ref: recipient.id },
+  ]);
+
+  if (result?.ok) {
+    await prisma.messageRecipient.update({
+      where: { id: recipient.id },
+      data: { state: "ACCEPTED", providerId: result.providerId },
+    });
+  } else {
+    await prisma.messageRecipient.update({
+      where: { id: recipient.id },
+      data: { state: "FAILED", error: (result?.error ?? "Send failed.").slice(0, 500) },
+    });
+  }
+
+  revalidatePath("/messages");
+  revalidatePath("/admin/communications/queue");
+  return result?.ok
+    ? { ok: true }
+    : { ok: false, error: result?.error ?? "The message could not be delivered." };
+}
+
+/**
+ * Close a draft without sending it.
+ *
+ * A manager needs a way to say "not this one" that is not silence — somebody on compassionate
+ * leave, or a person who has asked not to be marked. Recorded as MISSED with the reason, so the
+ * queue shows a decision rather than a gap.
+ */
+export async function dismissCongratulation(id: string, reason?: string): Promise<Result> {
+  const actor = await requireAssignee(id);
+  if (!actor) return { ok: false, error: "This isn't yours to close." };
+
+  const closed = await prisma.message.updateMany({
+    where: { id, state: "DRAFT" },
+    data: {
+      state: "MISSED",
+      missedAt: new Date(),
+      body: reason?.trim() ? `[Not sent: ${reason.trim()}]` : undefined,
+    },
+  });
+  if (closed.count === 0) return { ok: false, error: "That draft is no longer open." };
+
+  revalidatePath("/messages");
+  revalidatePath("/admin/communications/queue");
+  return { ok: true };
+}
