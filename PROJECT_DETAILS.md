@@ -318,6 +318,43 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 ### Module release switch (super user)
 - `ModuleFlag { key, enabled }` (migration `015`) + Admin → **Modules**. A module switched off is hidden from everyone's nav (`AppShell.hiddenNav`) and its pages redirect home (`requireModuleEnabled`). Lets a super user build in the background and release when ready.
 
+### Finance: petty cash & payback (spec 039, migration `067`)
+Replaces the MARCOM Expenses workbook. Routes: `/petty-cash` (accounts), `/petty-cash/[accountId]`
+(reconciliation + lines), `/payback` (an employee's own requests), the **Payback requests** sub-tab
+on `/finance`, and `/admin/expense-lists` (Super User).
+
+**Models.** `PettyCashAccount` (named custodian, no stored balance — it is derived) ·
+`PettyCashPeriod` (label, window, optional budget, carried `openingBalance`, OPEN → SUBMITTED →
+CLOSED, plus the missing-receipt acknowledgement and its line ids) · `PettyCashFunding`
+(TOP_UP/RETURN, amount always positive) · `PettyCashLine` (belongs to a period explicitly, never by
+date window) · `PettyCashLineDeletion` (a snapshot, so a ledger row cannot vanish) ·
+`PaybackRequest` (SUBMITTED → APPROVED → PAID, or REJECTED) · `ExpenseEvidence` (one model, two
+optional parents, exactly one enforced by a check constraint) · `ExpenseSection` /
+`ExpenseCategory` (independent flat lists, archivable, seeded from the workbook's own vocabulary).
+
+**Money.** Every amount is `Decimal(10,2)` EGP in Postgres and integer **piastres** in TypeScript;
+`src/lib/finance/money.ts` is the only boundary. `parseAmountInput` refuses rather than rounds.
+
+**The derivation.** `src/lib/finance/pettycash.ts` is pure (no Prisma, no I/O) and is the only
+place the reconciliation exists: opening balance, float advanced, spent from float, spent by
+company transfer, total expenses, signed budget remaining, signed closing balance, plus
+`describeBalance`/`describeBudget`, which build the sentences the screens print so the direction of
+"who owes whom" cannot invert between screens. `src/lib/finance/queries.ts` loads the rows and hands
+them over; `accountBalanceFor` equals the latest period's closing balance by construction.
+
+**Concurrency.** `withAccountLock` (`SELECT … FOR UPDATE` on the account row) wraps closing/
+reopening a period and writing a line or funding row — the two places state can break. A partial
+unique index (`PettyCashPeriod_one_open_per_account … WHERE status = 'OPEN'`) is the backstop.
+
+**Access.** `src/lib/finance/access.ts` — `canManagePettyCash` (Finance ∨ Super User),
+`canSeePettyCashAccount` (+ the custodian), `canWritePettyCashLine` (OPEN for the custodian,
+OPEN/SUBMITTED for Finance, never CLOSED), `canReviewPayback`, `canManageExpenseLists` (Super User).
+HR Admin is deliberately excluded. `GET /api/expense-evidence/[id]` re-checks and answers **404**,
+never 403.
+
+**Email.** The third permitted workflow: `paybackSubmittedToFinance`, `paybackRejectedToEmployee`,
+`paybackPaidToEmployee`. Fire-and-forget, master-toggleable. Petty cash sends none.
+
 ## 4. Phase-2 (designed-for, not built in v1)
 - **Learning Track** — courses → lessons → quizzes → certificate.
 - **Case Studies** — shared knowledge library.

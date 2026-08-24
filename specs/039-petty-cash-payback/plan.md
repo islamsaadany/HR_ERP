@@ -159,10 +159,10 @@ which is the failure mode `CLAUDE.md` names repeatedly.
 
 | Gate | What must be true to pass |
 |---|---|
-| **G1 — Data layer** | Schema + `067_*.sql` committed; `pettycash.ts` derivation written and exercised; `npx tsc --noEmit` clean. No UI yet. |
-| **G2 — Mockups approved** | Static HTML mockups for the five screens published and **explicitly signed off by the CEO**. No component file is created before this passes (constitution II). |
-| **G3 — Feature complete** | All FRs implemented; `npx tsc --noEmit` and `npm run build` pass; the four steering docs and the spec updated; the constitution amendment recorded. |
-| **G4 — Deployed** | `[apply-sql]` lines in the Vercel build log confirm `067` applied; result reported to the CEO in one line. |
+| **G1 — Data layer** | ✅ **Passed 2026-08-24.** Schema + `067_*.sql` committed together; migration applied twice against a throwaway local Postgres with its partial index and check constraint proven; derivation written and covered by tests over the workbook's own figures; `npx tsc --noEmit` clean. |
+| **G2 — Mockups approved** | ✅ **Passed 2026-08-24.** `design-mockups/petty-cash-payback/2026-08-24_petty-cash-and-payback.html` — six screens in one page (accounts, account + reconciliation, log a spend, closing a period, the employee's requests, Finance's queue) rather than five separate files, so the CEO reviewed one artifact. Signed off with all three open questions answered as drawn: number + standing column, the custodian sees the budget, and a missing receipt is acknowledged rather than blocking. |
+| **G3 — Feature complete** | ✅ **Passed 2026-08-24.** All FRs implemented; `npx tsc --noEmit` and `npm run build` clean; 133 tests pass; the four steering docs, the spec and the constitution amendment all landed. |
+| **G4 — Deployed** | ⏳ **Open.** Awaiting the deploy: the build log's `[apply-sql]` lines must confirm `067` applied, and the result be reported in one line. |
 
 ## Complexity Tracking
 

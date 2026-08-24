@@ -1,37 +1,33 @@
 <!--
-SYNC IMPACT REPORT — 2026-08-21
-Version change: 1.2.0 → 1.2.1 (PATCH — accuracy corrections and one clarification of
-existing practice; no principle added, removed, or redefined)
+SYNC IMPACT REPORT — 2026-08-24
+Version change: 1.2.1 → 1.3.0 (MINOR — the email clause is materially widened to a third
+workflow, on the CEO's request; plus one factual correction)
 
 Modified sections:
-  - Principle V "Engineered Enough, Explicit Over Clever" — appended the settled testing
-    position (no regime, no deploy gate, no standing obligation; protection is structural;
-    `npm test` is a tool for benefits-code changes). Clarification of practice already in
-    CLAUDE.md since 2026-08-20, not a new rule. Principle title and rules unchanged.
-  - Technology & Data Constraints — stack line corrected from "Next.js 16" to "Next.js 15"
-    (lockfile resolves next 15.5.22); the auth clause corrected from "NextAuth v5 Google
-    provider (domain-locked)" to email + password (scrypt) with the domain restriction lifted
-    2026-08-07 and Google disabled but env-gated; the migration clause replaced — schema/data
-    now reach the DB through the deploy-time runner (scripts/apply-sql.mjs, _sql_migrations),
-    with hand-pasting reduced to the failure path only.
+  - Technology & Data Constraints, email clause — widened from TWO permitted workflows to
+    THREE: the payback workflow (spec 039) joins benefit claims (020) and holidays (037).
+    Requested by the CEO on 2026-08-24 as part of the Finance module. Recorded with the note
+    that petty cash itself sends no email at all — nobody is waiting on a ledger.
+  - Technology & Data Constraints, roles line — corrected to include `FINANCE`, which has
+    existed in the schema since spec 020 and was never added here. A spec/code drift found
+    while writing spec 039 and reported rather than silently realigned (Principle IV). The
+    same line now states the appointment rule that Learning (038) and Transaction Approvers
+    (040) both follow.
 
 Added sections: none
 Removed sections: none
 
-Preserved verbatim (deliberately): sessions never hold the production DATABASE_URL, never run
-`prisma db push` against the user's DB, never ask for DATABASE_URL in chat; PII stays out of git;
-the two permitted email workflows; the cron rule (may nudge HR, never emails employees); roles.
+Preserved verbatim (deliberately): every principle; the migration clause; sessions never hold
+the production DATABASE_URL; PII stays out of git; the cron rule (may nudge HR, never emails
+employees at large).
 
 Templates checked:
-  ✅ .specify/templates/plan-template.md — "Constitution Check" gate is generic
-     ("[Gates determined based on constitution file]"); no version-specific text. No change needed.
-  ✅ .specify/templates/spec-template.md — no constitution or stack references. No change needed.
-  ✅ .specify/templates/tasks-template.md — no constitution or stack references. No change needed.
-  ✅ .claude/skills/speckit-*/SKILL.md — no agent-specific or outdated constitution references.
+  ✅ .specify/templates/plan-template.md — generic Constitution Check gate; no change needed.
+  ✅ .specify/templates/spec-template.md — no constitution or stack references.
+  ✅ .specify/templates/tasks-template.md — no constitution or stack references.
+  ✅ .claude/skills/speckit-*/SKILL.md — no outdated constitution references.
 
-Follow-up TODOs:
-  ⚠ CLAUDE.md still states "Next.js 16 (App Router)" under Technology Stack — same factual error,
-    corrected here. Fixed in the same commit as this amendment (Principle IV: docs move with code).
+Follow-up TODOs: none. CLAUDE.md carries the same two changes in the same commit.
 -->
 
 # HR_ERP Constitution
@@ -92,19 +88,27 @@ holds. Reach for it then; it is never an obligation.
   the provider stays env-gated so it can return). Admin-issued passwords are temporary — the
   employee is forced to `/set-password` on next sign-in (`mustChangePassword`). No emails in v1 for
   recovery: a forgotten password is reset by HR, with no self-service path.
-- Email: limited to **two** workflows —
-  the benefit-claim workflow (spec 020) and the holiday/vacation workflow
+- Email: limited to **three** workflows —
+  the benefit-claim workflow (spec 020), the holiday/vacation workflow
   (spec 037: HR verification reminders, team announcements, and the
-  "your day was returned" notice) — via Resend, env-gated
-  (`RESEND_API_KEY`/`EMAIL_FROM`), fire-and-forget, master-toggleable.
+  "your day was returned" notice), and the **payback workflow** (spec 039:
+  request submitted → Finance, declined and paid → the requester) — via Resend,
+  env-gated (`RESEND_API_KEY`/`EMAIL_FROM`), fire-and-forget, master-toggleable.
   (Amends "no email in v1", approved 2026-08-10; widened to the holiday
-  workflow, approved 2026-08-19.) No other emails.
+  workflow, approved 2026-08-19; widened to the payback workflow, requested by
+  the CEO and approved 2026-08-24.) No other emails. Petty cash itself sends
+  none: the custodian and Finance are both looking at a live screen, and nobody
+  is waiting on a ledger.
 - Scheduled work: one daily Vercel Cron job (`/api/cron/holidays`, spec 037),
   authenticated with `CRON_SECRET`. A scheduled job may nudge HR; it may never
   send anything to employees — company-wide messages are reviewed and sent by a
   human.
-- Roles: `EMPLOYEE`, `HR_ADMIN`, `SUPER_USER` (superset of HR Admin). A `manager`
-  capability derives from the org chart (an employee with direct reports).
+- Roles: `EMPLOYEE`, `HR_ADMIN`, `FINANCE`, `SUPER_USER` (superset of both). A `manager`
+  capability derives from the org chart (an employee with direct reports). `FINANCE` has existed
+  since spec 020 and was missing from this line until 2026-08-24 — a spec/code drift found while
+  writing spec 039, corrected here rather than silently. Per-module authority beyond these is an
+  **appointment**, never a new `Role` member (Learning managers, spec 038; Transaction Approvers,
+  spec 040).
 - **Migrations are Claude's job, not the user's** (settled 2026-08-20). Whenever
   `prisma/schema.prisma` or `prisma/seed.ts` changes, the matching numbered **idempotent**
   `prisma/sql/0NN_*.sql` MUST be written and committed in the **same commit** — it may be retried,

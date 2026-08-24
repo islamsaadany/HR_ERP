@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-24
 
-**Status**: Draft
+**Status**: Implemented (2026-08-24 — migration `067`; not yet exercised end-to-end against the live database)
 
 **Input**: User description: "Finance module: petty cash custodian accounts and out-of-pocket payback requests. Petty cash is modelled as one or more custodian float accounts, each with a named holder (e.g. the Marketing Manager) and a running balance: Finance records top-ups into the account, and spend lines draw it down. The custodian logs each spend line themselves as they spend — date, section, category, description, payment method (petty cash vs company transfer), payment details, payee, amount in EGP with two decimals — and attaches evidence per line. Finance reviews the lines and closes a period; a period carries a budget figure and shows total expenses, total paid from petty cash, the float advanced, remaining/overspend, and the resulting 'amount to reimburse'. Separately, any employee who paid out of their own pocket can raise a payback request with evidence; Finance reviews and approves or rejects it with a reason, then records the payment."
 

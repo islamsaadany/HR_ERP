@@ -16,7 +16,54 @@
 | 6 — Benefits (admin config) | 🟢 Complete |
 | 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |
+| 10 — Finance: petty cash & payback | 🟢 **Built** (spec 039 — custodian floats, period reconciliation, evidence, payback requests; migration `067`). Spec 040 (transaction approval + salary batches) is specced, not built. |
 | 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
+
+## Spec 039 — Finance: petty cash floats & payback requests (built 2026-08-24 — migration `067`)
+Replaces the MARCOM Expenses workbook the marketing manager emails Finance monthly.
+
+**What it does.** A **petty cash account** has a named custodian and a signed balance: Finance
+records top-ups, the custodian logs each spend with its receipt as they pay, and a **period**
+closes with one arithmetic that carries its closing balance forward as the next period's opening
+balance. Separately, **anyone** can raise a **payback request** with evidence; Finance approves,
+declines with a reason, or records the transfer. One surface at `/petty-cash` serves both Finance
+and custodians, gated per account by a single derivation.
+
+**What the workbook taught, and what was built instead.**
+- Its *"Amount to reimburse"* is **spent − float** on the `March` tab (3,444.54) and **float −
+  spent** on `JUL-AUG` (−4,617.16) — the same circumstance, opposite signs. So the balance is
+  derived **once** (`src/lib/finance/pettycash.ts`, pure — no Prisma), kept **signed**, and stated
+  in words: *"Forefront owes Raneem 4,617.16"*.
+- Its `Oct-Nov` overspend of 229.23 is carried into December by hand as a line item called
+  *"December Overbudget"*. Carry-forward is now a first-class **opening balance**.
+- Its `Status` column means "receipt attached" on some tabs and "Done" on others. *Missing receipt*
+  is now derived from whether evidence exists, and **closing names the specific lines** that lack
+  one and records which were waved through, by whom.
+
+**Money.** `Decimal(10,2)` in Postgres (the ledger stays readable in Neon), integer **piastres**
+for every calculation (`src/lib/finance/money.ts` is the only boundary). Amounts are **refused**,
+never rounded — a rounded amount no longer matches its receipt.
+
+**The lock.** `SELECT … FOR UPDATE` on the account row for exactly two writes — closing/reopening a
+period, and writing a line or funding row. Petty cash has no ceiling to breach (a float may
+legitimately go negative), so what is being protected is state: no line may land in a period being
+closed, and an account may never have two open periods (partial unique index as the backstop,
+checked in the action first so the operator sees a sentence).
+
+**Access.** Finance and Super User everywhere; a custodian only on their own float; HR Admin
+deliberately nowhere near it. One derivation (`src/lib/finance/access.ts`) asked by the pages, the
+actions, the sidebar door and the evidence route. `/api/expense-evidence/[id]` re-decides on every
+request and answers **404, never 403**.
+
+**Email.** The **third** permitted workflow (constitution amended 2026-08-24 at the CEO's request):
+submitted → Finance inbox, declined and paid → the requester. Petty cash sends none.
+
+**Verified:** migration `067` applied twice against a throwaway local Postgres (second run a clean
+no-op), the partial index proven to refuse a second open period while allowing a closed one, the
+check constraint proven to refuse evidence with two parents and with none, seeds landing 3 sections
+and 15 categories; `npx tsc --noEmit` and `npm run build` clean; 133 tests pass, including the
+workbook's own figures. **Not yet verified in the live app** — no end-to-end pass against Neon has
+been run by a person.
 
 ## Benefits: two reported wrong numbers, one cause each (fixed 2026-08-23 — no migration)
 Both reported from live data; neither needed a schema change, and neither had mispaid anyone.
