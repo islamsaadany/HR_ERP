@@ -27,6 +27,34 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ## Decisions log
 
+- **2026-08-24 — Finance module: petty cash, payback, and the CEO's transaction approval (specs 039
+  + 040, spec stage).** The CEO asked for three things: manage petty cash the way the MARCOM
+  workbook does today, let anyone request their money back with evidence attached, and be emailed
+  whenever Finance enters a transaction — for expenses and for monthly salaries — so he can give the
+  final confirmation he already performs in the bank. Eight decisions were put to him and answered
+  before a line was drafted: **(a)** approval authority is an **appointment** ("Transaction
+  Approver"), never a new `Role` member — Super Users hold it implicitly so an empty list cannot
+  lock the company out, and the appointment cannot appoint; **(b)** the monthly salary batch holds a
+  **summary only** — month, total, headcount, bank reference — so the salary-is-Super-User-only rule
+  is untouched and Finance still sees no individual's pay; **(c)** petty cash is **custodian float
+  accounts** with a signed running balance, not one company box and not a Finance-only ledger;
+  **(d)** approval is **notify-then-confirm** with no amount threshold — Finance enters the transfer
+  in the bank and submits here, the CEO confirms in the bank and marks it approved; **(e)** the
+  **custodian logs their own lines** with receipts as they spend and Finance reviews and closes the
+  period; **(f)** payback requests route **Finance then CEO**; **(g)** a **budget per period** only —
+  the workbook's Forecast and Tools Subscription tabs stay out; **(h)** it ships as **two specs** —
+  039 petty cash + payback, 040 the approval mechanism shared by expenses and payroll. Two rules
+  came out of reading the workbook itself: its **Amount to reimburse** flips sign between tabs
+  (`March` computes spent − float, `JUL-AUG` float − spent, for the same situation), so the balance
+  is derived **once**, kept **signed**, and stated in words; and its overspend is carried by hand as
+  a line called *"December Overbudget"*, so carry-forward becomes a first-class opening balance.
+  One rule was added that nobody asked for: **the submitter of a payment run may never approve it**,
+  whatever roles they hold — maker–checker is the whole point, and it binds a Super User submitting
+  their own run. **Pending governance amendments, to land with the code:** email widens to a third
+  workflow (finance approval); the daily scheduled job gains a second audience (appointed approvers,
+  still never employees at large); and the constitution's Roles line is corrected to include
+  `FINANCE`, which has existed since spec 020.
+
 - **2026-08-23 — A threshold decides IF, the cycle decides HOW MUCH (fix, no migration).** Reported
   issue: one employee's pool ceiling was not prorated "despite the cycle being prorated for all".
   Traced and reproduced with the engine's own functions: `poolCeiling`'s **sub-6-month** branch
