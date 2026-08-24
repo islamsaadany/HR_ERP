@@ -1,0 +1,379 @@
+<title>Bank Confirmations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-500:#2f4d78;
+    --navy-600:#1f3a63;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;
+    --red:#b91c1c;--red-bg:#fdf3f3;--red-line:#f3c6c6;
+    --sans:"Hanken Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Fraunces","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    color-scheme:light;
+  }
+  /* Renders in the product's own light navy/gold world — it exists to show what the app will
+     look like, so it deliberately does not follow the viewer's theme. */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:34px 20px 90px}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  h1{font-family:var(--serif);font-weight:600;font-size:30px;margin:4px 0 0;text-wrap:balance}
+  .lede{color:var(--muted);font-size:14.5px;margin:8px 0 0;max-width:70ch}
+  .meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+
+  .flow{margin-top:30px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:18px 20px}
+  .flow h2{font-family:var(--serif);font-weight:600;font-size:18px;margin:0 0 12px}
+  .steps{display:flex;gap:0;flex-wrap:wrap;align-items:stretch}
+  .step{flex:1 1 190px;padding:12px 14px;border-left:3px solid var(--navy-200);background:#fafbfd;margin-right:10px;border-radius:0 8px 8px 0;margin-bottom:8px}
+  .step.here{border-left-color:var(--gold-500);background:#fdfaf0}
+  .step b{display:block;font-size:12.5px;color:var(--navy-800)}
+  .step span{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .step .who{display:inline-block;margin-top:6px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+  section.screen{margin-top:46px}
+  section.screen>h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0 0 3px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  section.screen>h2 .who{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-500);border:1px solid var(--navy-200);background:var(--navy-50);border-radius:999px;padding:3px 9px}
+  section.screen>.sub{color:var(--muted);font-size:13.5px;margin:0 0 15px;max-width:80ch}
+
+  .frame{border:1px solid var(--line);border-radius:14px;background:#e9ebf0;padding:16px;box-shadow:0 1px 3px rgba(16,36,68,.06)}
+  .app{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--navy-800);color:#fff}
+  .bar .dot{width:9px;height:9px;border-radius:99px;background:rgba(255,255,255,.28)}
+  .bar .path{margin-left:8px;font-size:11.5px;color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums}
+  .page{padding:22px 22px 26px}
+  .page-eyebrow{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .page h3{font-family:var(--serif);font-weight:600;font-size:23px;margin:3px 0 0}
+  .page .hint{color:var(--muted);font-size:13px;margin:6px 0 0;max-width:78ch}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+  .btn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:8px;padding:8px 13px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);cursor:default}
+  .btn.primary{background:var(--navy-800);border-color:var(--navy-800);color:#fff}
+  .btn.big{font-size:14px;padding:11px 20px}
+  .btn.ghost{border-color:var(--line);color:var(--muted)}
+  .btn.warn{border-color:var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-wait{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-done{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-back{border:1px solid var(--red-line);background:var(--red-bg);color:var(--red)}
+  .c-flat{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+
+  /* waiting cards — the confirmer's whole screen */
+  .waiting{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+  .wcard{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+  .wcard .top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:16px 18px;background:linear-gradient(180deg,#fbfaf7,var(--surface))}
+  .wcard .amt{font-family:var(--serif);font-weight:600;font-size:30px;font-variant-numeric:tabular-nums;line-height:1.1}
+  .wcard .what{font-size:13.5px;font-weight:600;margin-top:2px}
+  .wcard .when{font-size:12px;color:var(--muted);margin-top:3px}
+  .wcard .act{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 18px;border-top:1px solid var(--line);background:#fbfaf7}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
+  .scroll{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+  thead th{background:var(--navy-800);color:#fff;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:9px 12px;white-space:nowrap}
+  tbody td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
+  tbody tr:nth-child(even){background:#faf9f6}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tfoot td{padding:11px 12px;border-top:2px solid var(--navy-200);font-weight:600;background:var(--navy-50)}
+  .paperclip{color:var(--navy-500);font-weight:600;font-size:11.5px;text-decoration:underline;text-underline-offset:2px}
+
+  .form{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  @media(max-width:760px){.form{grid-template-columns:1fr}}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field.wide{grid-column:1/-1}
+  .field label{font-size:11.5px;font-weight:600;color:var(--navy-700)}
+  .field .input{border:1px solid var(--navy-200);border-radius:8px;background:var(--surface);padding:9px 11px;font-size:13px;min-height:38px;display:flex;align-items:center}
+  .field .input.placeholder{color:#9aa0ad}
+  .field .help{font-size:11px;color:var(--muted)}
+  .check{display:flex;gap:9px;align-items:flex-start;font-size:12.5px}
+  .box{width:15px;height:15px;border:1.5px solid var(--navy-500);border-radius:4px;flex:none;margin-top:2px}
+  .box.on{background:var(--navy-800);border-color:var(--navy-800)}
+
+  /* the email */
+  .mail{width:100%;max-width:440px;background:#fff;border:1px solid #E3E8EF;border-radius:10px;overflow:hidden;font-family:Helvetica,Arial,sans-serif;box-shadow:0 2px 10px rgba(10,26,48,.05)}
+  .m-head{padding:17px 22px;background:var(--navy-800)}
+  .m-org{font:700 15px/1.3 Helvetica,Arial,sans-serif;color:#fff}
+  .m-unit{font:600 10px/1.4 Helvetica,Arial,sans-serif;letter-spacing:.15em;text-transform:uppercase;padding-top:4px;color:var(--gold-300)}
+  .m-bar{height:3px;background:var(--gold-500);font-size:0;line-height:0}
+  .m-body{padding:22px 22px 6px}
+  .m-title{margin:0 0 12px;font:700 19px/1.3 Helvetica,Arial,sans-serif;color:#1B2330}
+  .m-p{margin:0 0 13px;font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#1B2330}
+  .m-row{margin:0 0 7px;font:400 14px/1.5 Helvetica,Arial,sans-serif;color:#1B2330}
+  .m-row span{color:#6B7686}
+  .m-cta{display:inline-block;padding:10px 19px;border-radius:6px;font:600 13px/1 Helvetica,Arial,sans-serif;color:#fff;text-decoration:none;background:#0f2444;margin:8px 0 18px}
+  .m-foot{padding:14px 22px 20px;font:400 11.5px/1.55 Helvetica,Arial,sans-serif;color:#6B7686;border-top:1px solid #E3E8EF;margin:0 22px;padding-left:0;padding-right:0}
+  .two{display:grid;grid-template-columns:minmax(0,440px) 1fr;gap:24px;align-items:start;margin-top:16px}
+  @media(max-width:860px){.two{grid-template-columns:1fr}}
+
+  .notes{margin-top:16px;border-left:3px solid var(--navy-800);background:#f7f8fb;border-radius:0 10px 10px 0;padding:13px 16px}
+  .notes b{font-family:var(--serif);font-weight:600;font-size:14.5px;display:block;margin-bottom:5px}
+  .notes ul{margin:0;padding-left:17px;font-size:13px}
+  .notes li{margin:5px 0}
+  .notes .q{color:var(--gold-800);font-weight:600}
+  footer{margin-top:52px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12.5px}
+  footer b{color:var(--ink)}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 040 · Mockups for sign-off</p>
+  <h1>Bank confirmations &amp; salaries</h1>
+  <p class="lede">Your half of the Finance module. Finance enters transfers at the bank and sends them
+    here; you get an email, confirm at the bank as you always have, and tick them off. Nothing in
+    this app releases money — it tells you and keeps the record.</p>
+  <div class="meta">
+    <span class="tag">Your screen is one list and one button</span>
+    <span class="tag">Emails carry totals, never names</span>
+    <span class="tag">Salaries: month, total, headcount — no individual pay</span>
+  </div>
+
+  <div class="flow">
+    <h2>Where you sit in it</h2>
+    <div class="steps">
+      <div class="step"><b>1 · Enter at the bank</b><span>Finance keys the transfers into the bank as normal.</span><span class="who">Finance</span></div>
+      <div class="step"><b>2 · Send here</b><span>They tick which payments went, add the bank reference, and send. The total is frozen at that moment.</span><span class="who">Finance</span></div>
+      <div class="step here"><b>3 · You get an email</b><span>How many, what they total, who sent it, and a link. No names.</span><span class="who">You</span></div>
+      <div class="step here"><b>4 · Confirm &amp; tick off</b><span>You confirm at the bank, then tap Confirmed here. Only now is anyone told they've been paid.</span><span class="who">You</span></div>
+    </div>
+  </div>
+
+  <!-- ══ 1 ══ -->
+  <section class="screen">
+    <h2>1 · The email you get <span class="who">The moment Finance sends</span></h2>
+    <p class="sub">Short enough to act on from your phone. The detail is one tap away, deliberately —
+      an emailed list of who was paid what lives in an inbox forever.</p>
+    <div class="two">
+      <div class="mail">
+        <div class="m-head"><div class="m-org">Forefront People</div><div class="m-unit">Finance</div></div>
+        <div class="m-bar"></div>
+        <div class="m-body">
+          <p class="m-title">3 transfers are waiting for you at the bank</p>
+          <p class="m-p">Mohamed Selim has entered these and sent them for confirmation.</p>
+          <p class="m-row"><span>Batch:</span> <b>AUG-26-04</b></p>
+          <p class="m-row"><span>Transfers:</span> <b>3</b></p>
+          <p class="m-row"><span>Total:</span> <b>EGP 12,450.00</b></p>
+          <p class="m-row"><span>Value date:</span> <b>24/08/2026</b></p>
+          <a class="m-cta" href="#">See what's in it</a>
+        </div>
+        <div class="m-foot">You're receiving this because you're appointed to confirm transfers.</div>
+      </div>
+      <div class="notes" style="margin-top:0">
+        <b>Why it's this short</b>
+        <ul>
+          <li><b>No names, no individual amounts.</b> Your choice, and the right one — this reaches
+            you by email, gets forwarded by accident, and stays in the inbox. The link is behind the
+            same sign-in as everything else.</li>
+          <li>The salary email is the same shape: <i>"Salaries for August 2026 — EGP 89,000.00
+            covering 5 people."</i> Never a person's pay.</li>
+          <li>If a batch sits unconfirmed for a few days, you get one summary reminder. Nobody else
+            is ever emailed by that.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 2 ══ -->
+  <section class="screen">
+    <h2>2 · Your screen <span class="who">Only you see this</span></h2>
+    <p class="sub">The whole thing. What's waiting, what it totals, and a way in. If nothing is
+      waiting, it says so and you close it.</p>
+    <div class="frame"><div class="app">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / confirmations</span></div>
+      <div class="page">
+        <p class="page-eyebrow">Waiting on you</p>
+        <h3>Confirmations</h3>
+        <p class="hint">Finance has entered these at the bank. Confirm them there, then tick them off
+          here — that's what tells the person they've been paid.</p>
+
+        <div class="waiting">
+          <div class="wcard">
+            <div class="top">
+              <div>
+                <span class="chip c-wait">Waiting 2 days</span>
+                <p class="what" style="margin-top:8px">3 transfers · expenses</p>
+                <p class="when">Sent by Mohamed Selim on 22/08/2026 · value date 24/08/2026 · ref AUG-26-04</p>
+              </div>
+              <div style="text-align:right"><p class="amt">EGP 12,450.00</p></div>
+            </div>
+            <div class="act">
+              <span class="btn primary big">Confirmed at the bank</span>
+              <span class="btn ghost">Send back…</span>
+              <span class="btn ghost" style="margin-left:auto">See the 3 transfers</span>
+            </div>
+          </div>
+
+          <div class="wcard">
+            <div class="top">
+              <div>
+                <span class="chip c-wait">Waiting today</span>
+                <p class="what" style="margin-top:8px">Salaries — August 2026</p>
+                <p class="when">Sent by Mohamed Selim today · covering 5 people · ref AUG-26-SAL</p>
+              </div>
+              <div style="text-align:right"><p class="amt">EGP 89,000.00</p></div>
+            </div>
+            <div class="act">
+              <span class="btn primary big">Confirmed at the bank</span>
+              <span class="btn ghost">Send back…</span>
+              <span class="btn ghost" style="margin-left:auto">See the run</span>
+            </div>
+          </div>
+        </div>
+
+        <p style="margin-top:22px;font-size:12.5px;color:var(--muted)">
+          <b style="color:var(--ink)">Recently confirmed</b> · AUG-26-03, 2 transfers, EGP 3,180.00,
+          confirmed 19/08/2026 <span class="chip c-done" style="margin-left:6px">Done</span>
+        </p>
+      </div>
+    </div></div>
+    <div class="notes"><b>What to check</b><ul>
+      <li>The button says <b>“Confirmed at the bank”</b>, not “Approve” — it records what you did
+        elsewhere, it doesn't authorise anything here.</li>
+      <li><b>Send back</b> returns it to Finance with your note, and the payments go back to waiting.
+        Nobody is told they were paid.</li>
+      <li><span class="q">For you:</span> is <b>“Waiting 2 days”</b> useful, or would you rather just
+        see the date it was sent?</li>
+    </ul></div>
+  </section>
+
+  <!-- ══ 3 ══ -->
+  <section class="screen">
+    <h2>3 · What's inside a batch <span class="who">One tap from the email</span></h2>
+    <p class="sub">Who's being paid, what for, and the receipt — before you tick it off.</p>
+    <div class="frame"><div class="app">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / confirmations / AUG-26-04</span></div>
+      <div class="page">
+        <p class="page-eyebrow">Batch AUG-26-04 · sent by Mohamed Selim</p>
+        <h3>3 transfers · EGP 12,450.00</h3>
+        <p class="hint">Value date 24/08/2026 · bank reference NBE-88213 · sent 22/08/2026</p>
+
+        <div class="scroll"><table>
+          <thead><tr><th>Paying</th><th>For</th><th>Receipt</th><th class="num">Amount</th></tr></thead>
+          <tbody>
+            <tr><td>Marwa Abdelazeem</td><td>Uber to the Meetup 20 venue and back</td><td><span class="paperclip">2 receipts</span></td><td class="num">404.00</td></tr>
+            <tr><td>Hussein Kamel</td><td>AlMentor annual subscription</td><td><span class="paperclip">1 receipt</span></td><td class="num">1,199.50</td></tr>
+            <tr><td>Raneem Sarhaan</td><td>Marketing float — August top-up</td><td><span class="chip c-flat">Float</span></td><td class="num">10,846.50</td></tr>
+          </tbody>
+          <tfoot><tr><td colspan="3">Total sent to the bank</td><td class="num">12,450.00</td></tr></tfoot>
+        </table></div>
+
+        <div class="row" style="margin-top:20px">
+          <span style="font-size:12px;color:var(--muted)">This total was fixed when Finance sent it — it can't change while it's with you.</span>
+          <div class="btns">
+            <span class="btn ghost">Send back…</span>
+            <span class="btn primary big">Confirmed at the bank</span>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="notes"><b>What to check</b><ul>
+      <li>Nothing here can change while it's waiting on you. If a figure was wrong, Finance has to
+        withdraw the whole batch and send a fresh one — so what you confirm is always what you were
+        emailed.</li>
+      <li>The people in it are told they've been paid the moment you tick it, and not before.</li>
+    </ul></div>
+  </section>
+
+  <!-- ══ 4 ══ -->
+  <section class="screen">
+    <h2>4 · Finance sends a batch <span class="who">Finance</span></h2>
+    <p class="sub">They tick what they've just keyed into the bank. This is a record of something
+      that already happened — there's no draft.</p>
+    <div class="frame"><div class="app">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / finance — sent to the bank</span></div>
+      <div class="page">
+        <p class="page-eyebrow">Finance · Payments</p>
+        <h3>Sent to the bank</h3>
+        <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap">
+          <span class="btn ghost">Confirmation queue</span>
+          <span class="btn ghost">Medical recoveries</span>
+          <span class="btn ghost">Payback requests</span>
+          <span class="btn primary">Sent to the bank · 2</span>
+        </div>
+
+        <p class="hint" style="margin-top:16px">Tick what you've entered at the bank, then send. Islam
+          gets an email straight away.</p>
+
+        <div class="scroll"><table>
+          <thead><tr><th style="width:34px"></th><th>Paying</th><th>For</th><th class="num">Amount</th></tr></thead>
+          <tbody>
+            <tr><td><span class="box on"></span></td><td>Marwa Abdelazeem</td><td>Uber — Meetup 20</td><td class="num">404.00</td></tr>
+            <tr><td><span class="box on"></span></td><td>Hussein Kamel</td><td>AlMentor subscription</td><td class="num">1,199.50</td></tr>
+            <tr><td><span class="box on"></span></td><td>Raneem Sarhaan</td><td>Marketing float top-up</td><td class="num">10,846.50</td></tr>
+            <tr><td><span class="box"></span></td><td>Salma Adel</td><td>Client taxi — awaiting your approval</td><td class="num">180.00</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="form">
+          <div class="field"><label>Value date at the bank</label><div class="input">24/08/2026</div></div>
+          <div class="field"><label>Bank reference</label><div class="input">NBE-88213</div></div>
+          <div class="field wide"><label>Note <span style="color:var(--muted);font-weight:400">(optional)</span></label><div class="input placeholder">Anything Islam should know</div></div>
+        </div>
+
+        <div class="row" style="margin-top:18px">
+          <span style="font-size:12.5px"><b>3 selected · EGP 12,450.00</b></span>
+          <span class="btn primary big">Send to Islam for confirmation</span>
+        </div>
+      </div>
+    </div></div>
+    <div class="notes"><b>What to check</b><ul>
+      <li>Once sent, those three are locked — Finance can't edit them, and can't put them in another
+        batch. To change something they withdraw the batch and start again.</li>
+      <li>If nobody is appointed to confirm, this screen says so plainly rather than sending into
+        silence.</li>
+    </ul></div>
+  </section>
+
+  <!-- ══ 5 ══ -->
+  <section class="screen">
+    <h2>5 · The monthly salary run <span class="who">Finance · never HR</span></h2>
+    <p class="sub">Four figures and a reference. There is no field for an individual's pay, so none
+      can be entered, stored, or shown.</p>
+    <div class="frame"><div class="app">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / finance / salary</span></div>
+      <div class="page">
+        <p class="page-eyebrow">Finance · Salaries</p>
+        <h3>Send the monthly run</h3>
+        <p class="hint">After you've entered payroll at the bank. Islam gets the email and confirms
+          there.</p>
+        <div class="form">
+          <div class="field"><label>Month</label><div class="input">August 2026</div></div>
+          <div class="field"><label>Total transferred (EGP)</label><div class="input">89,000.00</div></div>
+          <div class="field"><label>How many people</label><div class="input">5</div></div>
+          <div class="field"><label>Bank reference</label><div class="input">NBE-SAL-0826</div></div>
+          <div class="field wide"><label>The bank's file <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+            <div class="input placeholder">Attach a PDF or photo</div>
+            <span class="help">Kept private — only Finance, Islam and top-level access can open it.</span></div>
+          <div class="field wide">
+            <div class="check"><span class="box"></span><span>This is a second run for August (I'll say why)</span></div>
+            <span class="help">A month can only be sent once, so nobody pays it twice by accident.</span></div>
+        </div>
+        <div class="row" style="margin-top:18px">
+          <span style="font-size:12px;color:var(--muted)">Nothing here identifies anyone.</span>
+          <span class="btn primary big">Send for confirmation</span>
+        </div>
+
+        <p style="margin-top:24px;font-size:12.5px;color:var(--muted)">
+          <b style="color:var(--ink)">Earlier runs</b> · July 2026 · EGP 89,000.00 · 5 people ·
+          confirmed by Islam 28/07/2026 <span class="chip c-done" style="margin-left:6px">Done</span>
+        </p>
+      </div>
+    </div></div>
+    <div class="notes"><b>What to check</b><ul>
+      <li><b>No individual salary exists in this flow</b> — not stored, not shown, not exported. HR
+        can't open this screen at all.</li>
+      <li>Sending August twice is refused unless it's explicitly flagged a second run with a reason.</li>
+      <li><span class="q">For you:</span> do you want the bank's file attached to salary runs, or is
+        the reference enough?</li>
+    </ul></div>
+  </section>
+
+  <footer>
+    <p><b>Approve these and I'll build them.</b> If anything should look or read differently, say
+      which screen and what.</p>
+    <p style="margin-top:8px">Two questions are marked in gold: whether “waiting 2 days” is useful on
+      your screen, and whether salary runs need the bank's file attached.</p>
+  </footer>
+</div>
