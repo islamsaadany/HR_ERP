@@ -32,9 +32,10 @@ Three things are **not** decided and must not be assumed by whoever implements t
       workflows" to three. Recorded in [plan.md](./plan.md) as a formal deviation. **The code must
       not ship while the governing document says two** — run `/speckit-constitution` in the same
       change as T090.
-- [ ] **G2** Product owner approves a **mockup of the manager's pending-drafts screen and the
+- [X] **G2** Product owner approves a **mockup of the manager's pending-drafts screen and the
       sidebar count** (US2). These are new UI; constitution II requires a static HTML mockup and
       explicit sign-off before any component is written. Nothing in Phase 5 starts until this is done.
+      → `design-mockups/communications/2026-08-24_manager-messages.html`, approved 2026-08-24.
 - [ ] **G3** Confirm each **business unit's real brand colour** is set on its record in
       Admin → Brand. The email reads `primaryColor` from there. Visual Shift is `#450059`; if the
       record does not carry it, emails will be branded with whatever it does carry. This is data
@@ -124,15 +125,11 @@ compare against the preview.
 
 ## Phase 5: User Story 2 — a manager sends a prepared congratulation (P2)
 
-> **Status 2026-08-24**: everything except T055/T056 is built. Those two are the manager's own
-> `/messages` screen and the sidebar count — new UI, blocked on **G2**. HR's queue at
-> `/admin/communications/queue` reaches the same drafts, so the feature works end to end without
-> them; a manager simply cannot yet self-serve.
+> **Status 2026-08-24**: complete. G2's mockup was approved, so T055/T056 are built — a manager
+> now self-serves at `/messages`, with a gold count in the sidebar that appears only when something
+> is waiting. HR's queue at `/admin/communications/queue` still reaches the same drafts.
 
 **Goal**: the part that runs without anyone remembering a date.
-
-**⛔ Blocked by G2** — the manager's screen and the sidebar count are new UI and need an approved
-mockup first.
 
 **Independent test**: set a joining date three days out, run the preparation, confirm a draft
 appears for the manager with the right years, edit it, send it, confirm only that employee got it.
@@ -142,8 +139,8 @@ appears for the manager with the right years, edit it, send it, confirm only tha
 - [X] T052 [US2] Add the second cron entry to `vercel.json`
 - [X] T053 [US2] Add `updateCongratulation`, `sendCongratulation`, `dismissCongratulation` to `actions.ts` with `requireAssignee(id)`. `sendCongratulation` guards: DRAFT re-read in the transaction · the subject is still **active** · **not past the occasion date** · email configured
 - [X] T054 [P] [US2] Add `pendingForAssignee(userId)` and `pendingQueue()` to `src/lib/comms/` as plain functions
-- [ ] T055 [US2] Create `src/app/(app)/messages/page.tsx` — the manager's own pending drafts, edit and send **(after G2)**
-- [ ] T056 [US2] Snapshot then add the pending count to `src/components/AppShell.tsx`, reusing the existing `navBadges` machinery **(after G2)**
+- [X] T055 [US2] Create `src/app/(app)/messages/page.tsx` — the manager's own pending drafts, edit and send. Scoped `assignedToId: me.id`, so no `requireAdmin` and no module gate: Communications is deliberately **not** in `MODULES`, because a listed module puts a nav entry in front of everybody
+- [X] T056 [US2] Snapshot then add the pending count to `src/components/AppShell.tsx`, reusing the existing `navBadges` machinery. The entry renders **only** when the count is above zero — an empty queue is not a door
 - [X] T057 [US2] Sign the sent message with `sentById`'s name in `renderMessage` — honest only because the manager rewrote the words first
 
 **Checkpoint**: birthdays and anniversaries no longer depend on anyone remembering.
@@ -215,6 +212,8 @@ branded with their own unit.
 first test.
 
 **Then Phase 5** once G2's mockup is approved. Stop after any phase and what exists is coherent.
+All of the above is now built; **G3 is the one item left, and it is the user's own** — confirming
+each unit's real brand colour on its record.
 
 ## Task count
 

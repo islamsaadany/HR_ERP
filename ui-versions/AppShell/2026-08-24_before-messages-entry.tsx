@@ -65,7 +65,6 @@ export function AppShell({
   email,
   showAdmin,
   showManageLearning = false,
-  messagesWaiting = 0,
   showIncentive,
   showPayments = false,
   hiddenNav = [],
@@ -87,12 +86,6 @@ export function AppShell({
    * door is Admin, and a second entry for one module would beg the question of why not Benefits.
    */
   showManageLearning?: boolean;
-  /**
-   * Congratulations waiting for this person to send (spec 039). The entry appears ONLY when this
-   * is above zero and disappears again — an entry that is empty eleven months of the year is one
-   * nobody looks at, so it is not a permanent fixture of the nav.
-   */
-  messagesWaiting?: number;
   showIncentive: boolean;
   showPayments?: boolean;
   hiddenNav?: string[];
@@ -293,24 +286,6 @@ export function AppShell({
                   ) : null}
                 </Link>
               ) : null}
-              {messagesWaiting > 0 ? (
-                <Link
-                  href="/messages"
-                  title={`Messages to send (${messagesWaiting})`}
-                  aria-label={`Messages to send, ${messagesWaiting} waiting`}
-                  className={
-                    "relative mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive("/messages")
-                      ? "bg-navy-800 text-gold-300"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  <NavIcon name="messages" />
-                  <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                    {messagesWaiting}
-                  </span>
-                </Link>
-              ) : null}
             </nav>
             {liveDataRequestCount > 0 ? (
               <div className="px-2 pb-2">
@@ -454,23 +429,6 @@ export function AppShell({
                       {badgeFor("/admin/learning")}
                     </span>
                   ) : null}
-                </Link>
-              ) : null}
-              {messagesWaiting > 0 ? (
-                <Link
-                  href="/messages"
-                  aria-current={isActive("/messages") ? "page" : undefined}
-                  className={
-                    "relative mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/messages")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  Messages to send
-                  <span className="ml-auto grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                    {messagesWaiting}
-                  </span>
                 </Link>
               ) : null}
             </nav>
@@ -677,13 +635,6 @@ function NavIcon({ name }: { name: string }) {
     case "admin":
       return (
         <svg {...common}><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" /></svg>
-      );
-    case "messages":
-      // An envelope with the flap drawn open — distinct from every other glyph in this nav, and
-      // from the closed rectangle a "mail" icon usually is, because this one is asking to be sent
-      // rather than reporting something received.
-      return (
-        <svg {...common}><rect x="3" y="5.5" width="18" height="13" rx="2" /><path d="m3.6 6.6 8.4 6 8.4-6" /></svg>
       );
     case "manage-learning":
       // The Admin shield with a mortarboard inside — because that is exactly what it is: the

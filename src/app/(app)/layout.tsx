@@ -33,6 +33,21 @@ export default async function AppLayout({
   // The count on that entry: resources employees have suggested and nobody has reviewed. It is the
   // only thing in Learning that waits on a person — a badge whose number never reaches zero stops
   // being read. Wrapped, because before migration 064 this table does not exist.
+  // Congratulations waiting for THIS person to send. Wrapped, because before migration 067 the
+  // table does not exist — and a shell that cannot render is worse than a missing count.
+  let messagesWaiting = 0;
+  try {
+    messagesWaiting = await prisma.message.count({
+      where: {
+        assignedToId: user.id,
+        state: "DRAFT",
+        kind: { in: ["BIRTHDAY", "WORK_ANNIVERSARY"] },
+      },
+    });
+  } catch {
+    messagesWaiting = 0;
+  }
+
   let learningBadge = 0;
   if (showManageLearning) {
     try {
@@ -132,6 +147,7 @@ export default async function AppLayout({
       email={user.email}
       showAdmin={hrAdmin}
       showManageLearning={showManageLearning}
+      messagesWaiting={messagesWaiting}
       showIncentive={canAccessIncentive(user.role)}
       showPayments={isFinance(user.role)}
       hiddenNav={hiddenNav}

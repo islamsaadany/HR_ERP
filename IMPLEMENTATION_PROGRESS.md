@@ -97,16 +97,26 @@ Both reported from live data; neither needed a schema change, and neither had mi
   copied. Learning re-verified after the move (17/17 access, 35/35 materials, 26/26 manager).
 - **Two constitution-level changes**, both recorded: email widened to three workflows (v1.3.0), and
   a second daily cron. The load-bearing half — no scheduled process emails an employee — untouched.
+- **The manager self-serves** (G2 approved 2026-08-24,
+  `design-mockups/communications/2026-08-24_manager-messages.html`): `/messages` shows only the
+  drafts assigned to the person asking (`assignedToId: me.id`), so it needs no admin gate — and
+  Communications is deliberately **not** a `MODULES` entry, because a listed module puts a nav
+  door in front of everybody. The sidebar count renders only when something is actually waiting.
 - **Verified**: migration `067` applied twice on a throwaway Postgres, diffed against the schema
-  (only the house `updatedAt` line); `scripts/verify-communications.mts` **44/44**; `npm test`
+  (only the house `updatedAt` line); `scripts/verify-communications.mts` **51/51**; `npm test`
   136/136; `npx tsc --noEmit` and `npm run build` clean.
 - **Three test failures were real findings**, not noise: one caught a genuine bug (`surfaceFor`
   returned the input string rather than a normalised hex, so `#036` and `#003366` compared
   unequal); two were my own assertions testing the fixture rather than the rule, and were rewritten.
-- **NOT built, and blocked deliberately**: the manager's own `/messages` screen and the sidebar
-  count. They are new UI and the constitution requires an approved mockup first (gate G2). HR's
-  queue at `/admin/communications/queue` covers the same drafts in the meantime, so the feature
-  works end to end without them.
+- **A fourth finding was a collision, not a failure**: this script's fixture ids (`alice`, `bob`)
+  matched `verify-learning-us1`'s, and each script cleans only its own `@x.test` addresses — so the
+  suite passed or failed depending on the order it was run in. Namespaced to `comms-*`, and both
+  orders re-run clean.
+- **Still the user's own**: gate **G3** — confirm each business unit's real brand colour is on its
+  record in Admin → Brand (Visual Shift should read `#450059`). The email reads `primaryColor` from
+  there, so a wrong record brands the mail with whatever it carries. And a **real test send** to a
+  real inbox before the first announcement: how the HTML renders in Outlook, Gmail and Apple Mail
+  is observed, not derived.
 
 ## Learning: a direct "Manage Learning" door (built 2026-08-22 — no migration)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_manage-learning-nav.html`). A

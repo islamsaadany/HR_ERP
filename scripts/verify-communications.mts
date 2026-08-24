@@ -36,7 +36,9 @@ await db.messageRecipient.deleteMany({});
 await db.messageAudience.deleteMany({});
 await db.occasion.deleteMany({});
 await db.message.deleteMany({});
-await db.user.deleteMany({ where: { email: { endsWith: "@comms.test" } } });
+await db.user.deleteMany({
+  where: { OR: [{ email: { endsWith: "@comms.test" } }, { id: { startsWith: "comms-" } }] },
+});
 await db.businessUnit.deleteMany({ where: { name: { in: ["Test Coral", "Test Navy"] } } });
 await db.department.deleteMany({ where: { name: "Comms Dept" } });
 
@@ -48,9 +50,23 @@ const navy = await db.businessUnit.create({
   data: { name: "Test Navy", shortName: "TN", primaryColor: "#0f2444", accentColor: "#c9a227" },
 });
 
-const mk = (id: string, over: Record<string, unknown> = {}) =>
+/**
+ * Fixture ids are NAMESPACED, and that is not tidiness.
+ *
+ * Each verification script cleans up by its own `@x.test` email suffix, so a plain id like
+ * "alice" survives another script's cleanup and then collides with its `create` — which makes the
+ * whole suite order-dependent and fails in a way that looks like a code defect. Found exactly
+ * that way: this script's "alice" broke verify-learning-us1 when both ran against one database.
+ */
+const mk = (name: string, over: Record<string, unknown> = {}) =>
   db.user.create({
-    data: { id, email: `${id}@comms.test`, name: `${id} Person`, status: "ACTIVE", ...over },
+    data: {
+      id: `comms-${name}`,
+      email: `${name}@comms.test`,
+      name: `${name} Person`,
+      status: "ACTIVE",
+      ...over,
+    },
   });
 
 const hr = await mk("hrboss", { role: "HR_ADMIN" });
@@ -261,6 +277,48 @@ ok("and states no number anywhere", !/\d/.test(bday.subject + bday.body));
 
 const anniv = draftFor({ userId: "x", name: "Karim Hassan", kind: "WORK_ANNIVERSARY", occasionYear: 2026, occasionDate: today, years: 5 });
 ok("an anniversary states the years", anniv.subject.includes("5"));
+
+// ── 9. the manager's own queue ──
+console.log("\n── a manager's own messages ──");
+
+// The exact query /messages runs, so this cannot drift from the page it checks.
+const mine = (userId: string) =>
+  db.message.count({
+    where: { assignedToId: userId, state: "DRAFT", kind: { in: ["BIRTHDAY", "WORK_ANNIVERSARY"] } },
+  });
+
+check("the manager sees the two drafts assigned to them", await mine(manager.id), 2);
+check("alice, whose birthday it is, sees none of her own", await mine(alice.id), 0);
+check("a colleague uninvolved sees none", await mine(carol.id), 0);
+
+// The sidebar entry appears only when the count is above zero — that IS the rule, so it is
+// asserted as arithmetic rather than left to the component.
+ok("the entry shows for the manager", (await mine(manager.id)) > 0);
+ok("and is absent for everybody else", (await mine(carol.id)) === 0);
+
+// A draft that has been sent leaves the queue rather than lingering.
+const [firstDraft] = await db.message.findMany({
+  where: { assignedToId: manager.id, state: "DRAFT" },
+  take: 1,
+  select: { id: true },
+});
+await db.message.update({
+  where: { id: firstDraft.id },
+  data: { state: "SENT", sentById: manager.id, sentAt: new Date(), recipientCount: 1 },
+});
+check("sending one removes it from the queue", await mine(manager.id), 1);
+
+// And a closed one leaves too, so "not this one" actually clears it.
+const [remaining] = await db.message.findMany({
+  where: { assignedToId: manager.id, state: "DRAFT" },
+  take: 1,
+  select: { id: true },
+});
+await db.message.update({
+  where: { id: remaining.id },
+  data: { state: "MISSED", missedAt: new Date() },
+});
+check("closing the last one empties the queue", await mine(manager.id), 0);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await db.$disconnect();
