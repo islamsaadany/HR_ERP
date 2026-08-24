@@ -193,8 +193,10 @@ and confirm exactly one summary email reaches the approvers and none reaches any
   differ.
 - **Two approvers open the same run.** The first decision wins; the second sees the run already
   decided, by whom and when, rather than an error.
-- **Finance approves their own run.** Refused. The person who submitted a run may never approve it,
-  even if they hold Super User — that is the entire point of maker–checker.
+- **Finance approves their own run.** Refused — a Finance user, or an appointed approver, may never
+  decide a run they submitted. A **Super User** is the single exception and may complete both halves
+  alone; the run records that the same person submitted and approved it, so it is visible rather
+  than silent.
 - **A run with no items.** Refused at submission.
 - **The bank rejects a transfer after the run was approved.** The run stays approved as the historic
   record; Finance raises the correction as new payables. Approved runs are never rewritten.
@@ -233,8 +235,10 @@ and confirm exactly one summary email reaches the approvers and none reaches any
   its items MUST return to awaiting-payment and the withdrawal MUST be recorded.
 - **FR-010**: A run MUST move through: Submitted → Approved, Submitted → Queried (returned with a
   note, items released), or Submitted → Withdrawn. An approved run MUST be immutable thereafter.
-- **FR-011**: The person who submitted a run MUST NOT be able to approve it, regardless of the roles
-  or appointments they hold.
+- **FR-011**: The person who submitted a run MUST NOT be able to approve it — **except a Super
+  User**, who MAY approve a run they submitted themselves (CEO's decision, 2026-08-24). Holding
+  Finance, the Transaction Approver appointment, or both is never sufficient: those two halves stay
+  separated for everyone below Super User.
 - **FR-012**: Approving a run MUST record who approved it, when, and the total they were shown, and
   MUST move every item in it to **Paid**.
 - **FR-013**: Notifying a person that they have been paid MUST happen on approval, never at
@@ -292,8 +296,9 @@ and confirm exactly one summary email reaches the approvers and none reaches any
   Finance entering it in the bank, without anyone messaging them.
 - **SC-002**: Every released payment — payback, petty cash funding or payroll — is traceable to the
   person who submitted it, the person who approved it, and the moment each acted.
-- **SC-003**: No payment run can be approved by the person who submitted it, in any configuration of
-  roles or appointments.
+- **SC-003**: No payment run can be approved by the person who submitted it in any configuration of
+  Finance and Transaction Approver rights; only a Super User can, and when they do, the run shows
+  both halves as theirs.
 - **SC-004**: An employee is told they were paid only after the money was actually released, never
   before.
 - **SC-005**: The total the approver was emailed always equals the total they approve — the two can

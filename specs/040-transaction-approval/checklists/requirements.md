@@ -35,11 +35,13 @@
   2026-08-24 — authority is an appointment rather than a new role; the salary batch holds a summary
   only, never per-person amounts; approval follows the bank entry (notify-then-confirm) with no
   amount threshold; and this ships as a separate spec from 039.
-- **One rule added that was not asked for, and why**: FR-011 forbids the submitter from approving
-  their own run. Maker–checker is the entire purpose of the feature, and without this rule a Finance
-  user who also held Super User could complete both halves alone. Flagged here because it is the one
-  place this spec constrains the CEO's own convenience — a Super User submitting a run must have
-  someone else approve it.
+- **One rule added that was not asked for, and how it was settled**: FR-011 forbids the submitter
+  from approving their own run, since maker–checker is the entire purpose of the feature. It was put
+  to the CEO because it would otherwise have constrained him, and he ruled on 2026-08-24 that
+  **Super User is the sole exception** — Finance and appointed approvers stay separated, a Super
+  User may complete both halves. The residual risk is stated plainly: one Super User acting alone
+  can release money, and the run makes that visible by recording the same person on both halves
+  rather than concealing it.
 - **Values deferred to planning, not decisions**: the reminder's default lead time (FR-022) and the
   attachment size limit, both of which follow existing platform values.
 - **Three governance amendments are required before this ships**, listed in the spec's *Dependencies

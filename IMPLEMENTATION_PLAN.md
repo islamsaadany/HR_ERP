@@ -48,9 +48,11 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   (`March` computes spent − float, `JUL-AUG` float − spent, for the same situation), so the balance
   is derived **once**, kept **signed**, and stated in words; and its overspend is carried by hand as
   a line called *"December Overbudget"*, so carry-forward becomes a first-class opening balance.
-  One rule was added that nobody asked for: **the submitter of a payment run may never approve it**,
-  whatever roles they hold — maker–checker is the whole point, and it binds a Super User submitting
-  their own run. **Pending governance amendments, to land with the code:** email widens to a third
+  One rule was added that nobody asked for: **the submitter of a payment run may not approve it** —
+  maker–checker is the whole point. Put to the CEO because it would have bound him too; he ruled
+  (2026-08-24) that **Super User is the sole exception**, so Finance and appointed approvers stay
+  separated while a Super User may complete both halves, with the run recording the same person on
+  each so it is visible rather than silent. **Pending governance amendments, to land with the code:** email widens to a third
   workflow (finance approval); the daily scheduled job gains a second audience (appointed approvers,
   still never employees at large); and the constitution's Roles line is corrected to include
   `FINANCE`, which has existed since spec 020.
