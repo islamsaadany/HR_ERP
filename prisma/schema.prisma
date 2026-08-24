@@ -173,6 +173,22 @@ model User {
   learningManager           LearningManager?     @relation("LearningManagerSubject")
   learningManagersAppointed LearningManager[]    @relation("LearningManagerAppointer")
 
+  // Finance: petty cash & payback (spec 039) — back-relations only; this feature adds NO
+  // column to User. Custody is an attribute of the ACCOUNT, not of the person.
+  pettyCashAccounts         PettyCashAccount[]      @relation("PettyCashCustodian")
+  pettyCashAccountsCreated  PettyCashAccount[]      @relation("PettyCashAccountCreator")
+  pettyCashPeriodsSubmitted PettyCashPeriod[]       @relation("PettyCashPeriodSubmitter")
+  pettyCashPeriodsClosed    PettyCashPeriod[]       @relation("PettyCashPeriodCloser")
+  pettyCashPeriodsReopened  PettyCashPeriod[]       @relation("PettyCashPeriodReopener")
+  pettyCashMissingAcks      PettyCashPeriod[]       @relation("PettyCashMissingEvidenceAck")
+  pettyCashFundingsRecorded PettyCashFunding[]      @relation("PettyCashFundingRecorder")
+  pettyCashLinesCreated     PettyCashLine[]         @relation("PettyCashLineCreator")
+  pettyCashLinesDeleted     PettyCashLineDeletion[] @relation("PettyCashLineDeleter")
+  paybackRequests           PaybackRequest[]        @relation("PaybackRequester")
+  paybackRequestsDecided    PaybackRequest[]        @relation("PaybackDecider")
+  paybackRequestsPaid       PaybackRequest[]        @relation("PaybackPayer")
+  expenseEvidenceUploaded   ExpenseEvidence[]       @relation("ExpenseEvidenceUploader")
+
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   poolExceptions        PoolCeilingException[] @relation("PoolExceptionSubject")
@@ -1645,4 +1661,320 @@ model LearningManager {
   appointedBy   User?   @relation("LearningManagerAppointer", fields: [appointedById], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
+}
+
+// ─── Finance: petty cash & payback requests (spec 039) ──────────────────
+//
+// Replaces the MARCOM Expenses workbook. A petty cash account is a FLOAT held by a named
+// custodian: Finance tops it up, the custodian's spend draws it down, and each period closes
+// with one arithmetic that says who owes whom. Separately, anybody who paid out of pocket
+// raises a payback request with evidence for Finance to approve and pay.
+//
+// MONEY: every amount here is `Decimal(10,2)` EGP and is read into TypeScript through
+// `src/lib/finance/money.ts` ONLY — integer piastres for arithmetic, never floats.
+// DERIVATION: balances and period figures come from `src/lib/finance/pettycash.ts` and are
+// never stored, so no screen can quote a total that disagrees with another.
+
+enum PettyCashAccountStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum PettyCashPeriodStatus {
+  OPEN // the custodian is logging spend
+  SUBMITTED // handed to Finance for review; Finance may still edit, the custodian may not
+  CLOSED // figures frozen; evidence may still be attached, amounts may not change
+}
+
+/// FLOAT draws on the custodian's cash. COMPANY_TRANSFER is the company paying a vendor
+/// directly — it counts as period expenditure and consumes budget, but never moves the float.
+enum PettyCashPaymentMethod {
+  FLOAT
+  COMPANY_TRANSFER
+}
+
+/// Cash moving between the company and the float. The amount is ALWAYS positive; the type
+/// carries the direction, so a negative amount can never mean two different things.
+enum PettyCashFundingType {
+  TOP_UP // company → custodian
+  RETURN // custodian → company
+}
+
+/// Spec 040 inserts PAYMENT_SUBMITTED between APPROVED and PAID (a request becomes PAID when
+/// the CEO approves the run carrying it, not when Finance records the transfer).
+/// DO NOT reorder these members.
+enum PaybackStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PAID
+}
+
+/// A float held by ONE named custodian. Carries no balance column on purpose: the balance is
+/// derived from fundings and float-paid lines, so it cannot drift from the lines that explain
+/// it. The row is also the lock subject — every write that could race takes it FOR UPDATE.
+model PettyCashAccount {
+  id     String                 @id @default(cuid())
+  name   String                 @unique
+  status PettyCashAccountStatus @default(ACTIVE)
+
+  /// The person who holds the cash. Must be an ACTIVE employee for new lines to be accepted —
+  /// an account whose custodian has left is frozen until Finance names a new one.
+  custodianId String
+  custodian   User   @relation("PettyCashCustodian", fields: [custodianId], references: [id])
+
+  createdById String?
+  createdBy   User?   @relation("PettyCashAccountCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  periods  PettyCashPeriod[]
+  fundings PettyCashFunding[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([custodianId])
+  @@index([status])
+}
+
+/// One reconciliation window on one account. `openingBalance` is the previous period's closing
+/// balance, carried forward as a first-class figure rather than the workbook's hand-typed
+/// "December Overbudget" line.
+///
+/// An account may have at most ONE open period. Prisma cannot express a partial unique index,
+/// so it lives in `prisma/sql/067_petty_cash_payback.sql`.
+model PettyCashPeriod {
+  id        String           @id @default(cuid())
+  accountId String
+  account   PettyCashAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  label     String /// e.g. "Aug 2026"
+  startDate DateTime
+  endDate   DateTime
+
+  /// Optional per-period budget. Remaining budget is derived and SIGNED — an overspend shows
+  /// as an overspend and is never floored to zero.
+  budget Decimal? @db.Decimal(10, 2)
+
+  /// Carried from the previous period's closing balance (0 for the first). Signed.
+  openingBalance Decimal @default(0) @db.Decimal(10, 2)
+
+  status PettyCashPeriodStatus @default(OPEN)
+
+  submittedAt   DateTime?
+  submittedById String?
+  submittedBy   User?     @relation("PettyCashPeriodSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+
+  closedAt   DateTime?
+  closedById String?
+  closedBy   User?     @relation("PettyCashPeriodCloser", fields: [closedById], references: [id], onDelete: SetNull)
+
+  /// Closing a period that still has lines with no receipt requires Finance to acknowledge
+  /// those specific lines. We store WHICH lines were acknowledged, not just that a box was
+  /// ticked — otherwise the acknowledgement says nothing about what was accepted.
+  missingEvidenceAckAt      DateTime?
+  missingEvidenceAckById    String?
+  missingEvidenceAckBy      User?     @relation("PettyCashMissingEvidenceAck", fields: [missingEvidenceAckById], references: [id], onDelete: SetNull)
+  missingEvidenceAckNote    String?
+  missingEvidenceAckLineIds String[]  @default([])
+
+  reopenedAt   DateTime?
+  reopenedById String?
+  reopenedBy   User?     @relation("PettyCashPeriodReopener", fields: [reopenedById], references: [id], onDelete: SetNull)
+  reopenReason String?
+
+  lines    PettyCashLine[]
+  fundings PettyCashFunding[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, label])
+  @@index([accountId, startDate])
+  @@index([status])
+}
+
+/// Cash moving into or out of the float. Recorded by Finance only.
+model PettyCashFunding {
+  id        String           @id @default(cuid())
+  accountId String
+  account   PettyCashAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  /// The period it counts toward — set explicitly, like a line, so a figure can never move
+  /// between periods because somebody corrected a date.
+  periodId String?
+  period   PettyCashPeriod? @relation(fields: [periodId], references: [id], onDelete: SetNull)
+
+  type      PettyCashFundingType
+  date      DateTime
+  amount    Decimal              @db.Decimal(10, 2) /// always positive; `type` carries direction
+  reference String? /// bank / InstaPay reference
+  note      String?
+
+  recordedById String?
+  recordedBy   User?   @relation("PettyCashFundingRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  /// RESERVED for spec 040 (payment runs). No relation, no index, not written by this feature.
+  paymentRunId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([accountId, date])
+  @@index([periodId])
+}
+
+/// One purchase. Belongs to a period explicitly (never by date window): the workbook's lines
+/// are routinely undated or dated outside their tab, and a line that silently moves between
+/// periods changes a balance somebody already signed off.
+model PettyCashLine {
+  id       String          @id @default(cuid())
+  periodId String
+  period   PettyCashPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+
+  datePaid DateTime
+
+  sectionId String
+  section   ExpenseSection @relation(fields: [sectionId], references: [id])
+
+  categoryId String?
+  category   ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  description    String
+  method         PettyCashPaymentMethod
+  paymentDetails String? /// the workbook's free-text "Payment details"
+  payee          String? /// the workbook's "TO"
+  amount         Decimal                @db.Decimal(10, 2)
+
+  createdById String?
+  createdBy   User?   @relation("PettyCashLineCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  /// A line is "missing receipt" when this is empty — derived, never a stored flag.
+  evidence ExpenseEvidence[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([periodId])
+  @@index([sectionId])
+  @@index([categoryId])
+  @@index([datePaid])
+}
+
+/// What a deleted line said. A ledger where a row can simply vanish is not a ledger.
+model PettyCashLineDeletion {
+  id       String @id @default(cuid())
+  periodId String
+
+  /// The line's fields as they stood, including its evidence filenames.
+  snapshot Json
+
+  deletedById String?
+  deletedBy   User?    @relation("PettyCashLineDeleter", fields: [deletedById], references: [id], onDelete: SetNull)
+  deletedAt   DateTime @default(now())
+
+  @@index([periodId])
+}
+
+/// Somebody's out-of-pocket spend awaiting repayment. Open to every employee — a custodian's
+/// own overspend is settled through petty cash reconciliation, not through here.
+model PaybackRequest {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("PaybackRequester", fields: [userId], references: [id], onDelete: Cascade)
+
+  amount   Decimal  @db.Decimal(10, 2)
+  datePaid DateTime
+
+  categoryId String?
+  category   ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  description String
+  payee       String?
+
+  status      PaybackStatus @default(SUBMITTED)
+  submittedAt DateTime      @default(now())
+
+  decidedById    String?
+  decidedBy      User?     @relation("PaybackDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt      DateTime?
+  decisionReason String? /// required on rejection
+
+  /// The payment as recorded by Finance. `paidAt` is when it was RECORDED; `transferDate` is
+  /// when the money moved — they are different questions and the workbook conflated them.
+  paidById          String?
+  paidBy            User?     @relation("PaybackPayer", fields: [paidById], references: [id], onDelete: SetNull)
+  paidAt            DateTime?
+  transferDate      DateTime?
+  amountTransferred Decimal?  @db.Decimal(10, 2)
+  paymentReference  String?
+
+  /// RESERVED for spec 040 (payment runs). No relation, not written by this feature.
+  paymentRunId String?
+
+  evidence ExpenseEvidence[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+/// A receipt or invoice. ONE model with two optional parents, because a spend line and a
+/// payback request carry the same kind of file under the same rules — one upload validator,
+/// one serving route, one access rule. Exactly one parent is set, enforced by a check
+/// constraint in the migration (Prisma cannot express it).
+///
+/// Files live in the PRIVATE blob store and are only ever reachable through
+/// `/api/expense-evidence/[id]`, which re-decides access at the door and answers 404 — never
+/// 403, which would confirm the file exists.
+model ExpenseEvidence {
+  id          String @id @default(cuid())
+  blobUrl     String
+  fileName    String
+  contentType String
+  sizeBytes   Int
+
+  uploadedById String?
+  uploadedBy   User?   @relation("ExpenseEvidenceUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  pettyCashLineId String?
+  pettyCashLine   PettyCashLine? @relation(fields: [pettyCashLineId], references: [id], onDelete: Cascade)
+
+  paybackRequestId String?
+  paybackRequest   PaybackRequest? @relation(fields: [paybackRequestId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([pettyCashLineId])
+  @@index([paybackRequestId])
+}
+
+/// Admin-managed classification. Sections and categories are INDEPENDENT flat lists — the
+/// workbook pairs them freely and leaves category blank half the time — so a line requires a
+/// section and may carry a category, and neither constrains the other.
+model ExpenseSection {
+  id         String    @id @default(cuid())
+  name       String    @unique
+  sortOrder  Int       @default(0)
+  /// Archived values stay on the records that already reference them; they are simply no
+  /// longer offered on new ones.
+  archivedAt DateTime?
+
+  lines PettyCashLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExpenseCategory {
+  id         String    @id @default(cuid())
+  name       String    @unique
+  sortOrder  Int       @default(0)
+  archivedAt DateTime?
+
+  lines           PettyCashLine[]
+  paybackRequests PaybackRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
