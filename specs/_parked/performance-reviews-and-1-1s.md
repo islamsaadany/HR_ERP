@@ -165,13 +165,20 @@ context for the conversation, never a score.
   Administering the profile is employee-record work, so it is *not* covered by the HR exclusion above
   — that exclusion is about review and 1:1 contents.
 
-## 6. Open questions (blocking a spec)
+## 6. Settled — how a Gallup profile gets in
 
-1. **How a Gallup profile gets in.** Recommendation: **HR types the ordered themes** (5–10 picks
-   from a fixed list of 34, a minute per person) and optionally attaches the Gallup PDF to the
-   employee record as a document. Parsing the PDF automatically means building against a report
-   format we do not control and cannot test against, for a one-off per employee — a poor trade
-   unless the headcount makes typing genuinely impractical.
+**Decided 2026-08-24: parse the PDF.** The requester uploads Gallup assessment PDFs; the platform
+extracts the ordered themes onto the employee's profile. (My recommendation was typing them in; the
+requester chose parsing, so parsing it is.)
+
+Constraints the spec must carry:
+- **A real sample PDF is required before the parser can be built** — the extraction is written
+  against an actual report layout, not a guess.
+- **Extraction is a suggestion until confirmed.** The parsed themes are shown for review and saved
+  only on confirmation — same rule as the Nager.Date holiday fetch (spec 037): nothing stored from
+  an outside source without a human agreeing to it.
+- **A parse failure must fall back to manual entry**, never block the profile. Gallup can change
+  their report format at any time and we would not know until it broke.
 
 ## 7. Resolved with a recommendation (raise only if wrong)
 
