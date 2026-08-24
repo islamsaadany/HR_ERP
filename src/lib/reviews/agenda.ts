@@ -1,4 +1,4 @@
-// THE review agenda (spec 039). One registry, the way `campaign-fields.ts` is the
+// THE review agenda (spec 040). One registry, the way `campaign-fields.ts` is the
 // one registry of employee-answerable fields.
 //
 // The questions are the supplied PERFORMANCE REVIEW AGENDA verbatim, with one

@@ -34,14 +34,10 @@ export function countWorkingDays(start: Date, end: Date, holidays: ReadonlySet<s
 }
 
 /**
- * The part of [start, end] that falls inside `year`, counted in working days. A request
- * spanning New Year contributes each year's days to that year only (spec 035 edge case).
- */
-/**
  * Working days of [start, end] that fall inside [windowStart, windowEnd].
  *
  * The generic clip. `workingDaysInYear` and the quarter count used by the review
- * system pack (spec 039) both go through here, so a figure shown on a review can
+ * system pack (spec 040) both go through here, so a figure shown on a review can
  * never disagree with the one Time-Off shows for the same dates — there is only
  * one counter.
  */
@@ -57,6 +53,10 @@ export function workingDaysInWindow(
   return countWorkingDays(from, to, holidays);
 }
 
+/**
+ * The part of [start, end] that falls inside `year`, counted in working days. A request
+ * spanning New Year contributes each year's days to that year only (spec 035 edge case).
+ */
 export function workingDaysInYear(
   start: Date,
   end: Date,
@@ -86,7 +86,7 @@ export function takenInYear(
 
 /**
  * Sum a person's approved working days inside an arbitrary window — the quarter
- * figure on a review sheet (spec 039). Same engine as the yearly count above, so
+ * figure on a review sheet (spec 040). Same engine as the yearly count above, so
  * the two can never drift apart.
  */
 export function takenInWindow(

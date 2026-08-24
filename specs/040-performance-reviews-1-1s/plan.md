@@ -2,7 +2,7 @@
 
 **Branch**: `claude/team-log-reviews-1-1s-t0dugz` | **Date**: 2026-08-24 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `/specs/039-performance-reviews-1-1s/spec.md`
+**Input**: Feature specification from `/specs/040-performance-reviews-1-1s/spec.md`
 
 ---
 
@@ -37,7 +37,7 @@ Two findings from Phase 0 shape the build more than anything in the spec:
 **`unpdf`** (new — Gallup PDF text extraction, verified on both sample reports; research R5)
 
 **Storage**: PostgreSQL (Neon). New tables per [data-model.md](./data-model.md); migration
-`prisma/sql/067_performance_reviews.sql`, idempotent, committed with the schema change.
+`prisma/sql/068_performance_reviews.sql`, idempotent, committed with the schema change.
 Uploaded Gallup PDFs go to the **private** Vercel Blob store.
 
 **Testing**: No testing regime, per Principle V. `npx tsc --noEmit` and `npm run build` are the gate.
@@ -74,7 +74,7 @@ employee, which runs on upload and never in a render path.
 | **III · Benefits Money Server-Authoritative** | **PASS (by exclusion)** | This feature touches no benefits, payroll, or monetary record. FR-034 forbids money on the surface; data-model.md states no money column and no benefits relation. No existing money rule is affected. |
 | **IV · Spec-Driven, Docs Move With Code** | **PASS** | Spec, research, data model, contracts, quickstart written before code. `PROJECT_DETAILS.md`, `IMPLEMENTATION_PROGRESS.md`, `IMPLEMENTATION_PLAN.md` and `CLAUDE.md` updated in the same commit as the implementation. |
 | **V · Engineered Enough, Explicit Over Clever** | **PASS** | One derivation per rule — `access.ts` for who may read, `isOpen()` for visible-and-frozen, `quarters.ts` for the calendar, `agenda.ts` for the questions. Edge cases enumerated in the spec and carried into quickstart. |
-| **Migrations are Claude's job** | **PASS** | `067_performance_reviews.sql`, idempotent, same commit; applied by the deploy-time runner; `[apply-sql]` lines checked and the result reported in one line. |
+| **Migrations are Claude's job** | **PASS** | `068_performance_reviews.sql`, idempotent, same commit; applied by the deploy-time runner; `[apply-sql]` lines checked and the result reported in one line. |
 | **Email limited to two workflows** | **PASS** | No email. A reminder would in any case reintroduce the overseer this design excludes. |
 | **Scheduled work** | **PASS** | No cron. Quarters are derived, not seeded (research R4). |
 | **Roles** | **PASS** | No new `Role` member. The pair derives from the org chart, exactly as the `manager` capability already does — and per the house rule, per-module authority is never a new role. |
@@ -90,7 +90,7 @@ not planning.
 ### Documentation (this feature)
 
 ```text
-specs/039-performance-reviews-1-1s/
+specs/040-performance-reviews-1-1s/
 ├── plan.md              # This file
 ├── spec.md
 ├── research.md          # Phase 0 — 7 decisions, 2 of them load-bearing
@@ -135,7 +135,7 @@ src/
 prisma/
 ├── schema.prisma           # 8 new models, 4 new enums
 ├── seed.ts                 # 34 StrengthsTheme rows
-└── sql/067_performance_reviews.sql
+└── sql/068_performance_reviews.sql
 ```
 
 **Structure Decision**: Standard module layout, matching `time-off` and `learning`: a route folder
@@ -151,7 +151,7 @@ Add `{ key: "reviews", label: "Reviews & 1:1s", href: "/reviews" }` to `MODULES`
 ## Build order
 
 1. **Mockups + approval** (Principle II gate — blocks everything below).
-2. Schema + migration `067` + 34-theme seed; verified against a throwaway Postgres.
+2. Schema + migration `068` + 34-theme seed; verified against a throwaway Postgres.
 3. `lib/reviews/*` — access, quarters, agenda, gallup, pack. The rules before any screen.
 4. Journal (smallest surface, exercises `requireRealUser`).
 5. Review sheet: halves → submit → both-confirm → open/freeze → outcome → carry-forward.

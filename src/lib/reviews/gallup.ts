@@ -1,4 +1,4 @@
-// Reading a Gallup CliftonStrengths report (spec 039).
+// Reading a Gallup CliftonStrengths report (spec 040).
 //
 // ONE rule reads both report formats with no format detection and no branching:
 //

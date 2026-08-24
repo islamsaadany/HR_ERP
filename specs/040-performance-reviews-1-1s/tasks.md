@@ -1,10 +1,10 @@
 ---
-description: "Task list for spec 039 — Performance Reviews & 1:1s"
+description: "Task list for spec 040 — Performance Reviews & 1:1s"
 ---
 
 # Tasks: Performance Reviews & 1:1s
 
-**Input**: Design documents from `/specs/039-performance-reviews-1-1s/`
+**Input**: Design documents from `/specs/040-performance-reviews-1-1s/`
 
 **Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md),
 [data-model.md](./data-model.md), [contracts/server-interface.md](./contracts/server-interface.md),
@@ -43,9 +43,9 @@ tasks T059–T061, not a test suite.
 ### Schema
 
 - [x] T004 Add 8 models and 4 enums to `prisma/schema.prisma` per [data-model.md](./data-model.md): `ReviewSheet`, `ReviewSheetItem`, `ReviewOutcome`, `JournalEntry`, `OneOnOne`, `OneOnOneNote`, `StrengthsTheme`, `StrengthsProfile`, `StrengthsProfileTheme`; enums `ReviewJournalSection`, `ReviewItemSource`, `StrengthsDomain`, `StrengthsProfileSource`
-- [x] T005 Write `prisma/sql/067_performance_reviews.sql` — **idempotent** (`CREATE TABLE IF NOT EXISTS`, `DO $$` guards for enums/indexes), including the **partial unique index** on `ReviewSheetItem (sheetId, authorId, questionKey, sourceKind, sourceId) WHERE sourceId IS NOT NULL`, and the 34 `StrengthsTheme` rows as an idempotent upsert. Commit in the **same commit** as T004
-- [~] T006 **Not applicable** — this repo has no `prisma/seed.ts` (`package.json` references one, but the file does not exist); the SQL migrations are the seeding mechanism, and `067` upserts the 34 themes.
-- [x] T007 Apply `067` twice to a throwaway Postgres and confirm it is a clean no-op the second time; confirm 34 theme rows and the exact spelling of `Self-Assurance`
+- [x] T005 Write `prisma/sql/068_performance_reviews.sql` — **idempotent** (`CREATE TABLE IF NOT EXISTS`, `DO $$` guards for enums/indexes), including the **partial unique index** on `ReviewSheetItem (sheetId, authorId, questionKey, sourceKind, sourceId) WHERE sourceId IS NOT NULL`, and the 34 `StrengthsTheme` rows as an idempotent upsert. Commit in the **same commit** as T004
+- [~] T006 **Not applicable** — this repo has no `prisma/seed.ts` (`package.json` references one, but the file does not exist); the SQL migrations are the seeding mechanism, and `068` upserts the 34 themes.
+- [x] T007 Apply `068` twice to a throwaway Postgres and confirm it is a clean no-op the second time; confirm 34 theme rows and the exact spelling of `Self-Assurance`
 
 ### The rules — one derivation each
 
@@ -165,7 +165,7 @@ halves open and lock, agree an outcome, and see it on the next quarter's sheet.
 - [x] T059 Quickstart A + B — the seal holds at each of the four steps, opens and freezes only at the fourth, and a quarter with no meeting produces nothing at all
 - [x] T060 Quickstart C — direct retrieval as Super User, **Super User impersonating**, HR Admin, an unrelated employee, and a **new** manager all fail; the previous manager still reads their own sheet. Plus `grep -rn "requireUser" src/app/\(app\)/reviews src/lib/reviews src/app/api/reviews` returns nothing
 - [x] T061 Quickstart D + E + G — promotion copies rather than links; both Gallup formats parse from one code path and a non-Gallup PDF falls back to manual entry; no money term appears anywhere in the module
-- [ ] T062 Report the deploy's `[apply-sql]` result for `067` in one line, and state plainly what was verified here versus what cannot be tested from a session (the live Neon database)
+- [ ] T062 Report the deploy's `[apply-sql]` result for `068` in one line, and state plainly what was verified here versus what cannot be tested from a session (the live Neon database)
 
 ---
 

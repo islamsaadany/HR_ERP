@@ -1,7 +1,7 @@
 # Phase 1 Data Model — Performance Reviews & 1:1s
 
 **Spec**: [spec.md](./spec.md) · **Research**: [research.md](./research.md)
-**Migration**: `prisma/sql/067_performance_reviews.sql` (next free number; idempotent; same commit as
+**Migration**: `prisma/sql/068_performance_reviews.sql` (next free number; idempotent; same commit as
 the schema change).
 
 ---

@@ -573,7 +573,7 @@ handful). No email, no cron, no new env var, no new runtime dependency.
 
 ---
 
-## Reviews & 1:1s (spec 039)
+## Reviews & 1:1s (spec 040)
 
 A quarterly performance review that is filled **across** the quarter rather than the night before,
 plus the ad-hoc 1:1s that feed it. Private to each manager↔report pair.

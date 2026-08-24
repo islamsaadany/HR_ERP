@@ -18,7 +18,7 @@ initdb -D /tmp/pgdata && pg_ctl -D /tmp/pgdata -o "-k /tmp" -l /tmp/pg.log start
 createdb -h /tmp hrerp_reviews
 ```
 
-Apply `prisma/sql/067_performance_reviews.sql` to it **twice** — it must be idempotent, because the
+Apply `prisma/sql/068_performance_reviews.sql` to it **twice** — it must be idempotent, because the
 deploy-time runner may retry it — then query the tables it created and confirm the 34
 `StrengthsTheme` rows are present and correctly spelled (`Self-Assurance` is the one to check).
 
@@ -134,7 +134,7 @@ mismatch means a second counter was written, which is the thing R6 exists to pre
 - `npx tsc --noEmit` and `npm run build` clean.
 - `ui-versions/` snapshot saved for every **existing** UI file edited (the sidebar/nav).
 - Mockups approved **before** components were built (Principle II).
-- Migration `067` applied by the deploy; the build log's `[apply-sql]` lines checked and the outcome
+- Migration `068` applied by the deploy; the build log's `[apply-sql]` lines checked and the outcome
   reported to the user in one line.
 - State plainly what was verified here and what could not be (the user's live Neon database cannot be
   tested from a session).

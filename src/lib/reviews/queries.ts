@@ -1,4 +1,4 @@
-// Reads for the reviews & 1:1s module (spec 039).
+// Reads for the reviews & 1:1s module (spec 040).
 //
 // Every function here takes the caller's REAL id (from `requireRealUser`) and
 // filters on the pair STORED on the record. None of them accepts "whose reviews

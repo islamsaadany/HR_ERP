@@ -1,4 +1,4 @@
--- HR_ERP — Performance reviews & 1:1s (spec 039, 2026-08-24).
+-- HR_ERP — Performance reviews & 1:1s (spec 040, 2026-08-24).
 --
 -- WHAT
 --   Nine tables and four enums for a quarterly review that is filled across the quarter, the

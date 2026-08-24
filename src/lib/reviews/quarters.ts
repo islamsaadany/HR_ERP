@@ -1,4 +1,4 @@
-// Calendar quarters (spec 039). Pure, no I/O.
+// Calendar quarters (spec 040). Pure, no I/O.
 //
 // There is no ReviewCycle table and nothing opens or closes a quarter: this
 // module has no operator and no admin screen, so a stored cycle row would both

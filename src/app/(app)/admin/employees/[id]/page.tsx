@@ -47,7 +47,7 @@ export default async function EditEmployeePage({
       },
     }),
     prisma.medicalCommitment.aggregate({ where: { userId: id }, _count: true, _sum: { premium: true } }),
-    // Strengths (spec 039). HR administers the CliftonStrengths profile — the
+    // Strengths (spec 040). HR administers the CliftonStrengths profile — the
     // exclusion that keeps HR out of reviews, 1:1s and journals covers the
     // private conversation, not this employee-record data.
     allThemes(),

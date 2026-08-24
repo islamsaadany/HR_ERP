@@ -1,4 +1,4 @@
-// Who may read what, in the reviews & 1:1s module (spec 039).
+// Who may read what, in the reviews & 1:1s module (spec 040).
 //
 // This is the ONE place these questions are answered. Pages, actions and routes
 // ask it; none of them re-derive an answer of their own.
@@ -12,7 +12,7 @@
 // the target, which is exactly right for every other module.
 //
 // It is exactly wrong here. A Super User could switch into an employee and read
-// that person's private journal — the one thing spec 039 promises nobody can
+// that person's private journal — the one thing spec 040 promises nobody can
 // read — and both halves of any review they are party to. Nothing in the spec's
 // wording would be violated by the code; the hole is that "the current user"
 // silently means someone else.

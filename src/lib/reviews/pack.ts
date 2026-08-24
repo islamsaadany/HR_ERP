@@ -1,4 +1,4 @@
-// The system pack (spec 039) — the facts the platform already holds about a
+// The system pack (spec 040) — the facts the platform already holds about a
 // person's quarter, so a review starts from the same picture rather than from
 // memory.
 //

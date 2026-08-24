@@ -1,7 +1,7 @@
 # Agreed input — Performance reviews & 1:1s
 
-> **Status: specced 2026-08-24 as [`specs/039-performance-reviews-1-1s`](../039-performance-reviews-1-1s/spec.md).
-> Still not built.** This file is no longer a parking space; it is the **agreed input** behind spec 039
+> **Status: specced 2026-08-24 as [`specs/040-performance-reviews-1-1s`](../040-performance-reviews-1-1s/spec.md).
+> Still not built.** This file is no longer a parking space; it is the **agreed input** behind spec 040
 > and stays here as the record of what was decided and why. Two things live here rather than in the
 > spec on purpose: the **source template verbatim** (§2) and the **validated PDF parse rule** (§6) —
 > the latter is implementation detail that the spec must not carry, and the planning phase should read
