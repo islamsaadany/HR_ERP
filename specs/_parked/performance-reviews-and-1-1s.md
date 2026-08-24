@@ -98,49 +98,71 @@ B. Alignment & Commitments
  * What would make the next review feel like a success?
 ```
 
-## 3. Proposed shape (for discussion — nothing agreed)
+## 3. Proposed shape
 
-Three objects, not one form.
+Four objects, not one form. **Corrected 2026-08-24:** the 1:1 was first proposed as a journal entry;
+it is its own element, because a 1:1 produces an **outcome both parties align on** — a journal entry
+has one author and no counterpart.
 
-1. **Running journal** — open all quarter. Short dated entries, each tagged to a template section
-   (went well / didn't / learning / blocker / expectation). This is what makes the review honest:
-   nobody remembers March in June. 1:1 notes are journal entries marked "discussed on `<date>`",
-   not a separate module.
-2. **Review sheet** — one per pair per cycle, sections exactly as the template above. Assembled
-   from the journal entries the author promotes, the carry-forward from last cycle, and the system
-   pack. **Two authors:** section 1D and 2A are addressed to the other party, so the manager fills a
-   mirrored half.
-3. **Agreed outcome** — the only thing that outlives the meeting: top 3 priorities, risks to watch,
+1. **Running journal** — open all quarter, one author, private. Short dated entries, each tagged to
+   a template section (went well / didn't / learning / blocker / expectation). This is what makes the
+   review honest: nobody remembers March in June. Solo capture *between* conversations.
+2. **1:1 record** — an ad-hoc meeting between a pair, held whenever it is needed rather than waiting
+   for the quarter. Notes plus an **outcome both sides acknowledge**. Structurally a small sibling of
+   the review, not a note: same pair, same freeze-on-held rule, same carry-forward behaviour.
+3. **Review sheet** — one per pair per cycle, sections exactly as the template above. Assembled from
+   the journal entries the author promotes, the 1:1 outcomes from the cycle, the carry-forward from
+   last cycle, and the system pack. **Two authors:** section 1D and 2A are addressed to the other
+   party, so the manager fills a mirrored half.
+4. **Agreed outcome** — the only thing that outlives the meeting: top 3 priorities, risks to watch,
    what would make the next review a success, and each side's commitments. It becomes the
    carry-forward that opens the next cycle's sheet.
+
+The 1:1 is what stops the quarter being the only moment anything gets resolved; the review is where
+a quarter of those outcomes is read together.
 
 **System pack** — the facts the platform can state without anyone typing them (candidate: working
 days taken this cycle, onboarding completion, learning progress, data-request responsiveness). It is
 context for the conversation, never a score.
 
-## 4. Recommended mechanisms (each still needs sign-off)
+## 4. Mechanisms — **all four agreed 2026-08-24**
 
 - **The journal is private to its author, permanently.** The moment a manager can read it, people
   stop writing honestly and it becomes theatre. Only promoted entries surface on the sheet.
 - **Both halves stay sealed until both are submitted**, then both open. Otherwise whoever writes
-  second anchors on the first, and "mutual expectations" stops being mutual.
+  second anchors on the first, and "mutual expectations" stops being mutual. *Applies to the
+  quarterly sheet only — sealing an ad-hoc 1:1 would add friction to the thing whose whole value is
+  being quick. A 1:1 outcome needs both to acknowledge, not to write blind.*
 - **The sheet freezes when the meeting is marked held.** The outcome is written after and
-  acknowledged by both. Without a freeze, history quietly rewrites itself.
+  acknowledged by both. Without a freeze, history quietly rewrites itself. Same rule for a 1:1
+  record once its outcome is acknowledged.
 - **No money on this surface, ever.** Pool figures, claims, and salary have no place on a
   performance page — it turns a review into a compensation negotiation and leaks money facts to
   managers who have no business seeing them.
 
-## 5. Open questions (blocking a spec)
+## 5. Settled (2026-08-24)
 
-1. **Cadence vs. wording.** The template asks "this **year**" throughout, but the request is
-   quarterly. Quarterly cycles with an annual roll-up, and the wording changed to "this period"?
-2. **Who else reads it.** Recommendation: HR sees *that* a review happened (cycle compliance), not
-   its contents. Does a Super User get a break-glass, and is it logged?
-3. **Who opens a cycle.** HR opens a review cycle platform-wide (like the benefits plan year), or
-   each pair schedules their own?
-4. **Coverage.** Every employee with a manager, or an opt-in set of pairs to start?
-5. **Strengths vocabulary.** The template names CliftonStrengths-style strengths (Restorative,
+- **Quarterly cycles.** The template's "this year" wording becomes "this period".
+- **HR does not view reviews or 1:1s — contents or existence.** This module is not an HR surface.
+  Consequences to honour when specced: no admin oversight screen, no completion/compliance
+  reporting, no Super User break-glass; a cycle cannot be opened by HR (see open Q); and **access
+  follows the pair, not the chair** — when someone changes manager, the new manager does **not**
+  inherit read access to sheets written with the previous one.
+- **1:1s are their own element**, not journal entries — see §3.
+
+## 6. Open questions (blocking a spec)
+
+1. **1:1 scope** — manager↔report only, or any two employees (peer 1:1s)?
+2. **1:1 → review flow** — do a cycle's 1:1 outcomes appear on the quarter sheet automatically, or
+   does each person promote the ones they want to raise?
+3. **Who opens a cycle** — with HR out, the plausible answer is the calendar: Q1–Q4 open and close
+   automatically, no operator. Confirm, or does each pair run its own schedule?
+4. **Strengths vocabulary** — the template names CliftonStrengths-style strengths (Restorative,
    Arranger, Responsibility, Developer, Strategic, Achiever, Analytical). If that vocabulary is
    company-wide, "strengths I relied on / misutilized" should be a picklist on the employee record —
    comparable across cycles — rather than free text.
-6. **Skipped reviews.** What happens when a cycle closes with a sheet half-filled or no meeting held?
+5. **Coverage** — every employee with a manager, or a few pairs first? *Recommendation: everyone
+   with a manager; with HR unable to see anything, a pilot has no way to be observed anyway.*
+6. **Skipped cycles** — a quarter that closes with a half-filled sheet and no meeting. *Recommendation:
+   it closes as-is and stays readable; nothing chases anybody, since chasing implies an overseer and
+   there isn't one.*
