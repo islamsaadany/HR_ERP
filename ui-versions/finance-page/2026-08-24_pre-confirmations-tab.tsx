@@ -9,11 +9,6 @@ import { syncMedicalRecoveries } from "@/lib/benefits/recoveries";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { ReviewQueue, type ReviewRow } from "@/components/payback/ReviewQueue";
 import { possibleDuplicateLines } from "@/lib/finance/queries";
-import { availablePayables } from "@/lib/finance/payables";
-import { hasAnyConfirmer } from "@/lib/finance/confirmers";
-import { describeBatch } from "@/lib/finance/batches";
-import { formatEGP2 } from "@/lib/labels";
-import { SubmitPanel, type SubmissionRow } from "@/components/confirmations/SubmitPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +21,7 @@ export default async function FinancePage({
   const { paid, edited, error, ok } = await searchParams;
 
   const claims = await prisma.benefitClaim.findMany({
-    where: { status: { in: ["APPROVED", "PAYMENT_SUBMITTED", "REIMBURSED"] } },
+    where: { status: { in: ["APPROVED", "REIMBURSED"] } },
     include: {
       user: { select: { name: true } },
       guaranteedBenefit: { select: { name: true } },
@@ -36,16 +31,11 @@ export default async function FinancePage({
   });
 
   const rows: PaymentRow[] = claims
-    // Awaiting-payment first, then those at the bank, then the reimbursed history.
+    // Awaiting-payment (APPROVED) first, then the reimbursed history.
     .sort((a, b) => (a.status === "APPROVED" ? 0 : 1) - (b.status === "APPROVED" ? 0 : 1))
     .map((c) => ({
       id: c.id,
-      status:
-        c.status === "REIMBURSED"
-          ? "REIMBURSED"
-          : c.status === "PAYMENT_SUBMITTED"
-            ? "PAYMENT_SUBMITTED"
-            : "APPROVED",
+      status: c.status === "REIMBURSED" ? "REIMBURSED" : "APPROVED",
       employee: c.user.name,
       benefit: c.guaranteedBenefit?.name ?? c.catalogItem?.name ?? "—",
       covered: c.amount,
@@ -139,33 +129,6 @@ export default async function FinancePage({
     })),
   );
 
-  // Spec 040: what Finance can put into a submission, and what is already with the confirmer.
-  const [payables, anyConfirmer, batches] = await Promise.all([
-    availablePayables(),
-    hasAnyConfirmer(),
-    prisma.paymentBatch.findMany({
-      where: { type: "EXPENSES" },
-      include: { decidedBy: { select: { name: true } } },
-      orderBy: { submittedAt: "desc" },
-      take: 20,
-    }),
-  ]);
-
-  const submissionRows: SubmissionRow[] = batches.map((b) => ({
-    id: b.id,
-    reference: b.reference,
-    summary: describeBatch(
-      { type: b.type, itemCount: b.itemCount, salaryMonth: b.salaryMonth, headcount: b.headcount },
-      formatEGP2(b.totalAmount),
-    ),
-    total: formatEGP2(b.totalAmount),
-    status: b.status,
-    submittedOn: formatDate(b.submittedAt),
-    decidedOn: b.decidedAt ? formatDate(b.decidedAt) : null,
-    decidedBy: b.decidedBy?.name ?? null,
-    decisionNote: b.decisionNote,
-  }));
-
   return (
     <div>
       <AutoRefresh />
@@ -186,13 +149,6 @@ export default async function FinancePage({
             className="rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
           >
             Data requests
-          </Link>
-          {/* The monthly salary run (spec 040) — Finance, the confirmer and Super User only. */}
-          <Link
-            href="/finance/salary"
-            className="rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
-          >
-            Salaries
           </Link>
           {/* Petty cash floats, the other half of the Finance module (spec 039). */}
           <Link
@@ -248,14 +204,6 @@ export default async function FinancePage({
                 </p>
                 <RecoveriesTable rows={recoveryRows} />
               </section>
-            ),
-          },
-          {
-            id: "submit",
-            label: "Awaiting confirmation",
-            badge: payables.length,
-            node: (
-              <SubmitPanel payables={payables} submissions={submissionRows} anyConfirmer={anyConfirmer} />
             ),
           },
           {

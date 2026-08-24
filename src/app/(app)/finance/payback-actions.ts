@@ -92,54 +92,17 @@ export async function rejectRequest(formData: FormData): Promise<void> {
   redirect(`/finance?ok=${q("Declined, and the person has been told why.")}`);
 }
 
-/**
- * Record the transfer. Spec 040 moves this behind the CEO's approval of a payment run — that is
- * the ONE transition it changes, which is why the payment fields live on the request already.
+/*
+ * `recordPayment` USED TO LIVE HERE, and is deliberately gone (spec 040, 2026-08-24).
+ *
+ * Same reason as the benefit-claim confirm it sat beside: it marked a request PAID and emailed the
+ * requester when Finance recorded a transfer, before the bank had released anything. Finance now
+ * ticks approved requests into a submission, and they reach PAID — with the requester told — when
+ * the CEO marks that submission complete.
+ *
+ * `correctPayment` below stays: fixing a mistyped amount on something already paid is bookkeeping,
+ * and it still sends no email.
  */
-export async function recordPayment(formData: FormData): Promise<void> {
-  const actorId = await requireReviewer();
-  const id = ((formData.get("id") as string | null) ?? "").trim();
-
-  const parsed = parseAmountInput(formData.get("amountTransferred"));
-  if (!parsed.ok) fail(parsed.error);
-
-  const dateStr = ((formData.get("transferDate") as string | null) ?? "").trim();
-  const transferDate = dateStr ? new Date(dateStr) : null;
-  if (!transferDate || Number.isNaN(transferDate.getTime())) fail("Enter the date of the transfer.");
-  if (transferDate.getTime() > endOfToday().getTime()) fail("The transfer date can't be in the future.");
-
-  const request = await prisma.paybackRequest.findUnique({
-    where: { id },
-    select: { status: true, description: true, user: { select: { name: true, email: true } } },
-  });
-  if (!request) fail("That request no longer exists.");
-  if (request.status !== "APPROVED") fail("That request isn't awaiting payment.");
-
-  await prisma.paybackRequest.update({
-    where: { id },
-    data: {
-      status: "PAID",
-      paidById: actorId,
-      paidAt: new Date(),
-      transferDate,
-      amountTransferred: fromPiastres(parsed.piastres),
-      paymentReference: ((formData.get("paymentReference") as string | null) ?? "").trim() || null,
-    },
-  });
-
-  await sendEmail({
-    to: request.user.email,
-    ...paybackPaidToEmployee({
-      amount: formatEGP2(fromPiastres(parsed.piastres)),
-      transferDate: formatDate(transferDate),
-      description: request.description,
-    }),
-  });
-
-  revalidatePath("/finance");
-  revalidatePath("/payback");
-  redirect(`/finance?ok=${q(`Payment recorded for ${request.user.name ?? "the employee"}.`)}`);
-}
 
 /**
  * Fix a mistyped amount or date on an already-paid request. Does NOT change the status, does

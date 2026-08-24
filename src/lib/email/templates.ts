@@ -468,3 +468,50 @@ export function paybackPaidToEmployee(d: { amount: string; transferDate: string;
     ),
   };
 }
+
+// ─── Bank confirmations (spec 040) ─────────────────────────────────────────
+//
+// SC-007: no payee name and no individual amount may appear in either of these. The CEO's
+// choice, and the right default — an emailed list of who was paid what lives in an inbox
+// forever and gets forwarded by accident. The detail is one tap away, behind the same sign-in
+// as everything else. `summary` comes from `describeBatch`, which takes counts and a total and
+// has nowhere to put a name.
+
+/** C1 — transactions submitted → every appointed confirmer. */
+export function transactionsAwaitingConfirmation(d: {
+  summary: string;
+  reference: string;
+  count: number;
+  total: string;
+  submittedBy: string;
+  valueDate: string;
+}) {
+  return {
+    subject: `${d.count} ${d.count === 1 ? "transaction is" : "transactions are"} waiting for your confirmation`,
+    html: layout(
+      d.summary,
+      para(`${d.submittedBy} has created these in the bank and submitted them for confirmation.`) +
+        row("Reference", d.reference) +
+        row("Transactions", String(d.count)) +
+        row("Total", d.total) +
+        row("Value date", d.valueDate),
+      { href: link("/confirmations"), label: "See the transactions" }
+    ),
+  };
+}
+
+/** C2 — the daily nudge, when something has been waiting. Confirmers only, never employees. */
+export function confirmationReminder(d: { count: number; total: string; oldestDays: number }) {
+  return {
+    subject: `${d.count} still waiting for your confirmation`,
+    html: layout(
+      "Still waiting for you",
+      para(
+        `${d.count === 1 ? "One set of transactions has" : `${d.count} sets of transactions have`} been waiting ` +
+          `${d.oldestDays === 1 ? "since yesterday" : `up to ${d.oldestDays} days`}. Until they are confirmed at the bank, ` +
+          `nobody in them has been paid.`
+      ) + row("Combined total", d.total),
+      { href: link("/confirmations"), label: "Open confirmations" }
+    ),
+  };
+}

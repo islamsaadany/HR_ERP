@@ -92,6 +92,12 @@ const CATEGORIES: Category[] = [
         ready: true,
       },
       {
+        href: "/admin/confirmers",
+        title: "Who confirms transactions",
+        body: "Appoint who confirms bank transactions and marks them complete.",
+        ready: true,
+      },
+      {
         href: "/admin/expense-lists",
         title: "Expense lists",
         body: "Sections and categories for petty cash lines and payback requests.",
@@ -138,6 +144,7 @@ const GLYPH: Record<string, string> = {
   "/admin/brand": "◐",
   "/admin/notifications": "✉",
   "/admin/expense-lists": "☰",
+  "/admin/confirmers": "✓",
 };
 
 /**

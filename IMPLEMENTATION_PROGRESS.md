@@ -16,8 +16,46 @@
 | 6 — Benefits (admin config) | 🟢 Complete |
 | 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |
-| 10 — Finance: petty cash & payback | 🟢 **Built** (spec 039 — custodian floats, period reconciliation, evidence, payback requests; migration `067`). Spec 040 (transaction approval + salary batches) is specced, not built. |
+| 10 — Finance: petty cash & payback | 🟢 **Built** (spec 039 — custodian floats, period reconciliation, evidence, payback requests; migration `067`) |
+| 11 — Finance: bank confirmations & salaries | 🟢 **Built** (spec 040 — the confirmer appointment, submissions with a frozen total, the CEO's confirmation screen, monthly salary runs, the daily nudge; migrations `068` + `069`) |
 | 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
+
+## Spec 040 — Bank confirmations & monthly salary runs (built 2026-08-24 — migrations `068` + `069`)
+Finance creates transactions in the bank and submits them here; the CEO confirms them at the bank
+and marks them **Transaction complete**. The app notifies and records; it never gates money.
+
+**Three corrections from the CEO shaped it**, each one changing the design rather than the wording:
+1. *"I don't approve payments. I confirm the transaction in the bank."* — the first draft made the
+   platform look like the gate. It is not; the bank is, on two signatures.
+2. *"The finance doesn't send to bank, the finance creates transaction in the bank"* — and the
+   button should say the transaction is **done**. State names carried the wrong verb, so
+   SENT/CONFIRMED/SENT_BACK became SUBMITTED/COMPLETE/RETURNED before anything shipped.
+3. *"The employee should receive the email connected to my financial confirmation"* — which reached
+   back into spec 020 and pulled benefit reimbursements into the same flow.
+
+**What that third one cost, and why it was right.** Since spec 020 a claim became Reimbursed and the
+employee was emailed the moment Finance recorded a transfer — hours or days before the bank released
+it. An audit found exactly **two** emails in the whole application that announce money reaching a
+person; both now fire only on the confirmer's completion. Finance's one-step confirm on the claims
+queue and the pay button on the payback queue are retired.
+
+**One documented departure from house pattern.** `canConfirmBatches` reads the appointment table and
+nothing else — top-level access does **not** confer it, unlike every other appointment in the
+codebase. The instruction was that transactions wait for the appointed person and nobody stands in,
+and an implicit power held by every admin account would make that promise false. Self-appointment
+prevents lock-out.
+
+**Two things the database caught that reasoning had not:** inserting the new status "before PAID"
+put it after REJECTED, because the live type's order is not the order the schema declares; and a
+database that had applied an earlier version of migration `068` would keep the old column names
+forever, since an applied file never re-runs. `069` repairs such a database and `068` guards the
+statements that would abort against a half-renamed table. Verified by building both a fresh and a
+deliberately stale database and applying to each, twice.
+
+**Verified:** both migration paths converge on the declared schema; `npx tsc --noEmit` and
+`npm run build` clean, all new routes present; 149 tests pass, including that the summary line used
+in email never says "batch" and structurally cannot carry a payee name. **Not yet exercised in a
+running app**, and the migrations have not run on the live database.
 
 ## Spec 039 — Finance: petty cash floats & payback requests (built 2026-08-24 — migration `067`)
 Replaces the MARCOM Expenses workbook the marketing manager emails Finance monthly.

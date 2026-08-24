@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-24
 
-**Status**: Draft (2026-08-24 — the CEO corrected the framing, then the verbs, then widened the scope to benefit claims)
+**Status**: Implemented (2026-08-24 — migrations `068` + `069`; not yet exercised end-to-end against the live database)
 
 **Input**: User description: "Finance informs the CEO of any payment they make so the CEO can give the final transaction approval — the CEO performs the final confirmation in the bank, so an email is needed the moment Finance has entered a transaction. The same is needed for the monthly salaries: when Finance records the payroll on the banking side, they submit it on the platform and the CEO receives an email to approve the transactions. This may need a new authority in the release of amounts."
 

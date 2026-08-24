@@ -3,6 +3,7 @@ import { requireUser, getImpersonation } from "@/lib/roles";
 import { hasLearningAppointment } from "@/lib/learning/managers";
 import { isAdmin, isFinance, canAccessIncentive } from "@/lib/roles";
 import { canManagePettyCash } from "@/lib/finance/access";
+import { canConfirmBatches } from "@/lib/finance/confirmers";
 import { getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
 import { prisma } from "@/lib/prisma";
@@ -30,6 +31,18 @@ export default async function AppLayout({
   //     admin home would be one row they had just come from.
   const hrAdmin = isAdmin(user.role);
   const showManageLearning = !hrAdmin && (await hasLearningAppointment(user.id));
+
+  // The confirmations door (spec 040): the appointment and nothing else — no role fallback, so the
+  // door tells the same truth the page behind it does.
+  const showConfirmations = await canConfirmBatches(user.id);
+  let confirmationsWaiting = 0;
+  if (showConfirmations) {
+    try {
+      confirmationsWaiting = await prisma.paymentBatch.count({ where: { status: "SUBMITTED" } });
+    } catch {
+      confirmationsWaiting = 0;
+    }
+  }
 
   // Petty cash door (spec 039): Finance/Super User, or somebody who actually holds a float. The
   // SAME derivation the page and the actions use — a door that opens on a different rule from the
@@ -152,6 +165,8 @@ export default async function AppLayout({
       showIncentive={canAccessIncentive(user.role)}
       showPayments={isFinance(user.role)}
       showPettyCash={showPettyCash}
+      showConfirmations={showConfirmations}
+      confirmationsWaiting={confirmationsWaiting}
       hiddenNav={hiddenNav}
       navBadges={{ "/time-off": timeoffBadge, "/admin/learning": learningBadge }}
       dataRequestCount={dataRequests?.pendingCount ?? 0}

@@ -355,6 +355,42 @@ never 403.
 **Email.** The third permitted workflow: `paybackSubmittedToFinance`, `paybackRejectedToEmployee`,
 `paybackPaidToEmployee`. Fire-and-forget, master-toggleable. Petty cash sends none.
 
+### Finance: bank confirmations & salary runs (spec 040, migrations `068` + `069`)
+Finance creates transactions in the bank and submits them here; the appointed confirmer confirms
+them at the bank and marks them **Transaction complete**. Nothing in the app releases money.
+
+**Routes.** `/confirmations` and `/confirmations/[id]` (appointed confirmers only — their own small
+surface, because the confirmer is not a Finance user) · `/finance` → *Awaiting confirmation* tab
+(tick payables, submit, withdraw) · `/finance/salary` (Finance, confirmers, Super User — **never HR
+Admin**) · `/admin/confirmers` (Super User) · `GET /api/salary-run/[id]/file` (404, never 403) ·
+`GET /api/cron/confirmations` (daily, `CRON_SECRET`).
+
+**Models.** `TransactionConfirmer` (the appointment) · `PaymentBatch` (internal name; the UI says
+"3 transactions") with a **frozen** `totalAmount` and `itemCount` · `PaymentBatchItem` pointing at
+exactly one of a payback request, a petty cash funding movement or a benefit claim ·
+`ConfirmationReminderLog`.
+
+**Three payables, one flow.** `src/lib/finance/payables.ts` gathers approved payback requests, petty
+cash top-ups and approved benefit claims that are not already awaiting confirmation. Benefit claims
+joined at the CEO's instruction (2026-08-24): the employee is told when he confirms, not when
+Finance records a transfer.
+
+**Who confirms.** `src/lib/finance/confirmers.ts` reads the appointment table and **nothing else** —
+no role fallback, the one documented departure from the house pattern. `canAppointConfirmers` is
+Super User only, and self-appointment is the recovery path from an empty list.
+
+**The rules.** `src/lib/finance/batches.ts` is pure: `batchTotal` (once, at submission), `canDecide`
+(the submitter may not confirm their own, except a Super User), `nextStatus`, `releasesItems`,
+`describeBatch` (the summary shared by screen and email — it takes counts and a total and has
+nowhere to put a name, which is how "no payee names in email" is enforced structurally).
+
+**Lifecycles.** `PaymentBatchStatus`: SUBMITTED → COMPLETE / RETURNED / WITHDRAWN. Returning or
+withdrawing deletes the items, releasing the payables. `PaybackStatus` and `ClaimStatus` each gained
+`PAYMENT_SUBMITTED` between approval and paid.
+
+**Retired deliberately.** Finance's one-step "confirm payment" on the claims queue and "record
+payment" on the payback queue are gone, with a comment where each stood saying where it went.
+
 ## 4. Phase-2 (designed-for, not built in v1)
 - **Learning Track** — courses → lessons → quizzes → certificate.
 - **Case Studies** — shared knowledge library.

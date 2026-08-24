@@ -11,68 +11,21 @@ import { claimReimbursedToEmployee } from "@/lib/email/templates";
 
 const q = (s: string) => encodeURIComponent(s);
 
-/**
- * Finance confirms a transfer for an APPROVED claim → REIMBURSED, records the
- * amount + date + actor, and emails the employee. Guarded to Finance/Super User.
+/*
+ * `confirmPayment` USED TO LIVE HERE, and is deliberately gone (spec 040, 2026-08-24).
+ *
+ * It set a claim to REIMBURSED and emailed the employee "you have been reimbursed" the moment
+ * Finance recorded a transfer — but the money moves when the CEO confirms it at the bank, which
+ * could be hours or days later. Anyone emailed in between was told something untrue and then asked
+ * Finance where their money was. That is the confusion the CEO named.
+ *
+ * A claim is now ticked into a submission on Finance's "Awaiting confirmation" tab
+ * (`batch-actions.ts`), and reaches REIMBURSED — with the employee told — in
+ * `app/(app)/confirmations/actions.ts`, at the moment the transaction is marked complete.
+ *
+ * Left as a comment rather than deleted silently: the next person to look for the confirm button
+ * should find out where it went, not conclude it was never there.
  */
-export async function confirmPayment(formData: FormData): Promise<void> {
-  const actor = await requireFinance();
-  const id = formData.get("id") as string;
-  if (!id) return;
-
-  const amount = parseInt(((formData.get("amountTransferred") as string | null) ?? "").replace(/[^0-9]/g, ""), 10);
-  if (!Number.isFinite(amount) || amount <= 0) {
-    redirect("/finance?error=" + q("Enter a valid transferred amount."));
-  }
-  const dateStr = ((formData.get("transferDate") as string | null) ?? "").trim();
-  const transferDate = dateStr ? new Date(dateStr) : null;
-  if (!transferDate || Number.isNaN(transferDate.getTime())) {
-    redirect("/finance?error=" + q("Enter a valid transfer date."));
-  }
-  // Compare against end-of-today so a same-day transfer is allowed.
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
-  if (transferDate.getTime() > endOfToday.getTime()) {
-    redirect("/finance?error=" + q("The transfer date can't be in the future."));
-  }
-
-  const claim = await prisma.benefitClaim.findUnique({
-    where: { id },
-    include: {
-      user: { select: { name: true, email: true } },
-      guaranteedBenefit: { select: { name: true } },
-      catalogItem: { select: { name: true } },
-    },
-  });
-  if (!claim || claim.status !== "APPROVED") {
-    redirect("/finance?error=" + q("That claim isn't awaiting payment anymore."));
-  }
-
-  await prisma.benefitClaim.update({
-    where: { id },
-    data: {
-      status: "REIMBURSED",
-      paidById: actor.id,
-      paidAt: new Date(),
-      transferDate,
-      amountTransferred: amount,
-    },
-  });
-
-  await sendEmail({
-    to: claim.user.email,
-    ...claimReimbursedToEmployee({
-      benefitName: claim.guaranteedBenefit?.name ?? claim.catalogItem?.name ?? "a benefit",
-      amount,
-      transferDate: formatDate(transferDate),
-    }),
-  });
-
-  revalidatePath("/finance");
-  revalidatePath("/benefits");
-  revalidatePath("/admin/benefits");
-  redirect("/finance?paid=" + q(claim.user.name ?? "the employee"));
-}
 
 /**
  * Finance corrects an already-REIMBURSED record — the transferred amount and/or the

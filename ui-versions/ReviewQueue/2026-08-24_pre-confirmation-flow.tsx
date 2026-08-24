@@ -1,6 +1,11 @@
 import { formatDate, formatEGP2, toDateInput } from "@/lib/labels";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
-import { approveRequest, rejectRequest, correctPayment } from "@/app/(app)/finance/payback-actions";
+import {
+  approveRequest,
+  rejectRequest,
+  recordPayment,
+  correctPayment,
+} from "@/app/(app)/finance/payback-actions";
 
 export type DuplicateHint = {
   id: string;
@@ -145,17 +150,7 @@ function RequestCard({ row: r, muted }: { row: ReviewRow; muted: boolean }) {
       ) : null}
 
       {r.status === "SUBMITTED" ? <DecideForms id={r.id} /> : null}
-      {r.status === "APPROVED" ? (
-        // Spec 040: no pay button here any more. An approved request is ticked into a submission
-        // on the "Awaiting confirmation" tab and is paid — and the requester told — when the CEO
-        // confirms it at the bank.
-        <p className="mt-3 text-[12px] text-muted">Ready to submit for confirmation.</p>
-      ) : null}
-      {r.status === "PAYMENT_SUBMITTED" ? (
-        <p className="mt-3 text-[12px] text-gold-800">
-          At the bank, waiting on confirmation. Nobody has been told they were paid yet.
-        </p>
-      ) : null}
+      {r.status === "APPROVED" ? <PayForm id={r.id} amount={r.amount} /> : null}
       {r.status === "PAID" ? (
         <PaidRow
           id={r.id}
@@ -208,6 +203,50 @@ function DecideForms({ id }: { id: string }) {
         </form>
       </details>
     </div>
+  );
+}
+
+function PayForm({ id, amount }: { id: string; amount: string }) {
+  return (
+    <form action={recordPayment} className="mt-3 flex flex-wrap items-end gap-2">
+      <input type="hidden" name="id" value={id} />
+      <label className="flex flex-col gap-1">
+        <span className="text-[11px] font-semibold text-navy-700">Amount transferred</span>
+        <input
+          type="text"
+          name="amountTransferred"
+          required
+          inputMode="decimal"
+          defaultValue={Number(amount).toFixed(2)}
+          className="w-32 rounded-lg border border-navy-200 bg-surface px-3 py-2 text-[12.5px] tabular-nums"
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className="text-[11px] font-semibold text-navy-700">Transfer date</span>
+        <input
+          type="date"
+          name="transferDate"
+          required
+          defaultValue={toDateInput(new Date())}
+          className="rounded-lg border border-navy-200 bg-surface px-3 py-2 text-[12.5px]"
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className="text-[11px] font-semibold text-navy-700">Reference</span>
+        <input
+          type="text"
+          name="paymentReference"
+          placeholder="optional"
+          className="w-40 rounded-lg border border-navy-200 bg-surface px-3 py-2 text-[12.5px]"
+        />
+      </label>
+      <PendingSubmitButton
+        pendingLabel="Recording…"
+        className="rounded-lg bg-navy-800 px-3.5 py-2 text-[12.5px] font-semibold text-white hover:bg-navy-900"
+      >
+        Record the payment
+      </PendingSubmitButton>
+    </form>
   );
 }
 

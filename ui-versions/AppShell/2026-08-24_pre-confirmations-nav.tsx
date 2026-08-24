@@ -69,8 +69,6 @@ export function AppShell({
   showIncentive,
   showPayments = false,
   showPettyCash = false,
-  showConfirmations = false,
-  confirmationsWaiting = 0,
   hiddenNav = [],
   navBadges = {},
   dataRequestCount = 0,
@@ -94,9 +92,6 @@ export function AppShell({
   showPayments?: boolean;
   /** Finance/Super User, or the custodian of an active float — the same derivation the page uses. */
   showPettyCash?: boolean;
-  /** Holds the transaction-confirmer appointment. NOT implied by any role (spec 040). */
-  showConfirmations?: boolean;
-  confirmationsWaiting?: number;
   hiddenNav?: string[];
   navBadges?: Record<string, number>;
   /** Pending data-request fields (spec 033) — >0 renders the gold sidebar notice. */
@@ -267,26 +262,6 @@ export function AppShell({
                   <NavIcon name="pettycash" />
                 </Link>
               ) : null}
-              {showConfirmations ? (
-                <Link
-                  href="/confirmations"
-                  title="Confirmations"
-                  aria-label="Confirmations"
-                  className={
-                    "relative mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive("/confirmations")
-                      ? "bg-navy-800 text-gold-300"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  <NavIcon name="confirmations" />
-                  {confirmationsWaiting > 0 ? (
-                    <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                      {confirmationsWaiting}
-                    </span>
-                  ) : null}
-                </Link>
-              ) : null}
               {showAdmin ? (
                 <Link
                   href="/admin"
@@ -454,25 +429,6 @@ export function AppShell({
                   }
                 >
                   Petty cash
-                </Link>
-              ) : null}
-              {showConfirmations ? (
-                <Link
-                  href="/confirmations"
-                  aria-current={isActive("/confirmations") ? "page" : undefined}
-                  className={
-                    "relative mt-2 flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive("/confirmations")
-                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                      : "text-gold-300 hover:bg-navy-800")
-                  }
-                >
-                  Confirmations
-                  {confirmationsWaiting > 0 ? (
-                    <span className="ml-2 grid h-5 min-w-5 place-items-center rounded-full bg-gold-500 px-1 text-[11px] font-bold text-navy-900">
-                      {confirmationsWaiting}
-                    </span>
-                  ) : null}
                 </Link>
               ) : null}
               {showAdmin ? (
@@ -713,11 +669,6 @@ function NavIcon({ name }: { name: string }) {
       // A receipt with a return arrow — money going back to the person who paid.
       return (
         <svg {...common}><path d="M7 3h10v16l-2.5-1.6L12 19l-2.5-1.6L7 19z" /><path d="M13.5 8.5h-3a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3h-3" /></svg>
-      );
-    case "confirmations":
-      // A bank stamp: something checked and marked done.
-      return (
-        <svg {...common}><path d="M4 20h16" /><path d="M6 20V10h12v10" /><path d="M9 10V6.5A3 3 0 0 1 12 4a3 3 0 0 1 3 2.5V10" /><path d="M9.5 15.5l1.8 1.8 3.2-3.6" /></svg>
       );
     case "pettycash":
       // A cash box with a slot: a float somebody physically holds.

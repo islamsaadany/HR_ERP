@@ -62,3 +62,16 @@ export function canWritePettyCashLine(
   if (account.custodianId !== user.id) return false;
   return period.status === "OPEN";
 }
+
+/**
+ * Submit transactions for confirmation, and see the monthly salary runs (spec 040).
+ *
+ * `canSeeSalaryRuns` takes the appointment as a separate argument rather than looking it up,
+ * because the caller has usually already asked `canConfirmBatches` and a second query for the same
+ * fact is how two answers start disagreeing. HR Admin is absent on purpose: a salary total is not
+ * theirs to see.
+ */
+export const canSubmitTransactions = (role?: Role): boolean => isFinance(role) || isSuperUser(role);
+
+export const canSeeSalaryRuns = (role: Role | undefined, isConfirmer: boolean): boolean =>
+  isFinance(role) || isSuperUser(role) || isConfirmer;

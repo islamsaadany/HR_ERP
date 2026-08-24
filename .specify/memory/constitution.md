@@ -1,33 +1,32 @@
 <!--
-SYNC IMPACT REPORT — 2026-08-24
-Version change: 1.2.1 → 1.3.0 (MINOR — the email clause is materially widened to a third
-workflow, on the CEO's request; plus one factual correction)
+SYNC IMPACT REPORT — 2026-08-24 (second amendment of the day)
+Version change: 1.3.0 → 1.4.0 (MINOR — the scheduled-work audience widens, and one documented
+exception to the appointment pattern is recorded)
 
 Modified sections:
-  - Technology & Data Constraints, email clause — widened from TWO permitted workflows to
-    THREE: the payback workflow (spec 039) joins benefit claims (020) and holidays (037).
-    Requested by the CEO on 2026-08-24 as part of the Finance module. Recorded with the note
-    that petty cash itself sends no email at all — nobody is waiting on a ledger.
-  - Technology & Data Constraints, roles line — corrected to include `FINANCE`, which has
-    existed in the schema since spec 020 and was never added here. A spec/code drift found
-    while writing spec 039 and reported rather than silently realigned (Principle IV). The
-    same line now states the appointment rule that Learning (038) and Transaction Approvers
-    (040) both follow.
+  - Technology & Data Constraints, scheduled work — TWO daily cron jobs now, the second nudging
+    appointed transaction confirmers (spec 040). The audience a scheduled job may nudge widens
+    from "HR" to "HR, or an appointed confirmer"; the hard rule — never employees at large —
+    is untouched.
+  - Technology & Data Constraints, roles — records spec 040's deliberate exception: role-holders
+    do NOT implicitly hold the transaction-confirmer capability. Documented rather than applied
+    silently, because it reverses the reasoning used for Learning managers. Lock-out is prevented
+    by self-appointment instead.
+  - Technology & Data Constraints, email — the two "your money has arrived" messages in the whole
+    application now fire on the confirmer's completion, never on Finance recording a transfer.
+    The CEO's correction: before that moment the money has not moved, so the email was untrue.
 
 Added sections: none
 Removed sections: none
 
-Preserved verbatim (deliberately): every principle; the migration clause; sessions never hold
-the production DATABASE_URL; PII stays out of git; the cron rule (may nudge HR, never emails
-employees at large).
+Preserved verbatim (deliberately): every principle; the three permitted email workflows; the
+migration clause; sessions never hold the production DATABASE_URL; PII stays out of git.
 
 Templates checked:
-  ✅ .specify/templates/plan-template.md — generic Constitution Check gate; no change needed.
-  ✅ .specify/templates/spec-template.md — no constitution or stack references.
-  ✅ .specify/templates/tasks-template.md — no constitution or stack references.
-  ✅ .claude/skills/speckit-*/SKILL.md — no outdated constitution references.
+  ✅ .specify/templates/{plan,spec,tasks}-template.md — no constitution or stack references.
+  ✅ .claude/skills/speckit-*/SKILL.md — no outdated references.
 
-Follow-up TODOs: none. CLAUDE.md carries the same two changes in the same commit.
+Follow-up TODOs: none. CLAUDE.md carries the same changes in the same commit.
 -->
 
 # HR_ERP Constitution
@@ -98,17 +97,25 @@ holds. Reach for it then; it is never an obligation.
   workflow, approved 2026-08-19; widened to the payback workflow, requested by
   the CEO and approved 2026-08-24.) No other emails. Petty cash itself sends
   none: the custodian and Finance are both looking at a live screen, and nobody
-  is waiting on a ledger.
-- Scheduled work: one daily Vercel Cron job (`/api/cron/holidays`, spec 037),
-  authenticated with `CRON_SECRET`. A scheduled job may nudge HR; it may never
-  send anything to employees — company-wide messages are reviewed and sent by a
-  human.
+  is waiting on a ledger. Within the finance workflow, the two messages that tell somebody money
+  has reached them — a reimbursed benefit claim and a paid payback — fire **only** when the
+  appointed confirmer marks the bank transaction complete, never when Finance records a transfer
+  (the CEO's correction, 2026-08-24: before that moment the money has not moved).
+- Scheduled work: **two** daily Vercel Cron jobs, both authenticated with `CRON_SECRET` —
+  `/api/cron/holidays` (spec 037) and `/api/cron/confirmations` (spec 040, added 2026-08-24),
+  which nudges the appointed transaction confirmers about anything still waiting. A scheduled
+  job may nudge **HR, or an appointed confirmer**; it may never send anything to employees at
+  large — company-wide messages are reviewed and sent by a human. The confirmation nudge logs
+  each send, so a job that runs twice cannot email twice.
 - Roles: `EMPLOYEE`, `HR_ADMIN`, `FINANCE`, `SUPER_USER` (superset of both). A `manager`
   capability derives from the org chart (an employee with direct reports). `FINANCE` has existed
   since spec 020 and was missing from this line until 2026-08-24 — a spec/code drift found while
   writing spec 039, corrected here rather than silently. Per-module authority beyond these is an
-  **appointment**, never a new `Role` member (Learning managers, spec 038; Transaction Approvers,
-  spec 040).
+  **appointment**, never a new `Role` member (Learning managers, spec 038; transaction confirmers,
+  spec 040). Role-holders normally hold an appointment's capability implicitly, so emptying the
+  table cannot lock anyone out — **spec 040 is the one documented exception**: only appointed
+  confirmers may confirm a bank transaction, because the instruction was that transactions wait
+  for that person and nobody stands in. Lock-out is prevented there by allowing self-appointment.
 - **Migrations are Claude's job, not the user's** (settled 2026-08-20). Whenever
   `prisma/schema.prisma` or `prisma/seed.ts` changes, the matching numbered **idempotent**
   `prisma/sql/0NN_*.sql` MUST be written and committed in the **same commit** — it may be retried,

@@ -1,9 +1,10 @@
-
+import { confirmPayment } from "@/app/(app)/finance/actions";
 import { ReimbursedCell } from "@/components/finance/ReimbursedCell";
+import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 
 export type PaymentRow = {
   id: string;
-  status: "APPROVED" | "PAYMENT_SUBMITTED" | "REIMBURSED";
+  status: "APPROVED" | "REIMBURSED";
   employee: string;
   benefit: string;
   covered: number; // covered amount to transfer
@@ -17,15 +18,8 @@ export type PaymentRow = {
 import { formatEGP as egp } from "@/lib/labels";
 
 /**
- * Finance's benefit-claim payments (spec 020, amended by spec 040).
- *
- * The inline "confirm payment" that used to sit here is GONE. It set a claim to Reimbursed and
- * emailed the employee the moment Finance recorded a transfer — before the money had actually
- * moved. Claims now travel the same road as everything else: Finance ticks them into a submission
- * on the "Awaiting confirmation" tab, and the employee is told when the CEO confirms at the bank.
- *
- * What remains here is the view: what is waiting, what is at the bank, and the reimbursed history
- * with its correction form for a mistyped amount or date.
+ * Finance payments queue — APPROVED claims (awaiting payment, with an inline confirm form) followed
+ * by REIMBURSED ones (read-only, kept for reference so a confirmed payment doesn't disappear).
  */
 export function PaymentsQueue({ rows }: { rows: PaymentRow[] }) {
   if (rows.length === 0) {
@@ -73,18 +67,29 @@ export function PaymentsQueue({ rows }: { rows: PaymentRow[] }) {
               </td>
               <td className="px-3 py-2">
                 {r.status === "APPROVED" ? (
-                  // No confirm button here any more: an approved claim is picked up on the
-                  // "Awaiting confirmation" tab, along with paybacks and float top-ups, and paid
-                  // once the CEO confirms it at the bank.
-                  <span className="block text-right text-[11.5px] text-muted">
-                    Ready to submit for confirmation
-                  </span>
-                ) : r.status === "PAYMENT_SUBMITTED" ? (
-                  <span className="flex justify-end">
-                    <span className="rounded-full border border-gold-300 bg-gold-100 px-2 py-0.5 text-[10px] font-bold text-gold-800">
-                      At the bank
-                    </span>
-                  </span>
+                  <form action={confirmPayment} className="flex flex-wrap items-center justify-end gap-2">
+                    <input type="hidden" name="id" value={r.id} />
+                    <input
+                      name="amountTransferred"
+                      defaultValue={String(r.covered)}
+                      inputMode="numeric"
+                      aria-label="Amount transferred"
+                      className="w-24 rounded-lg border border-line bg-surface px-2 py-1.5 text-right text-sm tabular-nums focus:border-navy-500 focus:outline-none"
+                    />
+                    <input
+                      name="transferDate"
+                      type="date"
+                      required
+                      aria-label="Transfer date"
+                      className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm focus:border-navy-500 focus:outline-none"
+                    />
+                    <PendingSubmitButton
+                      pendingLabel="Confirming…"
+                      className="rounded-lg bg-navy-800 px-3 py-1.5 text-sm font-semibold text-white hover:bg-navy-700 disabled:opacity-60"
+                    >
+                      Confirm
+                    </PendingSubmitButton>
+                  </form>
                 ) : (
                   <ReimbursedCell
                     id={r.id}
