@@ -38,14 +38,18 @@ Validation run 2026-08-24. Issues found and fixed during validation:
    *what* — moved out of the spec and left where it belongs, in `specs/_parked/performance-reviews-and-1-1s.md`
    for the planning phase. FR-025 now states the outcome only ("propose the themes it finds, in rank
    order, resolved against the 34-theme vocabulary").
-2. **An untestable seal requirement.** "Halves stay sealed until both submit" had no stated resolution for
-   a party who never submits, which would have let one person's inaction seal the other's half forever.
-   Added FR-007 and Acceptance Scenario 1.7: the quarter's close opens both halves as-is.
+2. **An untestable seal requirement.** "Halves stay sealed until both submit" said nothing about what
+   happens when a party never submits, or when nobody meets.
+   *First attempt (rejected by the requester 2026-08-24):* open both halves at quarter close. *Settled:*
+   opening is **tied to the meeting** — both parties submit, both confirm they met, and only then do the
+   halves open. A quarter with no meeting opens nothing, publishes nothing, and carries nothing forward,
+   because without the conversation there is nothing to show. Requiring **both** confirmations is what
+   keeps this from becoming a way to read the other person's half by declaring a meeting alone.
+   See FR-006, FR-007, FR-009a.
 3. **A privacy requirement that could not be verified.** "HR cannot see reviews" was written as a UI
    statement. Rewritten as FR-031/FR-033/FR-035 with server-side enforcement on every request and a
    not-found (rather than forbidden) answer, and paired with SC-004, which is verified by direct retrieval
    rather than by looking at screens.
 
-One item to confirm before `/speckit-plan`, recorded in Assumptions rather than as a blocking marker
-because a defensible default exists: **the system pack's contents** (currently working days taken,
-onboarding status, learning activity; data-request responsiveness deliberately excluded).
+System pack contents confirmed 2026-08-24: working days taken, onboarding status, learning activity.
+Nothing outstanding — ready for `/speckit-plan`.

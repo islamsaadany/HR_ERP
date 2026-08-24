@@ -132,13 +132,25 @@ context for the conversation, never a score.
 
 - **The journal is private to its author, permanently.** The moment a manager can read it, people
   stop writing honestly and it becomes theatre. Only promoted entries surface on the sheet.
-- **Both halves stay sealed until both are submitted**, then both open. Otherwise whoever writes
-  second anchors on the first, and "mutual expectations" stops being mutual. *Applies to the
-  quarterly sheet only — sealing an ad-hoc 1:1 would add friction to the thing whose whole value is
-  being quick. A 1:1 outcome needs both to acknowledge, not to write blind.*
-- **The sheet freezes when the meeting is marked held.** The outcome is written after and
-  acknowledged by both. Without a freeze, history quietly rewrites itself. Same rule for a 1:1
-  record once its outcome is acknowledged.
+- **Both halves stay sealed until both are submitted** — otherwise whoever writes second anchors on
+  the first, and "mutual expectations" stops being mutual — **and until both confirm they met**
+  (refined 2026-08-24, below). *Applies to the quarterly sheet only — sealing an ad-hoc 1:1 would add
+  friction to the thing whose whole value is being quick. A 1:1 outcome needs both to acknowledge, not
+  to write blind.*
+- **Opening is tied to the meeting** (requester, 2026-08-24, overriding an earlier proposal to open
+  both halves automatically at quarter close). Submitting means "I am ready to meet", not "you may read
+  me". Both parties submit, **both** confirm the meeting happened, and only then do the halves open —
+  and freeze. A quarter that ends with no meeting opens nothing, closes nothing, publishes nothing and
+  carries nothing forward: *"other than that there is no point of closing or showing anything."* The
+  earlier proposal was rejected because it manufactured a record of a conversation that never happened.
+  Requiring **both** confirmations is what stops "we met" becoming a way to read the other person's
+  half alone.
+- **The sheet freezes at the moment it opens.** The halves are what each person brought to the meeting;
+  the meeting's own content goes into the outcome, which is written after and acknowledged by both.
+  Without a freeze, history quietly rewrites itself. Same rule for a 1:1 record once its outcome is
+  acknowledged.
+- **The system pack is working days taken, onboarding status, and learning activity** (confirmed
+  2026-08-24). Data-request responsiveness excluded: it measures chasing paperwork, not work.
 - **No money on this surface, ever.** Pool figures, claims, and salary have no place on a
   performance page — it turns a review into a compensation negotiation and leaks money facts to
   managers who have no business seeing them.

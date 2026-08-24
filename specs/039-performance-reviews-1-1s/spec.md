@@ -50,18 +50,21 @@ platform and open the next quarter carrying their agreed priorities forward.
 2. **Given** the employee has submitted and the manager has not, **When** the employee opens the sheet,
    **Then** they see their own half and a clear indication that the manager's half is sealed — no
    content, no partial content, no preview.
-3. **Given** both parties have submitted, **When** either opens the sheet, **Then** both halves are
-   fully visible to both.
-4. **Given** both halves are open, **When** either party marks the meeting held, **Then** both halves
-   become read-only and neither party can edit their answers afterwards.
-5. **Given** the meeting is marked held, **When** either party writes the agreed outcome (top 3
-   priorities, risks to watch, what would make the next review a success, commitments from each side),
-   **Then** the other party can see it and must acknowledge it before it is final.
-6. **Given** a finalised outcome for Q1, **When** the Q2 sheet is opened by either party, **Then** the
+3. **Given** both parties have submitted but they have not met, **When** either opens the sheet, **Then**
+   the other's half is still sealed. Submitting means "I am ready to meet", not "you may read me".
+4. **Given** both parties have submitted, **When** **both** confirm the meeting took place, **Then** both
+   halves open to both parties and become read-only.
+5. **Given** only one party has confirmed the meeting, **When** either opens the sheet, **Then** nothing
+   opens — one person cannot unseal the other's half by declaring a meeting alone.
+6. **Given** the meeting is confirmed, **When** either party writes the agreed outcome (top 3 priorities,
+   risks to watch, what would make the next review a success, commitments from each side), **Then** the
+   other party can see it and must acknowledge it before it is final.
+7. **Given** a finalised outcome for Q1, **When** the Q2 sheet is opened by either party, **Then** the
    Q1 outcome is shown on it as carry-forward, labelled as what was agreed last quarter.
-7. **Given** a quarter closes with only one party submitted, **When** the quarter ends, **Then** both
-   halves open as-is and the sheet freezes — a party who never submitted cannot keep the other's half
-   sealed indefinitely.
+8. **Given** a quarter ends with no meeting confirmed, **When** the quarter passes, **Then** each party
+   keeps their own half, neither half ever opens to the other, and nothing is closed, shown, or carried
+   forward. An unheld review produced nothing, and the product says so rather than manufacturing a
+   record of it.
 
 ---
 
@@ -193,8 +196,9 @@ without either party having typed them.
   them.
 - **A party leaves the company mid-quarter**: the open sheet freezes as-is and stays readable to the
   remaining party; nothing chases anyone.
-- **A quarter closes with a half-filled sheet and no meeting held**: it closes as-is and stays readable.
-  Nothing chases anybody — chasing implies an overseer, and this module has none.
+- **A quarter ends with no meeting held**: nothing opens and nothing is published. Each party keeps
+  their own half; neither ever sees the other's. Nothing chases anybody — chasing implies an overseer,
+  and this module has none. A review that did not happen leaves no record that it did.
 - **An employee joins mid-quarter**: they get that quarter's sheet like anyone else; there is no
   proration and no minimum tenure.
 - **The parties disagree on an outcome**: the outcome cannot be acknowledged, so it stays editable and is
@@ -230,14 +234,20 @@ without either party having typed them.
   input file.
 - **FR-005**: The sheet MUST have two independently authored halves — one per party — with each party
   able to save drafts of their own half repeatedly before submitting.
-- **FR-006**: The system MUST keep each half sealed from the other party until **both** halves are
-  submitted, at which point both open to both parties.
-- **FR-007**: The system MUST open both halves as-is when the quarter closes, whether or not both were
-  submitted, so that one party's inaction cannot seal the other's half permanently.
+- **FR-006**: The system MUST keep each half sealed from the other party until **both** parties have
+  submitted **and both** have confirmed that the review meeting took place. Both halves then open to
+  both parties at that moment.
+- **FR-007**: The system MUST require confirmation from **both** parties that the meeting happened;
+  one party's confirmation alone MUST NOT open anything, so nobody can reach the other's half by
+  declaring a meeting that did not occur.
 - **FR-008**: A sealed half MUST reveal no content of any kind to the other party — not a preview, a
   summary, a word count, or a per-question completion state.
-- **FR-009**: The system MUST freeze both halves as read-only once the meeting is marked held, and MUST
-  allow either party to mark it held.
+- **FR-009**: The system MUST freeze both halves as read-only at the moment they open — the halves are
+  the record of what each person brought to the meeting, and the meeting's content belongs in the
+  agreed outcome instead.
+- **FR-009a**: A quarter that ends with no confirmed meeting MUST leave both halves sealed permanently,
+  produce no outcome, and carry nothing forward. The system MUST NOT open, close, publish, or summarise
+  an unheld review, and MUST NOT chase either party about it.
 - **FR-010**: The agenda's wording MUST read as the period under review ("this period"), not "this
   year".
 
@@ -341,8 +351,9 @@ without either party having typed them.
   and the agreed outcome — without any document, file, or message outside the platform.
 - **SC-002**: A person opening their review sheet sees what they agreed last quarter without searching for
   it, in a single view with no navigation away from the sheet.
-- **SC-003**: Neither party can read any part of the other's half before both have submitted, verified by
-  attempting to view it directly rather than only through the interface.
+- **SC-003**: Neither party can read any part of the other's half until both have submitted **and** both
+  have confirmed the meeting, verified by attempting to view it directly rather than only through the
+  interface.
 - **SC-004**: No account that is not one of the two parties — including the highest-privileged accounts in
   the product — can retrieve a review sheet, outcome, 1:1, or journal entry by any route.
 - **SC-005**: A review sheet can be assembled from notes captured earlier in the quarter, such that
@@ -357,11 +368,10 @@ without either party having typed them.
 
 ## Assumptions
 
-- **The system pack contents are a first cut, not a settled list.** Working days taken, onboarding status,
-  and learning activity were chosen because the platform already holds them and none is a performance
-  judgement. Data-request responsiveness was deliberately excluded: it measures administrative chasing
-  rather than work, and putting it in front of a manager turns a chore tracker into a character note.
-  This list should be confirmed before planning.
+- **The system pack is working days taken, onboarding status, and learning activity** — confirmed
+  2026-08-24. Each was chosen because the platform already holds it and none is a performance judgement.
+  Data-request responsiveness was deliberately excluded: it measures administrative chasing rather than
+  work, and putting it in front of a manager turns a chore tracker into a character note.
 - **Quarters follow the calendar year** (Jan–Mar, Apr–Jun, Jul–Sep, Oct–Dec), consistent with the
   time-off module's per-calendar-year counting.
 - **"Manager" means the same thing here as everywhere else in the product**: the capability derived from

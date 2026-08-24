@@ -292,9 +292,9 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 - **2026-08-24 — Spec `039` written: performance reviews & 1:1s (specced, not built).** Quarterly cycles
   opened by the calendar with **no operator and no admin screen**; four objects — a **private** running
   journal, ad-hoc manager↔report **1:1s** with an outcome both acknowledge, a **two-halved** quarterly
-  sheet on the supplied agenda that stays **sealed until both submit** (and opens as-is at quarter close,
-  so one party's inaction cannot seal the other's half), and an **agreed outcome** that carries into the
-  next quarter. **HR reads nothing here** — no oversight screen, no compliance reporting, no break-glass;
+  sheet on the supplied agenda that stays **sealed until both submit AND both confirm they met** — a
+  quarter with no meeting opens nothing, closes nothing and carries nothing forward, because without the
+  conversation there is nothing to show — and an **agreed outcome** that carries into the next quarter. **HR reads nothing here** — no oversight screen, no compliance reporting, no break-glass;
   access follows the **pair**, so a new manager does not inherit a previous manager's records. **No money
   on any surface.** Strengths come from an uploaded **Gallup PDF** — one parse rule validated against a
   real Top 5 and a real CliftonStrengths 34 report, proposed themes **confirmed by a human** before
