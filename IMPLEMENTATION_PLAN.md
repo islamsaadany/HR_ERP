@@ -289,7 +289,18 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 - **2026-08-18 — "Exceptional releases" tab.** Everything paid outside an employee's own request (bulk release sheet + grants) lives in one Benefits Management tab; the standalone release page redirects; Amounts is config-only.
 - **2026-08-18 — Dashboard = cards only.** Quick links removed (duplicated cards + nav); cards are Benefits · Time-Off · Approvals (managers) · Onboarding (while in progress).
 - **2026-08-18 — Campaign popup submits, not finishes.** "Finish" → **Submit**, blocked until every listed field is confirmed/filled; "Later" still dismisses. Monitoring pages (tracker, campaign list) auto-refresh on focus + 30s.
-- **2026-08-22 — Backlog: regular reviews + 1:1s with the team (parked, nothing specced, nothing built).** Requested so it is on record for future alignment: the platform should host the **recurring performance/check-in reviews and manager↔report 1:1s** — a place to schedule them, log what was discussed, and keep the history alongside the employee record. Scope, cadence, who can read what, and how it relates to the org chart are **all still open** — the requester will come back with the detail. **No spec, no schema, no UI until that alignment happens.** The source review template and the proposed shape (running journal → two-sided review sheet → agreed outcome carried into the next cycle) are parked in `specs/_parked/performance-reviews-and-1-1s.md`.
+- **2026-08-24 — Spec `039` written: performance reviews & 1:1s (specced, not built).** Quarterly cycles
+  opened by the calendar with **no operator and no admin screen**; four objects — a **private** running
+  journal, ad-hoc manager↔report **1:1s** with an outcome both acknowledge, a **two-halved** quarterly
+  sheet on the supplied agenda that stays **sealed until both submit** (and opens as-is at quarter close,
+  so one party's inaction cannot seal the other's half), and an **agreed outcome** that carries into the
+  next quarter. **HR reads nothing here** — no oversight screen, no compliance reporting, no break-glass;
+  access follows the **pair**, so a new manager does not inherit a previous manager's records. **No money
+  on any surface.** Strengths come from an uploaded **Gallup PDF** — one parse rule validated against a
+  real Top 5 and a real CliftonStrengths 34 report, proposed themes **confirmed by a human** before
+  saving, manual entry as the fallback. Agreed input and the parse rule:
+  `specs/_parked/performance-reviews-and-1-1s.md`. Next gate: `/speckit-plan`.
+- **2026-08-22 — Backlog: regular reviews + 1:1s with the team (raised; now spec `039`).** Requested so it is on record for future alignment: the platform should host the **recurring performance/check-in reviews and manager↔report 1:1s** — a place to schedule them, log what was discussed, and keep the history alongside the employee record. Scope, cadence, who can read what, and how it relates to the org chart are **all still open** — the requester will come back with the detail. **No spec, no schema, no UI until that alignment happens.** The source review template and the proposed shape (running journal → two-sided review sheet → agreed outcome carried into the next cycle) are parked in `specs/_parked/performance-reviews-and-1-1s.md`.
 
 ### Resolved earlier / Open
 - **A · Design language** — *resolved 2026-07-27:* **navy/gold** (Forefront reference tool) product-wide. The benefits selector's layout/interaction is preserved but recolored to navy/gold (not paper/pine).
@@ -298,4 +309,4 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ---
 
-*Last Updated: 2026-08-22 (parked backlog item: regular reviews + 1:1s).*
+*Last Updated: 2026-08-24 (spec 039 written: performance reviews & 1:1s).*
