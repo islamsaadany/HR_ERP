@@ -89,7 +89,15 @@ async function loadMedicalContext(userId: string) {
     return { ok: false as const, error: "Benefits aren't fully configured (pool ceiling / rate card)." };
   }
 
-  return { ok: true as const, planYear, user, scope, eligibility, ceilingAmount, bands };
+  // The cap a premium is trimmed to is THE pool ceiling (`poolCeiling`), the same figure the
+  // affordability check below measures against (2026-08-23). Pricing used to prorate the raw
+  // annual ceiling by the MEDICAL eligibility fraction, which ignores the cycle's length — so on
+  // a short cycle the modal suggested an amount the very next check refused. The fallback keeps
+  // the old figure for the one case `poolCeiling` cannot measure, so a gap never means "no cap".
+  const pool = await poolStateFor(userId, planYear);
+  const ceilingCap = pool.ceiling ?? prorate(ceilingAmount, eligibility.fraction);
+
+  return { ok: true as const, planYear, user, scope, eligibility, ceilingAmount, ceilingCap, bands };
 }
 
 /** Family-eligible dependants that have a DOB (the only ones medical can price). */
@@ -134,7 +142,7 @@ function priceMedical(ctx: Extract<MedicalCtx, { ok: true }>, atDate: Date, cove
   ];
   const { annualEGP, lines, anyOverTop } = sumMedicalPremium(people, ctx.bands, atDate);
 
-  const proratedCeiling = prorate(ctx.ceilingAmount, ctx.eligibility.fraction);
+  const proratedCeiling = ctx.ceilingCap;
   const proratedPremium = proratedPremiumEGP(annualEGP, ctx.eligibility.fraction);
   const premium = Math.min(proratedPremium, proratedCeiling);
 

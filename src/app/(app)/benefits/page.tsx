@@ -293,7 +293,12 @@ export default async function BenefitsPage({
         {medHeader}
         <BenefitsBoard
           medicalOnly
-          ceiling={prorate(entryCeiling, medicalEligibility.fraction)}
+          // The SAME scale the banded view and `poolCeiling()` use: the cycle's length, not this
+          // person's mid-joiner fraction (2026-08-23). The mid-joiner fraction is 1 whenever the
+          // three-month mark falls on or before the cycle's first day, so a sub-6-month employee
+          // was shown — and allowed — the whole annual ceiling on a half-year cycle. Their medical
+          // PREMIUM keeps its own mid-joiner proration below; only the container changes.
+          ceiling={prorate(entryCeiling, poolCycleFraction(medicalEligibility, planYearWindow(medPlanYear)))}
           medicalOffered={medScope.offered}
           familyMedical={medScope.family}
           medicalPremiumFraction={medicalEligibility.fraction}

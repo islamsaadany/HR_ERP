@@ -1,6 +1,9 @@
 <!--
-SYNC IMPACT REPORT — 2026-08-21
-Version change: 1.2.0 → 1.2.1 (PATCH — accuracy corrections and one clarification of
+SYNC IMPACT REPORT — 2026-08-24
+Version change: 1.2.1 → 1.3.0 (MINOR — the email limit widens from two workflows to
+three for Team Communications, spec 039, approved 2026-08-24. The load-bearing half of the
+rule is unchanged: no scheduled process may email an employee. A second daily cron is
+recorded. Previously 1.2.0 → 1.2.1 (PATCH — accuracy corrections and one clarification of
 existing practice; no principle added, removed, or redefined)
 
 Modified sections:
@@ -92,14 +95,27 @@ holds. Reach for it then; it is never an obligation.
   the provider stays env-gated so it can return). Admin-issued passwords are temporary — the
   employee is forced to `/set-password` on next sign-in (`mustChangePassword`). No emails in v1 for
   recovery: a forgotten password is reset by HR, with no self-service path.
-- Email: limited to **two** workflows —
-  the benefit-claim workflow (spec 020) and the holiday/vacation workflow
-  (spec 037: HR verification reminders, team announcements, and the
-  "your day was returned" notice) — via Resend, env-gated
-  (`RESEND_API_KEY`/`EMAIL_FROM`), fire-and-forget, master-toggleable.
+- Email: limited to **three** workflows — the benefit-claim workflow (spec 020),
+  the holiday/vacation workflow (spec 037: HR verification reminders, team
+  announcements, and the "your day was returned" notice), and **Team
+  Communications** (spec 039: announcements to a chosen audience, and personal
+  congratulations for birthdays and joining anniversaries) — via Resend,
+  env-gated (`RESEND_API_KEY`/`EMAIL_FROM`), master-toggleable.
   (Amends "no email in v1", approved 2026-08-10; widened to the holiday
-  workflow, approved 2026-08-19.) No other emails.
-- Scheduled work: one daily Vercel Cron job (`/api/cron/holidays`, spec 037),
+  workflow, approved 2026-08-19; widened to Communications, approved
+  2026-08-24.) Still **no** marketing email, no external recipients, no
+  invitations, and no scheduling a send for later.
+  - The first two are **transactional** and fire-and-forget: one person, because
+    of something they did, and a mail failure must never block a state change.
+    Communications is **broadcast** and is deliberately the opposite — a send
+    REPORTS, per recipient, because somebody pressed send and has to know
+    whether it went. A broadcast cannot be recalled.
+  - **NON-NEGOTIABLE, and untouched by the widening: no scheduled process may
+    email an EMPLOYEE.** Scheduled work prepares drafts and nudges operators.
+    Every message that reaches an employee is the result of a person reading it
+    and choosing to send.
+- Scheduled work: two daily Vercel Cron jobs (`/api/cron/holidays`, spec 037;
+  `/api/cron/communications`, spec 039),
   authenticated with `CRON_SECRET`. A scheduled job may nudge HR; it may never
   send anything to employees — company-wide messages are reviewed and sent by a
   human.
@@ -131,7 +147,7 @@ This constitution supersedes conflicting practices. Amendments require explicit 
 approval and must be reflected in `CLAUDE.md` and any dependent spec-kit templates in the
 same change. All spec-kit commands and reviews check work against these principles.
 
-**Version**: 1.2.1 | **Ratified**: 2026-07-27 | **Last Amended**: 2026-08-21
+**Version**: 1.3.0 | **Ratified**: 2026-07-27 | **Last Amended**: 2026-08-24
 (1.1.0 — email allowed for the spec 020 benefit-claim workflow.
 1.2.0 — email widened to the spec 037 holiday/vacation workflow, and the first
 scheduled job admitted, with the rule that a cron may nudge HR but never email

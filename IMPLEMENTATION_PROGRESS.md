@@ -18,6 +18,34 @@
 | 8 — Dashboard + polish | 🟢 Complete |
 | 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
 
+## Benefits: two reported wrong numbers, one cause each (fixed 2026-08-23 — no migration)
+Both reported from live data; neither needed a schema change, and neither had mispaid anyone.
+
+- **A newcomer's pool was not prorated.** On a short cycle every banded employee's ceiling scales to
+  the cycle, but `poolCeiling`'s **sub-6-month branch** scaled by the **mid-joiner** fraction instead
+  — which is **1** whenever a person's 3-month medical mark falls on or before the cycle's first day.
+  Result: an employee under six months carried the **whole annual ceiling**, roughly double their
+  colleagues, and the report showed no *prorated* tag to give it away. Reproduced with the real
+  functions before touching anything (6-month cycle: banded 10,000 vs newcomer 20,000). Both branches
+  now use the one `poolCycleFraction`; the 3-month vs 6-month threshold still decides *whether* there
+  is a pool, never *how big*. Medical keeps its own ÷12 mid-joiner reduction on the **premium**.
+  Fixed in `lib/benefits/pool.ts`, with the same figure now feeding the employee's own medical-only
+  view (`benefits/page.tsx`) and **both** medical clamps (`benefits/actions.ts`,
+  `admin/benefits/manual-actions.ts` → `ceilingCap`) — the clamp and the affordability refusal used
+  to quote different ceilings. New regression test in `tests/pool-rules.test.ts` (106 pass).
+- **A Loans claim read as if it emptied the pool.** The claims queue's *"their pool after this"*
+  meter summed **every** non-rejected claim, so a 90,000 salary-driven Loans request showed "EGP 0
+  left of EGP 22,500" in red — on that row and every other row of that employee's. Display only:
+  every write path (submit, approve, HR record entry, reopen, medical) asks `poolStateFor`, which
+  counts `catalogItemId` claims alone. The meter now counts flexible claims only, a guaranteed claim
+  shows **"Not from the pool"** in that column instead of a meter, and the ceiling comes from
+  `poolCeiling` rather than a local copy that disagreed with the report for anyone under six months
+  and ignored raised ceilings. `admin/benefits/page.tsx` + `components/admin/ClaimsPanel.tsx`
+  (snapshot: `ui-versions/ClaimsPanel/2026-08-23_before-not-from-the-pool-note.tsx`).
+- **Watch for:** any under-six-month employee whose committed medical exceeds their now-correct
+  smaller ceiling will start showing **over pool** in Reporting. Nothing new was spent — the old
+  ceiling was wrong — and a Super User can RAISE the ceiling to accept it.
+
 ## Learning: course status ladder + access as a setup (built 2026-08-22 — migration `066`)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_course-access-setup.html`). The
   Excel template was deliberately left alone — who takes a course is set on the course, not in a
@@ -44,6 +72,66 @@
   the total is distinct people (4) and not the sum of the chips (6), and that a pause stops a
   mid-course learner while keeping their tick and their 42 watched seconds. `npm test` 105/105;
   `npx tsc --noEmit` and `npm run build` clean.
+
+## Learning: a settings gear on the module page (built 2026-08-22 — no migration)
+- **Mockup-approved first** (`design-mockups/learning/2026-08-22_learning-settings-menu.html`).
+  *Who runs Learning* and *Manage groups* were grey text links between the page description and the
+  buttons — reported as unfindable, and fairly: unadorned, no border, no icon, sitting where a page
+  puts prose. They now live behind a gear at the top right, each with a line saying what it is.
+- The grey links are **removed**, not kept alongside — two doors to one page would leave the same
+  confusion. Menu closes on an outside click and on Escape; nothing else on the page moved.
+
+## Spec 039 — Team Communications (built 2026-08-24 — migration `067`)
+- **Announcements** to a chosen audience and **personal congratulations** for birthdays and joining
+  anniversaries. The third email workflow and the first BROADCAST one.
+- **Specced, planned and tasked first** (spec → plan → tasks → implement), design approved as a
+  mockup before any component was written.
+- **The unit leads, the group endorses**: one template, the unit's colour on the header and button,
+  the group above it in small caps and a gold hairline below. Body always dark on white.
+- **Contrast is derived**: `surfaceFor` tries both inks and leaves five of six real brands
+  untouched. The naive rule is kept as a failing-case test — it puts white on a coral at 3.44:1.
+- **Nothing sends itself**: a second daily cron prepares drafts and nudges the line manager; it
+  never emails an employee, and that is asserted rather than intended. A missed congratulation
+  CLOSES rather than going out late.
+- **The audience derivation is SHARED with Learning**, extracted to `src/lib/audience/` — not
+  copied. Learning re-verified after the move (17/17 access, 35/35 materials, 26/26 manager).
+- **Two constitution-level changes**, both recorded: email widened to three workflows (v1.3.0), and
+  a second daily cron. The load-bearing half — no scheduled process emails an employee — untouched.
+- **The manager self-serves** (G2 approved 2026-08-24,
+  `design-mockups/communications/2026-08-24_manager-messages.html`): `/messages` shows only the
+  drafts assigned to the person asking (`assignedToId: me.id`), so it needs no admin gate — and
+  Communications is deliberately **not** a `MODULES` entry, because a listed module puts a nav
+  door in front of everybody. The sidebar count renders only when something is actually waiting.
+- **Verified**: migration `067` applied twice on a throwaway Postgres, diffed against the schema
+  (only the house `updatedAt` line); `scripts/verify-communications.mts` **51/51**; `npm test`
+  136/136; `npx tsc --noEmit` and `npm run build` clean.
+- **Three test failures were real findings**, not noise: one caught a genuine bug (`surfaceFor`
+  returned the input string rather than a normalised hex, so `#036` and `#003366` compared
+  unequal); two were my own assertions testing the fixture rather than the rule, and were rewritten.
+- **A fourth finding was a collision, not a failure**: this script's fixture ids (`alice`, `bob`)
+  matched `verify-learning-us1`'s, and each script cleans only its own `@x.test` addresses — so the
+  suite passed or failed depending on the order it was run in. Namespaced to `comms-*`, and both
+  orders re-run clean.
+- **Still the user's own**: gate **G3** — confirm each business unit's real brand colour is on its
+  record in Admin → Brand (Visual Shift should read `#450059`). The email reads `primaryColor` from
+  there, so a wrong record brands the mail with whatever it carries. And a **real test send** to a
+  real inbox before the first announcement: how the HTML renders in Outlook, Gmail and Apple Mail
+  is observed, not derived.
+
+## Learning: a direct "Manage Learning" door (built 2026-08-22 — no migration)
+- **Mockup-approved first** (`design-mockups/learning/2026-08-22_manage-learning-nav.html`). A
+  learning manager now reaches the module in ONE click from a gold sidebar entry carrying the
+  suggested-resources count, instead of passing through an admin home that held a single row.
+- **HR's sidebar is untouched** — the two doors are mutually exclusive, so nobody ever sees both.
+  Proven, including the odd case of an HR Admin holding a stray appointment row.
+- **The dead end is closed**: `/admin` redirects a manager to the module, `/admin/learning` drops
+  its "← Admin" link for them, and the one-section admin home was **retired** rather than left
+  unreachable.
+- **The icon is new, not reused** — the Admin shield with a mortarboard inside. `AppShell` already
+  carried a comment about what a lookalike nav glyph cost once before.
+- **Verified**: `scripts/verify-learning-manager.mts` **26/26** against a real database, using the
+  same expressions the layout uses so the test cannot drift from the door it checks. `npm test`
+  105/105; `npx tsc --noEmit` and `npm run build` clean.
 
 ## Learning: a manager who runs the module and nothing else (built 2026-08-22 — migration `065`)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_learning-manager.html`), option
@@ -1254,4 +1342,4 @@ over the six screens.
 
 ---
 
-*Last Updated: 2026-08-24 — Reviews & 1:1s built (spec 040, migration `068` applies on deploy). Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*
+*Last Updated: 2026-08-24 — Reviews & 1:1s built (spec 040, migration `068` applies on deploy). Previously: 2026-08-23 — Sub-6-month pool ceilings now scale to the cycle like everyone else's; the claims queue's pool meter counts only pool-funded claims (a Loans request no longer reads as an emptied pool). Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix. Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*

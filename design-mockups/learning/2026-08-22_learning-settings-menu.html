@@ -1,0 +1,134 @@
+<title>Learning Settings Menu</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-400:#4f6d97;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .proposal{margin-top:34px}
+  .proposal>h2{font-family:Georgia,serif;font-size:19px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:25px;height:25px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 35px;max-width:78ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:18px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-red{border:1px solid #f3c6c6;background:#fdf3f3;color:var(--red)}
+  .decision{margin-top:32px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:840px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:5px 0}
+  .note{font-size:11.5px;color:var(--muted);margin-top:10px}
+  footer{margin-top:42px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+
+  /* the page, in miniature */
+  .pg-eyebrow{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--gold-600);margin:0}
+  .pg-h1{font-family:Georgia,serif;font-size:26px;margin:3px 0 3px}
+  .pg-lede{color:var(--muted);font-size:13.5px;margin:0;max-width:60ch}
+  .head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .gear{position:relative;flex:none}
+  .gear-btn{display:grid;place-items:center;width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--navy-700);cursor:pointer}
+  .gear-btn.open{background:var(--navy-800);border-color:var(--navy-800);color:#fff}
+  .menu{position:absolute;right:0;top:42px;width:274px;background:var(--surface);border:1px solid var(--line);border-radius:11px;box-shadow:0 10px 28px rgba(10,26,48,.13);overflow:hidden;z-index:5}
+  .menu-cap{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:9px 12px 5px}
+  .mi{display:block;padding:8px 12px;border-top:1px solid var(--line);text-decoration:none;color:inherit}
+  .mi b{display:block;font-size:13px;font-weight:600;color:var(--navy-800)}
+  .mi span{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
+  .mi.on{background:var(--navy-50)}
+  .btns{display:flex;gap:9px;margin-top:16px;flex-wrap:wrap}
+  .b-navy{background:var(--navy-800);color:#fff;border:0;border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:600}
+  .b-ghost{background:var(--surface);color:var(--navy-800);border:1px solid var(--line);border-radius:9px;padding:9px 16px;font-size:13.5px;font-weight:600}
+  .card{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:12px 14px;margin-top:9px;display:flex;align-items:center;gap:10px}
+  .card b{font-size:14px;color:var(--navy-800)}
+  .card .meta{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+  .before{opacity:.9}
+  .grey-link{color:var(--muted);font-size:13.5px;margin-right:18px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 038 · learning settings</p>
+  <h1>A settings menu for Learning</h1>
+  <p class="lede">The two links were grey text sitting between the description and the buttons — they read as caption, not as controls. A gear on the right, holding both, is where people look for &ldquo;the settings of this screen&rdquo;.</p>
+
+  <!-- 1 -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Today <span class="chip c-red">unclear</span></h2>
+    <p class="sub">Grey, unadorned, no underline, no border, no icon — and placed where a page normally puts explanatory text.</p>
+    <div class="frame before">
+      <p class="pg-eyebrow">Admin</p>
+      <p class="pg-h1">Learning</p>
+      <p class="pg-lede">Build training courses and choose who they reach. A course stays a draft — invisible to everyone — until you publish it.</p>
+      <p style="margin:14px 0 0"><span class="grey-link">Manage groups →</span><span class="grey-link">Setup: who runs Learning →</span></p>
+      <div class="btns"><span class="b-navy">+ New course</span><span class="b-ghost">↓ Course template</span><span class="b-ghost">↑ Upload filled template</span></div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="proposal">
+    <h2><span class="num">2</span> Proposed — closed</h2>
+    <p class="sub">A gear at the top right, level with the title. Nothing else on the page moves; the two grey links are gone.</p>
+    <div class="frame">
+      <div class="head">
+        <div>
+          <p class="pg-eyebrow">Admin</p>
+          <p class="pg-h1">Learning</p>
+          <p class="pg-lede">Build training courses and choose who they reach. A course stays a draft — invisible to everyone — until you publish it.</p>
+        </div>
+        <div class="gear">
+          <div class="gear-btn" title="Learning settings">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="btns"><span class="b-navy">+ New course</span><span class="b-ghost">↓ Course template</span><span class="b-ghost">↑ Upload filled template</span></div>
+      <div class="card"><span style="flex:1"><b>Power &amp; Influence Course</b> <span class="chip c-gold" style="margin-left:6px">Draft</span><span class="meta">3 sections · 0 started</span></span><span style="color:var(--muted)">→</span></div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="proposal">
+    <h2><span class="num">3</span> Proposed — open</h2>
+    <p class="sub">Both pages, each with a line saying what it is — so you pick without having to remember which is which.</p>
+    <div class="frame" style="padding-bottom:150px">
+      <div class="head">
+        <div>
+          <p class="pg-eyebrow">Admin</p>
+          <p class="pg-h1">Learning</p>
+          <p class="pg-lede">Build training courses and choose who they reach. A course stays a draft — invisible to everyone — until you publish it.</p>
+        </div>
+        <div class="gear">
+          <div class="gear-btn open" title="Learning settings">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+          </div>
+          <div class="menu">
+            <p class="menu-cap">Learning settings</p>
+            <a class="mi on"><b>Who runs Learning</b><span>Appoint someone to run this module</span></a>
+            <a class="mi"><b>Manage groups</b><span>Named lists you can give a course to</span></a>
+          </div>
+        </div>
+      </div>
+      <div class="btns"><span class="b-navy">+ New course</span><span class="b-ghost">↓ Course template</span><span class="b-ghost">↑ Upload filled template</span></div>
+    </div>
+    <p class="note"><b>Who runs Learning</b> is listed first — it is the one you were looking for, and the one people reach for least often but need most urgently. Closes on a click outside or on Escape.</p>
+  </section>
+
+  <div class="decision">
+    <h3>What I&rsquo;m assuming — correct me and I&rsquo;ll change it</h3>
+    <ul>
+      <li><b>The two grey links go entirely.</b> Keeping them as well would leave two ways to the same page and the same confusion.</li>
+      <li><b>Gear only</b>, no word beside it, with a &ldquo;Learning settings&rdquo; tooltip. The menu says what it holds the moment it opens.</li>
+      <li><b>Top right, level with the title</b> — where a screen&rsquo;s own settings live everywhere else.</li>
+      <li><b>Both entries show for a learning manager too.</b> They can open &ldquo;Who runs Learning&rdquo; and read it; only HR can change the list, and the page already says so.</li>
+      <li><b>Nothing else on the page moves</b> — New course, the template buttons, the suggestions queue and the course list all stay exactly where they are.</li>
+    </ul>
+  </div>
+
+  <footer>Spec 038 · learning settings menu · 22/08/2026 · illustrative. Nothing is built until you approve.</footer>
+</div>

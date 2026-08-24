@@ -93,6 +93,33 @@ check(
   false
 );
 
+console.log("\n── which sidebar door each person gets ──");
+// The exact expressions (app)/layout.tsx uses, so this cannot drift from the real thing.
+const doors = async (u: { id: string; role: "EMPLOYEE" | "HR_ADMIN" | "SUPER_USER" | "FINANCE" }) => {
+  const { isAdmin } = await import("../src/lib/roles.js");
+  const hrAdmin = isAdmin(u.role);
+  return {
+    admin: hrAdmin,
+    manageLearning: !hrAdmin && (await hasLearningAppointment(u.id)),
+  };
+};
+
+await db.user.update({ where: { id: sara.id }, data: { status: "ACTIVE" } });
+check("an appointed manager gets Manage Learning, not Admin", await doors({ id: sara.id, role: "EMPLOYEE" }), { admin: false, manageLearning: true });
+check("HR gets Admin and NOT a second Learning entry", await doors({ id: nada.id, role: "HR_ADMIN" }), { admin: true, manageLearning: false });
+check("a Super User the same", await doors({ id: islam.id, role: "SUPER_USER" }), { admin: true, manageLearning: false });
+check("an ordinary employee gets neither", await doors({ id: omar.id, role: "EMPLOYEE" }), { admin: false, manageLearning: false });
+check("Finance gets neither", await doors({ id: fin.id, role: "FINANCE" }), { admin: false, manageLearning: false });
+
+// An HR Admin who somehow holds a row must still get exactly ONE door, never two.
+await db.learningManager.upsert({ where: { userId: nada.id }, create: { userId: nada.id }, update: {} });
+check(
+  "an HR Admin holding a stray appointment still gets one door only",
+  await doors({ id: nada.id, role: "HR_ADMIN" }),
+  { admin: true, manageLearning: false }
+);
+await db.learningManager.deleteMany({ where: { userId: nada.id } });
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await db.$disconnect();
 process.exit(fail ? 1 : 0);

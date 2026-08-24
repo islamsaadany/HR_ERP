@@ -1,18 +1,23 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireLearningManager } from "@/lib/learning/managers";
+import { isAdmin } from "@/lib/roles";
 import { formatDate } from "@/lib/labels";
 import { BackLink } from "@/components/admin/BackLink";
 import { NewCourseForm } from "@/components/learning/NewCourseForm";
 import { CHIP } from "@/components/learning/ui";
 import { SuggestionQueue, type Suggestion } from "@/components/learning/SuggestionQueue";
+import { LearningSettingsMenu } from "@/components/learning/LearningSettingsMenu";
 import { averageStars } from "@/lib/learning/materials";
 import { AutoRefresh } from "@/components/AutoRefresh";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminLearningPage() {
-  await requireLearningManager();
+  const actor = await requireLearningManager();
+  // A learning manager has no admin home to go back to — their sidebar door lands here. Showing
+  // "← Admin" would offer a way out that just bounces them straight back (2026-08-22).
+  const hrAdmin = isAdmin(actor.role);
 
   const courses = await prisma.course.findMany({
     orderBy: [{ status: "asc" }, { order: "asc" }],
@@ -58,21 +63,20 @@ export default async function AdminLearningPage() {
     <div>
       {/* Employees suggest resources and finish courses while this page sits open. */}
       <AutoRefresh />
-      <BackLink href="/admin" label="Admin" />
-      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin</p>
-      <h1 className="mt-1 font-serif text-3xl text-ink">Learning</h1>
-      <p className="mt-1 max-w-[70ch] text-muted">
-        Build training courses and choose who they reach. A course stays a draft — invisible to
-        everyone — until you publish it.
-      </p>
-
-      <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
-        <Link href="/admin/learning/groups" className="text-muted hover:text-ink">
-          Manage groups →
-        </Link>
-        <Link href="/admin/learning/settings" className="text-muted hover:text-ink">
-          Setup: who runs Learning →
-        </Link>
+      {hrAdmin ? <BackLink href="/admin" label="Admin" /> : null}
+      {/* The module's own settings live behind the gear (mockup-approved 2026-08-22). They used to
+          be two grey text links under this description and were reported as unfindable — grey,
+          unadorned, and sitting exactly where a page puts explanatory prose. */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Admin</p>
+          <h1 className="mt-1 font-serif text-3xl text-ink">Learning</h1>
+          <p className="mt-1 max-w-[70ch] text-muted">
+            Build training courses and choose who they reach. A course stays a draft — invisible to
+            everyone — until you publish it.
+          </p>
+        </div>
+        <LearningSettingsMenu />
       </div>
 
       <NewCourseForm />

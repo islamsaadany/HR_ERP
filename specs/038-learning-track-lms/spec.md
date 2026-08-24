@@ -366,6 +366,12 @@ roster updates without a manual reload.
 - **FR-066**: A learning manager MUST be able to publish a course themselves — nothing they do
   waits for HR approval. HR's oversight is that they appointed the person, can see everything they
   do, and can remove the appointment at any time.
+- **FR-075**: A learning manager MUST reach the Learning module in ONE step from the sidebar, and
+  MUST NOT be routed through an admin home listing only that one destination.
+- **FR-076**: That entry MUST carry the count of suggested resources awaiting review, and MUST be
+  named so it cannot be confused with the employee's own Learning item.
+- **FR-077**: An HR Admin MUST NOT gain a second, module-specific sidebar entry; their door stays
+  the general one.
 - **FR-067**: A learning manager MUST see the course roster, because training cannot be run blind
   to who has completed it; it MUST show course progress only, never pay, leave, or personal records.
 

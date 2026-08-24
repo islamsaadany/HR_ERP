@@ -43,11 +43,13 @@ export type CeilingResult =
 /**
  * The employee's ceiling for this cycle, prorated.
  *
- * Two branches, and they use DIFFERENT gates on purpose:
- *  - Banded (6+ months): the pool unlocks at 6 months and is scaled to the CYCLE's length.
+ * Two branches with DIFFERENT gates but the SAME scale:
+ *  - Banded (6+ months): the pool unlocks at 6 months.
  *  - Sub-6-month (no band yet): only medical has unlocked, at 3 months, so the ceiling is the
- *    entry tier at that person's mid-joiner fraction — otherwise a new starter who is allowed
- *    to buy medical would be measured against a ceiling of zero.
+ *    entry tier — otherwise a new starter who is allowed to buy medical would be measured
+ *    against a ceiling of zero.
+ * Whichever door they came through, the ceiling is then scaled to the CYCLE's length by the one
+ * `poolCycleFraction`. Two gates were once mistaken for two scales; see the note below.
  *
  * Pure: the caller supplies the configured amounts, so the same function serves a per-employee
  * check and a whole-company report without one query per row.
@@ -94,10 +96,20 @@ export function poolCeiling(
   if (entry == null) return none("no pool ceiling configured");
   const medical = classifyEligibility(employee.startDate, 3, window);
   if (medical.status === "NOT_YET") return none("under 3 months — nothing unlocked yet");
-  const derivedEntry = prorate(entry, medical.fraction);
+  // THE 3-MONTH CHECK IS THE DOOR; THE CYCLE IS THE SCALE — and they are separate questions
+  // (2026-08-23). This used to prorate by `medical.fraction`, the MID-JOINER fraction, which is
+  // 1 whenever the person's three-month mark falls on or before the cycle's first day. So on a
+  // six-month cycle every banded colleague was scaled to 6/12 and a sub-6-month employee was
+  // handed the WHOLE annual ceiling — double everyone else's, with no "prorated" tag on the
+  // report to show it. Cycle-length proration is one rule for every eligible employee (spec 019,
+  // revised): the same `poolCycleFraction` the banded branch above uses, with no extra reduction
+  // for joining partway through. Medical keeps its own mid-joiner proration on the PREMIUM, which
+  // is where a mid-term joiner's reduction belongs — not on the container that bounds it.
+  const fraction = poolCycleFraction(medical, window);
+  const derivedEntry = prorate(entry, fraction);
   return {
     ceiling: raisedTo ?? derivedEntry,
-    proratedFrom: raisedTo != null ? derivedEntry : medical.fraction < 1 ? entry : null,
+    proratedFrom: raisedTo != null ? derivedEntry : fraction < 1 ? entry : null,
     band,
     reason: null,
   };

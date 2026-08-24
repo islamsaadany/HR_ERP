@@ -150,6 +150,20 @@ four steering files (same commit).
   actually gets the thing, and then it is worse than no count. Related: **one way to say
   "everyone"** — the same panel offered it as a course setting AND as an audience rule, so a course
   could read RESTRICTED while reaching the whole company.
+- **A GATE IS NOT A SCALE, and a meter must count only what the decision moves** — one money rule
+  broke twice on the same screen family (2026-08-23). (a) `poolCeiling` has two doors — 6 months for
+  the pool, 3 months for medical — and the sub-6 branch mistook its door for a *scale*, prorating by
+  the mid-joiner fraction, which is **1** whenever the 3-month mark lands on or before the cycle's
+  first day. A newcomer on a six-month cycle therefore carried the WHOLE annual ceiling — double
+  their colleagues — and the report printed no *prorated* tag, so nothing looked wrong. Ask the two
+  questions separately: *may they have it* (threshold) and *how much of the window is this*
+  (`poolCycleFraction`, one scale for everybody); a reduction that belongs to the thing bought
+  (medical's ÷12 premium) never belongs on the container that bounds it. (b) The claims queue's
+  "their pool after this" meter summed EVERY claim, so a 90,000 salary-driven Loans request read as
+  an emptied pool — a number the enforcement path (`poolStateFor`, `catalogItemId` only) never
+  agreed with. A figure shown next to a decision must be computed from exactly what that decision
+  changes, through the same derivation the write uses; when the decision moves nothing, say so in
+  words ("Not from the pool") rather than drawing a meter at zero.
 - **A visibility rule needs ONE source and must be re-decided at the door** — the Learning
   materials tab labels three document slots and the employee page only ever selects one, but
   neither is a control: a URL is a URL, and somebody who has seen a slides link can guess an
@@ -244,6 +258,29 @@ HR_ERP/
 - **Time-Off counts WORKING days, never limits (spec 035, 2026-08-18)** — weekend is **Friday + Saturday**, the HR-managed public-holidays list also never counts (`src/lib/workdays.ts` is the ONE counting engine, shared server + client preview); there is **no entitlement/limit — only a per-calendar-year taken count** visible to employee/manager/HR; no leave types. Approvals resolve against the **current** org chart (`pendingApprovalWhere`/`canDecideLeave`), never the stored approver snapshot.
 - **A guaranteed benefit is paid at most once per cycle (2026-08-18)** — claims and bulk releases are mutually aware in every payment path (employee claim, HR Record entry, Release sheet); employee cards show the true state (gold in-review / green received) instead of a dead button. **Eligibility exceptions are per-person GRANTS (spec 036)**: a Super User grants one person one benefit for the open cycle at a typed amount (Exceptional releases tab); the person then uses the completely normal request→approve→pay flow — never widen a benefit's general eligibility for one person, and never pay around the flow via sheet overrides (one was shipped and reverted same-day).
 - **Official holidays are a lifecycle, not a date list (spec 037, 2026-08-19)** — a holiday is ONE entry covering a **date range** (Eid included) with an **announced** range and an **actual/observed** range; all working-day counting reads the actual one, so moving a holiday re-counts every request live. Status is `TENTATIVE | VERIFIED | MOVED`; HR fetches a year from Nager.Date as **suggestions only** (nothing stored without confirmation) and actual ranges may never overlap (enforced in the server actions — Prisma can't express it). A **daily Vercel Cron** (`/api/cron/holidays`, `CRON_SECRET`) nudges HR to verify a tentative date within a configurable lead (default 14 days) — it can **never** email employees. Team announcements are **drafted deterministically** (English then Arabic, warm, with bridge/long-weekend callouts) and **only ever sent by a human**; each send snapshots the dates it went out with, which is what flags "announced with an outdated date" and makes the next draft a correction. A **bridge is exactly ONE working day** between off-days. Moving a holiday onto someone's booked leave emails them the day was returned.
+- **A colour an operator CHOOSES must carry its own legibility rule** — the Communications email
+  paints its header and button in the recipient's business-unit colour, which somebody picked for
+  brand reasons with no thought for text. The obvious rule (one luminance threshold picking black
+  or white) FAILS: measured, it puts white on a coral at 3.44:1 and on a mid teal at 4.08:1, both
+  under AA. `surfaceFor` (`src/lib/comms/brand.ts`) tries BOTH inks and returns the brand
+  **untouched** whenever either clears 4.5:1 — five of six real brands, including Visual Shift
+  `#450059` at 15.03:1 — and moves the colour only when neither does, toward whichever end it is
+  already closer to (an earlier always-deepen variant turned a pale gold into olive). Never make
+  the operator responsible for contrast; derive it, leave the brand alone where you can, and
+  **put an accent in a FILL rather than in type** — a fill has no ratio to meet. The same measure
+  found the existing emails' eyebrow at 4.33:1 and fixed it.
+- **A broadcast is not a transactional email and must not inherit its stance** — the claim and
+  holiday emails are fire-and-forget so a mail failure never blocks a state change. A broadcast is
+  the opposite: somebody pressed send and has to know whether it went, so `sendBatch` REPORTS per
+  recipient. Never a shared `to` and never BCC (nobody sees another address, each copy can carry
+  its own branding, and a failure names *who*). And the confirmation carries the **count**, which
+  the server re-checks — a confirmation that can silently cover more people than it named is not a
+  confirmation.
+- **Email is limited to THREE workflows (specs 020 + 037 + 039)** — the original "no emails, ever (v1)" rule was reversed for the benefit-claim workflow (approved 2026-08-10) and widened to the holiday/vacation workflow (approved 2026-08-19), and widened again to Team
+  Communications (approved 2026-08-24 — announcements to a chosen audience, plus personal
+  congratulations for birthdays and joining anniversaries). **No scheduled process may email an
+  EMPLOYEE** — that half is untouched: cron prepares drafts and nudges operators, a human sends.
+  Transactional claim notifications (submit→HR, approve→Finance, reject/reimburse→employee) send via **Resend**, **env-gated** (`RESEND_API_KEY`/`EMAIL_FROM`) and **fire-and-forget** (never block a state change), configurable + master-toggleable at **Admin → Notifications**. Still **no** invitations, marketing, external recipients, or scheduling a send for later.
 - **A privacy promise must survive "view as" (spec 040, 2026-08-24)** — `requireUser()` deliberately
   returns the **impersonation target**, which is right for every module except one: a Super User
   viewing as an employee would have read that person's private review journal. Reviews & 1:1s
@@ -264,10 +301,6 @@ HR_ERP/
   fetched, so no preview, word count, or per-question completion state exists in the payload to be
   uncovered. A quarter that ends with no meeting **opens nothing and carries nothing forward** —
   an unheld review must not leave a record that it happened.
-- **Email is limited to TWO workflows (specs 020 + 037)** — the original "no emails, ever (v1)" rule was reversed for the benefit-claim workflow (approved 2026-08-10) and widened to the holiday/vacation workflow (approved 2026-08-19). Transactional claim notifications (submit→HR, approve→Finance, reject/reimburse→employee) send via **Resend**, **env-gated** (`RESEND_API_KEY`/`EMAIL_FROM`) and **fire-and-forget** (never block a state change), configurable + master-toggleable at **Admin → Notifications**. Still **no** invitations, marketing, or other notifications outside these two workflows.
-
----
-
 ## Configuration
 
 ### Database operations (Neon)
@@ -334,6 +367,34 @@ TEST_DATABASE_URL="postgresql://…/hrerp_test" npx prisma db push
 TEST_DATABASE_URL="postgresql://…/hrerp_test" npm test
 ```
 
+#### `scripts/verify-*.mts` — and the two things that make them lie
+The 21 verification scripts prove a feature against a real Postgres. Set one up **the way a real
+deploy does**, or they fail for reasons that have nothing to do with the code:
+
+```bash
+POSTGRES_URL=$DB DATABASE_URL_UNPOOLED=$DB npx prisma db push --skip-generate --accept-data-loss
+POSTGRES_URL=$DB DATABASE_URL_UNPOOLED=$DB node scripts/apply-sql.mjs   # ← the step that gets missed
+POSTGRES_URL=$DB DATABASE_URL_UNPOOLED=$DB AUTH_SECRET=anything npx tsx scripts/verify-<x>.mts
+```
+
+`prisma db push` builds the tables and nothing else. The reference data several scripts read — the
+department list above all — arrives in the numbered `prisma/sql/` files, so without `apply-sql` they
+fail looking for rows that a real database has had since migration 022. Replaying the whole history
+onto an already-current schema makes four historical files fail (`023`, `025`, `030`, `055`); that is
+an artefact of replaying them out of order, not a deploy problem — on Neon they ran in sequence years
+of commits ago and are recorded in `_sql_migrations`. And `AUTH_SECRET` must be set for anything
+touching sign-in, because minting a ticket without a signing secret correctly refuses.
+
+**They share one database, so a script must never assert a number about the whole of it.** Four
+separate order-dependent failures came from this in one sweep: two scripts both used a "Consulting"
+department, and two both used the ids `alice`/`bob`, so each cleaned up its own rows and inherited
+the other's. Whichever ran second failed, and the failure looked exactly like a real one. The rules:
+**namespace every shared string** a script writes (its own email domain, its own department names,
+its own ids), and where a value can't be namespaced — an enum like `PART_TIME` — **count the
+expected figure from the database through the same derivation** rather than writing down a number
+that was true on the day. A script that asserts "reaches its 3" is asserting something about every
+other script too.
+
 ### Before Committing
 1. `npx tsc --noEmit` — no TypeScript errors.
 2. Review all changed files.
@@ -350,4 +411,4 @@ TEST_DATABASE_URL="postgresql://…/hrerp_test" npm test
 
 ---
 
-*Last Updated: 2026-08-24 (Added: spec 040 — Reviews & 1:1s. A privacy promise must survive "view as"; whose records these are is stored, not derived (the deliberate opposite of the Time-Off rule); sealing means the data is not sent, not that it is hidden. Previously: 2026-08-22 (Added: a count shown beside a choice must be that choice's count, computed through the same derivation the real check uses; one way to say "everyone". Plus: per-module authority is an appointment, never a new Role member — one derivation, role-holders are never rows, the appointment cannot appoint. Plus: a visibility rule needs one source and must be re-decided at the serving route, 404 not 403. Previously: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.))*
+*Last Updated: 2026-08-24 (Added: spec 040 — Reviews & 1:1s. A privacy promise must survive "view as"; whose records these are is stored, not derived (the deliberate opposite of the Time-Off rule); sealing means the data is not sent, not that it is hidden. Previously: 2026-08-24 (Added: how to actually run the `verify-*.mts` scripts — `apply-sql.mjs` after `db push`, or the reference data several of them read is simply absent; and the rule that a script sharing a database must never assert a number about the whole of it, because four order-dependent failures in one sweep all came from two scripts reaching for the same department name or the same fixture ids. Previously: 2026-08-23 (Added: a gate is not a scale — the sub-6-month pool ceiling now scales to the cycle like everyone else's, and a figure shown beside a decision counts only what that decision moves, through the derivation the write uses. Previously: 2026-08-22 (Added: a count shown beside a choice must be that choice's count, computed through the same derivation the real check uses; one way to say "everyone". Plus: per-module authority is an appointment, never a new Role member — one derivation, role-holders are never rows, the appointment cannot appoint. Plus: a visibility rule needs one source and must be re-decided at the serving route, 404 not 403. Previously: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.). Previously: 2026-08-22 (Added: a count shown beside a choice must be that choice's count, computed through the same derivation the real check uses; one way to say "everyone". Plus: per-module authority is an appointment, never a new Role member — one derivation, role-holders are never rows, the appointment cannot appoint. Plus: a visibility rule needs one source and must be re-decided at the serving route, 404 not 403. Previously: 2026-08-20 (Added: `npm test` is a tool, not a routine — no regime, no deploy gate, no standing obligation; protection is structural. Plus: the pool ceiling is enforced on every write path in every order — one derivation, signed remaining, refuse-don't-clamp, per-employee row lock; the freeze-vs-parked-header table rule; unchanged legacy identity values no longer block an unrelated employee-form save, and rejected saves are now scrolled to / announced / listed in full. Previously: official-holiday lifecycle + announcements (spec 037) and the first scheduled job; email widened to that workflow; HR may reopen a rejected claim with a reason. migrations now run through Claude via the deploy, not by hand; added the no-unneeded-complications rule.))*

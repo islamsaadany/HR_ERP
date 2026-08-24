@@ -18,11 +18,11 @@ const cs = wb.addWorksheet("Course");
 cs.addRow(["Title", "Summary", "Category", "Redo after (months)"]);
 cs.addRow(["Client Engagement Essentials", "How we scope", "Consulting", "Never"]);
 const ls = wb.addWorksheet("Lessons");
-ls.addRow(["Section", "Lesson", "Required", "Minutes", "Video link", "Must watch %", "Notes"]);
-ls.addRow(["Before the engagement", "Why scoping fails", "Yes", "8", "https://vimeo.com/948120774", "80", ""]);
-ls.addRow(["Before the engagement", "The kick-off checklist", "Yes", "12", "https://www.youtube.com/watch?v=nc51UwuL8pE", "", "Bring the signed SOW."]);
-ls.addRow(["Before the engagement", "Further reading", "No", "3", "", "", "See the **handbook**."]);
-ls.addRow(["On site", "Running the first workshop", "Yes", "15", "", "", "Notes only."]);
+ls.addRow(["Section", "Lesson", "Required", "Video link", "Must watch %", "Notes"]);
+ls.addRow(["Before the engagement", "Why scoping fails", "Yes", "https://vimeo.com/948120774", "80", ""]);
+ls.addRow(["Before the engagement", "The kick-off checklist", "Yes", "https://www.youtube.com/watch?v=nc51UwuL8pE", "", "Bring the signed SOW."]);
+ls.addRow(["Before the engagement", "Further reading", "No", "", "", "See the **handbook**."]);
+ls.addRow(["On site", "Running the first workshop", "Yes", "", "", "Notes only."]);
 const buf = await wb.xlsx.writeBuffer();
 
 const back = new ExcelJS.Workbook();
@@ -43,7 +43,7 @@ const rows = (name: string, cols: number) => {
   return out;
 };
 
-const parsed = parseCourseWorkbook(rows("Course", 4)[0], rows("Lessons", 7));
+const parsed = parseCourseWorkbook(rows("Course", 4)[0], rows("Lessons", 6));
 check("the template's OWN example rows import cleanly", parsed.ok, true);
 if (!parsed.ok) { console.log(parsed.problems); process.exit(1); }
 check("4 lessons", parsed.course.lessons.length, 4);
@@ -60,7 +60,7 @@ const created = await db.course.create({
     renewAfterMonths: parsed.course.renewAfterMonths, order: 99,
     sections: { create: sections.map((s, si) => ({ title: s.title, order: si + 1,
       lessons: { create: s.lessons.map((l, li) => ({ title: l.title, order: li + 1, isRequired: l.isRequired,
-        estimatedMinutes: l.estimatedMinutes, minWatchPercent: l.minWatchPercent,
+        minWatchPercent: l.minWatchPercent,
         blocks: { create: [
           ...(l.videoUrl ? [{ type: "VIDEO" as const, order: 1, externalUrl: l.videoUrl, videoSource: l.videoSource }] : []),
           ...(l.notes ? [{ type: "TEXT" as const, order: l.videoUrl ? 2 : 1, text: l.notes }] : []),
