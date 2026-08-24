@@ -1,0 +1,520 @@
+<title>Petty Cash &amp; Payback</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-500:#2f4d78;
+    --navy-600:#1f3a63;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;
+    --red:#b91c1c;--red-bg:#fdf3f3;--red-line:#f3c6c6;
+    --sans:"Hanken Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Fraunces","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    color-scheme:light;
+  }
+  /* This mockup deliberately renders in the product's own light navy/gold world —
+     it exists to show what the app will look like, so it does not follow the viewer's theme. */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:34px 20px 90px}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  h1{font-family:var(--serif);font-weight:600;font-size:30px;margin:4px 0 0;text-wrap:balance}
+  .lede{color:var(--muted);font-size:14.5px;margin:8px 0 0;max-width:70ch}
+  .meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+
+  section.screen{margin-top:46px}
+  section.screen>h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0 0 3px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  section.screen>h2 .who{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-500);border:1px solid var(--navy-200);background:var(--navy-50);border-radius:999px;padding:3px 9px}
+  section.screen>.sub{color:var(--muted);font-size:13.5px;margin:0 0 15px;max-width:80ch}
+
+  /* the app frame */
+  .frame{border:1px solid var(--line);border-radius:14px;background:#e9ebf0;padding:16px;box-shadow:0 1px 3px rgba(16,36,68,.06)}
+  .app{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--navy-800);color:#fff}
+  .bar .dot{width:9px;height:9px;border-radius:99px;background:rgba(255,255,255,.28)}
+  .bar .path{margin-left:8px;font-size:11.5px;color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums}
+  .page{padding:22px 22px 26px}
+  .page-eyebrow{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .page h3{font-family:var(--serif);font-weight:600;font-size:23px;margin:3px 0 0}
+  .page .hint{color:var(--muted);font-size:13px;margin:6px 0 0;max-width:78ch}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:8px;padding:8px 13px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);cursor:default}
+  .btn.primary{background:var(--navy-800);border-color:var(--navy-800);color:#fff}
+  .btn.ghost{border-color:var(--line);color:var(--muted)}
+  .btn.danger{border-color:var(--red-line);color:var(--red);background:var(--red-bg)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+
+  /* chips */
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;letter-spacing:.02em}
+  .c-open{border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700)}
+  .c-sub{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-closed{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-warn{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-flat{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-red{border:1px solid var(--red-line);background:var(--red-bg);color:var(--red)}
+
+  /* the reconciliation panel — the centrepiece */
+  .recon{margin-top:18px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+  .recon-head{padding:16px 18px;background:linear-gradient(180deg,var(--navy-800),var(--navy-900));color:#fff}
+  .recon-head .k{font-size:10.5px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-300);margin:0}
+  .recon-head .amount{font-family:var(--serif);font-weight:600;font-size:34px;margin:6px 0 0;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .recon-head .say{margin:4px 0 0;font-size:13.5px;color:rgba(255,255,255,.82)}
+  .recon-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0}
+  @media(max-width:860px){.recon-grid{grid-template-columns:repeat(2,1fr)}}
+  .cell{padding:13px 16px;border-top:1px solid var(--line);border-right:1px solid var(--line)}
+  .cell:last-child{border-right:0}
+  .cell .k{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0}
+  .cell .v{font-size:16.5px;font-weight:600;margin:4px 0 0;font-variant-numeric:tabular-nums}
+  .cell .v.neg{color:var(--red)}
+  .cell .n{font-size:11px;color:var(--muted);margin:2px 0 0}
+
+  /* tables */
+  .scroll{overflow-x:auto;margin-top:18px;border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:760px}
+  thead th{background:var(--navy-800);color:#fff;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:9px 12px;white-space:nowrap}
+  tbody td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
+  tbody tr:nth-child(even){background:#faf9f6}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .desc b{display:block;font-weight:600}
+  .desc span{display:block;color:var(--muted);font-size:11.5px;margin-top:1px}
+  .paperclip{color:var(--navy-500);font-weight:600;font-size:11.5px;text-decoration:underline;text-underline-offset:2px}
+  tfoot td{padding:11px 12px;border-top:2px solid var(--navy-200);font-weight:600;background:var(--navy-50)}
+
+  /* forms */
+  .form{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  @media(max-width:760px){.form{grid-template-columns:1fr}}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field.wide{grid-column:1/-1}
+  .field label{font-size:11.5px;font-weight:600;color:var(--navy-700)}
+  .field .input{border:1px solid var(--navy-200);border-radius:8px;background:var(--surface);padding:9px 11px;font-size:13px;color:var(--ink);min-height:38px;display:flex;align-items:center}
+  .field .input.placeholder{color:#9aa0ad}
+  .field .help{font-size:11px;color:var(--muted)}
+  .seg{display:flex;gap:0;border:1px solid var(--navy-200);border-radius:8px;overflow:hidden;width:fit-content}
+  .seg span{font-size:12px;font-weight:600;padding:8px 13px;color:var(--navy-700);background:var(--surface)}
+  .seg span.on{background:var(--navy-800);color:#fff}
+  .drop{border:1.5px dashed var(--navy-200);border-radius:10px;background:#fbfaf7;padding:15px;text-align:center}
+  .drop .big{font-size:13px;font-weight:600;color:var(--navy-700)}
+  .drop .small{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .files{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .file{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 9px;font-size:11.5px}
+  .file .x{color:var(--muted)}
+
+  /* dialog */
+  .dialog{border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 10px 30px rgba(10,26,48,.13);max-width:520px;margin:0 auto;overflow:hidden}
+  .dialog .d-head{padding:16px 18px 0}
+  .dialog h4{font-family:var(--serif);font-weight:600;font-size:19px;margin:0}
+  .dialog .d-body{padding:12px 18px 18px;font-size:13px;color:var(--muted)}
+  .warnbox{border:1px solid var(--gold-300);background:#fdfaf0;border-radius:10px;padding:12px 13px;margin-top:12px}
+  .warnbox b{font-size:12.5px;color:var(--gold-800);display:block}
+  .warnbox ul{margin:7px 0 0;padding-left:17px;font-size:12px;color:var(--ink)}
+  .warnbox li{margin:3px 0}
+  .ack{display:flex;gap:9px;align-items:flex-start;margin-top:12px;font-size:12.5px;color:var(--ink)}
+  .box{width:15px;height:15px;border:1.5px solid var(--navy-500);border-radius:4px;flex:none;margin-top:2px}
+  .d-foot{display:flex;justify-content:flex-end;gap:8px;padding:13px 18px;border-top:1px solid var(--line);background:#faf9f6}
+
+  /* cards (my requests) */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:12px;margin-top:16px}
+  .card{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:13px 14px}
+  .card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .card .amt{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+  .card .what{font-size:12.5px;font-weight:600;margin-top:5px}
+  .card .when{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .card .said{font-size:11.5px;margin-top:9px;padding-top:9px;border-top:1px solid var(--line);color:var(--muted)}
+  .card .said.bad{color:var(--red)}
+
+  /* review queue item */
+  .review{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:15px 16px;margin-top:12px}
+  .review .head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start}
+  .review .who{font-size:14px;font-weight:600}
+  .review .sub2{font-size:12px;color:var(--muted);margin-top:2px}
+  .review .amt{font-family:var(--serif);font-weight:600;font-size:24px;font-variant-numeric:tabular-nums}
+  .dup{margin-top:12px;border-left:3px solid var(--gold-500);background:#fdfaf0;border-radius:0 9px 9px 0;padding:10px 13px;font-size:12px}
+  .dup b{display:block;font-size:11.5px;color:var(--gold-800);margin-bottom:3px}
+  .rev-foot{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap;align-items:center}
+
+  /* decision notes under each screen */
+  .notes{margin-top:16px;border-left:3px solid var(--navy-800);background:#f7f8fb;border-radius:0 10px 10px 0;padding:13px 16px}
+  .notes b{font-family:var(--serif);font-weight:600;font-size:14.5px;display:block;margin-bottom:5px}
+  .notes ul{margin:0;padding-left:17px;font-size:13px}
+  .notes li{margin:5px 0}
+  .notes .q{color:var(--gold-800);font-weight:600}
+  footer{margin-top:52px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12.5px}
+  footer b{color:var(--ink)}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 039 · Mockups for sign-off</p>
+  <h1>Petty cash &amp; payback</h1>
+  <p class="lede">Six screens, drawn with real figures from the MARCOM workbook so they can be checked against what
+    Finance already knows. Nothing is built yet — no component file is written until these are approved.</p>
+  <div class="meta">
+    <span class="tag">Navy / gold, matching the app</span>
+    <span class="tag">Dates dd/mm/yyyy</span>
+    <span class="tag">EGP to two decimals</span>
+    <span class="tag">Gold = needs attention · Green = done · Navy = action</span>
+  </div>
+
+  <!-- ══ 1 ══ -->
+  <section class="screen">
+    <h2>1 · Petty cash accounts <span class="who">Finance sees all · a custodian sees theirs</span></h2>
+    <p class="sub">The first thing Finance opens. One line per float, each saying who holds it and where it stands
+      right now — the question the workbook can only answer at month end.</p>
+    <div class="frame"><div class="app">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / petty-cash</span></div>
+      <div class="page">
+        <div class="row">
+          <div>
+            <p class="page-eyebrow">Finance</p>
+            <h3>Petty cash</h3>
+          </div>
+          <div class="btns"><span class="btn primary">New account</span></div>
+        </div>
+        <p class="hint">A float is money the company has advanced to someone. A negative balance means they have spent
+          their own money on our behalf and we owe them.</p>
+        <div class="scroll"><table>
+          <thead><tr>
+            <th>Account</th><th>Custodian</th><th>Current period</th><th class="num">Balance</th><th>Standing</th><th></th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td class="desc"><b>Marketing petty cash</b><span>Opened 01/10/2024</span></td>
+              <td>Raneem Sarhaan</td>
+              <td>Aug 2026 <span class="chip c-open">Open</span></td>
+              <td class="num" style="color:var(--red);font-weight:700">−4,617.16</td>
+              <td>Forefront owes Raneem</td>
+              <td><span class="btn">Open</span></td>
+            </tr>
+            <tr>
+              <td class="desc"><b>Office float</b><span>Opened 01/02/2026</span></td>
+              <td>Marwa Abdelazeem</td>
+              <td>Aug 2026 <span class="chip c-sub">Submitted</span></td>
+              <td class="num" style="font-weight:700">1,382.84</td>
+              <td>Marwa holds company cash</td>
+              <td><span class="btn">Open</span></td>
+            </tr>
+            <tr>
+              <td class="desc"><b>Community events float</b><span>Opened 15/05/2026</span></td>
+              <td>Hussein Kamel</td>
+              <td>Jul 2026 <span class="chip c-closed">Closed</span></td>
+              <td class="num" style="font-weight:700">0.00</td>
+              <td>Settled</td>
+              <td><span class="btn">Open</span></td>
+            </tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div></div>
+    <div class="notes"><b>What to check</b><ul>
+      <li>The balance column is <b>signed</b> and the standing column says the same thing in words, so nobody has to
+        interpret a minus sign. Your workbook computes this as +3,444.54 on the March tab and −4,617.16 on JUL-AUG,
+        for the same situation.</li>
+      <li><span class="q">For you:</span> is "Standing" the right word, or would you rather it read
+        "Forefront owes 4,617.16" as one column?</li>
+    </ul></div>
+  </section>
+
+  <!-- ══ 2 ══ -->
+  <section class="screen">
+    <h2>2 · Inside an account <span class="who">The centrepiece</span></h2>
+    <p class="sub">The reconciliation and the period's lines on one page. The custodian and Finance look at exactly this
+      screen — the same numbers, so a disagreement is about a receipt, not about arithmetic.</p>
+    <div class="frame"><div class="app">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / petty-cash / marketing</span></div>
+      <div class="page">
+        <div class="row">
+          <div>
+            <p class="page-eyebrow">Petty cash · Raneem Sarhaan</p>
+            <h3>Marketing petty cash</h3>
+          </div>
+          <div class="btns">
+            <span class="btn">Aug 2026 ▾</span>
+            <span class="btn">Record a top-up</span>
+            <span class="btn primary">Close the period</span>
+          </div>
+        </div>
+
+        <div class="recon">
+          <div class="recon-head">
+            <p class="k">Where this stands</p>
+            <p class="amount">EGP 4,617.16</p>
+            <p class="say">Forefront owes Raneem — she has spent 4,617.16 of her own money beyond the float advanced.</p>
+          </div>
+          <div class="recon-grid">
+            <div class="cell"><p class="k">Opening balance</p><p class="v">0.00</p><p class="n">carried from Jul 2026</p></div>
+            <div class="cell"><p class="k">Float advanced</p><p class="v">9,000.00</p><p class="n">1 top-up</p></div>
+            <div class="cell"><p class="k">Spent from float</p><p class="v">13,617.16</p><p class="n">11 lines</p></div>
+            <div class="cell"><p class="k">Paid by company</p><p class="v">34,088.00</p><p class="n">2 transfers · not Raneem's money</p></div>
+            <div class="cell"><p class="k">Budget remaining</p><p class="v neg">−2,705.16</p><p class="n">over budget · 45,000.00 set</p></div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:20px">
+          <div style="font-size:12.5px;color:var(--muted)"><b style="color:var(--ink)">11 lines</b> · 2 with no receipt</div>
+          <div class="btns"><span class="btn primary">Log a spend</span><span class="btn ghost">Submit to Finance</span></div>
+        </div>
+
+        <div class="scroll"><table>
+          <thead><tr>
+            <th>Date</th><th>Section</th><th>Description</th><th>Paid</th><th>Payee</th><th class="num">Amount</th><th>Receipt</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td>04/08/2026</td><td>Team</td>
+              <td class="desc"><b>Office monthly cleaning</b><span>Office supply · InstaPay to Eman M M</span></td>
+              <td><span class="chip c-flat">Float</span></td><td>Eman M M</td>
+              <td class="num">1,530.00</td><td><span class="paperclip">1 file</span></td>
+            </tr>
+            <tr>
+              <td>08/08/2026</td><td>Marketing</td>
+              <td class="desc"><b>Camera &amp; lighting rental</b><span>Media coverage · invoice BK-101993</span></td>
+              <td><span class="chip c-flat">Float</span></td><td>Pixipine</td>
+              <td class="num">3,925.00</td><td><span class="paperclip">2 files</span></td>
+            </tr>
+            <tr>
+              <td>12/08/2026</td><td>Team</td>
+              <td class="desc"><b>Office internet &amp; phone</b><span>Office supply · WE Home 0228</span></td>
+              <td><span class="chip c-flat">Float</span></td><td>Raneem</td>
+              <td class="num">482.56</td><td><span class="paperclip">1 file</span></td>
+            </tr>
+            <tr>
+              <td>16/08/2026</td><td>Community</td>
+              <td class="desc"><b>Meetup 20 venue</b><span>Venue · full booking</span></td>
+              <td><span class="chip c-flat">Company transfer</span></td><td>Kamelizer Spaces</td>
+              <td class="num">34,088.00</td><td><span class="paperclip">1 file</span></td>
+            </tr>
+            <tr>
+              <td>23/08/2026</td><td>Team</td>
+              <td class="desc"><b>Office cleaning supplies</b><span>Office supply · talabat mart</span></td>
+              <td><span class="chip c-flat">Float</span></td><td>Raneem</td>
+              <td class="num">496.51</td><td><span class="chip c-warn">No receipt</span></td>
+            </tr>
+            <tr>
+              <td>31/07/2026</td><td>Marketing</td>
+              <td class="desc"><b>Greetings cards</b><span>Printings <span class="chip c-flat" style="margin-left:4px">Outside this period</span></span></td>
+              <td><span class="chip c-flat">Float</span></td><td>Nina Printing</td>
+              <td class="num">800.00</td><td><span class="paperclip">1 file</span></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="5">Total expenses · 11 lines</td><td class="num">47,705.16</td><td></td></tr>
+          </tfoot>
+        </table></div>
+      </div>
+    </div></div>
+    <div class="notes"><b>What to check</b><ul>
+      <li><b>Paid by company</b> sits in the panel but never moves the balance — the company paid the vendor, not Raneem.
+        Your April tab mixes the two and only the "Total Pitty Cash" line separates them.</li>
+      <li>A line dated outside the period is <b>kept and flagged</b>, not rejected — receipts arrive late, and your tabs
+        are full of them.</li>
+      <li><span class="q">For you:</span> should the custodian be able to see <b>Budget remaining</b>, or is the budget
+        Finance's business only?</li>
+    </ul></div>
+  </section>
+
+  <!-- ══ 3 ══ -->
+  <section class="screen">
+    <h2>3 · Log a spend <span class="who">The custodian, usually on a phone</span></h2>
+    <p class="sub">The one screen that gets used daily. It has to be finishable standing in a shop, which is why the
+      receipt is attached here rather than emailed later.</p>
+    <div class="frame"><div class="app">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / petty-cash / marketing / new</span></div>
+      <div class="page">
+        <p class="page-eyebrow">Marketing petty cash · Aug 2026</p>
+        <h3>Log a spend</h3>
+        <div class="form">
+          <div class="field"><label>Date paid</label><div class="input">24/08/2026</div></div>
+          <div class="field"><label>Amount (EGP)</label><div class="input">1,530.00</div>
+            <span class="help">Two decimals. We never round an amount — it has to match the receipt.</span></div>
+          <div class="field"><label>Section</label><div class="input">Team ▾</div></div>
+          <div class="field"><label>Category <span style="color:var(--muted);font-weight:400">(optional)</span></label><div class="input">Office supply ▾</div></div>
+          <div class="field wide"><label>Description</label><div class="input">Office monthly cleaning</div></div>
+          <div class="field"><label>How was it paid?</label>
+            <div class="seg"><span class="on">From my float</span><span>Company transfer</span></div>
+            <span class="help">"Company transfer" means Finance paid the vendor directly — it won't touch your balance.</span></div>
+          <div class="field"><label>Paid to <span style="color:var(--muted);font-weight:400">(optional)</span></label><div class="input placeholder">Eman M M</div></div>
+          <div class="field wide"><label>Receipt</label>
+            <div class="drop">
+              <div class="big">Take a photo, or choose files</div>
+              <div class="small">Photos or PDF, up to 10MB each — attach as many as the purchase produced.</div>
+            </div>
+            <div class="files">
+              <span class="file">🧾 IMG_2619.PNG <span class="x">✕</span></span>
+              <span class="file">🧾 receipt-cleaning.pdf <span class="x">✕</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:18px;justify-content:flex-end">
+          <div class="btns"><span class="btn ghost">Cancel</span><span class="btn primary">Save this spend</span></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="notes"><b>What to check</b><ul>
+      <li>Only <b>date, amount, section, description and how it was paid</b> are required. Category, payee and payment
+        details are optional, because half your workbook rows leave them blank and forcing them would just produce
+        junk values.</li>
+      <li>A spend can be saved <b>without a receipt</b> and is flagged until one is attached — otherwise people log
+        nothing at all when they can't find the paper.</li>
+    </ul></div>
+  </section>
+
+  <!-- ══ 4 ══ -->
+  <section class="screen">
+    <h2>4 · Closing the period <span class="who">Finance only</span></h2>
+    <p class="sub">Closing freezes the amounts and carries the balance into next month. It is also the last moment a
+      missing receipt can be caught, so it is the one place the system pushes back.</p>
+    <div class="frame" style="background:#dfe2e9;padding:34px 16px">
+      <div class="dialog">
+        <div class="d-head"><h4>Close Aug 2026?</h4></div>
+        <div class="d-body">
+          <p style="margin:6px 0 0">Amounts, dates and categories will be locked. The closing balance of
+            <b style="color:var(--red)">−4,617.16</b> carries into September as its opening balance. Receipts can still
+            be attached afterwards — they change no figure.</p>
+          <div class="warnbox">
+            <b>2 lines still have no receipt</b>
+            <ul>
+              <li>23/08 · Office cleaning supplies · 496.51</li>
+              <li>19/08 · Meetup 20 name cards · 500.00</li>
+            </ul>
+          </div>
+          <div class="ack"><span class="box"></span>
+            <span>I'm closing the period with these two receipts missing. This will be recorded against my name.</span></div>
+        </div>
+        <div class="d-foot"><span class="btn ghost">Cancel</span><span class="btn primary">Close the period</span></div>
+      </div>
+    </div>
+    <div class="notes"><b>What to check</b><ul>
+      <li>The system <b>lists which lines</b> are missing a receipt rather than showing a generic warning, and records
+        which ones were waved through and by whom — an acknowledgement that doesn't say what was accepted says nothing.</li>
+      <li>A closed period can be <b>reopened</b> with a reason, which re-derives the next month's opening balance.</li>
+      <li><span class="q">For you:</span> should closing be blocked outright when a receipt is missing, instead of
+        allowing this acknowledgement?</li>
+    </ul></div>
+  </section>
+
+  <!-- ══ 5 ══ -->
+  <section class="screen">
+    <h2>5 · Ask for your money back <span class="who">Any employee</span></h2>
+    <p class="sub">For everyone who is not a custodian: they paid for something, they want it back, and they need to
+      know where the request stands without asking anyone.</p>
+    <div class="frame"><div class="app">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / payback</span></div>
+      <div class="page">
+        <div class="row">
+          <div><p class="page-eyebrow">My money</p><h3>Payback requests</h3></div>
+          <div class="btns"><span class="btn primary">Request a payback</span></div>
+        </div>
+        <p class="hint">Paid for something with your own money? Send us the receipt and Finance will transfer it back.</p>
+        <div class="cards">
+          <div class="card">
+            <div class="top"><span class="amt">EGP 262.83</span><span class="chip c-sub">In review</span></div>
+            <p class="what">Uber to collect the laptop</p>
+            <p class="when">Paid 23/08/2026 · sent 24/08/2026 · 1 receipt</p>
+            <p class="said">With Finance since this morning.</p>
+          </div>
+          <div class="card">
+            <div class="top"><span class="amt">EGP 1,199.50</span><span class="chip c-open">Awaiting payment</span></div>
+            <p class="what">AlMentor annual subscription</p>
+            <p class="when">Paid 05/08/2026 · approved 09/08/2026</p>
+            <p class="said">Approved by Mohamed Selim. Waiting on the transfer.</p>
+          </div>
+          <div class="card">
+            <div class="top"><span class="amt">EGP 474.17</span><span class="chip c-closed">Paid</span></div>
+            <p class="what">MailerLite — August</p>
+            <p class="when">Paid 02/08/2026 · reimbursed 12/08/2026</p>
+            <p class="said">Transferred 474.17 on 12/08/2026.</p>
+          </div>
+          <div class="card">
+            <div class="top"><span class="amt">EGP 189.57</span><span class="chip c-red">Declined</span></div>
+            <p class="what">Uber — end of year printing run</p>
+            <p class="when">Paid 22/12/2025 · declined 04/01/2026</p>
+            <p class="said bad">"This one was already settled through the Marketing float in December."</p>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="notes"><b>What to check</b><ul>
+      <li>A request <b>cannot be sent without a receipt</b> — this is the one place evidence is mandatory, because
+        there is no float and no period to reconcile it against later.</li>
+      <li>A decline always carries the reason, shown to the person and emailed to them.</li>
+      <li>"Awaiting payment" becomes "Paid" only when the money has actually gone — which, once spec 040 is in, is when
+        <b>you</b> have approved the transfer.</li>
+    </ul></div>
+  </section>
+
+  <!-- ══ 6 ══ -->
+  <section class="screen">
+    <h2>6 · Finance reviews a request <span class="who">Finance · a new tab beside the claims queue</span></h2>
+    <p class="sub">Sits alongside the existing benefit-claim confirmation queue, so Finance has one place for
+      "money waiting on me".</p>
+    <div class="frame"><div class="app">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">forefront.people / finance — payback requests</span></div>
+      <div class="page">
+        <p class="page-eyebrow">Finance · Payments</p>
+        <h3>Payback requests</h3>
+        <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap">
+          <span class="btn ghost">Confirmation queue</span>
+          <span class="btn ghost">Medical recoveries</span>
+          <span class="btn primary">Payback requests · 3</span>
+        </div>
+
+        <div class="review">
+          <div class="head">
+            <div>
+              <p class="who">Marwa Abdelazeem <span class="chip c-sub" style="margin-left:6px">In review</span></p>
+              <p class="sub2">Community · Transportation · paid 21/08/2026 · sent 22/08/2026</p>
+              <p style="font-size:13px;margin:8px 0 0">Uber to the venue and back for the Meetup 20 setup.</p>
+            </div>
+            <div style="text-align:right">
+              <p class="amt">EGP 404.00</p>
+              <p class="sub2"><span class="paperclip">2 receipts</span></p>
+            </div>
+          </div>
+          <div class="dup">
+            <b>Possible duplicate</b>
+            Marwa holds the Office float, which has a line for <b>404.00</b> dated 21/08/2026 — "Uber, Meetup 20".
+            Check before approving; this may already have been paid from her float.
+          </div>
+          <div class="rev-foot">
+            <span class="btn primary">Approve</span>
+            <span class="btn danger">Decline…</span>
+            <span class="btn ghost">Open receipts</span>
+          </div>
+        </div>
+
+        <div class="review">
+          <div class="head">
+            <div>
+              <p class="who">Hussein Kamel <span class="chip c-open">Awaiting payment</span></p>
+              <p class="sub2">Marketing · Tools · paid 05/08/2026 · approved 09/08/2026 by Mohamed Selim</p>
+              <p style="font-size:13px;margin:8px 0 0">AlMentor annual subscription, renewed on the team card.</p>
+            </div>
+            <div style="text-align:right"><p class="amt">EGP 1,199.50</p><p class="sub2"><span class="paperclip">1 receipt</span></p></div>
+          </div>
+          <div class="rev-foot">
+            <span class="btn">Amount transferred</span>
+            <span class="btn">Transfer date</span>
+            <span class="btn primary">Record the payment</span>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="notes"><b>What to check</b><ul>
+      <li>The <b>possible duplicate</b> note is the one safeguard against the same purchase being claimed twice —
+        once as a petty cash line and once as a payback. The system can't know they're the same, so it shows Finance
+        the coincidence rather than pretending to decide.</li>
+      <li>Approve and pay are <b>two separate steps</b>, which is what leaves room for your approval in spec 040.</li>
+    </ul></div>
+  </section>
+
+  <footer>
+    <p><b>Approve these and I'll build them.</b> If anything should look or behave differently, say which screen and
+      what — the mockups change first, the components after.</p>
+    <p style="margin-top:8px">Three questions are marked in gold above: the wording of the balance column, whether the
+      custodian sees the budget, and whether a missing receipt should block closing outright.</p>
+  </footer>
+</div>
