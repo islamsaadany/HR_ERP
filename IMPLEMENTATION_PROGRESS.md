@@ -1215,10 +1215,43 @@ limit from claim clamping each make it fail. The first attempt did NOT catch the
 (the assertion relied on `over`, which that bug neuters); assertions now compute the overrun from
 `medical + flex` against the ceiling instead.
 
+## Reviews & 1:1s — spec 039 (built 2026-08-24, migration `067` pending on Neon)
+
+Quarterly reviews filled across the quarter, ad-hoc 1:1s, a private journal, and per-employee
+CliftonStrengths profiles parsed from uploaded Gallup PDFs.
+
+**Built**: 9 tables + 4 enums (migration `067`, idempotent, seeds the 34 themes) · the rules layer
+(`src/lib/reviews/`: access, quarters, agenda, gallup, pack, queries) · six routes under `/reviews`
+plus the Gallup file route · the strengths panel on the employee admin page · sidebar entry and
+module release switch.
+
+**Verified from this session** (throwaway Postgres 16, not the live Neon database):
+- `067` applied **twice** to a pre-039 database — clean no-op the second time; 9 tables, 34 themes,
+  `Self-Assurance` spelled correctly, partial unique index present.
+- 29 assertions against the **real** derivations: the seal holds at each of the four steps and opens
+  only at the fourth; a quarter with both halves submitted but no meeting stays sealed and produces
+  no outcome; Super User, HR Admin, an unrelated employee and a **new** manager all read
+  not-found while the previous manager still reads their own sheet; a promoted journal entry
+  survives its source being edited and deleted; re-promoting the same source is refused while plain
+  typed answers stay unconstrained; an outcome only one party agreed does not carry forward.
+- The Gallup parser against **both real reports** — 34 themes and 5 themes from one code path — and
+  against a non-Gallup PDF, which fails into manual entry rather than throwing.
+- `requireUser` appears nowhere in the module's code (only in the comment explaining why); no money
+  term and no benefits import anywhere in it.
+- `npx tsc --noEmit` and `npm run build` clean.
+
+**Not verifiable from a session**: the impersonation refusal needs a live request with a session and
+the impersonation cookie — it is enforced structurally (`requireRealUser` is the single entry point
+of every page and action, confirmed by grep) but has not been exercised end-to-end in a browser.
+Worth one manual pass: sign in as a Super User, view as an employee, open Reviews.
+
+**Remaining**: apply `067` on deploy and check the build log's `[apply-sql]` lines; a browser pass
+over the six screens.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*
+*Last Updated: 2026-08-24 — Reviews & 1:1s built (spec 039, migration `067` applies on deploy). Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*

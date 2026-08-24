@@ -299,7 +299,18 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   on any surface.** Strengths come from an uploaded **Gallup PDF** — one parse rule validated against a
   real Top 5 and a real CliftonStrengths 34 report, proposed themes **confirmed by a human** before
   saving, manual entry as the fallback. Agreed input and the parse rule:
-  `specs/_parked/performance-reviews-and-1-1s.md`. Next gate: `/speckit-plan`.
+  `specs/_parked/performance-reviews-and-1-1s.md`.
+- **2026-08-24 — Spec `039` BUILT (migration `067`).** Two findings shaped it more than the spec did.
+  (a) **`requireUser()` cannot be used here**: it deliberately returns the impersonation target, so a
+  Super User viewing as an employee would have read that person's private journal — the module
+  resolves the **real** session user and refuses to run while impersonating. (b) **Access follows the
+  pair stored on the record**, not the live org chart — the deliberate opposite of the Time-Off
+  approval rule, so a new manager never inherits a previous manager's conversations. Both are in the
+  spec's Complexity Tracking so they are not "fixed" back. Verified on throwaway Postgres: `067`
+  idempotent across two runs; 29 assertions covering the four-step seal, the never-met quarter, the
+  outsider reads, promotion-copies, and carry-forward; the Gallup parser against both real reports
+  and a non-Gallup PDF. `tsc`/`build` green. Remaining: the deploy's `[apply-sql]` line for `067`,
+  and a browser pass (the impersonation refusal needs a live session to exercise end-to-end).
 - **2026-08-22 — Backlog: regular reviews + 1:1s with the team (raised; now spec `039`).** Requested so it is on record for future alignment: the platform should host the **recurring performance/check-in reviews and manager↔report 1:1s** — a place to schedule them, log what was discussed, and keep the history alongside the employee record. Scope, cadence, who can read what, and how it relates to the org chart are **all still open** — the requester will come back with the detail. **No spec, no schema, no UI until that alignment happens.** The source review template and the proposed shape (running journal → two-sided review sheet → agreed outcome carried into the next cycle) are parked in `specs/_parked/performance-reviews-and-1-1s.md`.
 
 ### Resolved earlier / Open
@@ -309,4 +320,4 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ---
 
-*Last Updated: 2026-08-24 (spec 039 written: performance reviews & 1:1s).*
+*Last Updated: 2026-08-24 (spec 039 built: performance reviews & 1:1s, migration 067).*
