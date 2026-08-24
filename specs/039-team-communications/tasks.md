@@ -90,14 +90,14 @@ anything.
 department's active headcount, preview, send, and verify each recipient got their own copy branded
 with their own unit.
 
-- [ ] T030 [US1] Create `src/app/(app)/admin/communications/actions.ts` with `requireCommsSender()`, and `createAnnouncement` / `updateAnnouncement` (DRAFT only — a sent message is a record)
-- [ ] T031 [US1] Add `setAnnouncementAudience` / `removeAudienceChoice` per [contracts](./contracts/server-actions.md) — several values per call, **every fault reported together**, and deliberately not all-or-nothing so one stale name cannot throw away the other seven choices
-- [ ] T032 [US1] Add `audienceReachByChoice` to `src/lib/comms/` as a **plain function, not a `"use server"` export** — spec 038's `audienceReach` was an unguarded public endpoint. Count **per choice** through the same derivation the send uses
-- [ ] T033 [US1] Implement `sendAnnouncement` with all four guards from the contract: state re-read **inside** the transaction; `confirmedCount` must still equal the server's count; empty audience refused with a reason; email-off refused plainly. Expand → one `MessageRecipient` per person (PENDING) → `sendBatch` → stamp ACCEPTED/FAILED → set SENT, `sentById`, `sentAt`, `recipientCount`. **A partial failure is still a send** — do not roll back on the people who received it
-- [ ] T034 [P] [US1] Create `src/app/api/admin/communications/preview/route.ts` — renders through `renderMessage`, never a re-implementation (research D8)
-- [ ] T035 [US1] Create `src/app/(app)/admin/communications/page.tsx` — the message list and a compose form, in the existing admin idiom
-- [ ] T036 [US1] Create `src/app/(app)/admin/communications/[id]/page.tsx` — edit, the audience picker from `src/components/audience/`, the live total, and the preview in an `<iframe srcdoc>`
-- [ ] T037 [US1] Create `src/components/comms/SendConfirm.tsx` — names the count and passes it as `confirmedCount`. The one irreversible action in the feature gets a dialog, not a button
+- [X] T030 [US1] Create `src/app/(app)/admin/communications/actions.ts` with `requireCommsSender()`, and `createAnnouncement` / `updateAnnouncement` (DRAFT only — a sent message is a record)
+- [X] T031 [US1] Add `setAnnouncementAudience` / `removeAudienceChoice` per [contracts](./contracts/server-actions.md) — several values per call, **every fault reported together**, and deliberately not all-or-nothing so one stale name cannot throw away the other seven choices
+- [X] T032 [US1] Add `audienceReachByChoice` to `src/lib/comms/` as a **plain function, not a `"use server"` export** — spec 038's `audienceReach` was an unguarded public endpoint. Count **per choice** through the same derivation the send uses
+- [X] T033 [US1] Implement `sendAnnouncement` with all four guards from the contract: state re-read **inside** the transaction; `confirmedCount` must still equal the server's count; empty audience refused with a reason; email-off refused plainly. Expand → one `MessageRecipient` per person (PENDING) → `sendBatch` → stamp ACCEPTED/FAILED → set SENT, `sentById`, `sentAt`, `recipientCount`. **A partial failure is still a send** — do not roll back on the people who received it
+- [X] T034 [P] [US1] Create `src/app/api/admin/communications/preview/route.ts` — renders through `renderMessage`, never a re-implementation (research D8)
+- [X] T035 [US1] Create `src/app/(app)/admin/communications/page.tsx` — the message list and a compose form, in the existing admin idiom
+- [X] T036 [US1] Create `src/app/(app)/admin/communications/[id]/page.tsx` — edit, the audience picker from `src/components/audience/`, the live total, and the preview in an `<iframe srcdoc>`
+- [X] T037 [US1] Create `src/components/comms/SendConfirm.tsx` — names the count and passes it as `confirmedCount`. The one irreversible action in the feature gets a dialog, not a button
 - [ ] T038 [P] [US1] Snapshot then add a Communications card to `src/app/(app)/admin/page.tsx`
 
 **Checkpoint**: US1 alone is a shippable product — HR can announce things to chosen people.
