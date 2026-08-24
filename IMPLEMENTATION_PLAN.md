@@ -27,35 +27,44 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ## Decisions log
 
-- **2026-08-24 — Finance module: petty cash, payback, and the CEO's transaction approval (specs 039
-  + 040, spec stage).** The CEO asked for three things: manage petty cash the way the MARCOM
-  workbook does today, let anyone request their money back with evidence attached, and be emailed
-  whenever Finance enters a transaction — for expenses and for monthly salaries — so he can give the
-  final confirmation he already performs in the bank. Eight decisions were put to him and answered
-  before a line was drafted: **(a)** approval authority is an **appointment** ("Transaction
-  Approver"), never a new `Role` member — Super Users hold it implicitly so an empty list cannot
-  lock the company out, and the appointment cannot appoint; **(b)** the monthly salary batch holds a
-  **summary only** — month, total, headcount, bank reference — so the salary-is-Super-User-only rule
-  is untouched and Finance still sees no individual's pay; **(c)** petty cash is **custodian float
-  accounts** with a signed running balance, not one company box and not a Finance-only ledger;
-  **(d)** approval is **notify-then-confirm** with no amount threshold — Finance enters the transfer
-  in the bank and submits here, the CEO confirms in the bank and marks it approved; **(e)** the
-  **custodian logs their own lines** with receipts as they spend and Finance reviews and closes the
-  period; **(f)** payback requests route **Finance then CEO**; **(g)** a **budget per period** only —
-  the workbook's Forecast and Tools Subscription tabs stay out; **(h)** it ships as **two specs** —
-  039 petty cash + payback, 040 the approval mechanism shared by expenses and payroll. Two rules
-  came out of reading the workbook itself: its **Amount to reimburse** flips sign between tabs
-  (`March` computes spent − float, `JUL-AUG` float − spent, for the same situation), so the balance
-  is derived **once**, kept **signed**, and stated in words; and its overspend is carried by hand as
-  a line called *"December Overbudget"*, so carry-forward becomes a first-class opening balance.
-  One rule was added that nobody asked for: **the submitter of a payment run may not approve it** —
-  maker–checker is the whole point. Put to the CEO because it would have bound him too; he ruled
-  (2026-08-24) that **Super User is the sole exception**, so Finance and appointed approvers stay
-  separated while a Super User may complete both halves, with the run recording the same person on
-  each so it is visible rather than silent. **Pending governance amendments, to land with the code:** email widens to a third
-  workflow (finance approval); the daily scheduled job gains a second audience (appointed approvers,
-  still never employees at large); and the constitution's Roles line is corrected to include
-  `FINANCE`, which has existed since spec 020.
+- **2026-08-24 — Finance module: petty cash, payback, and the CEO's bank confirmation (specs 039
+  built + 040 specced).** The CEO asked for three things: manage petty cash the way the MARCOM
+  workbook does today, let anyone request their money back with evidence attached, and be told
+  whenever Finance enters a transaction — for expenses and for monthly salaries — so he can perform
+  the confirmation he already does in the bank. Eight decisions were put to him before a line was
+  drafted: **(a)** the authority to confirm is an **appointment**, never a new `Role` member;
+  **(b)** the monthly salary batch holds a **summary only** — month, total, headcount, bank
+  reference — so the salary-is-Super-User-only rule is untouched and Finance still sees no
+  individual's pay; **(c)** petty cash is **custodian float accounts** with a signed running
+  balance; **(d)** the flow is **notify-then-confirm** with no amount threshold; **(e)** the
+  **custodian logs their own lines** with receipts and Finance reviews and closes the period;
+  **(f)** payback requests route **Finance then the CEO**; **(g)** a **budget per period** only —
+  Forecast and Tools Subscription stay out; **(h)** it ships as **two specs**.
+
+  **A correction that changed spec 040.** The first draft called him an "approver" and the act
+  "approving a payment". He rejected the premise: *"I don't approve payments. I confirm the
+  transaction in the bank."* The wrong word had produced a design implying the platform held the
+  power to release money — it never does. 040 was rewritten end to end: Finance **sends** a batch to
+  the bank, the CEO **confirms** it there and **ticks it off** here, and the platform's whole job is
+  the notification and the record. **Four further decisions (2026-08-24):** he ticks batches off
+  after confirming, so the app can show what is outstanding; **nobody stands in for him** —
+  payments wait, which is why FR-003 deliberately departs from the Learning-manager pattern and
+  makes top-level access *not* an implicit confirmer (lock-out is instead prevented by allowing
+  self-appointment); the email carries **totals and a link only**, never payee names or amounts; and
+  the marketing float **opens owing 9,726.26**, the closing figure of the latest workbook tab, with
+  earlier months already settled.
+
+  **Two rules came out of reading the workbook itself:** its *"Amount to reimburse"* flips sign
+  between tabs (`March` computes spent − float, `JUL-AUG` float − spent, for the same situation), so
+  the balance is derived **once**, kept **signed**, and stated in words; and its overspend is
+  carried by hand as a line called *"December Overbudget"*, so carry-forward became a first-class
+  opening balance. **One rule was added that nobody asked for:** the sender of a batch may not
+  confirm it. Put to the CEO because it would have bound him too; he ruled that **top-level access
+  is the sole exception**, with the batch recording the same person on both halves so a
+  single-handed release is visible rather than silent. **Governance:** email widened to a third
+  workflow (payback) and the constitution's roles line corrected to include `FINANCE`, missing since
+  spec 020 — both landed with the code. Still pending for 040: the daily reminder job gains a second
+  audience (appointed confirmers, still never employees at large).
 
 - **2026-08-23 — A threshold decides IF, the cycle decides HOW MUCH (fix, no migration).** Reported
   issue: one employee's pool ceiling was not prorated "despite the cycle being prorated for all".

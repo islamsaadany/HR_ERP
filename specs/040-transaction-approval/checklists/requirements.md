@@ -1,7 +1,7 @@
-# Specification Quality Checklist: Transaction Approval & Monthly Salary Batches
+# Specification Quality Checklist: Bank Confirmations & Monthly Salary Runs
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-08-24
+**Created**: 2026-08-24 · **Revised**: 2026-08-24 after the CEO corrected the framing
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -31,19 +31,20 @@
 
 ## Notes
 
-- **No clarification markers**: the four decisions this spec turns on were answered by the CEO on
-  2026-08-24 — authority is an appointment rather than a new role; the salary batch holds a summary
-  only, never per-person amounts; approval follows the bank entry (notify-then-confirm) with no
-  amount threshold; and this ships as a separate spec from 039.
-- **One rule added that was not asked for, and how it was settled**: FR-011 forbids the submitter
-  from approving their own run, since maker–checker is the entire purpose of the feature. It was put
-  to the CEO because it would otherwise have constrained him, and he ruled on 2026-08-24 that
-  **Super User is the sole exception** — Finance and appointed approvers stay separated, a Super
-  User may complete both halves. The residual risk is stated plainly: one Super User acting alone
-  can release money, and the run makes that visible by recording the same person on both halves
-  rather than concealing it.
-- **Values deferred to planning, not decisions**: the reminder's default lead time (FR-022) and the
-  attachment size limit, both of which follow existing platform values.
-- **Three governance amendments are required before this ships**, listed in the spec's *Dependencies
-  & Constraints*: the third email workflow, the second scheduled-job audience, and the long-standing
-  omission of the `FINANCE` role from the constitution's roles line.
+- **The first draft got the premise wrong and was rewritten.** It described the CEO as approving
+  payments. He corrected it: *"I don't approve payments. I confirm the transaction in the bank."*
+  That reframed the whole feature — the platform notifies and records, it does not gate. Every
+  screen, state name and email in the spec now says send / confirm / tick off rather than approve.
+  Worth keeping in view: the wrong word had produced a design that implied the app held the power to
+  release money, which it never does.
+- **Decisions taken by the CEO on 2026-08-24**: he ticks a batch off after confirming in the bank
+  (so the platform can show what is outstanding and hold the record); nobody stands in for him, so
+  payments wait; the email carries totals and a link, never payee names or amounts; and the
+  marketing float opens owing 9,726.26, the closing figure of the latest workbook tab, with earlier
+  months already settled.
+- **One departure from house pattern is deliberate and flagged** (FR-003): unlike Learning managers,
+  top-level access does **not** confer confirmation implicitly, because "it waits for me and nobody
+  else" would otherwise be untrue. The lock-out risk that pattern exists to prevent is covered by
+  FR-004 instead — the list can always be refilled, including by self-appointment.
+- **Values deferred to planning, not decisions**: the reminder's default lead time, and the
+  attachment size limit, both following existing platform values.
