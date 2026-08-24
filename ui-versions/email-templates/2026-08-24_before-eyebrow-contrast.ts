@@ -5,11 +5,7 @@ import { appBaseUrl } from "@/lib/email/client";
 // styles only (email clients ignore <style>), light navy/gold.
 
 const NAVY = "#0f2444";
-// gold-500, not gold-600. MEASURED 2026-08-24: #a8821e on navy-800 #0f2444 is 4.33:1, below the
-// 4.5:1 AA requires for text under 18px — and the eyebrow below is 12px. #c9a227 is 6.40:1.
-// (spec 039 FR-042. The same trap is why the new Communications header puts the accent in a BAR,
-// which is a fill and has no ratio to meet, rather than in type.)
-const GOLD = "#c9a227";
+const GOLD = "#a8821e";
 const INK = "#16202e";
 const MUTED = "#5f6472";
 const LINE = "#e7e3da";

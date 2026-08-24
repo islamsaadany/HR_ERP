@@ -46,9 +46,9 @@ Three things are **not** decided and must not be assumed by whoever implements t
 
 **Purpose**: schema and migration, so everything downstream has something to build on.
 
-- [ ] T001 Add `MessageKind`, `MessageState`, `DeliveryState` enums and the `Message`, `MessageRecipient`, `MessageAudience`, `Occasion` models to `prisma/schema.prisma` per [data-model.md](./data-model.md). Add `congratsLeadDays Int @default(3)` to `NotificationSettings`. Add back-relations to `User` and `BusinessUnit` — **no new column on `User`**
-- [ ] T002 Write `prisma/sql/067_team_communications.sql` — additive and idempotent (enum creation guarded by a catalogue check, tables `IF NOT EXISTS`, column `ADD COLUMN IF NOT EXISTS`), in the **same commit** as T001
-- [ ] T003 Verify the migration per [quickstart.md](./quickstart.md) Scenario 1: build the pre-feature schema on a throwaway Postgres, apply `067` **twice**, then `prisma migrate diff` against `schema.prisma` and confirm no difference beyond the house `updatedAt` lines documented in `060`
+- [X] T001 Add `MessageKind`, `MessageState`, `DeliveryState` enums and the `Message`, `MessageRecipient`, `MessageAudience`, `Occasion` models to `prisma/schema.prisma` per [data-model.md](./data-model.md). Add `congratsLeadDays Int @default(3)` to `NotificationSettings`. Add back-relations to `User` and `BusinessUnit` — **no new column on `User`**
+- [X] T002 Write `prisma/sql/067_team_communications.sql` — additive and idempotent (enum creation guarded by a catalogue check, tables `IF NOT EXISTS`, column `ADD COLUMN IF NOT EXISTS`), in the **same commit** as T001
+- [X] T003 Verify the migration per [quickstart.md](./quickstart.md) Scenario 1: build the pre-feature schema on a throwaway Postgres, apply `067` **twice**, then `prisma migrate diff` against `schema.prisma` and confirm no difference beyond the house `updatedAt` lines documented in `060`
 
 ---
 
@@ -59,26 +59,26 @@ anything.
 
 ### The audience extraction (research D3)
 
-- [ ] T010 Snapshot `src/components/learning/AccessSetup.tsx` to `ui-versions/AccessSetup/2026-08-24_before-extraction.tsx` **before touching it** (constitution II)
-- [ ] T011 Create `src/lib/audience/types.ts` — `AudienceField`, `AudienceChoice`, moved verbatim from `src/lib/learning/access-actions.ts` with the Learning-specific naming dropped
-- [ ] T012 Create `src/lib/audience/rules.ts` — move `audienceWhere`, `subjectMatchesAudience`, `bandStartDateRange` and the per-choice counting out of `src/lib/learning/audience.ts` and `queries.ts`. **Behaviour must not change**: a rule that matches nothing still returns `null` (never a widened `where`), and a tenure band still compiles to a **start-date range**, never the stored `tenureBand` column
-- [ ] T013 Reduce `src/lib/learning/audience.ts` to a thin re-export of `src/lib/audience/rules.ts`
-- [ ] T014 Move the picker component to `src/components/audience/AudiencePicker.tsx`, parameterised by which fields it offers; update the Learning import
-- [ ] T015 Run the existing Learning verification (`scripts/verify-course-access.mts`, 17/17) and `npm test` (105/105) against a throwaway Postgres to prove the extraction changed **nothing** in Learning. A refactor that breaks a shipped module is not a refactor
+- [X] T010 Snapshot `src/components/learning/AccessSetup.tsx` to `ui-versions/AccessSetup/2026-08-24_before-extraction.tsx` **before touching it** (constitution II)
+- [X] T011 Create `src/lib/audience/types.ts` — `AudienceField`, `AudienceChoice`, moved verbatim from `src/lib/learning/access-actions.ts` with the Learning-specific naming dropped
+- [X] T012 Create `src/lib/audience/rules.ts` — move `audienceWhere`, `subjectMatchesAudience`, `bandStartDateRange` and the per-choice counting out of `src/lib/learning/audience.ts` and `queries.ts`. **Behaviour must not change**: a rule that matches nothing still returns `null` (never a widened `where`), and a tenure band still compiles to a **start-date range**, never the stored `tenureBand` column
+- [X] T013 Reduce `src/lib/learning/audience.ts` to a thin re-export of `src/lib/audience/rules.ts`
+- [X] T014 Move the picker component to `src/components/audience/AudiencePicker.tsx`, parameterised by which fields it offers; update the Learning import
+- [X] T015 Run the existing Learning verification (`scripts/verify-course-access.mts`, 17/17) and `npm test` (105/105) against a throwaway Postgres to prove the extraction changed **nothing** in Learning. A refactor that breaks a shipped module is not a refactor
 
 ### The pure rules
 
-- [ ] T016 [P] Create `src/lib/comms/brand.ts` — `inkFor(brandHex)` returning `{ background, ink, adjusted }`. Try white **and** dark against the brand; return the brand **unchanged** whenever either reaches 4.5:1; nudge toward the closer end in small steps only when neither does (research D5). The naive single-threshold rule is wrong — do not reintroduce it
-- [ ] T017 [P] Write `tests/comms-brand.test.ts` — the six measured colours from research D5 with their expected inks and ratios, **plus** the properties: every output ≥ 4.5:1, the brand untouched whenever either ink clears, and a sweep of several hundred colours producing no failure and no adjustment above ~15%
-- [ ] T018 [P] Create `src/lib/comms/occasions.ts` — `occasionsInWindow(users, from, to)` returning birthdays and anniversaries. Anniversary carries `years`; **a birthday carries `years: null`** — the model refuses to hold an age. A 29 February birthday is observed on 28 February in non-leap years. Leavers and people with no date produce nothing
-- [ ] T019 [P] Write `tests/comms-occasions.test.ts` per [quickstart.md](./quickstart.md) Scenario 3
+- [X] T016 [P] Create `src/lib/comms/brand.ts` — `inkFor(brandHex)` returning `{ background, ink, adjusted }`. Try white **and** dark against the brand; return the brand **unchanged** whenever either reaches 4.5:1; nudge toward the closer end in small steps only when neither does (research D5). The naive single-threshold rule is wrong — do not reintroduce it
+- [X] T017 [P] Write `tests/comms-brand.test.ts` — the six measured colours from research D5 with their expected inks and ratios, **plus** the properties: every output ≥ 4.5:1, the brand untouched whenever either ink clears, and a sweep of several hundred colours producing no failure and no adjustment above ~15%
+- [X] T018 [P] Create `src/lib/comms/occasions.ts` — `occasionsInWindow(users, from, to)` returning birthdays and anniversaries. Anniversary carries `years`; **a birthday carries `years: null`** — the model refuses to hold an age. A 29 February birthday is observed on 28 February in non-leap years. Leavers and people with no date produce nothing
+- [X] T019 [P] Write `tests/comms-occasions.test.ts` per [quickstart.md](./quickstart.md) Scenario 3
 
 ### The email builder (research D7, D8)
 
-- [ ] T020 Create `src/lib/comms/render.ts` — `renderMessage(input)` returning `{ html, text }`. **The only place email HTML is built.** Tables for layout, every style inline, colours literal, no `<style>` block, no `var()`, no `data:` image, `color-scheme: light` declared. Header: group name small above the unit name large, unit colour behind both with ink from `brand.ts`, group hairline under it. Body black on white always. Button in the unit's colour with derived ink. Paragraphs split on blank lines
-- [ ] T021 Extend `src/lib/email/client.ts` with `sendBatch(messages)` — chunk at 100, return a per-message result carrying the provider id or the error (research D1). Keep the existing single-send path untouched
-- [ ] T022 Add `deliveryReadiness()` to `src/lib/comms/settings.ts` — call `domains.list`, return **ready** · **ready for you only** · **key refused** · **could not check**. Match a refused key on the **message as well as the status** — Resend answers an invalid key with 400, not 401, and mislabelling it as an unverified domain sends an operator to fix DNS for a week (research D2)
-- [ ] T023 Snapshot then edit `src/lib/email/templates.ts`: change the header eyebrow from `#a8821e` (4.33:1) to `#c9a227` (6.40:1) — FR-042, research D11
+- [X] T020 Create `src/lib/comms/render.ts` — `renderMessage(input)` returning `{ html, text }`. **The only place email HTML is built.** Tables for layout, every style inline, colours literal, no `<style>` block, no `var()`, no `data:` image, `color-scheme: light` declared. Header: group name small above the unit name large, unit colour behind both with ink from `brand.ts`, group hairline under it. Body black on white always. Button in the unit's colour with derived ink. Paragraphs split on blank lines
+- [X] T021 Extend `src/lib/email/client.ts` with `sendBatch(messages)` — chunk at 100, return a per-message result carrying the provider id or the error (research D1). Keep the existing single-send path untouched
+- [X] T022 Add `deliveryReadiness()` to `src/lib/comms/settings.ts` — call `domains.list`, return **ready** · **ready for you only** · **key refused** · **could not check**. Match a refused key on the **message as well as the status** — Resend answers an invalid key with 400, not 401, and mislabelling it as an unverified domain sends an operator to fix DNS for a week (research D2)
+- [X] T023 Snapshot then edit `src/lib/email/templates.ts`: change the header eyebrow from `#a8821e` (4.33:1) to `#c9a227` (6.40:1) — FR-042, research D11
 
 ---
 

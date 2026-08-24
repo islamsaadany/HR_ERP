@@ -173,6 +173,14 @@ model User {
   learningManager           LearningManager?     @relation("LearningManagerSubject")
   learningManagersAppointed LearningManager[]    @relation("LearningManagerAppointer")
 
+  // Team Communications (spec 039) — back-relations only; this feature adds NO column to User.
+  messagesAbout    Message[]          @relation("MessageSubject")
+  messagesAssigned Message[]          @relation("MessageAssignee")
+  messagesCreated  Message[]          @relation("MessageAuthor")
+  messagesSent     Message[]          @relation("MessageSender")
+  messagesReceived MessageRecipient[] @relation("MessageAddressee")
+  occasions        Occasion[]         @relation("OccasionSubject")
+
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   poolExceptions        PoolCeilingException[] @relation("PoolExceptionSubject")
@@ -1063,20 +1071,22 @@ model BrandSettings {
 /// unit; unset falls back to the BrandSettings default. Theming only — no data
 /// isolation (that is spec 022's full multi-tenancy). Distinct from Department.
 model BusinessUnit {
-  id           String   @id @default(cuid())
-  name         String   @unique // official company name; unique (case-insensitive enforced in app)
-  platformName String? // what shows in-app (wordmark); falls back to name
-  shortName    String // eyebrow / initial
-  logoUrl      String? // private Blob URL; null = wordmark
-  primaryColor String   @default("#0f2444") // navy-800
-  accentColor  String   @default("#c9a227") // gold-500
-  order        Int      @default(0)
+  id              String             @id @default(cuid())
+  name            String             @unique // official company name; unique (case-insensitive enforced in app)
+  platformName    String? // what shows in-app (wordmark); falls back to name
+  shortName       String // eyebrow / initial
+  logoUrl         String? // private Blob URL; null = wordmark
+  primaryColor    String             @default("#0f2444") // navy-800
+  accentColor     String             @default("#c9a227") // gold-500
+  order           Int                @default(0)
   // The unit used as the default/fallback brand (unassigned users, sign-in, app
   // icon). At most one unit is default; enforced by the setDefault action.
-  isDefault    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
-  members      User[]
+  isDefault       Boolean            @default(false)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @default(now()) @updatedAt
+  members         User[]
+  /// Which copies of which messages this unit branded (spec 039).
+  brandedMessages MessageRecipient[]
 }
 
 // ─── Notification settings (super-user, spec 020) ───────────────────────────
@@ -1092,6 +1102,9 @@ model NotificationSettings {
   fromName             String?
   /// Days before a holiday that HR is asked to confirm its date (spec 037 FR-015).
   verificationLeadDays Int      @default(14)
+  /// How many days before a birthday or joining anniversary the platform prepares the draft
+  /// (spec 039 FR-018). Mirrors verificationLeadDays above rather than inventing a second idiom.
+  congratsLeadDays     Int      @default(3)
   updatedAt            DateTime @default(now()) @updatedAt
 }
 
@@ -1645,4 +1658,169 @@ model LearningManager {
   appointedBy   User?   @relation("LearningManagerAppointer", fields: [appointedById], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
+}
+
+// ─── Team Communications (spec 039, 2026-08-24) ─────────────────────────────────────────
+
+/// What a message is. The kind decides who it reaches and who may send it: an ANNOUNCEMENT goes
+/// to an audience and is written by a person; a congratulation goes to exactly ONE person and is
+/// prepared by the platform, then edited and sent by a human.
+enum MessageKind {
+  ANNOUNCEMENT
+  BIRTHDAY
+  WORK_ANNIVERSARY
+}
+
+/// DRAFT is the only state that can be edited or sent.
+///
+/// MISSED is terminal and deliberate: a congratulation nobody sent CLOSES rather than going out
+/// late (FR-026). You cannot wish somebody a happy birthday three days afterwards, and a system
+/// that tries is worse than one that stays quiet.
+enum MessageState {
+  DRAFT
+  SENT
+  MISSED
+}
+
+/// What the mail provider said about ONE person's copy. PENDING exists for the window between the
+/// row being written and the provider answering — so a function that dies mid-send leaves evidence
+/// of who it was up to rather than a gap nobody can reconstruct.
+enum DeliveryState {
+  PENDING
+  ACCEPTED
+  FAILED
+}
+
+/// One thing that goes to people.
+model Message {
+  id      String       @id @default(cuid())
+  kind    MessageKind
+  state   MessageState @default(DRAFT)
+  subject String
+  /// Plain text. Blank lines become paragraphs — the composer is a textarea, so the line breaks
+  /// somebody typed are the only structure the message has.
+  body    String
+
+  /// Optional call to action. Rendered ONLY when the href is absolute: a relative link is dead in
+  /// a mail client, which has no page to be relative to.
+  ctaLabel String?
+  ctaHref  String?
+
+  /// The person a congratulation is ABOUT. Null for an announcement.
+  subjectUserId String?
+  subjectUser   User?   @relation("MessageSubject", fields: [subjectUserId], references: [id], onDelete: Cascade)
+
+  /// Whose queue it sits in — the line manager, or HR. Null for an announcement.
+  assignedToId String?
+  assignedTo   User?   @relation("MessageAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  /// Null when the PLATFORM prepared it rather than a person writing it.
+  createdById String?
+  createdBy   User?   @relation("MessageAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  /// Who pressed send. Stored rather than derived: this is what the closing line is signed with
+  /// (FR-023), and it must not change when the person later changes role or manager.
+  sentById String?
+  sentBy   User?   @relation("MessageSender", fields: [sentById], references: [id], onDelete: SetNull)
+
+  sentAt   DateTime?
+  missedAt DateTime?
+
+  /// Stamped AT SEND. A snapshot of what was true then, never recomputed — a live count would
+  /// answer "who would this reach today", which is a different and misleading question once
+  /// people have joined or left.
+  recipientCount Int @default(0)
+
+  audiences  MessageAudience[]
+  recipients MessageRecipient[]
+  occasion   Occasion?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([state, kind])
+  @@index([assignedToId, state])
+  @@index([subjectUserId])
+}
+
+/// One person's copy of one message. This table is why "did Karim get it?" is answerable.
+model MessageRecipient {
+  id        String  @id @default(cuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation("MessageAddressee", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The address AS IT WAS at send time. People change email; the record has to say where the
+  /// message actually went, not where it would go today.
+  email String
+
+  /// Which unit branded THIS copy — the reason two people can receive the same words looking
+  /// different. Records the unit, not its colour: a unit re-branding changes future emails and
+  /// must not rewrite the past.
+  businessUnitId String?
+  businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id], onDelete: SetNull)
+
+  state      DeliveryState @default(PENDING)
+  /// The provider's id for this ONE message, for chasing a specific delivery later.
+  providerId String?
+  /// Why this one failed, when it did.
+  error      String?
+
+  createdAt DateTime @default(now())
+
+  /// A person cannot be in one send twice, however the audience choices overlap. Somebody matched
+  /// by their department AND by name gets one email, not two.
+  @@unique([messageId, userId])
+  @@index([messageId, state])
+}
+
+/// For an announcement: one row per choice, exactly mirroring how a course stores its access.
+///
+/// Deliberately NOT an expanded list of people — a choice is a RULE resolved live, which is what
+/// makes the count on screen today's answer rather than a stale one. The expansion happens once,
+/// at send, and lands in MessageRecipient.
+///
+/// There is deliberately no ALL_ACTIVE value. "Everyone" is its own control on the picker, for
+/// the reason the Learning fix established: two ways to say everyone is how a restricted thing
+/// quietly reaches the whole company.
+model MessageAudience {
+  id        String  @id @default(cuid())
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  /// DEPARTMENT | GROUP | PERSON | BUSINESS_UNIT | TENURE_BAND | EMPLOYMENT_TYPE | REPORTS_TO
+  field     String
+  value     String
+
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, field, value])
+}
+
+/// A birthday or joining anniversary for one person in one year.
+///
+/// Its only job is to make idempotence STRUCTURAL. The unique index below IS the guarantee that a
+/// second preparation run creates nothing new — not a check the job has to remember to do.
+model Occasion {
+  id     String      @id @default(cuid())
+  userId String
+  user   User        @relation("OccasionSubject", fields: [userId], references: [id], onDelete: Cascade)
+  kind   MessageKind // BIRTHDAY or WORK_ANNIVERSARY
+
+  occasionYear Int
+  /// The OBSERVED date — 28 February in a non-leap year for a 29 February birthday, so three
+  /// people in four years do not silently get nothing.
+  occasionDate DateTime
+
+  /// Years of service. NULL for a birthday — an age is never stated (FR-020), and a nullable
+  /// column is how the model refuses to hold one rather than merely declining to print it.
+  years Int?
+
+  messageId String?  @unique
+  message   Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  preparedAt DateTime @default(now())
+
+  @@unique([userId, kind, occasionYear])
+  @@index([occasionDate])
 }
