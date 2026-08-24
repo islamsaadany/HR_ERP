@@ -149,20 +149,35 @@ context for the conversation, never a score.
   follows the pair, not the chair** — when someone changes manager, the new manager does **not**
   inherit read access to sheets written with the previous one.
 - **1:1s are their own element**, not journal entries — see §3.
+- **1:1s are manager↔report only** — same pair as the review, so a 1:1 outcome always has a review
+  to feed into. No peer-to-peer 1:1s.
+- **1:1 outcomes are promoted, not auto-listed** — a cycle's outcomes sit beside the sheet and each
+  person pulls forward the ones worth raising. Same behaviour as journal entries: you walk into the
+  review with what you chose, not a transcript.
+- **Cycles are calendar quarters, opened and closed automatically** — Q1–Q4, no operator, no admin
+  screen. (Consistent with HR having no role here: nobody needs a power to open a cycle.)
+- **Strengths are a per-employee picklist, sourced from Gallup** — *not* a company-wide list. Each
+  employee has their own ordered CliftonStrengths profile (their top 5, or top 10 where available);
+  "strengths I relied on / misutilised" selects from **that person's own themes**, which is also the
+  correct reading of the instrument — you can only misuse a strength you have. Two layers: the fixed
+  34-theme vocabulary (static reference data) and the per-person ordered profile on the employee
+  record. Storing the profile as an **ordered list** covers top-5 and top-10 without a setting.
+  Administering the profile is employee-record work, so it is *not* covered by the HR exclusion above
+  — that exclusion is about review and 1:1 contents.
 
 ## 6. Open questions (blocking a spec)
 
-1. **1:1 scope** — manager↔report only, or any two employees (peer 1:1s)?
-2. **1:1 → review flow** — do a cycle's 1:1 outcomes appear on the quarter sheet automatically, or
-   does each person promote the ones they want to raise?
-3. **Who opens a cycle** — with HR out, the plausible answer is the calendar: Q1–Q4 open and close
-   automatically, no operator. Confirm, or does each pair run its own schedule?
-4. **Strengths vocabulary** — the template names CliftonStrengths-style strengths (Restorative,
-   Arranger, Responsibility, Developer, Strategic, Achiever, Analytical). If that vocabulary is
-   company-wide, "strengths I relied on / misutilized" should be a picklist on the employee record —
-   comparable across cycles — rather than free text.
-5. **Coverage** — every employee with a manager, or a few pairs first? *Recommendation: everyone
-   with a manager; with HR unable to see anything, a pilot has no way to be observed anyway.*
-6. **Skipped cycles** — a quarter that closes with a half-filled sheet and no meeting. *Recommendation:
-   it closes as-is and stays readable; nothing chases anybody, since chasing implies an overseer and
-   there isn't one.*
+1. **How a Gallup profile gets in.** Recommendation: **HR types the ordered themes** (5–10 picks
+   from a fixed list of 34, a minute per person) and optionally attaches the Gallup PDF to the
+   employee record as a document. Parsing the PDF automatically means building against a report
+   format we do not control and cannot test against, for a one-off per employee — a poor trade
+   unless the headcount makes typing genuinely impractical.
+
+## 7. Resolved with a recommendation (raise only if wrong)
+
+- **Coverage** — everyone with a manager. With HR unable to see anything, a pilot has no way to be
+  observed anyway.
+- **Skipped cycles** — a quarter closes as-is, half-filled sheet and all, and stays readable. Nothing
+  chases anybody: chasing implies an overseer, and there isn't one.
+- **Top 5 vs top 10** — no decision needed; the profile is an ordered list of whatever length was
+  uploaded.
