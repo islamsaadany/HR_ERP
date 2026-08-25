@@ -1,0 +1,204 @@
+<title>Raise This</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-400:#4f6d97;
+    --navy-500:#2f4d78;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 90px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .screen{margin-top:38px}
+  .screen>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:80ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .ph{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .ph h3{font-family:Georgia,serif;font-size:16px;margin:0}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-navy{border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:9px;cursor:pointer}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;cursor:pointer}
+  .rows{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface)}
+  .row{display:flex;align-items:flex-start;gap:11px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px}
+  .row:last-child{border-bottom:0}
+  .row.flag{background:#fbf9f2;border-left:3px solid var(--gold-500);padding-left:9px}
+  .when{color:var(--muted);font-size:12px;min-width:84px;flex:none;font-variant-numeric:tabular-nums;padding-top:1px}
+  .grow{flex:1}
+  .star{flex:none;width:22px;height:22px;border-radius:6px;border:1px solid var(--navy-200);background:var(--surface);display:grid;place-items:center;font-size:11px;cursor:pointer;color:var(--navy-300)}
+  .star.on{background:var(--gold-500);border-color:var(--gold-600);color:#fff}
+  .additem{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12px;color:var(--muted);border:1px dashed var(--navy-200);border-radius:8px;padding:6px 9px;background:var(--paper)}
+  .carry{border-left:3px solid var(--gold-500);background:#fbf9f2;padding:12px 16px;border-radius:0 10px 10px 0;font-size:13px}
+  .carry h4{font-family:Georgia,serif;font-size:14.5px;margin:0 0 6px}
+  .note{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .note:last-of-type{border-bottom:0}
+  .av{width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;flex:none}
+  .av.b{background:var(--gold-600)}
+  .nm{font-size:11px;color:var(--muted);margin-bottom:2px}
+  .src{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:5px;background:var(--navy-50);color:var(--navy-500);border:1px solid var(--navy-100);flex:none}
+  .decision{margin-top:34px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:900px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:5px 0}
+  .why{font-size:11.5px;color:var(--muted);margin-top:9px;max-width:84ch}
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 040 · addendum for sign-off</p>
+  <h1>Raise this</h1>
+  <p class="lede">Three changes to the journal you already approved — nothing new to learn, and no
+  second place to write things down. Flag a note as something to raise; it then waits for you
+  wherever the conversation actually happens.</p>
+
+  <!-- 1 -->
+  <div class="screen">
+    <h2><span class="num">1</span> Flag it when you write it</h2>
+    <p class="sub">One click on the flag. Everything else about the journal is unchanged.</p>
+
+    <div class="frame">
+      <div class="panel">
+        <div class="ph">
+          <h3>Journal</h3>
+          <span class="chip c-navy">🔒 Only you can ever read this</span>
+        </div>
+        <div class="additem" style="margin-bottom:11px">+ What happened? — pick the day, tag it, write a line</div>
+
+        <div class="rows">
+          <div class="row flag">
+            <span class="star on" title="Flagged to raise">⚑</span>
+            <span class="when">12/08/2026</span>
+            <span class="chip c-off" style="flex:none">Blocker</span>
+            <span class="grow">The retreat brief went three ways before anyone owned it</span>
+            <span class="chip c-gold" style="flex:none">To raise</span>
+          </div>
+          <div class="row flag">
+            <span class="star on" title="Flagged to raise">⚑</span>
+            <span class="when">09/08/2026</span>
+            <span class="chip c-off" style="flex:none">Blocker</span>
+            <span class="grow">Two people are on the retreat and the brand site in the same week</span>
+            <span class="chip c-gold" style="flex:none">To raise</span>
+          </div>
+          <div class="row">
+            <span class="star" title="Flag to raise">⚑</span>
+            <span class="when">04/08/2026</span>
+            <span class="chip c-off" style="flex:none">Went well</span>
+            <span class="grow">Marketing team is running its own standup now</span>
+          </div>
+          <div class="row">
+            <span class="star" title="Flag to raise">⚑</span>
+            <span class="when">27/07/2026</span>
+            <span class="chip c-off" style="flex:none">Learning</span>
+            <span class="grow">People's energy is charged in very different ways</span>
+            <span class="chip c-ok" style="flex:none">Raised 06/08</span>
+          </div>
+        </div>
+        <p class="why">A flagged note gets the gold rail and stays in the queue until you carry it into
+        a conversation. Once carried, the flag clears itself and the row says where it went — you never
+        have to tidy up after yourself.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="screen">
+    <h2><span class="num">2</span> It's waiting when you open a 1:1</h2>
+    <p class="sub">This is the new panel. Nothing chases you — it simply sits beside the conversation
+    you already came here to have.</p>
+
+    <div class="frame">
+      <div class="panel">
+        <div class="ph">
+          <h3>1:1 with Nada Kamal</h3>
+          <span class="chip c-off">Held 06/08/2026</span>
+        </div>
+
+        <div class="carry" style="margin-bottom:13px">
+          <h4>2 things you flagged to raise</h4>
+          <div class="rows" style="margin-top:8px;background:var(--surface)">
+            <div class="row">
+              <span class="when">12/08/2026</span>
+              <span class="grow">The retreat brief went three ways before anyone owned it</span>
+              <button class="btn-ghost" style="flex:none">Raise it</button>
+            </div>
+            <div class="row">
+              <span class="when">09/08/2026</span>
+              <span class="grow">Two people are on the retreat and the brand site in the same week</span>
+              <button class="btn-ghost" style="flex:none">Raise it</button>
+            </div>
+          </div>
+          <p class="why" style="margin-top:8px">Raising one copies the words into the notes below, where
+          Nada can see it. Until you press it, she sees nothing — the journal stays yours.</p>
+        </div>
+
+        <div class="note">
+          <div class="av">IS</div>
+          <div><div class="nm">Islam · 06/08/2026</div><div>Raised that the retreat and the brand site are colliding on the same two people.</div></div>
+          <span class="src" style="align-self:flex-start;margin-top:3px">From journal</span>
+        </div>
+        <div class="note">
+          <div class="av b">NK</div>
+          <div><div class="nm">Nada · 06/08/2026</div><div>Agreed. Retreat can slip two weeks; the site cannot.</div></div>
+        </div>
+        <div class="additem" style="margin-top:9px">+ Add a note</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="screen">
+    <h2><span class="num">3</span> And on the quarterly sheet</h2>
+    <p class="sub">The panel you already approved gains one line — flagged notes float to the top and
+    say so. Everything else is as signed off.</p>
+
+    <div class="frame">
+      <div class="panel">
+        <div class="ph"><h3>Bring something over</h3><span class="chip c-gold">2 still to raise</span></div>
+        <div class="rows">
+          <div class="row flag">
+            <span class="when">12/08/2026</span>
+            <span class="chip c-gold" style="flex:none">To raise</span>
+            <span class="grow">The retreat brief went three ways before anyone owned it</span>
+            <button class="btn-ghost" style="flex:none">Add</button>
+          </div>
+          <div class="row flag">
+            <span class="when">09/08/2026</span>
+            <span class="chip c-gold" style="flex:none">To raise</span>
+            <span class="grow">Two people are on the retreat and the brand site in the same week</span>
+            <button class="btn-ghost" style="flex:none">Add</button>
+          </div>
+          <div class="row">
+            <span class="when">04/08/2026</span>
+            <span class="grow">Marketing team is running its own standup now</span>
+            <button class="btn-ghost" style="flex:none">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>What I need you to sign off</h3>
+    <ul>
+      <li><b>A flag on a journal row</b>, not a separate "incidents" screen — one place to write things down.</li>
+      <li><b>The gold rail + "To raise" chip</b> for a flagged note.</li>
+      <li><b>The "N things you flagged to raise" panel</b> at the top of a 1:1, with a Raise it button per line.</li>
+      <li><b>Carrying it clears the flag automatically</b> and the journal row shows where it went.</li>
+      <li><b>No badge, no count on the Reviews home, no notification</b> — it appears where the conversation is, and nowhere else.</li>
+    </ul>
+    <p class="why" style="margin-top:10px">One thing this deliberately does not do: track whether the
+    issue was <em>resolved</em>. Raising it is the point; what came of it belongs in the 1:1's agreed
+    outcome, which already exists. Say if you want resolution tracked as well and I will draw it.</p>
+  </div>
+
+  <footer>Spec 040 addendum · 25/08/2026 · not built — for approval only</footer>
+</div>
