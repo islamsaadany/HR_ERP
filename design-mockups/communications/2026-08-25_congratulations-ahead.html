@@ -1,0 +1,204 @@
+<title>Congratulations ahead</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-50:#eef2f8;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;
+    --navy-600:#1f3a63;--navy-700:#163055;--navy-800:#0f2444;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green-bg:#e8f3ec;--green-ink:#256b45;
+    --shadow:0 1px 2px rgba(16,36,68,.04),0 1px 3px rgba(16,36,68,.06);
+    --serif:"Fraunces",Georgia,serif;--sans:"Hanken Grotesk",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:36px 22px 90px}
+  .doc-head{border-bottom:2px solid var(--navy-800);padding-bottom:18px}
+  .eyebrow{font:700 11px/1.4 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--gold-600);margin:0}
+  h1{font:600 34px/1.15 var(--serif);margin:6px 0 0}
+  .lede{color:var(--muted);max-width:70ch;margin:8px 0 0;font-size:14.5px}
+  .screen{margin-top:42px}
+  .screen-label{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .screen-n{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:var(--navy-800);color:#fff;font:700 12px/1 var(--sans)}
+  .screen-t{font:600 20px/1.2 var(--serif)}
+  .screen-note{color:var(--muted);font-size:13px;max-width:74ch;margin:0 0 14px}
+  .frame{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow)}
+  .crumb{font-size:12.5px;color:var(--muted);margin:0 0 8px}
+  .ph1{font:600 27px/1.15 var(--serif);margin:4px 0 0}
+  .sub{color:var(--muted);font-size:13.5px;margin:6px 0 0;max-width:68ch}
+
+  .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px;border-bottom:1px solid var(--line);padding-bottom:12px}
+  .tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font:600 12.5px/1.4 var(--sans);color:var(--ink)}
+  .tab.on{background:var(--navy-800);border-color:var(--navy-800);color:#fff}
+  .tab .n{opacity:.65;font-weight:500;margin-left:5px}
+
+  .grouphead{display:flex;align-items:baseline;gap:9px;margin:20px 0 8px}
+  .grouphead b{font:700 11px/1.4 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--navy-800)}
+  .grouphead span{font-size:12px;color:var(--muted)}
+  .rows{display:flex;flex-direction:column;gap:7px}
+  .row{border:1px solid var(--line);border-radius:11px;padding:11px 13px;display:flex;align-items:center;gap:12px;background:var(--surface)}
+  .row.due{border-color:var(--gold-300);background:#fffdf5}
+  .date{width:64px;flex:none;text-align:center;border-right:1px solid var(--line);padding-right:10px}
+  .date .d{font:600 18px/1 var(--serif);color:var(--navy-800)}
+  .date .m{font:700 9.5px/1.5 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .who{min-width:0;flex:1}
+  .who .n{font:700 14px/1.3 var(--sans);color:var(--navy-800)}
+  .who .m{font-size:12.2px;color:var(--muted);margin-top:1px}
+  .chip{display:inline-flex;align-items:center;border-radius:999px;padding:3px 9px;font:600 11px/1.5 var(--sans);white-space:nowrap}
+  .chip-written{background:var(--navy-50);color:var(--navy-700)}
+  .chip-due{background:var(--gold-100);color:var(--gold-800)}
+  .chip-sent{background:var(--green-bg);color:var(--green-ink)}
+  .chip-none{background:#f1efe9;color:var(--muted)}
+  .btn{display:inline-flex;align-items:center;border-radius:8px;padding:7px 13px;font:600 12.5px/1 var(--sans);border:1px solid transparent;white-space:nowrap}
+  .btn-navy{background:var(--navy-800);color:#fff}
+  .btn-ghost{background:var(--surface);color:var(--navy-800);border-color:var(--navy-200)}
+  .btn-off{background:#f1efe9;color:#9a9ba1;border-color:var(--line)}
+  .note{border-left:3px solid var(--gold-500);background:var(--gold-100);color:var(--gold-800);border-radius:0 8px 8px 0;padding:11px 14px;font-size:13px;margin-top:16px}
+  table.t{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+  table.t th,table.t td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.t th{font:700 10.5px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  table.t td:first-child{font-weight:600;color:var(--navy-800);white-space:nowrap}
+  .scrollx{overflow-x:auto}
+</style>
+
+<div class="wrap">
+  <div class="doc-head">
+    <p class="eyebrow">Mockup for sign-off · 25 August 2026</p>
+    <h1>Congratulations, seen ahead</h1>
+    <p class="lede">Who is coming up this month and this quarter, written whenever a manager likes —
+      and still sent by a person, on the day. Nothing is built yet.</p>
+  </div>
+
+  <!-- 1 -->
+  <section class="screen">
+    <div class="screen-label"><span class="screen-n">1</span><span class="screen-t">Communications → Congratulations</span></div>
+    <p class="screen-note">One screen, three periods. <b>Due now</b> is what needs a person today.
+      <b>This month</b> and <b>This quarter</b> are the look-ahead — worked out live from people's
+      recorded dates, so nothing is stored and nobody has to keep a list.</p>
+    <div class="frame">
+      <p class="crumb">← Communications</p>
+      <p class="eyebrow">Communications</p>
+      <h2 class="ph1">Congratulations</h2>
+      <p class="sub">Birthdays and joining anniversaries. Written in advance, sent by a person on the day.</p>
+
+      <div class="tabs">
+        <span class="tab on">Due now <span class="n">2</span></span>
+        <span class="tab">This month <span class="n">6</span></span>
+        <span class="tab">This quarter <span class="n">19</span></span>
+      </div>
+
+      <div class="grouphead"><b>Today</b><span>waiting on a person</span></div>
+      <div class="rows">
+        <div class="row due">
+          <span class="date"><span class="d">25</span><span class="m">Aug</span></span>
+          <span class="who"><span class="n">Nadia Rashad</span><span class="m">Birthday · Visual Shift · yours to send</span></span>
+          <span class="chip chip-due">Due today</span>
+          <span class="btn btn-ghost">Read</span>
+          <span class="btn btn-navy">Send</span>
+        </div>
+        <div class="row due">
+          <span class="date"><span class="d">25</span><span class="m">Aug</span></span>
+          <span class="who"><span class="n">Karim Hassan</span><span class="m">5 years · Forefront · Mona Adel</span></span>
+          <span class="chip chip-due">Due today</span>
+          <span class="btn btn-ghost">Read</span>
+          <span class="btn btn-navy">Send</span>
+        </div>
+      </div>
+
+      <div class="grouphead"><b>Later this month</b><span>written early, not due yet</span></div>
+      <div class="rows">
+        <div class="row">
+          <span class="date"><span class="d">29</span><span class="m">Aug</span></span>
+          <span class="who"><span class="n">Sara Fouad</span><span class="m">3 years · Visual Shift · yours to send</span></span>
+          <span class="chip chip-written">Written</span>
+          <span class="btn btn-ghost">Edit</span>
+          <span class="btn btn-off" title="Opens on the day">Send on 29 Aug</span>
+        </div>
+        <div class="row">
+          <span class="date"><span class="d">02</span><span class="m">Sep</span></span>
+          <span class="who"><span class="n">Omar Zaki</span><span class="m">Birthday · Forefront · yours to send</span></span>
+          <span class="chip chip-none">Not written yet</span>
+          <span class="btn btn-ghost">Write it now</span>
+        </div>
+      </div>
+
+      <div class="note"><b>Send opens on the day.</b> A birthday message that arrives three weeks
+        early is worse than one that arrives late — so a written message waits, and the button says
+        when it opens. Nothing sends by itself; somebody still presses it.</div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="screen">
+    <div class="screen-label"><span class="screen-n">2</span><span class="screen-t">This quarter — the look-ahead</span></div>
+    <p class="screen-note">Grouped by month. This is the view for planning: gifts, cards, who is
+      away when. Anything not written yet can be written from here.</p>
+    <div class="frame">
+      <div class="tabs">
+        <span class="tab">Due now <span class="n">2</span></span>
+        <span class="tab">This month <span class="n">6</span></span>
+        <span class="tab on">This quarter <span class="n">19</span></span>
+      </div>
+      <div class="grouphead"><b>September</b><span>7 people</span></div>
+      <div class="rows">
+        <div class="row"><span class="date"><span class="d">02</span><span class="m">Sep</span></span>
+          <span class="who"><span class="n">Omar Zaki</span><span class="m">Birthday · Forefront · yours to send</span></span>
+          <span class="chip chip-none">Not written yet</span><span class="btn btn-ghost">Write it now</span></div>
+        <div class="row"><span class="date"><span class="d">07</span><span class="m">Sep</span></span>
+          <span class="who"><span class="n">Laila Mansour</span><span class="m">5 years · Visual Shift · Mona Adel</span></span>
+          <span class="chip chip-none">Not written yet</span><span class="btn btn-ghost">Write it now</span></div>
+        <div class="row"><span class="date"><span class="d">14</span><span class="m">Sep</span></span>
+          <span class="who"><span class="n">Youssef Amin</span><span class="m">Birthday · Forefront · <b>nobody yet</b></span></span>
+          <span class="chip chip-none">No manager</span><span class="btn btn-ghost">Assign</span></div>
+      </div>
+      <div class="grouphead"><b>October</b><span>6 people</span></div>
+      <div class="rows">
+        <div class="row"><span class="date"><span class="d">03</span><span class="m">Oct</span></span>
+          <span class="who"><span class="n">Dina Saleh</span><span class="m">2 years · Visual Shift · yours to send</span></span>
+          <span class="chip chip-none">Not written yet</span><span class="btn btn-ghost">Write it now</span></div>
+      </div>
+      <div class="note"><b>A person with nobody to send for them shows up here</b> rather than being
+        silently skipped. Today that only surfaces as a number in a log nobody reads.</div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="screen">
+    <div class="screen-label"><span class="screen-n">3</span><span class="screen-t">Who sees what</span></div>
+    <div class="frame">
+      <div class="scrollx">
+      <table class="t">
+        <tr><th></th><th>Due now</th><th>This month / quarter</th><th>Can send</th></tr>
+        <tr><td>A line manager</td><td>Their own people</td><td>Their own people</td><td>Their own</td></tr>
+        <tr><td>HR / Super User</td><td>Everyone</td><td>Everyone</td><td>Anyone's — useful when a manager is away</td></tr>
+        <tr><td>Anyone else</td><td>Nothing</td><td>Nothing</td><td>No</td></tr>
+      </table>
+      </div>
+      <div class="note"><b>Birth dates are not published.</b> A manager sees their own team's dates
+        and HR sees everybody's, exactly as the records already allow — the look-ahead does not open
+        anything to anyone who could not already see it.</div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="screen">
+    <div class="screen-label"><span class="screen-n">4</span><span class="screen-t">What changes, and what deliberately does not</span></div>
+    <div class="frame">
+      <div class="scrollx">
+      <table class="t">
+        <tr><th>Now</th><th>After</th></tr>
+        <tr><td>Messages appear 3 days before the day</td><td>Written whenever a manager likes; the look-ahead goes out a full quarter</td></tr>
+        <tr><td>No way to see what is coming</td><td>This month and this quarter, live from people's records</td></tr>
+        <tr><td>Someone with no manager is a number in a log</td><td>Shows in the list, with a way to hand it to somebody</td></tr>
+        <tr><td>A person presses send</td><td><b>A person still presses send</b></td></tr>
+        <tr><td>Nothing reaches an employee's inbox on a schedule</td><td><b>Still nothing does</b></td></tr>
+      </table>
+      </div>
+      <div class="note"><b>The rule stands.</b> You chose to keep a person in the loop rather than
+        let messages send themselves, so the only thing moving earlier is the <i>writing</i>. The
+        send button does not appear until the day, and nothing in the platform can press it.</div>
+    </div>
+  </section>
+</div>
