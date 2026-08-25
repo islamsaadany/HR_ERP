@@ -1,7 +1,7 @@
 -- HR_ERP — A receipt that lives somewhere else (spec 040 follow-up, 2026-08-25).
 --
 -- WHY
---   Importing the marketing expenses workbook (migration 072) brings 145 historical lines whose
+--   Importing the marketing expenses workbook (migration 073) brings 145 historical lines whose
 --   receipts are Google Drive links, not files. There is nothing to upload: the files are in
 --   somebody's Drive, they always were, and copying them here would need access this deploy does
 --   not have.

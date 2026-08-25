@@ -1,0 +1,451 @@
+<title>Reviews &amp; 1:1s</title>
+<style>
+  /* Single-theme by design: this mirrors the live product, which is light navy/gold only.
+     Every colour is painted explicitly so the page holds on any host background. */
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-400:#4f6d97;
+    --navy-500:#2f4d78;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;
+    --red:#b91c1c;--red-line:#f3c6c6;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 90px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .screen{margin-top:40px}
+  .screen>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:80ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .panel+.panel{margin-top:12px}
+  .ph{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .ph h3{font-family:Georgia,serif;font-size:16px;margin:0}
+  .ph .meta{font-size:11.5px;color:var(--muted)}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;letter-spacing:.02em}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-navy{border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:9px;cursor:pointer}
+  .btn-navy[disabled]{opacity:.4;cursor:not-allowed}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;cursor:pointer}
+  .fld{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;font-weight:700}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--ink)}
+  .q{margin-top:14px}
+  .q:first-child{margin-top:0}
+  .qtext{font-size:13px;font-weight:650;margin:0 0 7px;color:var(--navy-800)}
+  .items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+  .items li{display:flex;gap:8px;align-items:flex-start;font-size:13px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 9px}
+  .items li .idx{font-size:10.5px;font-weight:800;color:var(--navy-300);flex:none;padding-top:2px;min-width:12px;font-variant-numeric:tabular-nums}
+  .src{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:5px;flex:none;align-self:flex-start;margin-top:1px}
+  .src-j{background:var(--navy-50);color:var(--navy-500);border:1px solid var(--navy-100)}
+  .src-o{background:var(--gold-100);color:var(--gold-800);border:1px solid var(--gold-200)}
+  .additem{display:flex;align-items:center;gap:7px;margin-top:6px;font-size:12px;color:var(--muted);border:1px dashed var(--navy-200);border-radius:8px;padding:6px 9px;background:var(--paper)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .sealed{position:relative;border:1px solid var(--line);border-radius:12px;background:repeating-linear-gradient(135deg,var(--paper),var(--paper) 9px,#efece5 9px,#efece5 18px);min-height:100%;display:grid;place-items:center;padding:36px 20px;text-align:center}
+  .sealed .lock{font-size:22px;line-height:1;margin-bottom:8px}
+  .sealed h4{font-family:Georgia,serif;font-size:15px;margin:0 0 6px}
+  .sealed p{font-size:12.5px;color:var(--muted);margin:0;max-width:34ch}
+  .steps{display:flex;gap:0;align-items:stretch;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface);margin-bottom:14px;flex-wrap:wrap}
+  .step{flex:1 1 150px;padding:9px 12px;border-right:1px solid var(--line);min-width:0}
+  .step:last-child{border-right:0}
+  .step .st{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+  .step .sl{font-size:12.5px;font-weight:650;margin-top:2px}
+  .step .sd{font-size:11px;color:var(--muted);margin-top:2px}
+  .step.done{background:var(--green-bg)}
+  .step.done .st{color:var(--green)}
+  .step.now{background:var(--navy-800)}
+  .step.now .st{color:var(--gold-300)}
+  .step.now .sl,.step.now .sd{color:#fff}
+  .step.now .sd{opacity:.75}
+  .carry{border-left:3px solid var(--gold-500);background:#fbf9f2;padding:12px 16px;border-radius:0 10px 10px 0;font-size:13px}
+  .carry h4{font-family:Georgia,serif;font-size:14.5px;margin:0 0 6px}
+  .carry ul{margin:4px 0 0;padding-left:18px}
+  .carry li{margin:3px 0}
+  .pack{display:flex;gap:10px;flex-wrap:wrap;margin-top:2px}
+  .fact{border:1px solid var(--line);background:var(--paper);border-radius:9px;padding:7px 11px;min-width:118px}
+  .fact .fv{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+  .fact .fl{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-top:1px}
+  .rows{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--surface)}
+  .row{display:flex;align-items:center;gap:12px;padding:10px 13px;border-bottom:1px solid var(--line);font-size:13px}
+  .row:last-child{border-bottom:0}
+  .row .who{font-weight:650;min-width:150px}
+  .row .when{color:var(--muted);font-size:12px;min-width:96px;font-variant-numeric:tabular-nums}
+  .row .grow{flex:1;color:var(--muted);font-size:12.5px}
+  .note{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .note:last-of-type{border-bottom:0}
+  .av{width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;flex:none}
+  .av.b{background:var(--gold-600)}
+  .nb{font-size:13px}
+  .nm{font-size:11px;color:var(--muted);margin-bottom:2px}
+  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface)}
+  thead th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px;font-weight:800;border-bottom:1px solid var(--line);background:var(--paper)}
+  td{padding:7px 10px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:0}
+  .rank{text-align:right;font-variant-numeric:tabular-nums;color:var(--navy-400);font-weight:700;width:44px}
+  .tbl{border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .scroll{overflow-x:auto}
+  .drop{border:1px dashed var(--navy-200);border-radius:11px;background:var(--paper);padding:20px;text-align:center;font-size:13px;color:var(--muted)}
+  .banner{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--gold-300);background:#fbf9f2;border-radius:10px;padding:10px 13px;font-size:12.5px;margin-bottom:12px}
+  .banner b{color:var(--gold-800)}
+  .decision{margin-top:34px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:900px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ul{margin:6px 0 0;padding-left:18px}.decision li{margin:5px 0}
+  .why{font-size:11.5px;color:var(--muted);margin-top:9px;max-width:84ch}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700);border-radius:999px;padding:3px 10px}
+  .tag.pick{background:var(--navy-800);border-color:var(--navy-800);color:#fff}
+  footer{margin-top:46px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+  @media(max-width:880px){.grid2{grid-template-columns:1fr}.row .who{min-width:0}}
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Spec 039 · Mockup for sign-off</p>
+  <h1>Reviews &amp; 1:1s</h1>
+  <p class="lede">Six screens, in the order you would meet them. Nothing here is built — this is the
+  look and the layout to approve before any code is written. Sample content is the agenda you sent,
+  so you can read it as your own quarter.</p>
+
+  <!-- 1 -->
+  <div class="screen">
+    <h2><span class="num">1</span> Reviews home</h2>
+    <p class="sub">One page, two lists: your own review, and the reviews you hold as a manager. The
+    journal and 1:1s hang off the same place, because they are what you feed into a review.</p>
+
+    <div class="frame">
+      <div class="panel">
+        <div class="ph">
+          <h3>Your review — Q3 2026</h3>
+          <span class="chip c-navy">Jul – Sep 2026</span>
+        </div>
+        <div class="rows">
+          <div class="row">
+            <span class="who">With Nada Kamal</span>
+            <span class="when">Q3 2026</span>
+            <span class="grow">You have written 9 items · not submitted</span>
+            <span class="chip c-gold">Your turn</span>
+          </div>
+        </div>
+        <div class="pack" style="margin-top:12px">
+          <div class="fact"><div class="fv">6</div><div class="fl">Days off taken</div></div>
+          <div class="fact"><div class="fv">2</div><div class="fl">Courses finished</div></div>
+          <div class="fact"><div class="fv">Done</div><div class="fl">Onboarding</div></div>
+        </div>
+        <p class="why">The three facts sit here and on the sheet itself. Facts only — no score, no
+        rating, no comparison with anyone else.</p>
+      </div>
+
+      <div class="panel">
+        <div class="ph">
+          <h3>Your team — Q3 2026</h3>
+          <span class="meta">4 people report to you</span>
+        </div>
+        <div class="rows">
+          <div class="row"><span class="who">Noran Esam</span><span class="when">Q3 2026</span><span class="grow">Both submitted · waiting for you both to confirm you met</span><span class="chip c-gold">Confirm meeting</span></div>
+          <div class="row"><span class="who">Omar Fathy</span><span class="when">Q3 2026</span><span class="grow">Met on 18/08/2026 · outcome agreed</span><span class="chip c-ok">Done</span></div>
+          <div class="row"><span class="who">Salma Adel</span><span class="when">Q3 2026</span><span class="grow">You have not written anything yet</span><span class="chip c-gold">Your turn</span></div>
+          <div class="row"><span class="who">Youssef Ramy</span><span class="when">Q3 2026</span><span class="grow">You submitted · waiting for Youssef</span><span class="chip c-off">Waiting</span></div>
+        </div>
+        <p class="why">Navy = something for you to do, gold = in progress, green = done. Same colour
+        rules as the rest of the platform. Notice what is <em>not</em> here: no percentage complete,
+        no chaser, no "3 of 4 reviews outstanding" — there is nobody whose job it is to count.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="screen">
+    <h2><span class="num">2</span> The sheet, before you meet</h2>
+    <p class="sub">You write your half. Their half is not there — not greyed out, not blurred, not
+    "3 answers written". Nothing.</p>
+
+    <div class="frame">
+      <div class="steps">
+        <div class="step done"><div class="st">Done</div><div class="sl">You wrote your half</div><div class="sd">Save as often as you like</div></div>
+        <div class="step now"><div class="st">Now</div><div class="sl">Both submit</div><div class="sd">Means "ready to meet"</div></div>
+        <div class="step"><div class="st">Then</div><div class="sl">Both confirm you met</div><div class="sd">Both of you, not one</div></div>
+        <div class="step"><div class="st">Then</div><div class="sl">Halves open &amp; lock</div><div class="sd">Agree the outcome</div></div>
+      </div>
+
+      <div class="carry" style="margin-bottom:14px">
+        <h4>What you agreed last quarter — Q2 2026</h4>
+        <ul>
+          <li><b>Priorities:</b> activate the team's responsibility strength · settle how to juggle the brands</li>
+          <li><b>Watch:</b> too many projects running at once</li>
+          <li><b>A good next review looks like:</b> fewer plans, more of them finished</li>
+        </ul>
+      </div>
+
+      <div class="grid2">
+        <div class="panel">
+          <div class="ph"><h3>Your half</h3><span class="chip c-gold">Draft</span></div>
+
+          <div class="q">
+            <p class="qtext">What achievements are you most proud of this period?</p>
+            <ul class="items">
+              <li><span class="idx">1</span><span>Leadership management style enhancement</span></li>
+              <li><span class="idx">2</span><span>Building the marketing team</span><span class="src src-j">From journal</span></li>
+              <li><span class="idx">3</span><span>Building my understanding of the B2B market</span></li>
+            </ul>
+            <div class="additem">+ Add an answer — or bring one over from your journal</div>
+          </div>
+
+          <div class="q">
+            <p class="qtext">What strengths did you rely on most?</p>
+            <div class="tags">
+              <span class="tag pick">Restorative</span>
+              <span class="tag pick">Arranger</span>
+              <span class="tag pick">Responsibility</span>
+              <span class="tag">Relator</span><span class="tag">Maximizer</span><span class="tag">Focus</span>
+            </div>
+            <p class="why" style="margin-top:6px">Your own Gallup themes only — you cannot pick a
+            strength you do not have.</p>
+          </div>
+
+          <div class="q">
+            <p class="qtext">Where did you struggle or feel blocked?</p>
+            <ul class="items">
+              <li><span class="idx">1</span><span>Putting the team on the execution road</span><span class="src src-o">From a 1:1</span></li>
+              <li><span class="idx">2</span><span>Process and project management — events, retreats, the brand sites</span></li>
+            </ul>
+          </div>
+
+          <div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn-navy">Submit — I'm ready to meet</button>
+            <span class="meta" style="font-size:11.5px;color:var(--muted)">You can still edit until you submit</span>
+          </div>
+        </div>
+
+        <div class="sealed">
+          <div>
+            <div class="lock">🔒</div>
+            <h4>Nada's half is sealed</h4>
+            <p>It opens when you have both submitted <b>and</b> you have both confirmed the review
+            actually happened.</p>
+          </div>
+        </div>
+      </div>
+      <p class="why">Submitting does not show them your answers — it only says you are ready. That is
+      the whole point of the seal: neither of you writes to match the other.</p>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="screen">
+    <h2><span class="num">3</span> The sheet, after you meet</h2>
+    <p class="sub">Both halves open at the same moment — and lock at the same moment. What each of you
+    brought is now the record; what you discuss goes into the outcome.</p>
+
+    <div class="frame">
+      <div class="steps">
+        <div class="step done"><div class="st">Done</div><div class="sl">Both wrote</div><div class="sd">&nbsp;</div></div>
+        <div class="step done"><div class="st">Done</div><div class="sl">Both submitted</div><div class="sd">&nbsp;</div></div>
+        <div class="step done"><div class="st">Done</div><div class="sl">Both confirmed the meeting</div><div class="sd">18/08/2026</div></div>
+        <div class="step now"><div class="st">Now</div><div class="sl">Agree the outcome</div><div class="sd">Both must acknowledge</div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel">
+          <div class="ph"><h3>Your half</h3><span class="chip c-off">🔒 Locked 18/08/2026</span></div>
+          <div class="q">
+            <p class="qtext">What didn't work as expected?</p>
+            <ul class="items">
+              <li><span class="idx">1</span><span>My plans — I had many more, and that is its own pressure</span></li>
+              <li><span class="idx">2</span><span>Time management</span></li>
+            </ul>
+          </div>
+          <div class="q">
+            <p class="qtext">What should I continue doing?</p>
+            <ul class="items">
+              <li><span class="idx">1</span><span>Leadership reflections and guidance in execution</span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ph"><h3>Nada's half</h3><span class="chip c-off">🔒 Locked 18/08/2026</span></div>
+          <div class="q">
+            <p class="qtext">What you expected from me and did happen</p>
+            <ul class="items">
+              <li><span class="idx">1</span><span>You shipped the marketing team faster than we planned for</span></li>
+            </ul>
+          </div>
+          <div class="q">
+            <p class="qtext">What support do you need more of?</p>
+            <ul class="items">
+              <li><span class="idx">1</span><span>Workload and expected outcomes set and agreed up front</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><h3>What we agreed</h3><span class="chip c-gold">Waiting for Nada to acknowledge</span></div>
+        <div class="q">
+          <label class="fld">Top 3 priorities for the next period</label>
+          <div class="inp">Activate responsibility across the team · one brand at a time · stop starting</div>
+        </div>
+        <div class="q">
+          <label class="fld">Key risks or concerns to watch</label>
+          <div class="inp">Too many parallel projects again by October</div>
+        </div>
+        <div class="q">
+          <label class="fld">What would make the next review feel like a success</label>
+          <div class="inp">Fewer plans, more of them finished</div>
+        </div>
+        <div class="grid2" style="margin-top:14px">
+          <div><label class="fld">Islam commits to</label><div class="inp">Handing two projects over by 15/09/2026</div></div>
+          <div><label class="fld">Nada commits to</label><div class="inp">Agreeing the quarter's workload before it starts</div></div>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="chip c-ok">✓ You acknowledged</span>
+          <span class="chip c-off">Nada has not yet</span>
+          <span class="why" style="margin:0">Editing it after one of you agrees clears both — nobody
+          gets to agree to text they never read.</span>
+        </div>
+      </div>
+      <p class="why">Once both acknowledge, this block is what opens next quarter's sheet as
+      "What you agreed last quarter".</p>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="screen">
+    <h2><span class="num">4</span> Your journal</h2>
+    <p class="sub">Private. Not to your manager, not to HR, not to a Super User. Write it across the
+    quarter; pull what you want onto the sheet when the review comes.</p>
+
+    <div class="frame">
+      <div class="panel">
+        <div class="ph">
+          <h3>Journal</h3>
+          <span class="chip c-navy">🔒 Only you can ever read this</span>
+        </div>
+        <div class="additem" style="margin-bottom:12px">+ What happened? — pick the day, tag it, write a line</div>
+        <div class="rows">
+          <div class="row">
+            <span class="when">12/08/2026</span>
+            <span class="chip c-off">Blocker</span>
+            <span class="grow" style="color:var(--ink)">The retreat brief went three ways before anyone owned it</span>
+            <button class="btn-ghost">Add to review</button>
+          </div>
+          <div class="row">
+            <span class="when">04/08/2026</span>
+            <span class="chip c-off">Went well</span>
+            <span class="grow" style="color:var(--ink)">Marketing team is running its own standup now</span>
+            <span class="chip c-ok">On your Q3 sheet</span>
+          </div>
+          <div class="row">
+            <span class="when">27/07/2026</span>
+            <span class="chip c-off">Learning</span>
+            <span class="grow" style="color:var(--ink)">People's energy is charged in very different ways</span>
+            <button class="btn-ghost">Add to review</button>
+          </div>
+        </div>
+        <p class="why">"Add to review" copies the words onto your half. Editing or deleting the note
+        afterwards does not touch what is on the sheet — the copy is yours to keep or cut there.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <div class="screen">
+    <h2><span class="num">5</span> A 1:1</h2>
+    <p class="sub">Held whenever it is needed. Both of you write freely — nothing is sealed here,
+    because the value of a 1:1 is being quick. It locks when you both agree the outcome.</p>
+
+    <div class="frame">
+      <div class="panel">
+        <div class="ph">
+          <h3>1:1 with Nada Kamal</h3>
+          <span class="meta">Held 06/08/2026</span>
+        </div>
+        <div class="note">
+          <div class="av">IS</div>
+          <div><div class="nm">Islam · 06/08/2026</div><div class="nb">Raised that the retreat and the brand site are colliding on the same two people.</div></div>
+        </div>
+        <div class="note">
+          <div class="av b">NK</div>
+          <div><div class="nm">Nada · 06/08/2026</div><div class="nb">Agreed. Retreat can slip two weeks; the site cannot.</div></div>
+        </div>
+        <div class="additem" style="margin-top:10px">+ Add a note</div>
+
+        <div class="carry" style="margin-top:14px">
+          <h4>Outcome</h4>
+          <p style="margin:0">Retreat moves to October. Omar owns the brand site end to end from Monday.</p>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="chip c-ok">✓ Islam agreed</span>
+          <button class="btn-navy">Agree this outcome</button>
+          <span class="why" style="margin:0">When you both agree, it locks — and becomes available to
+          pull onto the Q3 sheet.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="screen">
+    <h2><span class="num">6</span> Gallup strengths — HR uploads, then confirms</h2>
+    <p class="sub">On the employee's admin page. Drop the PDF, check what was read out of it, confirm.
+    Nothing is saved before you confirm.</p>
+
+    <div class="frame">
+      <div class="panel">
+        <div class="ph"><h3>Strengths</h3><span class="meta">Islam Saadany</span></div>
+        <div class="drop" style="margin-bottom:14px">Drop the Gallup report here — Top 5 or all 34, either works</div>
+
+        <div class="banner">
+          <span>📄</span>
+          <div>This report is printed for <b>ISLAM SAADANY</b>, assessed <b>13/11/2020</b>.
+          You are adding it to <b>Islam Saadany</b>. Read 34 themes in order.</div>
+        </div>
+
+        <div class="tbl scroll">
+          <table>
+            <thead><tr><th class="rank">#</th><th>Theme</th><th>Domain</th></tr></thead>
+            <tbody>
+              <tr><td class="rank">1</td><td>Relator</td><td>Relationship Building</td></tr>
+              <tr><td class="rank">2</td><td>Maximizer</td><td>Influencing</td></tr>
+              <tr><td class="rank">3</td><td>Responsibility</td><td>Executing</td></tr>
+              <tr><td class="rank">4</td><td>Focus</td><td>Executing</td></tr>
+              <tr><td class="rank">5</td><td>Futuristic</td><td>Strategic Thinking</td></tr>
+              <tr><td class="rank" style="color:var(--muted)">…</td><td style="color:var(--muted)">29 more, in order</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn-navy">Confirm these 34 themes</button>
+          <button class="btn-ghost">Fix the order</button>
+          <button class="btn-ghost">Enter by hand instead</button>
+        </div>
+        <p class="why">If the file cannot be read, this panel says so in one line and drops you
+        straight into entering them by hand — a report we cannot parse never blocks a profile.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="decision">
+    <h3>What I need you to sign off</h3>
+    <ul>
+      <li><b>The four-step bar</b> at the top of a sheet — write → both submit → both confirm you met → open &amp; lock.</li>
+      <li><b>The sealed panel</b> (screen 2): a plain padlock card, no preview of any kind.</li>
+      <li><b>Two columns side by side</b> once open, rather than one long scroll of both halves.</li>
+      <li><b>"What you agreed last quarter"</b> as a gold band at the top of the sheet.</li>
+      <li><b>Three facts</b> — days off, courses, onboarding — as plain tiles, no score.</li>
+      <li><b>The journal as a list with "Add to review"</b>, rather than a text document.</li>
+      <li><b>The Gallup panel</b>: name-and-date banner first, then the themes, then confirm.</li>
+    </ul>
+    <p class="why" style="margin-top:10px">Say which of these to change and I will redraw before
+    anything is built. Colours, type and spacing are the platform's existing navy/gold — unchanged.</p>
+  </div>
+
+  <footer>Spec 039 · Mockup 24/08/2026 · not built — for approval only</footer>
+</div>

@@ -20,8 +20,9 @@
 | 11 — Finance: bank confirmations & salaries | 🟢 **Built** (spec 041 — the confirmer appointment, submissions with a frozen total, the CEO's confirmation screen, monthly salary runs, the daily nudge; migrations `069` + `070`) |
 | 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
 | 12 — Team Communications | 🟢 **Built** (spec 039 — announcements to a chosen audience, birthday & work-anniversary congratulations drafted by the platform and sent by a human; migration `067`) |
+| 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
 
-## The marketing float, with its history (built 2026-08-25 — migrations `071` + `072`)
+## The marketing float, with its history (built 2026-08-25 — migrations `072` + `073`)
 The petty cash screen shipped empty: accounts are created by Finance in the app, and nobody had
 made one. Rather than open the marketing float at its closing figure alone, the whole workbook was
 imported at the CEO's request.
@@ -34,7 +35,7 @@ imported at the CEO's request.
   the whole import has to land on. It does, read back through `periodReconciliation` and
   `accountBalance` rather than by re-doing the sums.
 - **Receipts stay where they are.** The workbook's receipts are Drive links, so `ExpenseEvidence`
-  gained a second location (`externalUrl`, migration `071`, exactly one of the two enforced by a
+  gained a second location (`externalUrl`, migration `072`, exactly one of the two enforced by a
   check constraint) and the serving route redirects after making the same 404-not-403 decision.
   123 lines carry a link; 17 have none and are named in their period's missing-receipt
   acknowledgement.
@@ -51,7 +52,7 @@ imported at the CEO's request.
   Dec. The second trusted `JAN`'s column headers, which are wrong — its "DESCRIPTION" column holds
   the receipt link — costing every January line its receipt. Both now fail the parse instead.
 
-**Verified:** all 75 migrations applied in order to a throwaway Postgres 16; `071` and `072`
+**Verified:** all 76 migrations applied in order to a throwaway Postgres 16; `072` and `073`
 re-applied with no change (idempotent); the import skips cleanly and imports nothing when no
 custodian matches; balance read back through the app's own derivation as *"Forefront owes Raneem
 Sarhaan EGP 9,726.26"*; `npx tsc --noEmit`, `next build` and `npm test` (192) all clean.
@@ -1425,10 +1426,43 @@ limit from claim clamping each make it fail. The first attempt did NOT catch the
 (the assertion relied on `over`, which that bug neuters); assertions now compute the overrun from
 `medical + flex` against the ceiling instead.
 
+## Reviews & 1:1s — spec 042 (built 2026-08-24, migration `071` pending on Neon)
+
+Quarterly reviews filled across the quarter, ad-hoc 1:1s, a private journal, and per-employee
+CliftonStrengths profiles parsed from uploaded Gallup PDFs.
+
+**Built**: 9 tables + 4 enums (migration `071`, idempotent, seeds the 34 themes) · the rules layer
+(`src/lib/reviews/`: access, quarters, agenda, gallup, pack, queries) · six routes under `/reviews`
+plus the Gallup file route · the strengths panel on the employee admin page · sidebar entry and
+module release switch.
+
+**Verified from this session** (throwaway Postgres 16, not the live Neon database):
+- `068` applied **twice** to a pre-039 database — clean no-op the second time; 9 tables, 34 themes,
+  `Self-Assurance` spelled correctly, partial unique index present.
+- 29 assertions against the **real** derivations: the seal holds at each of the four steps and opens
+  only at the fourth; a quarter with both halves submitted but no meeting stays sealed and produces
+  no outcome; Super User, HR Admin, an unrelated employee and a **new** manager all read
+  not-found while the previous manager still reads their own sheet; a promoted journal entry
+  survives its source being edited and deleted; re-promoting the same source is refused while plain
+  typed answers stay unconstrained; an outcome only one party agreed does not carry forward.
+- The Gallup parser against **both real reports** — 34 themes and 5 themes from one code path — and
+  against a non-Gallup PDF, which fails into manual entry rather than throwing.
+- `requireUser` appears nowhere in the module's code (only in the comment explaining why); no money
+  term and no benefits import anywhere in it.
+- `npx tsc --noEmit` and `npm run build` clean.
+
+**Not verifiable from a session**: the impersonation refusal needs a live request with a session and
+the impersonation cookie — it is enforced structurally (`requireRealUser` is the single entry point
+of every page and action, confirmed by grep) but has not been exercised end-to-end in a browser.
+Worth one manual pass: sign in as a Super User, view as an employee, open Reviews.
+
+**Remaining**: apply `068` on deploy and check the build log's `[apply-sql]` lines; a browser pass
+over the six screens.
+
 ## Notes / carry-over
 - Planning docs originally drafted in a prior session were staged in another repo (inaccessible from HR_ERP-scoped sessions); they have been recreated here as the canonical copy.
 - Benefits figures are now **confirmed** (pool ceilings, guaranteed amounts by band, medical rate card) — see spec `007` and `PROJECT_DETAILS.md §5`. Claims/reimbursement remains Phase 2.
 
 ---
 
-*Last Updated: 2026-08-23 — Sub-6-month pool ceilings now scale to the cycle like everyone else's; the claims queue's pool meter counts only pool-funded claims (a Loans request no longer reads as an emptied pool). Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*
+*Last Updated: 2026-08-24 — Reviews & 1:1s merged into main and renumbered to spec 042 / migration `071`; it had claimed 040/068 while those were free, and Finance took them first. Both migrations apply on deploy. Previously: 2026-08-23 — Sub-6-month pool ceilings now scale to the cycle like everyone else's; the claims queue's pool meter counts only pool-funded claims (a Loans request no longer reads as an emptied pool). Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix. Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*

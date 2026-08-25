@@ -1,8 +1,8 @@
 /**
- * Turn the marketing expenses workbook into migration 072 (spec 040, 2026-08-25).
+ * Turn the marketing expenses workbook into migration 073 (spec 040, 2026-08-25).
  *
  * NOT part of the build. It was run once, by hand, against `NEW_MARCOM_Expenses.xlsx`, and its
- * output — `prisma/sql/072_marcom_petty_cash_history.sql` — is what actually ships. It is kept
+ * output — `prisma/sql/073_marcom_petty_cash_history.sql` — is what actually ships. It is kept
  * because the migration is 144 generated INSERTs that nobody can review line by line, and this
  * file is the reviewable statement of how each one was derived.
  *
@@ -35,7 +35,7 @@
  *     the sheet actually recorded — everything on a period's last day was not.
  *
  *   • Receipts are Google Drive hyperlinks. Nothing is downloaded; each becomes an
- *     `ExpenseEvidence` row with `externalUrl` set (migration 071). A receipt cell with text but
+ *     `ExpenseEvidence` row with `externalUrl` set (migration 072). A receipt cell with text but
  *     no link ("on the portal", "Nina Printing (WILL BE ADDED)") yields NO evidence row — the
  *     line is genuinely missing its receipt, and is named in the period's acknowledgement rather
  *     than given a receipt that does not resolve.

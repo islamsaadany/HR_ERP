@@ -58,7 +58,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!entitled) return notFound;
 
   // A receipt that lives elsewhere — the imported workbook history, whose receipts are Drive
-  // links (migration 071). The decision above was still made here; only the delivery differs.
+  // links (migration 072). The decision above was still made here; only the delivery differs.
   // Whoever follows the redirect needs access to the file at the other end; we cannot grant it.
   if (evidence.externalUrl) return NextResponse.redirect(evidence.externalUrl);
 
