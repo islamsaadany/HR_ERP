@@ -244,6 +244,31 @@ four steering files (same commit).
   time — the menu rendered, and the row below swallowed the clicks. Raise the **card**, not just the
   popover inside it. Same family as `overflow-hidden` silently killing a sticky header, and equally
   invisible in the code: only clicking it in a browser showed it.
+- **A hidden sidebar is a DEAD END, and the fix must not become a third copy (2026-08-25)** — the
+  app had been installable since spec 010, so "make it a PWA" read as done; it wasn't, because
+  installability and usability are different things. The sidebar is `max-md:hidden` and the only
+  phone chrome was a bar with the company name and a Sign out link, so from Time-Off exactly **two**
+  links were tappable and eight modules had no door at all. Nothing in the code says this — it was
+  found by driving a 390px viewport and counting what a thumb could reach, which is the check worth
+  running on any surface that hides a nav at a breakpoint. Three rules came out of building it:
+  (a) the appointment/admin entries were already hand-written **twice** (collapsed rail, expanded
+  sidebar) and a phone menu would have made three, so they became ONE `extras` array rendered by all
+  three — but the one inconsistency the old markup had (Confirmations counts in a bigger pill than
+  Manage Learning) is **carried in the data, not tidied**, because tidying it would have been an
+  unapproved visual change; unifying markup is only safe while the output is provably identical, so
+  it was proven — byte-identical PNGs of both sidebar states and 0 of 20 nav rows differing.
+  (b) A safe-area rule must be written as **height or margin, never padding** — the elements it sits
+  on already carry `py-3`/`p-6`, and a class fighting them for the same property changes desktop
+  spacing too; written this way the rules measure 0 in a browser tab and on desktop, so they are
+  inert until the app is actually installed. (c) The menu's dot is summed from the **same**
+  `badgeFor`/`extras` derivations the menu renders — same rule as the Learning audience count.
+- **"Add the missing tag" is a claim to CHECK against served HTML, not to reason about (2026-08-25)**
+  — the phone-menu mockup told the CEO we emitted Apple's full-screen meta but not the modern one
+  Chrome reads, and proposed adding it. Both halves were wrong: Next 15 renders `appleWebApp.capable`
+  as the **modern** `mobile-web-app-capable` and does not emit the Apple-prefixed one at all, so the
+  "fix" emitted the tag **twice**. `curl`-ing the page found it in seconds; no type check or build
+  ever would. Framework metadata helpers are a translation layer — read the output, not the input.
+  Same family as the enum-position rule: ask the running system, not the source that looks right.
 - **Benefits money & rules are server-authoritative** — every pool ceiling, 50%-per-benefit cap, and medical rule is enforced on the server at claim/commit time, never trusted from the client. (The benefit-count limit is retained but off by default — spec 018.)
 
 ### 4. Git Workflow

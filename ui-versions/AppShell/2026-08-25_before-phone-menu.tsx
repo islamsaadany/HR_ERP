@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { signOutAction } from "@/lib/signout-action";
 import { stopImpersonation } from "@/app/(app)/admin/impersonate/actions";
 import { switchAccountAction } from "@/lib/switch-account-action";
@@ -140,36 +140,6 @@ export function AppShell({
   }, []);
   const badgeFor = (href: string): number =>
     href === "/time-off" && liveTimeOffCount != null ? liveTimeOffCount : navBadges[href] ?? 0;
-
-  /**
-   * The entries BEYOND the standard employee nav — appointments and admin doors. Derived once
-   * and rendered by all three surfaces (the collapsed rail, the expanded sidebar, the phone
-   * menu), so a module added here cannot end up on a desktop screen and be missing from a
-   * phone. `bigBadge` carries the one piece of variance the hand-written sidebar already had
-   * (Confirmations counts in a larger pill than Manage Learning does) — kept, not tidied, so
-   * unifying this markup moved nothing on desktop.
-   */
-  const extras = [
-    { href: "/incentive", label: "Incentive Scheme", icon: "incentive", show: showIncentive, badge: 0, bigBadge: false },
-    { href: "/finance", label: "Payments", icon: "payments", show: showPayments, badge: 0, bigBadge: false },
-    { href: "/petty-cash", label: "Petty cash", icon: "pettycash", show: showPettyCash, badge: 0, bigBadge: false },
-    { href: "/confirmations", label: "Confirmations", icon: "confirmations", show: showConfirmations, badge: confirmationsWaiting, bigBadge: true },
-    { href: "/admin", label: "Admin", icon: "admin", show: showAdmin, badge: 0, bigBadge: false },
-    { href: "/admin/learning", label: "Manage Learning", icon: "manage-learning", show: showManageLearning, badge: badgeFor("/admin/learning"), bigBadge: false },
-    { href: "/messages", label: "Messages to send", icon: "messages", show: messagesWaiting > 0, badge: messagesWaiting, bigBadge: false },
-  ].filter((e) => e.show);
-
-  /**
-   * Is anything waiting for this person? The phone header has room for the question but not for
-   * seven answers, so the button carries ONE dot — summed from the SAME derivations the menu
-   * itself renders, never a count of its own. A dot computed separately is a dot that will
-   * eventually disagree with the list behind it.
-   */
-  const waitingTotal =
-    nav.reduce((n, item) => n + badgeFor(item.href), 0) +
-    extras.reduce((n, e) => n + e.badge, 0) +
-    liveDataRequestCount;
-
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [pref, setPref] = useState(false); // the user's manual preference
@@ -197,39 +167,6 @@ export function AppShell({
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
-
-  // ---- The phone menu (2026-08-25) ----
-  // Below md the sidebar is hidden, and until now the only mobile chrome was a bar carrying the
-  // company name and a Sign out link — so off the dashboard there was NO route to any module.
-  // This panel carries the same list, in the same order, with the same badges.
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  // Close on navigation. Tapping a section also closes it directly (below) — this covers the
-  // back button and any link elsewhere on the page.
-  useEffect(() => setMenuOpen(false), [pathname]);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    // Stop the page behind the panel scrolling under the finger.
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    panelRef.current?.focus();
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
-    };
-  }, [menuOpen]);
-
-  function closeMenu() {
-    setMenuOpen(false);
-    menuButtonRef.current?.focus();
-  }
 
   const singleScroll = isSingleScrollRoute(pathname);
 
@@ -293,27 +230,132 @@ export function AppShell({
                   </Link>
                 );
               })}
-              {extras.map((e) => (
+              {showIncentive ? (
                 <Link
-                  key={e.href}
-                  href={e.href}
-                  title={e.badge > 0 ? `${e.label} (${e.badge})` : e.label}
-                  aria-label={e.badge > 0 ? `${e.label}, ${e.badge} waiting` : e.label}
+                  href="/incentive"
+                  title="Incentive Scheme"
+                  aria-label="Incentive Scheme"
                   className={
-                    "relative mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
-                    (isActive(e.href)
+                    "mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
+                    (isActive("/incentive")
                       ? "bg-navy-800 text-gold-300"
                       : "text-gold-300 hover:bg-navy-800")
                   }
                 >
-                  <NavIcon name={e.icon} />
-                  {e.badge > 0 ? (
+                  <NavIcon name="incentive" />
+                </Link>
+              ) : null}
+              {showPayments ? (
+                <Link
+                  href="/finance"
+                  title="Payments"
+                  aria-label="Payments"
+                  className={
+                    "mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
+                    (isActive("/finance")
+                      ? "bg-navy-800 text-gold-300"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  <NavIcon name="payments" />
+                </Link>
+              ) : null}
+              {showPettyCash ? (
+                <Link
+                  href="/petty-cash"
+                  title="Petty cash"
+                  aria-label="Petty cash"
+                  className={
+                    "mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
+                    (isActive("/petty-cash")
+                      ? "bg-navy-800 text-gold-300"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  <NavIcon name="pettycash" />
+                </Link>
+              ) : null}
+              {showConfirmations ? (
+                <Link
+                  href="/confirmations"
+                  title="Confirmations"
+                  aria-label="Confirmations"
+                  className={
+                    "relative mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
+                    (isActive("/confirmations")
+                      ? "bg-navy-800 text-gold-300"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  <NavIcon name="confirmations" />
+                  {confirmationsWaiting > 0 ? (
                     <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
-                      {e.badge}
+                      {confirmationsWaiting}
                     </span>
                   ) : null}
                 </Link>
-              ))}
+              ) : null}
+              {showAdmin ? (
+                <Link
+                  href="/admin"
+                  title="Admin"
+                  aria-label="Admin"
+                  className={
+                    "mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
+                    (isActive("/admin")
+                      ? "bg-navy-800 text-gold-300"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  <NavIcon name="admin" />
+                </Link>
+              ) : null}
+              {showManageLearning ? (
+                <Link
+                  href="/admin/learning"
+                  title={
+                    badgeFor("/admin/learning") > 0
+                      ? `Manage Learning (${badgeFor("/admin/learning")})`
+                      : "Manage Learning"
+                  }
+                  aria-label={
+                    badgeFor("/admin/learning") > 0
+                      ? `Manage Learning, ${badgeFor("/admin/learning")} waiting`
+                      : "Manage Learning"
+                  }
+                  className={
+                    "relative mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
+                    (isActive("/admin/learning")
+                      ? "bg-navy-800 text-gold-300"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  <NavIcon name="manage-learning" />
+                  {badgeFor("/admin/learning") > 0 ? (
+                    <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
+                      {badgeFor("/admin/learning")}
+                    </span>
+                  ) : null}
+                </Link>
+              ) : null}
+              {messagesWaiting > 0 ? (
+                <Link
+                  href="/messages"
+                  title={`Messages to send (${messagesWaiting})`}
+                  aria-label={`Messages to send, ${messagesWaiting} waiting`}
+                  className={
+                    "relative mt-1 grid h-10 w-10 place-items-center rounded-lg transition " +
+                    (isActive("/messages")
+                      ? "bg-navy-800 text-gold-300"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  <NavIcon name="messages" />
+                  <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
+                    {messagesWaiting}
+                  </span>
+                </Link>
+              ) : null}
             </nav>
             {liveDataRequestCount > 0 ? (
               <div className="px-2 pb-2">
@@ -398,32 +440,117 @@ export function AppShell({
                   </Link>
                 );
               })}
-              {extras.map((e) => (
+              {showIncentive ? (
                 <Link
-                  key={e.href}
-                  href={e.href}
-                  aria-current={isActive(e.href) ? "page" : undefined}
+                  href="/incentive"
+                  aria-current={isActive("/incentive") ? "page" : undefined}
                   className={
-                    "relative mt-2 flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium transition " +
-                    (isActive(e.href)
+                    "relative mt-2 block rounded-lg px-3 py-2 text-sm font-medium transition " +
+                    (isActive("/incentive")
                       ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
                       : "text-gold-300 hover:bg-navy-800")
                   }
                 >
-                  {e.label}
-                  {e.badge > 0 ? (
-                    <span
-                      aria-label={`${e.badge} waiting`}
-                      className={
-                        "grid place-items-center rounded-full bg-gold-500 px-1 font-bold text-navy-900 " +
-                        (e.bigBadge ? "h-5 min-w-5 text-[11px]" : "h-4 min-w-4 text-[10px]")
-                      }
-                    >
-                      {e.badge}
+                  Incentive Scheme
+                </Link>
+              ) : null}
+              {showPayments ? (
+                <Link
+                  href="/finance"
+                  aria-current={isActive("/finance") ? "page" : undefined}
+                  className={
+                    "relative mt-2 block rounded-lg px-3 py-2 text-sm font-medium transition " +
+                    (isActive("/finance")
+                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  Payments
+                </Link>
+              ) : null}
+              {showPettyCash ? (
+                <Link
+                  href="/petty-cash"
+                  aria-current={isActive("/petty-cash") ? "page" : undefined}
+                  className={
+                    "relative mt-2 block rounded-lg px-3 py-2 text-sm font-medium transition " +
+                    (isActive("/petty-cash")
+                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  Petty cash
+                </Link>
+              ) : null}
+              {showConfirmations ? (
+                <Link
+                  href="/confirmations"
+                  aria-current={isActive("/confirmations") ? "page" : undefined}
+                  className={
+                    "relative mt-2 flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition " +
+                    (isActive("/confirmations")
+                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  Confirmations
+                  {confirmationsWaiting > 0 ? (
+                    <span className="ml-2 grid h-5 min-w-5 place-items-center rounded-full bg-gold-500 px-1 text-[11px] font-bold text-navy-900">
+                      {confirmationsWaiting}
                     </span>
                   ) : null}
                 </Link>
-              ))}
+              ) : null}
+              {showAdmin ? (
+                <Link
+                  href="/admin"
+                  aria-current={isActive("/admin") ? "page" : undefined}
+                  className={
+                    "relative mt-2 block rounded-lg px-3 py-2 text-sm font-medium transition " +
+                    (isActive("/admin")
+                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  Admin
+                </Link>
+              ) : null}
+              {showManageLearning ? (
+                <Link
+                  href="/admin/learning"
+                  aria-current={isActive("/admin/learning") ? "page" : undefined}
+                  className={
+                    "relative mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition " +
+                    (isActive("/admin/learning")
+                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  Manage Learning
+                  {badgeFor("/admin/learning") > 0 ? (
+                    <span className="ml-auto grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
+                      {badgeFor("/admin/learning")}
+                    </span>
+                  ) : null}
+                </Link>
+              ) : null}
+              {messagesWaiting > 0 ? (
+                <Link
+                  href="/messages"
+                  aria-current={isActive("/messages") ? "page" : undefined}
+                  className={
+                    "relative mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition " +
+                    (isActive("/messages")
+                      ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
+                      : "text-gold-300 hover:bg-navy-800")
+                  }
+                >
+                  Messages to send
+                  <span className="ml-auto grid h-4 min-w-4 place-items-center rounded-full bg-gold-500 px-1 text-[10px] font-bold text-navy-900">
+                    {messagesWaiting}
+                  </span>
+                </Link>
+              ) : null}
             </nav>
             {liveDataRequestCount > 0 ? (
               <div className="px-3 pb-3">
@@ -510,204 +637,17 @@ export function AppShell({
             </form>
           </div>
         ) : null}
-        {/* The notch strip: navy behind the phone's own clock when installed and run
-            full-screen, and exactly 0px tall in a browser tab or on a desktop. */}
-        <div className="ff-safe-top bg-navy-900 md:hidden" aria-hidden="true" />
-        <header className="flex items-center gap-3 bg-navy-900 px-4 py-3 text-white md:hidden">
-          <button
-            ref={menuButtonRef}
-            type="button"
-            onClick={() => setMenuOpen(true)}
-            aria-label={waitingTotal > 0 ? `Open menu, ${waitingTotal} waiting` : "Open menu"}
-            aria-expanded={menuOpen}
-            aria-controls="phone-menu"
-            className="relative -ml-2 grid h-10 w-10 place-items-center rounded-lg text-white transition hover:bg-navy-800"
-          >
-            <MenuIcon />
-            {waitingTotal > 0 ? (
-              <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-navy-900 bg-gold-500" />
-            ) : null}
-          </button>
+        <header className="flex items-center justify-between bg-navy-900 px-4 py-3 text-white md:hidden">
           <Link href="/dashboard" aria-label={`${companyName} — go to Home`} className="font-serif text-lg uppercase transition hover:text-gold-300">{companyName}</Link>
+          <form action={signOutAction}>
+            <button type="submit" className="text-xs text-navy-200 underline">
+              Sign out
+            </button>
+          </form>
         </header>
-
-        {menuOpen ? (
-          <div className="fixed inset-0 z-50 md:hidden">
-            <button
-              type="button"
-              aria-label="Close menu"
-              onClick={closeMenu}
-              className="absolute inset-0 bg-navy-950/60"
-            />
-            <div
-              id="phone-menu"
-              ref={panelRef}
-              tabIndex={-1}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Sections"
-              className="ff-panel-in absolute inset-y-0 right-0 flex w-[86%] max-w-sm flex-col bg-navy-900 text-white shadow-2xl outline-none"
-            >
-              <div className="ff-safe-top" aria-hidden="true" />
-              <div className="flex flex-shrink-0 items-start justify-between gap-3 border-b border-navy-700 px-4 py-4">
-                <Link
-                  href="/dashboard"
-                  onClick={closeMenu}
-                  aria-label={`${companyName} — go to Home`}
-                  className="min-w-0 transition hover:opacity-80"
-                >
-                  {logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={logoUrl} alt={companyName} className="h-9 max-w-[150px] object-contain" />
-                  ) : (
-                    <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-400">
-                        {shortName}
-                      </div>
-                      <div className="font-serif text-xl uppercase">{companyName}</div>
-                    </div>
-                  )}
-                </Link>
-                <button
-                  type="button"
-                  onClick={closeMenu}
-                  aria-label="Close menu"
-                  className="-mr-2 grid h-11 w-11 flex-shrink-0 place-items-center rounded-lg text-navy-200 transition hover:bg-navy-800 hover:text-white"
-                >
-                  <CloseIcon />
-                </button>
-              </div>
-
-              <nav className="ff-menu-scroll flex-1 overflow-y-auto px-3 py-3">
-                {nav.map((item) => {
-                  const on = isActive(item.href);
-                  const badge = badgeFor(item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={closeMenu}
-                      aria-current={on ? "page" : undefined}
-                      className={
-                        "relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-3 text-sm transition " +
-                        (on
-                          ? "bg-navy-800 font-medium text-white before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                          : "text-navy-100 hover:bg-navy-800 hover:text-white")
-                      }
-                    >
-                      <NavIcon name={item.icon} />
-                      <span className="min-w-0 truncate">{item.label}</span>
-                      {badge > 0 ? (
-                        <span
-                          aria-label={`${badge} new`}
-                          className="ml-auto grid h-5 min-w-5 flex-shrink-0 place-items-center rounded-full bg-gold-500 px-1.5 text-[11px] font-bold text-navy-900"
-                        >
-                          {badge}
-                        </span>
-                      ) : null}
-                    </Link>
-                  );
-                })}
-
-                {extras.length > 0 ? (
-                  <div className="mt-3 border-t border-navy-700 pt-3">
-                    {/* Labelled, unlike desktop: on a narrow screen the gold alone reads as
-                        decoration rather than as "these are yours because of a role". */}
-                    <div className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-navy-300">
-                      Also yours
-                    </div>
-                    {extras.map((e) => (
-                      <Link
-                        key={e.href}
-                        href={e.href}
-                        onClick={closeMenu}
-                        aria-current={isActive(e.href) ? "page" : undefined}
-                        className={
-                          "relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition " +
-                          (isActive(e.href)
-                            ? "bg-navy-800 text-gold-200 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-gold-400"
-                            : "text-gold-300 hover:bg-navy-800")
-                        }
-                      >
-                        <NavIcon name={e.icon} />
-                        <span className="min-w-0 truncate">{e.label}</span>
-                        {e.badge > 0 ? (
-                          <span
-                            aria-label={`${e.badge} waiting`}
-                            className="ml-auto grid h-5 min-w-5 flex-shrink-0 place-items-center rounded-full bg-gold-500 px-1.5 text-[11px] font-bold text-navy-900"
-                          >
-                            {e.badge}
-                          </span>
-                        ) : null}
-                      </Link>
-                    ))}
-                  </div>
-                ) : null}
-              </nav>
-
-              {liveDataRequestCount > 0 ? (
-                <div className="flex-shrink-0 px-3 pb-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      // Dispatch FIRST, then close: the popup layer listens on window, and
-                      // closing before the event is out would race the panel's unmount.
-                      window.dispatchEvent(new CustomEvent("hrerp:open-data-requests"));
-                      closeMenu();
-                    }}
-                    className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-gold-600 bg-navy-800 px-3 py-2.5 text-sm text-white hover:bg-navy-700"
-                  >
-                    <span>Profile data requested</span>
-                    <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold-500 px-1.5 text-[11px] font-bold text-navy-900">
-                      {liveDataRequestCount}
-                    </span>
-                  </button>
-                </div>
-              ) : null}
-
-              <div className="ff-safe-bottom flex-shrink-0 border-t border-navy-700 px-4 py-4">
-                <div className="truncate text-sm text-white">{name}</div>
-                <div className="truncate text-xs text-navy-200">{email}</div>
-                {linkedAccounts.length > 0 ? (
-                  <div className="mt-3 border-t border-navy-700 pt-3">
-                    <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-navy-300">
-                      Switch account
-                    </div>
-                    <div className="space-y-1">
-                      {linkedAccounts.map((a) => (
-                        // No onClick close anywhere in here: React flushes click updates
-                        // synchronously, so closing the panel would unmount the <form> before
-                        // the browser dispatched submit and the action would silently never
-                        // run. Switching and signing out both navigate, which unmounts it.
-                        <form key={a.email} action={switchAccountAction}>
-                          <input type="hidden" name="email" value={a.email} />
-                          <button
-                            type="submit"
-                            className="flex min-h-11 w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-xs text-navy-100 transition hover:bg-navy-800 hover:text-white"
-                          >
-                            <SwitchIcon />
-                            <span className="truncate">{a.label}</span>
-                          </button>
-                        </form>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-                <form action={signOutAction}>
-                  <button
-                    type="submit"
-                    className="mt-1 inline-flex min-h-11 items-center text-xs text-navy-200 underline underline-offset-2 hover:text-gold-300"
-                  >
-                    Sign out
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        ) : null}
         <main
           className={
-            "ff-safe-bottom w-full flex-1 p-6 md:p-10 " +
+            "w-full flex-1 p-6 md:p-10 " +
             // Single-scroll pages become a full-height flex column so the table
             // fills the leftover space and is the only scroller (desktop only).
             // Wide, many-column data pages (registry, incentive report) use the
@@ -723,24 +663,6 @@ export function AppShell({
         </main>
       </div>
     </div>
-  );
-}
-
-/** The phone menu button. */
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" aria-hidden="true">
-      <path d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-  );
-}
-
-/** Dismisses the phone menu. */
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
-      <path d="M6 6l12 12M18 6L6 18" />
-    </svg>
   );
 }
 

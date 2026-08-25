@@ -293,6 +293,27 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - Installable "Add to Home Screen": web manifest (`app/manifest.ts`), navy/gold "F" icons
   (`public/icons/*`), a minimal registration-only service worker (`public/sw.js`, no auth-content
   caching), and head meta (theme-color, apple-touch-icon, mobile-web-app-capable). No push (v1).
+- **Usable on a phone (spec 010 extension, 2026-08-25).** Installability shipped in 2026-08 but the
+  app was not navigable on a phone: the sidebar is `max-md:hidden` and the only mobile chrome was a
+  navy bar carrying the company name and a Sign out link, so off `/dashboard` **two** links were
+  tappable (measured). `AppShell` now renders a **slide-in panel** below `md` — the same sections in
+  the same order with the same badges, the appointment/admin entries under an "Also yours" heading
+  (labelled here only: on a narrow screen gold alone reads as decoration), the data-request notice
+  and the account block. Closes on a section tap, the ✕, the page behind, Escape, and any pathname
+  change; body scroll is locked while open; every target is ≥44px.
+  - The panel's Sign out and Switch-account **submit buttons carry no `onClick`** — closing the panel
+    there would unmount the `<form>` before the browser dispatched `submit` (the 2026-08-16 rule).
+    Both navigate, which unmounts it anyway. The data-request button dispatches its event *first*.
+  - The header button carries **one gold dot, not a number**, summed from the same `badgeFor`/`extras`
+    derivations the menu renders — never a count of its own.
+  - **Safe areas:** `viewportFit: "cover"` in `generateViewport` makes `env(safe-area-inset-*)`
+    non-zero; `.ff-safe-top` (a navy spacer, `height`) and `.ff-safe-bottom` (`margin-bottom`) in
+    `globals.css` keep the header out from under the clock and content off the home indicator. Written
+    as height/margin, never padding, so they cannot fight the Tailwind padding utilities already on
+    those elements — and they measure 0 in a browser tab and on desktop.
+  - **`mobile-web-app-capable` was never missing:** Next 15 renders `appleWebApp.capable` as the
+    *modern* meta, not the Apple-prefixed one. Adding it via `other:` emitted it **twice**; checked
+    against the served HTML and removed.
 
 ### Incentive Scheme (spec 009) — Super User + Finance, hidden
 - A **partner-compensation** engine implementing "Team Benefits System v1.5" (Business Partner Fee, Commission, Profit Share proposed, 70% margin gate, `eligible_to_lead` utilisation gate, contributor tiers/floor/cap, firm P&L, cost recovery, watch list). **Distinct from the employee Benefits module.**

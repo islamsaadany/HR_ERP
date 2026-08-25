@@ -16,11 +16,65 @@
 | 6 — Benefits (admin config) | 🟢 Complete |
 | 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |
+| — PWA / phone | 🟢 **Usable on a phone** (spec 010 + its 2026-08-25 extension — installable, and now navigable: a slide-in menu below `md`, safe areas) |
 | 10 — Finance: petty cash & payback | 🟢 **Built** (spec 040 — custodian floats, period reconciliation, evidence, payback requests; migration `068`) |
 | 11 — Finance: bank confirmations & salaries | 🟢 **Built** (spec 041 — the confirmer appointment **per business unit**, submissions with a frozen total, the CEO's confirmation screen, monthly salary runs, the daily nudge; migrations `069`, `070` + `075`) |
 | 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
 | 12 — Team Communications | 🟢 **Built** (spec 039 — one door with three options: the dashboard noticeboard, email to a chosen audience, and birthday & work-anniversary congratulations drafted by the platform and sent by a human; migrations `067` + `074`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
+
+## A menu on the phone (built 2026-08-25 — no migration)
+*"Make the application PWA so I can use from the mobile."*
+
+The PWA half was already done — spec 010 shipped the manifest, the icons and the worker back in
+August, and the app installs from Chrome and from Safari's Share sheet. What was not done was
+**being usable once installed**. The sidebar is hidden below `md`, and the only mobile chrome was a
+navy bar with the company name and a Sign out link. Driving a real phone viewport against a real
+Postgres, from the Time-Off page exactly **two** links were tappable: Home, and one link inside the
+page itself. Benefits, the Directory, the Handbook, Knowledge, Profile, Reviews, Payback and Admin
+had no door at all — the dashboard tiles are contextual and cover at most five sections.
+
+**Built.** A slide-in panel from a ☰ button in that bar, carrying the desktop list verbatim: same
+sections, same order, same badges, the appointment/admin entries grouped under an "Also yours"
+heading, the gold data-request notice, and the account block with Switch account and Sign out. It
+closes on a section tap, the ✕, the page behind it, Escape, and any navigation; the page behind is
+scroll-locked while it is open; every target is at least 44px. The button carries **one gold dot**
+when anything is waiting — summed from the same derivations the menu itself renders, so it cannot
+disagree with the list behind it. Plus `viewport-fit=cover` and two safe-area rules so the navy
+header stops sitting under the phone's clock and content stops running into the home indicator.
+
+**One list, three surfaces.** Adding a phone menu would have made the appointment/admin entries a
+*third* hand-written copy (the collapsed rail and the expanded sidebar were already two). They are
+now one `extras` array rendered by all three, so a module added here cannot appear on a desktop
+screen and be missing from a phone. The one piece of variance the old markup had — Confirmations
+counting in a larger pill than Manage Learning — is **carried in the data (`bigBadge`), not tidied
+away**, because tidying it would have been an unapproved visual change to desktop.
+
+**Proof (a real browser against a real Postgres, not reasoning).**
+- **Desktop did not move.** The sidebar was screenshotted and its 20 nav rows measured (position,
+  size, colour, weight, font-size) before and after. Expanded `240×900` and collapsed `64×900` are
+  **byte-identical PNGs**; **0 of 20** rows differ. Re-run after the last edit, still identical.
+- **22 phone checks green**: two links before, thirteen-plus after; each of `/benefits` `/directory`
+  `/handbook` `/knowledge` `/profile` `/reviews` `/admin` `/confirmations` `/petty-cash` `/finance`
+  reachable; Escape / backdrop / section-tap all close it; scroll lock applied and released;
+  **Sign out from inside the panel actually signs out** (the submit-button trap, tested explicitly).
+- **8 plain-employee checks green**: no "Also yours", no admin or finance doors, no account switcher,
+  no gold dot, and her whole list fits without scrolling.
+- **34 page loads** across 17 routes at 1280px and 390px: all 200, no console or page errors, the
+  menu button present on every phone page and absent on every desktop page.
+- `tsc --noEmit` and `next build` green.
+
+**Two things found by measuring rather than reading.**
+- The tap-target sweep failed first time: the ✕ was 36px and Sign out 16px, both desktop-sized. Fixed
+  to 44px — same glyph, same type, just a target a thumb can land on.
+- **`mobile-web-app-capable` was never missing.** The mockup claimed we emitted Apple's tag but not
+  Chrome's; the served HTML says Next 15 renders `appleWebApp.capable` as the *modern* name and does
+  not emit the Apple one at all. My "fix" therefore emitted the tag **twice**. Removed, and the
+  published mockup carries the correction rather than a quiet deletion.
+
+**Known and deliberately left.** `/admin/employees` and `/finance` still scroll sideways on a phone
+(59px and 20px). Measured **identically with these changes stashed** — pre-existing, those pages'
+wide tables, and out of scope for a navigation change.
 
 ## Confirmations, one business unit at a time (built 2026-08-25 — migration `075`)
 The CEO: *"for the transaction confirmation we need it by business unit. as every business unit
