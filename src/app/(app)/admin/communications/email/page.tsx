@@ -17,10 +17,9 @@ export default async function EmailAnnouncementsPage() {
 
   async function start() {
     "use server";
-    const form = new FormData();
-    form.set("subject", "Untitled announcement");
-    form.set("body", "Write your message here.");
-    const result = await createAnnouncement(form);
+    // Deliberately empty. The editor shows grey prompts in the boxes; pre-filling them with real
+    // words means the operator's first action is deleting somebody else's text.
+    const result = await createAnnouncement(new FormData());
     if (result.ok && result.data) redirect(`/admin/communications/${result.data.id}`);
   }
 
@@ -74,7 +73,11 @@ export default async function EmailAnnouncementsPage() {
               >
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-[14.5px] font-bold text-navy-800">{m.subject}</span>
+                    {/* A draft may legitimately have no subject yet — it must not render as a
+                        blank, unclickable-looking row. */}
+                    <span className={m.subject ? "text-[14.5px] font-bold text-navy-800" : "text-[14.5px] font-bold italic text-muted"}>
+                      {m.subject || "No subject yet"}
+                    </span>
                     <span className={m.state === "SENT" ? CHIP.done : CHIP.attention}>
                       {m.state === "SENT" ? "Sent" : "Draft"}
                     </span>

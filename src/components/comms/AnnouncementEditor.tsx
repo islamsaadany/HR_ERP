@@ -84,7 +84,15 @@ export function AnnouncementEditor({
         >
           <div>
             <label className={LABEL} htmlFor="subject">Subject</label>
-            <input id="subject" name="subject" defaultValue={initial.subject} className={INPUT} />
+            {/* A grey prompt, not stored text. A draft opens empty and this disappears the moment
+                anything is typed — the operator never has to delete words they did not write. */}
+            <input
+              id="subject"
+              name="subject"
+              defaultValue={initial.subject}
+              placeholder="What is this about?"
+              className={`${INPUT} placeholder:text-muted/60`}
+            />
           </div>
           <div className="mt-3">
             <label className={LABEL} htmlFor="body">Message</label>
@@ -93,7 +101,8 @@ export function AnnouncementEditor({
               name="body"
               defaultValue={initial.body}
               rows={10}
-              className={`${INPUT} font-normal`}
+              placeholder="Write your message here."
+              className={`${INPUT} font-normal placeholder:text-muted/60`}
             />
             <p className="mt-1 text-[11.5px] text-muted">
               Leave a blank line between paragraphs — that is how they arrive.
@@ -278,15 +287,15 @@ function EmailPreview({ src }: { src: string }) {
     let contentObserver: ResizeObserver | null = null;
     let holderObserver: ResizeObserver | null = null;
 
-    // Measured, not assumed — see the note on the constant above.
+    // Measure the BODY, never `documentElement`.
+    //
+    // The root element stretches to fill the frame, so reading its size returns the size this
+    // component just set — the measurement feeds on its own output. It locked the preview at its
+    // initial guess of 420px and left 117px of empty grey under a 303px email, which is exactly
+    // the letterboxing the old fixed-height box produced. The body is sized by its contents.
     function contentWidth(): number {
       try {
-        const doc = frame?.contentDocument;
-        return Math.max(
-          doc?.documentElement?.scrollWidth ?? 0,
-          doc?.body?.scrollWidth ?? 0,
-          PREVIEW_WIDTH_GUESS
-        );
+        return Math.max(frame?.contentDocument?.body?.scrollWidth ?? 0, PREVIEW_WIDTH_GUESS);
       } catch {
         return PREVIEW_WIDTH_GUESS;
       }
@@ -304,10 +313,9 @@ function EmailPreview({ src }: { src: string }) {
       // Cross-origin would throw. It cannot be — the src is our own route — but a preview is not
       // worth an unhandled error on the page it is previewing for.
       try {
-        const doc = frame?.contentDocument;
-        const body = doc?.body;
+        const body = frame?.contentDocument?.body;
         if (!body) return;
-        const next = Math.max(body.scrollHeight, doc?.documentElement?.scrollHeight ?? 0);
+        const next = body.scrollHeight;
         if (next > 0) setHeight(next);
         // Height and width are measured together: a re-wrap changes both.
         fit();

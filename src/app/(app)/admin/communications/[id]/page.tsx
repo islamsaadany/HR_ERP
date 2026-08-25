@@ -201,7 +201,10 @@ export default async function AnnouncementPage({
     <div>
       <BackLink href="/admin/communications/email" label="Email" />
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <h1 className="font-serif text-3xl text-ink">{message.subject}</h1>
+        {/* A draft may have no subject yet. A sent one always has: it could not have been sent. */}
+        <h1 className={message.subject ? "font-serif text-3xl text-ink" : "font-serif text-3xl italic text-muted"}>
+          {message.subject || "No subject yet"}
+        </h1>
         <span className={CHIP.attention}>Draft</span>
         <Link href="/admin/communications/email" className="text-sm text-muted hover:text-ink">
           All emails

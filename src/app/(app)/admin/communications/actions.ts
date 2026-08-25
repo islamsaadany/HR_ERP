@@ -42,14 +42,20 @@ function revalidate(id?: string) {
 
 // ─── Compose ────────────────────────────────────────────────────────────
 
+/**
+ * Start a draft.
+ *
+ * Subject and body may be EMPTY here — a new announcement opens as a blank page with grey
+ * prompts, not with placeholder words already typed into it that the operator has to select and
+ * delete first. They are still required to SEND: `sendAnnouncement` refuses an empty message, and
+ * `updateAnnouncement` refuses to save one blank once something has been written.
+ */
 export async function createAnnouncement(formData: FormData): Promise<Result<{ id: string }>> {
   const admin = await requireCommsSender();
   const subject = clean(formData.get("subject"));
   const body = clean(formData.get("body"));
 
-  if (!subject) return { ok: false, error: "Give the announcement a subject." };
   if (subject.length > 200) return { ok: false, error: "That subject is too long (200 characters max)." };
-  if (!body) return { ok: false, error: "Write something to send." };
 
   const message = await prisma.message.create({
     data: { kind: "ANNOUNCEMENT", state: "DRAFT", subject, body, createdById: admin.id },
