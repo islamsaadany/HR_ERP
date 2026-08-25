@@ -326,7 +326,7 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   Two constraints recorded rather than assumed away: unit logos cannot appear in email while they
   are served privately (design is typographic), and the single sender display name means changing
   it re-brands the two existing workflows too.
-- **2026-08-24 — Spec `039` written: performance reviews & 1:1s (specced, not built).** Quarterly cycles
+- **2026-08-24 — Spec `040` written: performance reviews & 1:1s (specced, not built).** Quarterly cycles
   opened by the calendar with **no operator and no admin screen**; four objects — a **private** running
   journal, ad-hoc manager↔report **1:1s** with an outcome both acknowledge, a **two-halved** quarterly
   sheet on the supplied agenda that stays **sealed until both submit AND both confirm they met** — a
@@ -337,7 +337,17 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   real Top 5 and a real CliftonStrengths 34 report, proposed themes **confirmed by a human** before
   saving, manual entry as the fallback. Agreed input and the parse rule:
   `specs/_parked/performance-reviews-and-1-1s.md`.
-- **2026-08-24 — Spec `039` BUILT (migration `068`).** Two findings shaped it more than the spec did.
+- **2026-08-25 — Flagging a journal note to raise (spec `040` addendum, migration `069`).** Asked for
+  as "incident reporting"; built as a **flag on the journal that already exists**, not a second module —
+  two places to write the same thing means remembering which one you used. A flagged note waits at the
+  top of a 1:1 and on the review sheet, is raised with one click (copying the words where the
+  counterpart can see them), and **nothing badges, counts, reminds or emails** about it. Whether it has
+  been raised is **derived** from the 1:1 note or sheet item referencing it, never a stored `raisedAt` —
+  so deleting that note returns the entry to the queue instead of leaving a lie. Resolution tracking
+  deliberately left out: what came of it belongs in the 1:1's agreed outcome. Verified on throwaway
+  Postgres (12 assertions incl. the delete-returns-it case and cross-user isolation); `068` + `069`
+  each applied twice clean.
+- **2026-08-24 — Spec `040` BUILT (migration `068`).** Two findings shaped it more than the spec did.
   (a) **`requireUser()` cannot be used here**: it deliberately returns the impersonation target, so a
   Super User viewing as an employee would have read that person's private journal — the module
   resolves the **real** session user and refuses to run while impersonating. (b) **Access follows the
@@ -357,4 +367,4 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ---
 
-*Last Updated: 2026-08-24 (spec 040 built: performance reviews & 1:1s, migration 068. Previously: Communications module built — spec 039, migration 067, constitution v1.3.0).*
+*Last Updated: 2026-08-25 (spec 040 addendum: flag a journal note to raise, migration 069. Previously: 2026-08-24 (spec 040 built: performance reviews & 1:1s, migration 068. Previously: Communications module built — spec 039, migration 067, constitution v1.3.0).*

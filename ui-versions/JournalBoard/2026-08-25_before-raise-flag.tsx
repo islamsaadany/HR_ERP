@@ -4,7 +4,6 @@ import { useActionState, useState } from "react";
 import {
   addJournalEntry,
   deleteJournalEntry,
-  toggleRaiseFlag,
   type ActionResult,
 } from "@/app/(app)/reviews/journal/actions";
 import { JOURNAL_SECTION_LABEL } from "@/lib/reviews/agenda";
@@ -15,26 +14,16 @@ export type JournalRow = {
   section: string | null;
   occurredOnLabel: string;
   occurredOnISO: string;
-  /** Flagged as something to raise. */
-  raiseIt: boolean;
-  /** Where it was carried, once it has been — derived, never stored. */
-  carried: { label: string; when: string } | null;
 };
 
 const SECTIONS = ["WENT_WELL", "DIDNT_GO_WELL", "LEARNING", "BLOCKER", "EXPECTATION"];
 
 export function JournalBoard({ entries }: { entries: JournalRow[] }) {
   const [state, formAction, pending] = useActionState<ActionResult | null, FormData>(
-    async (_prev, formData) => {
-      switch (String(formData.get("intent"))) {
-        case "delete":
-          return deleteJournalEntry(formData);
-        case "flag":
-          return toggleRaiseFlag(formData);
-        default:
-          return addJournalEntry(formData);
-      }
-    },
+    async (_prev, formData) =>
+      String(formData.get("intent")) === "delete"
+        ? deleteJournalEntry(formData)
+        : addJournalEntry(formData),
     null
   );
 
@@ -98,47 +87,12 @@ export function JournalBoard({ entries }: { entries: JournalRow[] }) {
 
       {entries.length === 0 ? (
         <p className="mt-4 rounded-xl border border-line bg-surface p-4 text-sm text-muted">
-          Nothing yet. The first note is usually the hardest and the most useful. Flag one with
-          the ⚑ and it will be waiting for you at your next 1:1.
+          Nothing yet. The first note is usually the hardest and the most useful.
         </p>
       ) : (
         <ul className="mt-4 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
           {entries.map((e) => (
-            <li
-              key={e.id}
-              className={
-                "flex flex-wrap items-start gap-x-3 gap-y-1 py-2.5 pr-3.5 " +
-                (e.raiseIt && !e.carried
-                  ? "border-l-[3px] border-gold-500 bg-[#fbf9f2] pl-[11px]"
-                  : "pl-3.5")
-              }
-            >
-              <button
-                type="submit"
-                name="intent"
-                value="flag"
-                disabled={pending}
-                onClick={(ev) => {
-                  const form = ev.currentTarget.form;
-                  const field = form?.querySelector<HTMLInputElement>('input[name="entryId"]');
-                  if (field) field.value = e.id;
-                }}
-                aria-pressed={e.raiseIt}
-                aria-label={
-                  e.raiseIt
-                    ? `Clear the raise flag on the note from ${e.occurredOnLabel}`
-                    : `Flag the note from ${e.occurredOnLabel} to raise`
-                }
-                title={e.raiseIt ? "Flagged to raise" : "Flag to raise"}
-                className={
-                  "mt-0.5 grid size-[22px] shrink-0 place-items-center rounded-md border text-[11px] " +
-                  (e.raiseIt
-                    ? "border-gold-600 bg-gold-500 text-white"
-                    : "border-navy-200 bg-surface text-navy-300 hover:text-navy-600")
-                }
-              >
-                ⚑
-              </button>
+            <li key={e.id} className="flex flex-wrap items-start gap-x-3 gap-y-1 px-3.5 py-2.5">
               <span className="min-w-[84px] shrink-0 pt-0.5 text-[12px] tabular-nums text-muted">
                 {e.occurredOnLabel}
               </span>
@@ -148,15 +102,6 @@ export function JournalBoard({ entries }: { entries: JournalRow[] }) {
                 </span>
               )}
               <span className="flex-1 text-[13px]">{e.body}</span>
-              {e.carried ? (
-                <span className="shrink-0 rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-[10px] font-bold text-green-700">
-                  Raised {e.carried.when} · {e.carried.label}
-                </span>
-              ) : e.raiseIt ? (
-                <span className="shrink-0 rounded-full border border-gold-300 bg-gold-100 px-2.5 py-0.5 text-[10px] font-bold text-gold-800">
-                  To raise
-                </span>
-              ) : null}
               <button
                 type="submit"
                 name="intent"

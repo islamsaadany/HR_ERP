@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireRealUser, myHalf } from "@/lib/reviews/access";
 import { requireModuleEnabled } from "@/lib/modules";
 import { formatDate } from "@/lib/labels";
-import { oneOnOneForRead } from "@/lib/reviews/queries";
+import { oneOnOneForRead, flaggedToRaise } from "@/lib/reviews/queries";
 import { OneOnOneBoard } from "@/components/reviews/OneOnOneBoard";
 import { AutoRefresh } from "@/components/AutoRefresh";
 
@@ -21,6 +21,10 @@ export default async function OneOnOnePage({
   // Not one of the pair reads as not-found — a refusal would confirm it exists.
   const record = await oneOnOneForRead(id, me.id);
   if (!record) notFound();
+
+  // My own flagged notes only — this never reads the counterpart's journal,
+  // because no query in this module can.
+  const flagged = await flaggedToRaise(me.id);
 
   const half = myHalf(record, me.id);
   if (!half) notFound();
@@ -54,6 +58,12 @@ export default async function OneOnOnePage({
             mine: n.authorId === me.id,
             body: n.body,
             createdAt: formatDate(n.createdAt),
+            fromJournal: n.sourceKind === "JOURNAL",
+          }))}
+          flagged={flagged.map((f) => ({
+            id: f.id,
+            body: f.body,
+            occurredOn: formatDate(f.occurredOn),
           }))}
           outcome={record.outcome}
           employeeName={record.employee.name.split(" ")[0]}

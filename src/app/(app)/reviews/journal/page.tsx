@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireRealUser } from "@/lib/reviews/access";
 import { requireModuleEnabled } from "@/lib/modules";
 import { formatDate } from "@/lib/labels";
-import { myJournal } from "@/lib/reviews/queries";
+import { myJournal, carriedJournalRefs } from "@/lib/reviews/queries";
 import { JournalBoard } from "@/components/reviews/JournalBoard";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,12 @@ export default async function JournalPage() {
 
   // Scoped to the author at the query. There is no version of this read that
   // takes somebody else's id — see lib/reviews/queries.ts.
-  const entries = await myJournal(me.id);
+  const [entries, carried] = await Promise.all([
+    myJournal(me.id),
+    // Whether a flagged note has been raised is DERIVED from the 1:1 note or
+    // sheet item that references it — never a stored flag that could disagree.
+    carriedJournalRefs(me.id),
+  ]);
 
   return (
     <div className="max-w-3xl">
@@ -26,8 +31,8 @@ export default async function JournalPage() {
       </p>
       <h1 className="mt-1 font-serif text-2xl text-navy-900">Your journal</h1>
       <p className="mt-1 max-w-[70ch] text-sm text-muted">
-        Write things down as they happen — nobody remembers March in June. When a review
-        comes round, bring over whatever you want to raise.
+        Write things down as they happen — nobody remembers March in June. Flag one with the ⚑
+        and it waits for you at your next 1:1 and on your review sheet.
       </p>
 
       <p className="mt-4 inline-block rounded-full border border-navy-200 bg-navy-50 px-3 py-1 text-[11px] font-bold text-navy-700">
@@ -42,6 +47,11 @@ export default async function JournalPage() {
             section: e.section,
             occurredOnLabel: formatDate(e.occurredOn),
             occurredOnISO: e.occurredOn.toISOString().slice(0, 10),
+            raiseIt: e.raiseIt,
+            carried: (() => {
+              const ref = carried.get(e.id);
+              return ref ? { label: ref.label, when: formatDate(ref.when) } : null;
+            })(),
           }))}
         />
       </div>

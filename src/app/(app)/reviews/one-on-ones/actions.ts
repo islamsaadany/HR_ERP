@@ -146,3 +146,56 @@ export async function acknowledgeOneOnOne(formData: FormData): Promise<ActionRes
   refresh(record.id);
   return OK;
 }
+
+/**
+ * Raise a flagged journal note in this 1:1.
+ *
+ * Copies the words into a note the other person can see. Until this is pressed
+ * they see nothing — the journal stays private, and flagging it changed only what
+ * YOU see.
+ *
+ * The copy is deliberate, as with a review sheet item: editing or deleting the
+ * journal entry afterwards must not rewrite something already said out loud. The
+ * flag is not cleared either — it does not need to be, because "carried" is
+ * derived from this note existing (`carriedJournalRefs`), so the entry drops out
+ * of the queue on its own and comes back if the note is removed.
+ */
+export async function raiseJournalEntryInOneOnOne(formData: FormData): Promise<ActionResult> {
+  const gate = await realUserForAction();
+  if (!gate.ok) return gate;
+  const me = gate.user;
+
+  const oneOnOneId = String(formData.get("oneOnOneId") ?? "");
+  const entryId = String(formData.get("entryId") ?? "");
+
+  const record = await oneOnOneForRead(oneOnOneId, me.id);
+  if (!record) return fail(NOT_FOUND);
+  if (record.finalAt) return fail(FINAL);
+
+  const entry = await prisma.journalEntry.findFirst({
+    where: { id: entryId, authorId: me.id },
+    select: { id: true, body: true },
+  });
+  if (!entry) return fail("That journal note could not be found.");
+
+  // Idempotent; the partial unique index in 069 is the real guard.
+  const already = await prisma.oneOnOneNote.findFirst({
+    where: { oneOnOneId: record.id, authorId: me.id, sourceKind: "JOURNAL", sourceId: entry.id },
+    select: { id: true },
+  });
+  if (!already) {
+    await prisma.oneOnOneNote.create({
+      data: {
+        oneOnOneId: record.id,
+        authorId: me.id,
+        body: entry.body,
+        sourceKind: "JOURNAL",
+        sourceId: entry.id,
+      },
+    });
+  }
+
+  revalidatePath("/reviews/journal");
+  refresh(record.id);
+  return OK;
+}

@@ -138,6 +138,60 @@ export async function myJournal(meId: string) {
   });
 }
 
+/**
+ * Where each of my journal entries has been carried, if anywhere.
+ *
+ * ONE derivation of "has this been raised". It is deliberately NOT a stored
+ * column: a `raisedAt` field would be a second source of truth that could
+ * disagree with the record it claims to describe. An entry is carried when a
+ * review sheet item or a 1:1 note references it — so deleting that note or item
+ * puts the entry back in the queue, which is the honest answer.
+ */
+export type CarriedRef = { kind: "ONE_ON_ONE" | "REVIEW"; when: Date; label: string };
+
+export async function carriedJournalRefs(meId: string): Promise<Map<string, CarriedRef>> {
+  const [notes, items] = await Promise.all([
+    prisma.oneOnOneNote.findMany({
+      where: { authorId: meId, sourceKind: "JOURNAL", sourceId: { not: null } },
+      select: { sourceId: true, oneOnOne: { select: { heldOn: true } } },
+    }),
+    prisma.reviewSheetItem.findMany({
+      where: { authorId: meId, sourceKind: "JOURNAL", sourceId: { not: null } },
+      select: { sourceId: true, sheet: { select: { year: true, quarter: true, createdAt: true } } },
+    }),
+  ]);
+
+  const out = new Map<string, CarriedRef>();
+  for (const n of notes) {
+    if (!n.sourceId) continue;
+    out.set(n.sourceId, { kind: "ONE_ON_ONE", when: n.oneOnOne.heldOn, label: "1:1" });
+  }
+  for (const i of items) {
+    if (!i.sourceId || out.has(i.sourceId)) continue; // a 1:1 is the more specific answer
+    out.set(i.sourceId, {
+      kind: "REVIEW",
+      when: i.sheet.createdAt,
+      label: `Q${i.sheet.quarter} ${i.sheet.year} review`,
+    });
+  }
+  return out;
+}
+
+/**
+ * Notes I flagged to raise and have not yet carried anywhere — the queue that
+ * waits at the top of a 1:1 and on the review sheet's bring-over list.
+ */
+export async function flaggedToRaise(meId: string) {
+  const [flagged, carried] = await Promise.all([
+    prisma.journalEntry.findMany({
+      where: { authorId: meId, raiseIt: true },
+      orderBy: [{ occurredOn: "desc" }, { createdAt: "desc" }],
+    }),
+    carriedJournalRefs(meId),
+  ]);
+  return flagged.filter((e) => !carried.has(e.id));
+}
+
 /** Which of my entries are already on this sheet, so the list can say so. */
 export async function promotedEntryIds(sheetId: string, meId: string) {
   const rows = await prisma.reviewSheetItem.findMany({

@@ -26,8 +26,6 @@ export type JournalOption = {
   occurredOn: string;
   section: string | null;
   promoted: boolean;
-  /** Flagged to raise and not yet carried anywhere — floats to the top. */
-  toRaise: boolean;
 };
 
 export type OneOnOneOption = {
@@ -410,26 +408,17 @@ function BringOver({
 }) {
   const [open, setOpen] = useState(false);
   const questions = sections.flatMap((s) => s.questions.filter((q) => !q.strengths));
-  const available =
-    journal.filter((j) => !j.promoted).length + oneOnOnes.filter((o) => !o.promoted).length;
-  const stillToRaise = journal.filter((j) => j.toRaise && !j.promoted).length;
+  const available = journal.filter((j) => !j.promoted).length + oneOnOnes.filter((o) => !o.promoted).length;
 
   return (
     <div className="mt-5 border-t border-line pt-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className="text-[12px] font-semibold text-navy-700 hover:underline"
-        >
-          {open ? "Hide" : `Bring something over (${available})`}
-        </button>
-        {stillToRaise > 0 && (
-          <span className="rounded-full border border-gold-300 bg-gold-100 px-2.5 py-0.5 text-[10px] font-bold text-gold-800">
-            {stillToRaise} still to raise
-          </span>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="text-[12px] font-semibold text-navy-700 hover:underline"
+      >
+        {open ? "Hide" : `Bring something over (${available})`}
+      </button>
 
       {open && (
         <div className="mt-3 space-y-3">
@@ -453,24 +442,12 @@ function BringOver({
                 From your journal
               </p>
               <ul className="mt-1.5 space-y-1.5">
-                {[...journal]
-                  .sort((a, b) => Number(b.toRaise) - Number(a.toRaise))
-                  .map((j) => (
+                {journal.map((j) => (
                   <li
                     key={j.id}
-                    className={
-                      "flex items-start gap-2 rounded-lg border px-2.5 py-1.5 text-[12.5px] " +
-                      (j.toRaise && !j.promoted
-                        ? "border-l-[3px] border-line border-l-gold-500 bg-[#fbf9f2]"
-                        : "border-line bg-paper")
-                    }
+                    className="flex items-start gap-2 rounded-lg border border-line bg-paper px-2.5 py-1.5 text-[12.5px]"
                   >
                     <span className="shrink-0 tabular-nums text-muted">{j.occurredOn}</span>
-                    {j.toRaise && !j.promoted && (
-                      <span className="shrink-0 rounded-full border border-gold-300 bg-gold-100 px-2 py-0.5 text-[9.5px] font-bold text-gold-800">
-                        To raise
-                      </span>
-                    )}
                     <span className="flex-1">{j.body}</span>
                     {j.promoted ? (
                       <span className="shrink-0 text-[10.5px] font-bold text-green-700">

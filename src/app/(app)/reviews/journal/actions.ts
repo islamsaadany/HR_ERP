@@ -100,3 +100,34 @@ export async function deleteJournalEntry(formData: FormData): Promise<ActionResu
   revalidatePath("/reviews/journal");
   return OK;
 }
+
+/**
+ * Flag a note as something to raise — or clear the flag.
+ *
+ * Flagging does nothing on its own and tells nobody. The note simply starts
+ * appearing in the queue at the top of a 1:1 and on the review sheet's
+ * bring-over list, and stops once it has been carried into one of them.
+ */
+export async function toggleRaiseFlag(formData: FormData): Promise<ActionResult> {
+  const gate = await realUserForAction();
+  if (!gate.ok) return gate;
+  const me = gate.user;
+
+  const id = String(formData.get("entryId") ?? "");
+  if (!id) return fail("That note could not be found.");
+
+  const entry = await prisma.journalEntry.findFirst({
+    where: { id, authorId: me.id },
+    select: { id: true, raiseIt: true },
+  });
+  if (!entry) return fail("That note could not be found.");
+
+  await prisma.journalEntry.update({
+    where: { id: entry.id },
+    data: { raiseIt: !entry.raiseIt },
+  });
+
+  revalidatePath("/reviews/journal");
+  revalidatePath("/reviews/one-on-ones");
+  return OK;
+}

@@ -1314,7 +1314,7 @@ plus the Gallup file route · the strengths panel on the employee admin page · 
 module release switch.
 
 **Verified from this session** (throwaway Postgres 16, not the live Neon database):
-- `068` applied **twice** to a pre-039 database — clean no-op the second time; 9 tables, 34 themes,
+- `068` applied **twice** to a database that did not yet have it — clean no-op the second time; 9 tables, 34 themes,
   `Self-Assurance` spelled correctly, partial unique index present.
 - 29 assertions against the **real** derivations: the seal holds at each of the four steps and opens
   only at the fourth; a quarter with both halves submitted but no meeting stays sealed and produces
@@ -1333,7 +1333,15 @@ the impersonation cookie — it is enforced structurally (`requireRealUser` is t
 of every page and action, confirmed by grep) but has not been exercised end-to-end in a browser.
 Worth one manual pass: sign in as a Super User, view as an employee, open Reviews.
 
-**Remaining**: apply `068` on deploy and check the build log's `[apply-sql]` lines; a browser pass
+**Added 2026-08-25 — flag a journal note to raise (migration `069`).** A journal note can be flagged;
+it then waits at the top of any 1:1 and floats to the top of the review sheet's bring-over list, and
+one click copies it into a note the counterpart can see. Whether it has been raised is **derived**
+from the 1:1 note or sheet item referencing it — never a stored flag — so deleting that note honestly
+returns the entry to the queue. No badge, count, reminder or email. Verified on throwaway Postgres:
+12 assertions including cross-user isolation, the duplicate refusal, the copy surviving its source,
+and the delete-returns-it case; `068` and `069` each applied twice clean.
+
+**Remaining**: apply `068` and `069` on deploy and check the build log's `[apply-sql]` lines; a browser pass
 over the six screens.
 
 ## Notes / carry-over
@@ -1342,4 +1350,4 @@ over the six screens.
 
 ---
 
-*Last Updated: 2026-08-24 — Reviews & 1:1s built (spec 040, migration `068` applies on deploy). Previously: 2026-08-23 — Sub-6-month pool ceilings now scale to the cycle like everyone else's; the claims queue's pool meter counts only pool-funded claims (a Loans request no longer reads as an emptied pool). Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix. Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*
+*Last Updated: 2026-08-25 — Reviews & 1:1s: flag a journal note to raise (migration `069`). Previously: 2026-08-24 — built (spec 040, migration `068`). Previously: 2026-08-23 — Sub-6-month pool ceilings now scale to the cycle like everyone else's; the claims queue's pool meter counts only pool-funded claims (a Loans request no longer reads as an emptied pool). Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix. Previously: 2026-08-20 — Pool-ceiling invariant closed across nine write paths (Yosra overrun traced to reconcile applying a carried charge onto a spent pool); employee-form save fix; Benefits Reporting scroll-away header. Previously: Official holidays + team vacation announcements (spec 037, migration `057` auto-applies on deploy; set `CRON_SECRET`); HR claim reopen with reason; Time-Off badge liveness fix. Previously: Per-person guaranteed-benefit grants (spec 036, migration 056 pending); Time-Off v2 (spec 035: working-day counts, holidays + Excel upload, live manager badge, current-manager routing, cancel-approved — Neon migration 055 pending); Benefits Reporting (spec 034); Finance payments sub-tabs; tracker auto-refresh fix.*

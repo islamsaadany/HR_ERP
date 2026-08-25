@@ -754,6 +754,22 @@ in progress, learning activity. Facts only: no score, rating, ranking, or compar
 working-day figure routes through `workingDaysInWindow` in `src/lib/workdays.ts`, the same counter
 Time-Off uses, so the two can never disagree.
 
+### Flagging something to raise (2026-08-25, migration `069`)
+
+A journal note can be flagged as something to raise. It then waits in a panel at the top of any 1:1
+the author opens, and floats to the top of the review sheet's bring-over list. Raising it in a 1:1
+copies the words into a note the counterpart can see, attributed to the journal; until then they see
+nothing, because flagging changes only what the author sees.
+
+**Whether a note has been raised is derived, not stored** — an entry is "carried" when a 1:1 note or
+a review sheet item references it (`carriedJournalRefs`). A stored `raisedAt` would keep claiming the
+note was raised after the thing it points at was deleted; derived, removing that note honestly returns
+the entry to the queue.
+
+There is no separate "incidents" module, deliberately: two places to write the same thing means
+remembering which one you used. And there is no badge, count, reminder or email — a flagged note
+appears where the conversation is and nowhere else.
+
 ### Not in this release
 
 No email, no cron, no notification, no reminder — a reminder mechanism would reintroduce the

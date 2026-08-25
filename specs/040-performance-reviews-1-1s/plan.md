@@ -69,7 +69,7 @@ employee, which runs on upload and never in a render path.
 
 | Principle | Status | How this plan satisfies it |
 |---|---|---|
-| **I · Align Before Building** | **PASS** | Spec 039 agreed clause by clause; the seal rule was corrected by the requester after a rejected first version, and the correction is recorded in the spec, the checklist, and the agreed-input file. |
+| **I · Align Before Building** | **PASS** | Spec 040 agreed clause by clause; the seal rule was corrected by the requester after a rejected first version, and the correction is recorded in the spec, the checklist, and the agreed-input file. |
 | **II · UI Changes Require Explicit Approval** | ⚠ **BLOCKING GATE — not yet satisfied** | All-new surfaces. **MOCKUP-FIRST is non-negotiable**: static navy/gold HTML mockups under `design-mockups/reviews/2026-08-24_*.html`, published as an Artifact, **approved before any component is written**. Editing the sidebar/nav to add the module is an edit to an existing file → `ui-versions/` snapshot required first. |
 | **III · Benefits Money Server-Authoritative** | **PASS (by exclusion)** | This feature touches no benefits, payroll, or monetary record. FR-034 forbids money on the surface; data-model.md states no money column and no benefits relation. No existing money rule is affected. |
 | **IV · Spec-Driven, Docs Move With Code** | **PASS** | Spec, research, data model, contracts, quickstart written before code. `PROJECT_DETAILS.md`, `IMPLEMENTATION_PROGRESS.md`, `IMPLEMENTATION_PLAN.md` and `CLAUDE.md` updated in the same commit as the implementation. |

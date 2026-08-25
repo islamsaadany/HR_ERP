@@ -5,7 +5,6 @@ import {
   addOneOnOneNote,
   writeOneOnOneOutcome,
   acknowledgeOneOnOne,
-  raiseJournalEntryInOneOnOne,
   type ActionResult,
 } from "@/app/(app)/reviews/one-on-ones/actions";
 
@@ -16,17 +15,11 @@ export type NoteRow = {
   mine: boolean;
   body: string;
   createdAt: string;
-  /** Raised from the author's journal rather than typed here. */
-  fromJournal: boolean;
 };
-
-/** A note I flagged to raise and have not carried anywhere yet. */
-export type FlaggedRow = { id: string; body: string; occurredOn: string };
 
 export function OneOnOneBoard({
   oneOnOneId,
   notes,
-  flagged,
   outcome,
   employeeName,
   managerName,
@@ -37,8 +30,6 @@ export function OneOnOneBoard({
 }: {
   oneOnOneId: string;
   notes: NoteRow[];
-  /** My unraised flagged journal notes — the queue that waits here. */
-  flagged: FlaggedRow[];
   outcome: string | null;
   employeeName: string;
   managerName: string;
@@ -56,8 +47,6 @@ export function OneOnOneBoard({
           return writeOneOnOneOutcome(formData);
         case "ack":
           return acknowledgeOneOnOne(formData);
-        case "raise":
-          return raiseJournalEntryInOneOnOne(formData);
         default:
           return { ok: false, error: "Nothing to do." };
       }
@@ -81,46 +70,6 @@ export function OneOnOneBoard({
         </p>
       )}
 
-      {/* The queue. It waits here rather than chasing anybody: this module has no
-          badge, no reminder and no notification — a flagged note appears where
-          the conversation is, and nowhere else. */}
-      {!final && flagged.length > 0 && (
-        <div className="mb-4 rounded-r-xl border-l-[3px] border-gold-500 bg-[#fbf9f2] px-4 py-3">
-          <h3 className="font-serif text-[14.5px] text-navy-900">
-            {flagged.length} {flagged.length === 1 ? "thing" : "things"} you flagged to raise
-          </h3>
-          <ul className="mt-2 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
-            {flagged.map((f) => (
-              <li key={f.id} className="flex flex-wrap items-start gap-x-3 gap-y-1 px-3 py-2">
-                <span className="min-w-[84px] shrink-0 pt-0.5 text-[12px] tabular-nums text-muted">
-                  {f.occurredOn}
-                </span>
-                <span className="flex-1 text-[13px]">{f.body}</span>
-                <button
-                  type="submit"
-                  name="intent"
-                  value="raise"
-                  disabled={pending}
-                  onClick={(e) => {
-                    const form = e.currentTarget.form;
-                    const field = form?.querySelector<HTMLInputElement>('input[name="entryId"]');
-                    if (field) field.value = f.id;
-                  }}
-                  className="shrink-0 rounded-lg border border-navy-200 bg-surface px-3 py-1 text-[12px] font-semibold text-navy-700 disabled:opacity-45"
-                >
-                  Raise it
-                </button>
-              </li>
-            ))}
-          </ul>
-          <input type="hidden" name="entryId" defaultValue="" />
-          <p className="mt-2 text-[11.5px] text-muted">
-            Raising one copies the words into the notes below, where they can see it. Until you
-            press it, they see nothing — the journal stays yours.
-          </p>
-        </div>
-      )}
-
       {notes.length === 0 ? (
         <p className="text-[13px] italic text-muted">No notes yet.</p>
       ) : (
@@ -141,11 +90,6 @@ export function OneOnOneBoard({
                 </div>
                 <div className="text-[13px]">{n.body}</div>
               </div>
-              {n.fromJournal && (
-                <span className="mt-1 shrink-0 self-start rounded border border-navy-100 bg-navy-50 px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider text-navy-500">
-                  From journal
-                </span>
-              )}
             </li>
           ))}
         </ul>

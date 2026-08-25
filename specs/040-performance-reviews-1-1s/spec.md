@@ -184,6 +184,40 @@ without either party having typed them.
 
 ---
 
+### User Story 6 - Flag an issue to raise (Priority: P2)
+
+Something goes wrong or gets in the way. The person writes it in their journal and flags it as
+something to raise. It then waits for them at the top of their next 1:1 and on their review sheet,
+and stops waiting once they have carried it into one of them.
+
+**Why this priority**: This is what turns the journal from a diary into preparation. It rides on
+US2's journal and needs US3's 1:1 to be raised into, but it is what makes the whole capture habit
+pay off.
+
+**Independent Test**: Flag a note, open a 1:1, see it offered, raise it, and watch it leave the queue.
+
+**Acceptance Scenarios**:
+
+1. **Given** a journal note, **When** the author flags it, **Then** it is marked to raise and appears
+   in a queue at the top of any 1:1 they open and on their review sheet's bring-over list.
+2. **Given** a flagged note, **When** anyone other than its author looks anywhere in the product,
+   **Then** they see neither the note nor any sign that it is flagged. Flagging changes only what the
+   author sees.
+3. **Given** a flagged note offered in a 1:1, **When** the author raises it, **Then** its words are
+   copied into a note the counterpart can see, marked as coming from the journal.
+4. **Given** a raised note, **When** the author later edits or deletes the journal entry, **Then**
+   what was raised is unchanged.
+5. **Given** a note raised in a 1:1, **When** the author opens the journal, **Then** the row shows
+   where it went and when, and it no longer appears in the queue.
+6. **Given** a note raised in a 1:1, **When** that 1:1 note is deleted, **Then** the entry returns to
+   the queue — it was never actually raised.
+7. **Given** a flagged note already raised, **When** the author raises it again in the same 1:1,
+   **Then** nothing is duplicated.
+8. **Given** flagged notes outstanding, **When** the author is anywhere other than a 1:1 or a review
+   sheet, **Then** nothing counts, badges, reminds, or emails them about it.
+
+---
+
 ### Edge Cases
 
 - **An employee with no manager** (the top of the org chart) has no pair, and therefore no review sheet
@@ -301,6 +335,20 @@ without either party having typed them.
 - **FR-030**: Replacing an employee's profile MUST NOT alter strengths answers already recorded on past
   sheets.
 
+**Flagging something to raise**
+
+- **FR-038**: An author MUST be able to flag a journal note as something to raise, and clear that flag.
+- **FR-039**: A flagged note MUST appear in a queue at the top of any 1:1 the author opens and on
+  their own half of a review sheet's bring-over list, and nowhere else.
+- **FR-040**: The system MUST NOT count, badge, remind, notify, or email anyone about outstanding
+  flagged notes. A flagged note waits where the conversation happens; it never chases.
+- **FR-041**: Flagging MUST change nothing another person can see. A flag is as private as the note.
+- **FR-042**: Raising a flagged note in a 1:1 MUST copy its text into a note the counterpart can see,
+  attributed as coming from the journal, and MUST be idempotent.
+- **FR-043**: Whether a note has been raised MUST be **derived** from the 1:1 note or review sheet item
+  that references it, never stored separately — so removing that note or item returns the entry to the
+  queue, and a flag can never disagree with the record it points at.
+
 **Privacy and boundaries**
 
 - **FR-031**: HR Admins and Super Users MUST have no access to review sheets, outcomes, 1:1 records, or
@@ -362,6 +410,8 @@ without either party having typed them.
   Top 5 report and 34 from a CliftonStrengths 34 report — with no per-format choice made by the uploader.
 - **SC-007**: A Gallup report that cannot be read still results in a complete profile within the same
   session, by hand.
+- **SC-009**: A person can record an issue the day it happens and be shown it, unprompted, at the next
+  conversation where it can be raised — without having searched for it or kept a list elsewhere.
 - **SC-008**: No monetary figure appears anywhere in the module, verified across every screen it presents.
 
 ---

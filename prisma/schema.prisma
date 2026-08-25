@@ -2007,6 +2007,16 @@ model JournalEntry {
   section    ReviewJournalSection?
   body       String
 
+  /// "I want to raise this." A flagged note waits in a panel at the top of a 1:1
+  /// and on the review sheet's bring-over list until it is carried into one of
+  /// them. Nothing chases it and nothing counts it elsewhere: it appears where
+  /// the conversation happens, and nowhere else.
+  ///
+  /// Whether it HAS been carried is derived, not stored — an entry is carried
+  /// when a ReviewSheetItem or OneOnOneNote references it. One derivation
+  /// (`carriedJournalRefs`), so a flag and the thing it points at cannot disagree.
+  raiseIt Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -2049,7 +2059,15 @@ model OneOnOneNote {
 
   authorId String
   author   User   @relation("OneOnOneNoteAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  /// Always a COPY, like a sheet item: editing or deleting the journal entry this
+  /// came from cannot reach it.
   body     String
+
+  /// Where this note came from. A note raised from the journal keeps a pointer to
+  /// the entry so the journal can say where it went — and so raising the same
+  /// entry twice into one 1:1 is a no-op (partial unique index, in prisma/sql/069).
+  sourceKind ReviewItemSource @default(TYPED)
+  sourceId   String?
 
   createdAt DateTime @default(now())
 

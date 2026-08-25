@@ -21,6 +21,7 @@ import {
   agreedOneOnOnesInWindow,
   promotedOneOnOneIds,
   myStrengths,
+  carriedJournalRefs,
 } from "@/lib/reviews/queries";
 import { SystemPackTiles } from "@/components/reviews/SystemPackTiles";
 import { SealProgress } from "@/components/reviews/SealProgress";
@@ -66,6 +67,9 @@ export default async function ReviewSheetPage({
       promotedOneOnOneIds(sheet.id, me.id),
       myStrengths(me.id),
     ]);
+
+  // Flagged-and-not-yet-carried, so the bring-over list can float them up.
+  const carried = open ? new Map() : await carriedJournalRefs(me.id);
 
   const counterpart = half === "employee" ? sheet.manager : sheet.employee;
   const myItems = items.filter((i) => i.authorId === me.id);
@@ -138,6 +142,7 @@ export default async function ReviewSheetPage({
             occurredOn: formatDate(e.occurredOn),
             section: e.section,
             promoted: promotedJournal.has(e.id),
+            toRaise: e.raiseIt && !carried.has(e.id),
           }))}
           oneOnOnes={oneOnOnes.map((o) => ({
             id: o.id,
