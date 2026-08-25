@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { toPiastres } from "@/lib/finance/money";
+import { toPiastres, sumPiastres } from "@/lib/finance/money";
+import { unitsWithConfirmers } from "@/lib/finance/confirmers";
 
 /**
  * What Finance can put into a submission (spec 041).
@@ -15,6 +16,18 @@ import { toPiastres } from "@/lib/finance/money";
  * submission. Membership lives in `PaymentBatchItem`, so the second half is a simple absence check
  * — and the unique indexes behind it make a double-submit impossible even if two people try at
  * once.
+ *
+ * EACH PAYABLE CARRIES ITS BUSINESS UNIT (2026-08-25), because each unit banks separately and a
+ * submission corresponds to one transaction in one account. The unit is DERIVED from the person
+ * being paid — the CEO's choice of three offered — so nobody types it and it cannot be got wrong:
+ *
+ *   • a payback and a benefit claim belong to an employee, so they take that employee's unit;
+ *   • a float top-up is paid to the custodian holding the float, so it takes the custodian's.
+ *
+ * Somebody with no business unit yields a payable with `businessUnitId: null`. That is not a
+ * fallback to anywhere — the screen groups them under "No business unit" and cannot send them,
+ * the same refusal as a unit with nobody appointed. Guessing a unit here would mean guessing a
+ * bank account.
  */
 
 export type PayableKind = "PAYBACK" | "FLOAT_TOPUP" | "BENEFIT_CLAIM";
@@ -28,24 +41,50 @@ export type Payable = {
   amountPiastres: number;
   /** Display-formatted date the payable arose, for the selection screen. */
   since: Date;
+  /** Whose account pays this. Null when the person being paid has no business unit set. */
+  businessUnitId: string | null;
+  businessUnitName: string | null;
+};
+
+/** One unit's worth of what is waiting — the shape Finance's screen is built from. */
+export type PayableGroup = {
+  /** Null is the "No business unit" group: real payables that cannot be sent anywhere yet. */
+  businessUnitId: string | null;
+  businessUnitName: string;
+  payables: Payable[];
+  totalPiastres: number;
+  /** False when this unit has nobody appointed — or when there is no unit at all. */
+  canSend: boolean;
+  /** Named on screen so Finance knows who it is going to before they send it. */
+  confirmerNames: string[];
 };
 
 export async function availablePayables(): Promise<Payable[]> {
   const [paybacks, topUps, claims] = await Promise.all([
     prisma.paybackRequest.findMany({
       where: { status: "APPROVED", batchItems: { none: {} } },
-      include: { user: { select: { name: true } }, category: { select: { name: true } } },
+      include: {
+        user: { select: { name: true, businessUnit: { select: { id: true, name: true } } } },
+        category: { select: { name: true } },
+      },
       orderBy: { decidedAt: "asc" },
     }),
     prisma.pettyCashFunding.findMany({
       where: { type: "TOP_UP", batchItems: { none: {} } },
-      include: { account: { select: { name: true, custodian: { select: { name: true } } } } },
+      include: {
+        account: {
+          select: {
+            name: true,
+            custodian: { select: { name: true, businessUnit: { select: { id: true, name: true } } } },
+          },
+        },
+      },
       orderBy: { date: "asc" },
     }),
     prisma.benefitClaim.findMany({
       where: { status: "APPROVED", batchItems: { none: {} } },
       include: {
-        user: { select: { name: true } },
+        user: { select: { name: true, businessUnit: { select: { id: true, name: true } } } },
         guaranteedBenefit: { select: { name: true } },
         catalogItem: { select: { name: true } },
       },
@@ -61,6 +100,8 @@ export async function availablePayables(): Promise<Payable[]> {
       purpose: p.category?.name ? `${p.description} · ${p.category.name}` : p.description,
       amountPiastres: toPiastres(p.amount),
       since: p.decidedAt ?? p.submittedAt,
+      businessUnitId: p.user.businessUnit?.id ?? null,
+      businessUnitName: p.user.businessUnit?.name ?? null,
     })),
     ...topUps.map((f): Payable => ({
       kind: "FLOAT_TOPUP",
@@ -69,6 +110,9 @@ export async function availablePayables(): Promise<Payable[]> {
       purpose: `${f.account.name} — top-up`,
       amountPiastres: toPiastres(f.amount),
       since: f.date,
+      // The float is paid to whoever holds it, so it banks where that person does.
+      businessUnitId: f.account.custodian.businessUnit?.id ?? null,
+      businessUnitName: f.account.custodian.businessUnit?.name ?? null,
     })),
     ...claims.map((c): Payable => ({
       kind: "BENEFIT_CLAIM",
@@ -79,6 +123,8 @@ export async function availablePayables(): Promise<Payable[]> {
       // here keeps every amount in one currency of arithmetic once it reaches a submission.
       amountPiastres: c.amount * 100,
       since: c.decidedAt ?? c.createdAt,
+      businessUnitId: c.user.businessUnit?.id ?? null,
+      businessUnitName: c.user.businessUnit?.name ?? null,
     })),
   ].sort((a, b) => a.since.getTime() - b.since.getTime());
 }
@@ -93,4 +139,74 @@ export function itemParentFor(kind: PayableKind, id: string) {
     case "BENEFIT_CLAIM":
       return { benefitClaimId: id };
   }
+}
+
+/**
+ * What is waiting, split into one group per business unit (2026-08-25).
+ *
+ * THE shape Finance's screen is built from, and the reason a submission can never mix two units:
+ * there is no list containing both. Groups come back in a stable order — units by their own sort
+ * order, then the "No business unit" group last, because it is the one that needs fixing rather
+ * than sending.
+ *
+ * `canSend` is answered here, from `unitsWithConfirmers`, so the screen, the button and the server
+ * action all read the same fact. A unit with money waiting and nobody appointed says so and
+ * refuses; it does not fall through to anybody else (the CEO's choice, of three offered).
+ */
+export async function payableGroups(): Promise<PayableGroup[]> {
+  const [payables, withConfirmers, units] = await Promise.all([
+    availablePayables(),
+    unitsWithConfirmers(),
+    prisma.businessUnit.findMany({
+      select: {
+        id: true,
+        name: true,
+        order: true,
+        transactionConfirmers: {
+          where: { user: { status: "ACTIVE" } },
+          select: { user: { select: { name: true } } },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+      orderBy: [{ order: "asc" }, { name: "asc" }],
+    }),
+  ]);
+
+  const byUnit = new Map<string | null, Payable[]>();
+  for (const p of payables) {
+    const key = p.businessUnitId;
+    const list = byUnit.get(key);
+    if (list) list.push(p);
+    else byUnit.set(key, [p]);
+  }
+
+  const groups: PayableGroup[] = [];
+  for (const unit of units) {
+    const list = byUnit.get(unit.id);
+    if (!list?.length) continue;
+    groups.push({
+      businessUnitId: unit.id,
+      businessUnitName: unit.name,
+      payables: list,
+      totalPiastres: sumPiastres(list.map((p) => p.amountPiastres)),
+      canSend: withConfirmers.has(unit.id),
+      confirmerNames: unit.transactionConfirmers.map((c) => c.user.name ?? "—"),
+    });
+  }
+
+  // People with no business unit set. Real money, genuinely owed, with nowhere to pay it from —
+  // so it is shown rather than hidden, and cannot be sent until somebody gives them a unit.
+  const orphans = byUnit.get(null);
+  if (orphans?.length) {
+    groups.push({
+      businessUnitId: null,
+      businessUnitName: "No business unit",
+      payables: orphans,
+      totalPiastres: sumPiastres(orphans.map((p) => p.amountPiastres)),
+      canSend: false,
+      confirmerNames: [],
+    });
+  }
+
+  return groups;
 }

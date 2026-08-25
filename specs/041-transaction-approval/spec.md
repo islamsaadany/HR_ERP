@@ -58,6 +58,33 @@ the benefit reimbursement and the payback. Both now wait for his confirmation. T
 decisions (submitted, approved, declined, reopened) and are unaffected — a decision is true when it
 is made.
 
+### A fourth correction: one queue was one queue too few
+
+*"For the transaction confirmation we need it by business unit. As every business unit might have
+an account to confirm and accordingly different people. That's in general."* (2026-08-25)
+
+The feature as first built had ONE company-wide queue: one appointment list, and every submission
+visible to everyone on it. That is wrong the moment two units bank separately — a person appointed
+for one unit could confirm money leaving another unit's account, and Finance could put two units'
+payables into a single transaction only one account can settle.
+
+Three decisions were put to him before anything was changed, and he took the recommended one each
+time:
+
+- **Which unit a transaction belongs to is DERIVED from who is being paid**, never typed. A payback
+  and a benefit claim belong to an employee and take that employee's unit; a float top-up is paid to
+  the custodian holding the float and takes theirs. Finance sees what is waiting grouped by unit and
+  sends one unit at a time.
+- **Salaries run per unit per month.** Each unit's payroll leaves its own account and is confirmed
+  by its own person; a month is covered only when every unit has been sent, which the screen states
+  outright.
+- **A unit with nobody appointed refuses, and says so.** It does not fall back to a company-wide
+  confirmer, and it does not go to whoever is appointed elsewhere. Appointing somebody — including
+  yourself — unblocks it immediately, which is the same escape hatch FR-004 already relies on.
+
+One thing he corrected on the mockup: **"Forefront Group" is not a business unit**, so it has no
+transactions and no band. Only real units appear; this feature creates none.
+
 ## Overview
 
 Forefront's bank works on two signatures: Finance creates a transaction, the CEO confirms it. Today
@@ -251,12 +278,16 @@ confirm exactly one summary email reaches the confirmer and none reaches anyone 
 
 **Who confirms**
 
-- **FR-001**: The right to confirm MUST be a per-person **appointment**, not a new role value: an
-  appointed person's role and everything else they can see MUST be unchanged by it.
+- **FR-001**: The right to confirm MUST be an appointment of a **person to a business unit**, not a
+  new role value: an appointed person's role and everything else they can see MUST be unchanged by
+  it. One person MAY hold several units. There MUST be no appointment meaning "every unit" — a
+  company-wide row would silently cover a unit created later, which is the implicit authority the
+  appointment pattern exists to avoid.
 - **FR-002**: The system MUST answer "may this person confirm?" from **one** derivation used by
   every screen, action, email recipient list and scheduled job.
-- **FR-003**: Only appointed people MUST be able to confirm. Holding top-level access MUST NOT by
-  itself confer it. *(This deliberately departs from the pattern used for Learning managers, where
+- **FR-003**: Only appointed people MUST be able to confirm, and only **the units they hold**.
+  Holding top-level access MUST NOT by itself confer it, and holding one unit MUST NOT confer
+  another. *(This deliberately departs from the pattern used for Learning managers, where
   role-holders hold the capability implicitly. The CEO's instruction was that transactions wait for
   him and nobody else; an implicit power held by every top-level account would make that untrue. The
   lock-out that pattern guards against is prevented instead by FR-004.)*
@@ -324,9 +355,26 @@ confirm exactly one summary email reaches the confirmer and none reaches anyone 
 - **FR-024**: Submissions MUST be listable and filterable by state, kind and date, so Finance and
   the confirmer can see what is outstanding and what was released in a period.
 
+**By business unit (added 2026-08-25)**
+
+- **FR-030**: Every submission MUST record the business unit whose account it was created in,
+  derived from the people being paid and never entered by hand.
+- **FR-031**: A submission MUST contain payables from exactly one business unit. This MUST be
+  enforced on the server, not only by the screen omitting the option — a form can be posted by hand.
+- **FR-032**: A payable belonging to somebody with no business unit MUST NOT be sendable. It MUST be
+  shown, grouped and explained, rather than hidden or attributed to a unit by guesswork — guessing a
+  unit means guessing a bank account.
+- **FR-033**: Finance MUST be refused, with a sentence naming the unit, when submitting for a unit
+  that has nobody appointed. Nothing MUST fall back to another unit's confirmer.
+- **FR-034**: A confirmer's queue, sidebar count, emails, daily reminder and salary-file access MUST
+  each be limited to the units they hold.
+- **FR-035**: Monthly salary runs MUST be one per business unit per month; the duplicate-month
+  refusal MUST be per unit, and the screen MUST state which units are still to send.
+
 ### Key Entities
 
-- **Confirmer appointment**: A row saying one person may confirm. Records who appointed them, and
+- **Confirmer appointment**: A row saying one person may confirm **one business unit's**
+  transactions. Records who appointed them, and
   when.
 - **Submission**: The transactions Finance created in the bank in one sitting — kind, bank
   reference, value date, note, attachment, submitted-by/at, fixed total, count, state,

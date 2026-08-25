@@ -9,9 +9,15 @@ import { requireSuperUser } from "@/lib/roles";
  * Appointing who confirms transactions at the bank (spec 041).
  *
  * Super User only, and — unusually for this codebase — holding Super User does NOT itself let you
- * confirm. The CEO's instruction was that transactions wait for him and nobody stands in, so the
- * appointment list is the whole truth. What keeps that from being a trap is exactly this file: a
- * Super User can appoint THEMSELVES, so an empty list is a pause of one click, not a wall.
+ * confirm. The CEO's instruction was that transactions wait for the appointed person and nobody
+ * stands in, so the appointment list is the whole truth. What keeps that from being a trap is
+ * exactly this file: a Super User can appoint THEMSELVES, so an empty list is a pause of one
+ * click, not a wall.
+ *
+ * Per BUSINESS UNIT since 2026-08-25 — every unit banks separately, so the appointment names both
+ * the person and the unit. One person may hold several units; there is no row meaning "all of
+ * them", so a unit created next month starts with nobody, visibly, rather than inheriting whoever
+ * happened to be appointed before it existed.
  */
 
 const q = (s: string) => encodeURIComponent(s);
@@ -24,31 +30,40 @@ function fail(msg: string): never {
 export async function appointConfirmer(formData: FormData): Promise<void> {
   const actor = await requireSuperUser();
   const userId = ((formData.get("userId") as string | null) ?? "").trim();
+  const businessUnitId = ((formData.get("businessUnitId") as string | null) ?? "").trim();
   if (!userId) fail("Choose somebody.");
+  if (!businessUnitId) fail("Choose which business unit they confirm for.");
 
-  const person = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { status: true, name: true },
-  });
+  const [person, unit] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { status: true, name: true } }),
+    prisma.businessUnit.findUnique({ where: { id: businessUnitId }, select: { name: true } }),
+  ]);
   if (!person) fail("That person isn't in the employee registry.");
   if (person.status !== "ACTIVE") fail("That person is no longer active.");
+  if (!unit) fail("That business unit no longer exists.");
 
   await prisma.transactionConfirmer.upsert({
-    where: { userId },
-    create: { userId, appointedById: actor.id },
+    where: { userId_businessUnitId: { userId, businessUnitId } },
+    create: { userId, businessUnitId, appointedById: actor.id },
     update: {},
   });
 
   revalidatePath(BACK);
-  redirect(`${BACK}?ok=${q(`${person.name ?? "They"} can now confirm transactions.`)}`);
+  redirect(
+    `${BACK}?ok=${q(`${person.name ?? "They"} can now confirm ${unit.name}'s transactions.`)}`,
+  );
 }
 
 export async function removeConfirmer(formData: FormData): Promise<void> {
   await requireSuperUser();
   const userId = ((formData.get("userId") as string | null) ?? "").trim();
+  const businessUnitId = ((formData.get("businessUnitId") as string | null) ?? "").trim();
+  if (!userId || !businessUnitId) fail("Nothing to remove.");
 
-  await prisma.transactionConfirmer.deleteMany({ where: { userId } });
+  // One unit at a time. Removing somebody everywhere at once would be a second, wider action
+  // wearing the same button, and the wider one is the one that gets clicked by accident.
+  await prisma.transactionConfirmer.deleteMany({ where: { userId, businessUnitId } });
 
   revalidatePath(BACK);
-  redirect(`${BACK}?ok=${q("Removed. They will no longer be emailed.")}`);
+  redirect(`${BACK}?ok=${q("Removed. They will no longer be emailed about that unit.")}`);
 }

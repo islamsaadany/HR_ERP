@@ -145,7 +145,7 @@
 </style>
 
 <div class="wrap">
-  <p class="eyebrow">Spec 041 · Change for sign-off · 25 Aug 2026</p>
+  <p class="eyebrow">Spec 041 · Signed off and built · 25 Aug 2026</p>
   <h1>Confirmations, one business unit at a time</h1>
   <p class="lede">Today the platform treats confirmation as one company-wide queue. You've asked for
     it per business unit — each unit banks separately, so each has its own person to confirm.
@@ -245,7 +245,7 @@
           <div class="unit u-grp">
             <div class="uhead">
               <div>
-                <div class="nm">Forefront Group</div>
+                <div class="nm">Omnisight Analytics</div>
                 <div class="who2">Nobody appointed</div>
               </div>
               <div class="rt">
@@ -253,11 +253,31 @@
                 <div class="who2">1 waiting</div>
               </div>
             </div>
-            <p class="blocked"><b>Nothing can be sent for Forefront Group.</b> Nobody is appointed to
-              confirm this unit's transactions, and nobody else stands in. A Super User can appoint
+            <p class="blocked"><b>Nothing can be sent for Omnisight Analytics.</b> Nobody is appointed
+              to confirm this unit's transactions, and nobody else stands in. A Super User can appoint
               somebody — including themselves — and this unblocks immediately.</p>
             <div class="foot">
               <span class="who2">Ali Mansour · Paid out of pocket · Booking · 22/08/2026 · 2,300.00</span>
+              <span class="btns"><span class="btn primary off">Send for confirmation</span></span>
+            </div>
+          </div>
+
+          <div class="unit u-grp">
+            <div class="uhead">
+              <div>
+                <div class="nm">No business unit</div>
+                <div class="who2">These people have no business unit set</div>
+              </div>
+              <div class="rt">
+                <div class="tot">EGP 640.00</div>
+                <div class="who2">1 waiting</div>
+              </div>
+            </div>
+            <p class="blocked"><b>Nothing here can be sent.</b> The people in this list have no
+              business unit, so there is no account to pay them from. Set their business unit and
+              they move into it.</p>
+            <div class="foot">
+              <span class="who2">Hana Farouk · Paid out of pocket · Transportation · 24/08/2026 · 640.00</span>
               <span class="btns"><span class="btn primary off">Send for confirmation</span></span>
             </div>
           </div>
@@ -308,9 +328,9 @@
             <div class="wcard">
               <div class="top">
                 <div>
-                  <span class="uname grp"><i></i>Forefront Group</span>
+                  <span class="uname grp"><i></i>Omnisight Analytics</span>
                   <div class="what">August salaries · 14 people</div>
-                  <div class="when">Sent by Mohamed Selim on 23/08/2026 · value date 28/08/2026 · ref SAL-AUG-26-GRP</div>
+                  <div class="when">Sent by Mohamed Selim on 23/08/2026 · value date 28/08/2026 · ref SAL-AUG-26-OMN</div>
                 </div>
                 <div class="rt"><div class="amt">EGP 412,500.00</div><span class="chip c-wait">Waiting 2 days</span></div>
               </div>
@@ -369,8 +389,8 @@
           </div>
 
           <div class="unit u-grp">
-            <div class="uhead"><div><div class="nm">Forefront Group</div><div class="who2">Nobody appointed</div></div></div>
-            <p class="blocked"><b>Forefront Group has 1 transaction and nobody to confirm it.</b>
+            <div class="uhead"><div><div class="nm">Omnisight Analytics</div><div class="who2">Nobody appointed</div></div></div>
+            <p class="blocked"><b>Omnisight Analytics has 1 transaction and nobody to confirm it.</b>
               Finance cannot send this unit's transactions until somebody is appointed. Appointing
               yourself takes one click.</p>
             <div class="body">
@@ -399,22 +419,23 @@
     <div class="notes">
       <b>Before I build it</b>
       <ul>
-        <li><span class="q">The unit names are placeholders.</span> I've used Forefront Consulting,
-          Visual Shift and Forefront Group because those are the ones I know exist. The real list is
-          whatever is already set up under Business Units — nothing new gets created.</li>
+        <li><span class="q">Corrected 25 Aug:</span> Forefront Group is <b>not</b> a business unit,
+          so it has no band and no transactions. The units shown are the ones already set up under
+          Business Units; this feature creates none.</li>
         <li><span class="q">A float top-up follows its custodian.</span> The marketing float's top-up is
           paid to Raneem, so it lands under her unit. If a float should ever belong to a different unit
           from the person holding it, tell me and I'll make it a property of the float instead.</li>
-        <li><span class="q">Somebody with no unit.</span> A person not assigned to any business unit
-          falls to the default one (Forefront Group today). If you'd rather that blocked instead, say so
-          — it's a one-line difference.</li>
+        <li><span class="q">Somebody with no unit is blocked, not guessed at.</span> With no
+          Forefront Group to fall back to, a person with no business unit set is grouped under
+          &ldquo;No business unit&rdquo;, shown, and cannot be sent — because guessing a unit would
+          mean guessing which bank account pays them. Setting their unit moves them straight into
+          it.</li>
       </ul>
     </div>
   </section>
 
   <footer>
-    <b>Mockup only.</b> Nothing here is built yet. Sign this off and I'll implement exactly this —
-    the palette, the layout and the wording are the product's existing ones, with the unit band as the
-    only new element.
+    <b>Signed off 25 Aug and built.</b> This is what shipped. The palette, the layout and the wording
+    are the product's existing ones, with the unit band as the only new element.
   </footer>
 </div>

@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
 import { canSubmitTransactions } from "@/lib/finance/access";
-import { eligibleConfirmers } from "@/lib/finance/confirmers";
-import { batchTotal, nextBatchReference, describeBatch } from "@/lib/finance/batches";
+import { confirmersForUnit } from "@/lib/finance/confirmers";
+import { batchTotal, nextBatchReference, describeBatch, sameBusinessUnit } from "@/lib/finance/batches";
 import { parseAmountInput, fromPiastres } from "@/lib/finance/money";
 import { availablePayables, itemParentFor, type PayableKind } from "@/lib/finance/payables";
 import { refuse, isRefusal } from "@/lib/finance/refusal";
@@ -58,7 +58,13 @@ function endOfToday(): Date {
   return d;
 }
 
-/** Tell every appointed confirmer. After the write, never inside it, and never blocking. */
+/**
+ * Tell the people appointed for THIS unit. After the write, never inside it, and never blocking.
+ *
+ * Per unit since 2026-08-25: somebody appointed for one unit is not told about another's money,
+ * which is most of what "by business unit" means in practice — the email is the thing that
+ * actually reaches a person.
+ */
 async function notifyConfirmers(batch: {
   reference: string;
   type: "EXPENSES" | "SALARY";
@@ -68,8 +74,10 @@ async function notifyConfirmers(batch: {
   salaryMonth?: Date | null;
   headcount?: number | null;
   submittedBy: string;
+  businessUnitId: string;
+  businessUnitName: string;
 }) {
-  const confirmers = await eligibleConfirmers();
+  const confirmers = await confirmersForUnit(batch.businessUnitId);
   if (confirmers.length === 0) return;
 
   const total = formatEGP2(fromPiastres(batch.totalPiastres));
@@ -93,6 +101,7 @@ async function notifyConfirmers(batch: {
         total,
         submittedBy: batch.submittedBy,
         valueDate: formatDate(batch.valueDate),
+        businessUnit: batch.businessUnitName,
       }),
     });
   }
@@ -125,6 +134,12 @@ export async function submitTransactions(formData: FormData): Promise<void> {
 
   if (picked.length === 0) fail("Nothing selected.");
 
+  // Which unit's account this was created in. The screen posts it with the group's own button, so
+  // it is never a free choice — but it is re-checked below against every payable, because a form
+  // can be posted by hand.
+  const businessUnitId = ((formData.get("businessUnitId") as string | null) ?? "").trim();
+  if (!businessUnitId) fail("Which business unit is this? Send from one unit's list.");
+
   const valueDate = parseDate(formData.get("valueDate"));
   if (!valueDate) fail("Enter the value date at the bank.");
   if (valueDate.getTime() > endOfToday().getTime()) fail("The value date can't be in the future.");
@@ -149,6 +164,17 @@ export async function submitTransactions(formData: FormData): Promise<void> {
         return found;
       });
 
+      // One submission is one transaction in one account, so everything in it belongs to one unit.
+      const sameUnit = sameBusinessUnit(items, businessUnitId);
+      if (!sameUnit.ok) refuse(sameUnit.reason);
+
+      // And that unit must actually have somebody to confirm it. The CEO's choice, of three
+      // offered: refuse and say so, rather than fall back to anybody else.
+      const confirmers = await confirmersForUnit(businessUnitId);
+      if (confirmers.length === 0) {
+        refuse("Nobody is appointed to confirm that business unit's transactions, so it can't be sent yet.");
+      }
+
       const totalPiastres = batchTotal(items.map((i) => ({ amountPiastres: i.amountPiastres })));
       const reference = await makeReference(new Date());
 
@@ -156,6 +182,7 @@ export async function submitTransactions(formData: FormData): Promise<void> {
         data: {
           reference,
           type: "EXPENSES",
+          businessUnitId,
           bankReference,
           valueDate,
           note,
@@ -196,6 +223,11 @@ export async function submitTransactions(formData: FormData): Promise<void> {
     throw e;
   }
 
+  const unit = await prisma.businessUnit.findUnique({
+    where: { id: businessUnitId },
+    select: { name: true },
+  });
+
   await notifyConfirmers({
     reference: created.reference,
     type: "EXPENSES",
@@ -203,6 +235,8 @@ export async function submitTransactions(formData: FormData): Promise<void> {
     totalPiastres: created.total,
     valueDate,
     submittedBy: actor.name ?? "Finance",
+    businessUnitId,
+    businessUnitName: unit?.name ?? "the business unit",
   });
 
   revalidatePath(BACK);
@@ -217,6 +251,11 @@ export async function submitTransactions(formData: FormData): Promise<void> {
 export async function submitSalaryRun(formData: FormData): Promise<void> {
   const actor = await requireSubmitter();
   const back = "/finance/salary";
+
+  // One run per unit per month (2026-08-25): each unit's payroll leaves its own account and is
+  // confirmed by its own person, so a month is only covered when every unit has been sent.
+  const businessUnitId = ((formData.get("businessUnitId") as string | null) ?? "").trim();
+  if (!businessUnitId) failSalary("Choose which business unit's payroll this is.");
 
   const monthRaw = ((formData.get("salaryMonth") as string | null) ?? "").trim();
   if (!monthRaw) failSalary("Choose the month this run covers.");
@@ -250,14 +289,35 @@ export async function submitSalaryRun(formData: FormData): Promise<void> {
     attachmentName = stored.files[0].fileName;
   }
 
+  const unit = await prisma.businessUnit.findUnique({
+    where: { id: businessUnitId },
+    select: { name: true },
+  });
+  if (!unit) failSalary("That business unit no longer exists.");
+
+  const confirmers = await confirmersForUnit(businessUnitId);
+  if (confirmers.length === 0) {
+    failSalary(
+      `Nobody is appointed to confirm ${unit.name}'s transactions, so its payroll can't be sent yet.`,
+    );
+  }
+
   if (!isExtraRun) {
+    // The clash is per (unit, month) now — two units both running August is normal, one unit
+    // running August twice is what needs saying out loud.
     const clash = await prisma.paymentBatch.findFirst({
-      where: { type: "SALARY", salaryMonth, isExtraRun: false, status: { not: "WITHDRAWN" } },
+      where: {
+        type: "SALARY",
+        businessUnitId,
+        salaryMonth,
+        isExtraRun: false,
+        status: { not: "WITHDRAWN" },
+      },
       select: { reference: true },
     });
     if (clash) {
       failSalary(
-        `A salary run for that month has already been submitted (${clash.reference}). Tick “extra run” and say why if this is a second transfer.`,
+        `${unit.name} already has a salary run for that month (${clash.reference}). Tick “extra run” and say why if this is a second transfer.`,
       );
     }
   }
@@ -267,6 +327,7 @@ export async function submitSalaryRun(formData: FormData): Promise<void> {
     data: {
       reference,
       type: "SALARY",
+      businessUnitId,
       valueDate,
       bankReference,
       note,
@@ -292,6 +353,8 @@ export async function submitSalaryRun(formData: FormData): Promise<void> {
     salaryMonth,
     headcount,
     submittedBy: actor.name ?? "Finance",
+    businessUnitId,
+    businessUnitName: unit.name,
   });
 
   revalidatePath(back);

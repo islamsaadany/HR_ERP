@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
 import { canSeeSalaryRuns, canSubmitTransactions } from "@/lib/finance/access";
-import { confirmableUnitIds, unitsWithConfirmers } from "@/lib/finance/confirmers";
+import { canConfirmBatches, hasAnyConfirmer } from "@/lib/finance/confirmers";
 import { formatEGP2, formatDate, toDateInput } from "@/lib/labels";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
@@ -19,11 +19,6 @@ export const dynamic = "force-dynamic";
  * promise "no per-person salary is stored or shown" is kept — not by remembering, but because
  * there is nowhere to put one.
  *
- * ONE RUN PER BUSINESS UNIT PER MONTH (2026-08-25): each unit's payroll leaves its own account and
- * is confirmed by its own person. A month is therefore only covered when every unit has been sent,
- * which the table above the form states outright — a unit quietly missed is the failure mode worth
- * spending a row on.
- *
  * HR Admin cannot reach this page: a payroll total is not theirs to see.
  */
 export default async function SalaryRunsPage({
@@ -32,47 +27,22 @@ export default async function SalaryRunsPage({
   searchParams: Promise<{ ok?: string; error?: string }>;
 }) {
   const user = await requireUser();
-  const myUnits = await confirmableUnitIds(user.id);
-  if (!canSeeSalaryRuns(user.role, myUnits.length > 0)) redirect("/dashboard");
+  const isConfirmer = await canConfirmBatches(user.id);
+  if (!canSeeSalaryRuns(user.role, isConfirmer)) redirect("/dashboard");
   const canSubmit = canSubmitTransactions(user.role);
   const { ok, error } = await searchParams;
 
-  const [runs, withConfirmers, units] = await Promise.all([
+  const [runs, anyConfirmer] = await Promise.all([
     prisma.paymentBatch.findMany({
-      // Finance sees every unit's runs; a confirmer sees only the units they hold.
-      where: canSubmit ? { type: "SALARY" } : { type: "SALARY", businessUnitId: { in: myUnits } },
-      include: {
-        submittedBy: { select: { name: true } },
-        decidedBy: { select: { name: true } },
-        businessUnit: { select: { name: true } },
-      },
+      where: { type: "SALARY" },
+      include: { submittedBy: { select: { name: true } }, decidedBy: { select: { name: true } } },
       orderBy: [{ salaryMonth: "desc" }, { submittedAt: "desc" }],
       take: 24,
     }),
-    unitsWithConfirmers(),
-    prisma.businessUnit.findMany({
-      select: { id: true, name: true },
-      orderBy: [{ order: "asc" }, { name: "asc" }],
-    }),
+    hasAnyConfirmer(),
   ]);
 
   const thisMonth = new Date().toISOString().slice(0, 7);
-
-  // Which units have already had this month's payroll sent — the coverage question, answered from
-  // the runs themselves rather than from anyone's memory.
-  const monthStart = new Date(`${thisMonth}-01T00:00:00Z`);
-  const sentThisMonth = new Set(
-    runs
-      .filter(
-        (r) =>
-          r.salaryMonth?.getTime() === monthStart.getTime() &&
-          r.status !== "WITHDRAWN" &&
-          !r.isExtraRun,
-      )
-      .map((r) => r.businessUnitId),
-  );
-  const stillToSend = units.filter((u) => !sentThisMonth.has(u.id));
-  const sendableUnits = units.filter((u) => withConfirmers.has(u.id));
 
   return (
     <div>
@@ -93,35 +63,10 @@ export default async function SalaryRunsPage({
           {error}
         </p>
       ) : null}
-      {canSubmit && sendableUnits.length < units.length ? (
+      {canSubmit && !anyConfirmer ? (
         <p className="mt-4 rounded-lg border border-gold-300 bg-gold-50 px-4 py-3 text-sm text-gold-800">
-          {sendableUnits.length === 0
-            ? "No business unit has anybody appointed to confirm its transactions yet, so nothing can be sent. A Super User can appoint someone under Admin."
-            : `${units
-                .filter((u) => !withConfirmers.has(u.id))
-                .map((u) => u.name)
-                .join(", ")} ${
-                units.length - sendableUnits.length === 1 ? "has" : "have"
-              } nobody appointed to confirm, so payroll for ${
-                units.length - sendableUnits.length === 1 ? "it" : "them"
-              } can't be sent yet.`}
-        </p>
-      ) : null}
-
-      {canSubmit && units.length > 0 ? (
-        <p className="mt-4 text-[12.5px] text-muted">
-          {stillToSend.length === 0 ? (
-            <>
-              <b className="text-green-700">Every business unit&rsquo;s payroll has been sent</b> for{" "}
-              {monthStart.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}.
-            </>
-          ) : (
-            <>
-              Still to send for{" "}
-              {monthStart.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}:{" "}
-              <b className="text-ink">{stillToSend.map((u) => u.name).join(", ")}</b>.
-            </>
-          )}
+          Nobody is appointed to confirm transactions yet, so a run submitted now will sit here until
+          somebody is. A Super User can appoint someone under Admin.
         </p>
       ) : null}
 
@@ -131,22 +76,6 @@ export default async function SalaryRunsPage({
             <span aria-hidden>+</span> Submit the monthly run
           </summary>
           <form action={submitSalaryRun} className="grid gap-4 border-t border-line p-4 md:grid-cols-2">
-            <label className="flex flex-col gap-1.5">
-              <span className={LABEL}>Business unit</span>
-              <select name="businessUnitId" required defaultValue="" className={INPUT}>
-                <option value="" disabled>
-                  Whose payroll is this?
-                </option>
-                {sendableUnits.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
-              <span className="text-[11px] text-muted">
-                Only units with somebody appointed to confirm are listed.
-              </span>
-            </label>
             <label className="flex flex-col gap-1.5">
               <span className={LABEL}>Month</span>
               <input type="month" name="salaryMonth" required defaultValue={thisMonth} className={INPUT} />
@@ -188,7 +117,7 @@ export default async function SalaryRunsPage({
                 className={`${INPUT} mt-2`}
               />
               <p className="mt-1.5 text-[11.5px] text-muted">
-                A unit&rsquo;s month can only be submitted once, so nobody pays it twice by accident.
+                A month can only be submitted once, so nobody pays it twice by accident.
               </p>
             </div>
             <div className="flex items-center justify-between gap-3 md:col-span-2">
@@ -214,7 +143,6 @@ export default async function SalaryRunsPage({
             <thead>
               <tr>
                 <th className="px-3 py-3 text-left font-medium">Month</th>
-                <th className="px-3 py-3 text-left font-medium">Business unit</th>
                 <th className="px-3 py-3 text-right font-medium">Total</th>
                 <th className="px-3 py-3 text-right font-medium">People</th>
                 <th className="px-3 py-3 text-left font-medium">Reference</th>
@@ -234,7 +162,6 @@ export default async function SalaryRunsPage({
                       </span>
                     ) : null}
                   </td>
-                  <td className="px-3 py-2 text-muted">{r.businessUnit?.name ?? "—"}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-ink">{formatEGP2(r.totalAmount)}</td>
                   <td className="px-3 py-2 text-right tabular-nums text-muted">{r.headcount ?? "—"}</td>
                   <td className="px-3 py-2 text-muted">{r.bankReference ?? r.reference}</td>

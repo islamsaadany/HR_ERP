@@ -489,12 +489,19 @@ export function transactionsAwaitingConfirmation(d: {
   total: string;
   submittedBy: string;
   valueDate: string;
+  /** Whose account these leave from (2026-08-25). Named in the subject: somebody who confirms for
+   *  two units needs to know which one this is before opening anything. */
+  businessUnit: string;
 }) {
   return {
-    subject: `${d.count} ${d.count === 1 ? "transaction is" : "transactions are"} waiting for your confirmation`,
+    subject: `${d.businessUnit}: ${d.count} ${d.count === 1 ? "transaction is" : "transactions are"} waiting for your confirmation`,
     html: layout(
       d.summary,
-      para(`${d.submittedBy} has created these in the bank and submitted them for confirmation.`) +
+      para(
+        `${d.submittedBy} has created these in ${d.businessUnit}'s bank account and submitted them ` +
+          `for confirmation.`
+      ) +
+        row("Business unit", d.businessUnit) +
         row("Reference", d.reference) +
         row("Transactions", String(d.count)) +
         row("Total", d.total) +
@@ -505,7 +512,14 @@ export function transactionsAwaitingConfirmation(d: {
 }
 
 /** C2 — the daily nudge, when something has been waiting. Confirmers only, never employees. */
-export function confirmationReminder(d: { count: number; total: string; oldestDays: number }) {
+export function confirmationReminder(d: {
+  count: number;
+  total: string;
+  oldestDays: number;
+  /** The units this person is being nudged about — they may hold several (2026-08-25). */
+  businessUnits: string[];
+}) {
+  const units = d.businessUnits.length ? d.businessUnits.join(", ") : "your business units";
   return {
     subject: `${d.count} still waiting for your confirmation`,
     html: layout(
@@ -514,7 +528,9 @@ export function confirmationReminder(d: { count: number; total: string; oldestDa
         `${d.count === 1 ? "One set of transactions has" : `${d.count} sets of transactions have`} been waiting ` +
           `${d.oldestDays === 1 ? "since yesterday" : `up to ${d.oldestDays} days`}. Until they are confirmed at the bank, ` +
           `nobody in them has been paid.`
-      ) + row("Combined total", d.total),
+      ) +
+        row("Business unit", units) +
+        row("Combined total", d.total),
       { href: link("/confirmations"), label: "Open confirmations" }
     ),
   };

@@ -370,7 +370,7 @@ asserted against the total the sheet itself states, and the import against 9,726
 a modern tab throws rather than shipping. Four of the workbook's own SUM formulas are short by a
 row; those differences are reported by the generator, never absorbed.
 
-### Finance: bank confirmations & salary runs (spec 041, migrations `069` + `070`)
+### Finance: bank confirmations & salary runs (spec 041, migrations `069`, `070` + `074`)
 Finance creates transactions in the bank and submits them here; the appointed confirmer confirms
 them at the bank and marks them **Transaction complete**. Nothing in the app releases money.
 
@@ -772,6 +772,19 @@ per-unit sending addresses (each brand's domain would need verifying), an employ
 
 A quarterly performance review that is filled **across** the quarter rather than the night before,
 plus the ad-hoc 1:1s that feed it. Private to each manager↔report pair.
+
+**By business unit (migration `074`, 2026-08-25).** The CEO: *"we need it by business unit — every
+business unit might have an account to confirm and accordingly different people."* An appointment is
+now a (person, unit) pair, and one person may hold several; there is deliberately **no** row meaning
+"every unit", so a unit added later starts with nobody rather than inheriting whoever was appointed
+before it existed. `PaymentBatch` carries the unit whose account it was created in, **derived** from
+the people being paid — a payback and a benefit claim take the employee's unit, a float top-up takes
+its custodian's. `payableGroups()` is the shape Finance's screen is built from, so a submission can
+never mix two units: there is no list containing both. `sameBusinessUnit` re-checks it server-side
+anyway. `canDecide` asks about the transaction's unit, not the company. A unit with nobody appointed
+**refuses and says so** — no fallback to anyone, with self-appointment as the escape hatch. Somebody
+with no business unit at all is grouped, shown and unsendable, because guessing a unit means guessing
+a bank account. Salary runs are one per unit per month, and the screen names the units still to send.
 
 ### Shape
 

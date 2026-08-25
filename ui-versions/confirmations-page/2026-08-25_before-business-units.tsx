@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser, isSuperUser } from "@/lib/roles";
-import { confirmableUnitIds } from "@/lib/finance/confirmers";
+import { canConfirmBatches } from "@/lib/finance/confirmers";
 import { describeBatch } from "@/lib/finance/batches";
 import { formatEGP2, formatDate } from "@/lib/labels";
 import { AutoRefresh } from "@/components/AutoRefresh";
@@ -23,27 +23,19 @@ export default async function ConfirmationsPage({
   searchParams: Promise<{ ok?: string; error?: string }>;
 }) {
   const user = await requireUser();
-  const myUnits = await confirmableUnitIds(user.id);
-  if (myUnits.length === 0 && !isSuperUser(user.role)) redirect("/dashboard");
+  const isConfirmer = await canConfirmBatches(user.id);
+  if (!isConfirmer && !isSuperUser(user.role)) redirect("/dashboard");
   const { ok, error } = await searchParams;
-
-  // Only this person's units (2026-08-25). A Super User with no appointment can reach the page —
-  // that is how they see there is something to appoint somebody for — but `canDecide` still
-  // refuses anything outside their own units unless they use the documented exception.
-  const unitScope = isSuperUser(user.role) && myUnits.length === 0 ? {} : { businessUnitId: { in: myUnits } };
 
   const [waiting, recent] = await Promise.all([
     prisma.paymentBatch.findMany({
-      where: { status: "SUBMITTED", ...unitScope },
-      include: {
-        submittedBy: { select: { name: true } },
-        businessUnit: { select: { name: true } },
-      },
+      where: { status: "SUBMITTED" },
+      include: { submittedBy: { select: { name: true } } },
       orderBy: { submittedAt: "asc" },
     }),
     prisma.paymentBatch.findMany({
-      where: { status: { in: ["COMPLETE", "RETURNED"] }, ...unitScope },
-      include: { decidedBy: { select: { name: true } }, businessUnit: { select: { name: true } } },
+      where: { status: { in: ["COMPLETE", "RETURNED"] } },
+      include: { decidedBy: { select: { name: true } } },
       orderBy: { decidedAt: "desc" },
       take: 6,
     }),
@@ -68,7 +60,6 @@ export default async function ConfirmationsPage({
       waitingDays: Math.floor((now - b.submittedAt.getTime()) / 86_400_000),
       itemCount: b.itemCount,
       headcount: b.headcount,
-      businessUnitName: b.businessUnit?.name ?? "—",
     };
   });
 
@@ -79,8 +70,7 @@ export default async function ConfirmationsPage({
       <h1 className="mt-1 font-serif text-3xl text-ink">Confirmations</h1>
       <p className="mt-1 max-w-[72ch] text-muted">
         Finance created these in the bank. Confirm them there, then mark them complete here — that is
-        what tells the person they have been paid. You only ever see the business units you were
-        appointed for.
+        what tells the person they have been paid.
       </p>
 
       {ok ? <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">✓ {ok}</p> : null}
@@ -112,7 +102,6 @@ export default async function ConfirmationsPage({
                   {b.reference}
                 </Link>
                 <span>
-                  {b.businessUnit?.name ?? "—"} ·{" "}
                   {b.itemCount === 0 ? "salaries" : `${b.itemCount} transactions`} · {formatEGP2(b.totalAmount)} ·{" "}
                   {b.decidedAt ? formatDate(b.decidedAt) : "—"}
                   {b.decidedBy?.name ? ` · ${b.decidedBy.name}` : ""}

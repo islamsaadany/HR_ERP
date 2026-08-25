@@ -9,7 +9,8 @@ import { syncMedicalRecoveries } from "@/lib/benefits/recoveries";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { ReviewQueue, type ReviewRow } from "@/components/payback/ReviewQueue";
 import { possibleDuplicateLines } from "@/lib/finance/queries";
-import { payableGroups } from "@/lib/finance/payables";
+import { availablePayables } from "@/lib/finance/payables";
+import { hasAnyConfirmer } from "@/lib/finance/confirmers";
 import { describeBatch } from "@/lib/finance/batches";
 import { formatEGP2 } from "@/lib/labels";
 import { SubmitPanel, type SubmissionRow } from "@/components/confirmations/SubmitPanel";
@@ -138,13 +139,13 @@ export default async function FinancePage({
     })),
   );
 
-  // Spec 041: what Finance can put into a submission — grouped by business unit, because each
-  // unit banks separately — and what is already with a confirmer.
-  const [groups, batches] = await Promise.all([
-    payableGroups(),
+  // Spec 040: what Finance can put into a submission, and what is already with the confirmer.
+  const [payables, anyConfirmer, batches] = await Promise.all([
+    availablePayables(),
+    hasAnyConfirmer(),
     prisma.paymentBatch.findMany({
       where: { type: "EXPENSES" },
-      include: { decidedBy: { select: { name: true } }, businessUnit: { select: { name: true } } },
+      include: { decidedBy: { select: { name: true } } },
       orderBy: { submittedAt: "desc" },
       take: 20,
     }),
@@ -163,7 +164,6 @@ export default async function FinancePage({
     decidedOn: b.decidedAt ? formatDate(b.decidedAt) : null,
     decidedBy: b.decidedBy?.name ?? null,
     decisionNote: b.decisionNote,
-    businessUnitName: b.businessUnit?.name ?? "—",
   }));
 
   return (
@@ -253,9 +253,9 @@ export default async function FinancePage({
           {
             id: "submit",
             label: "Awaiting confirmation",
-            badge: groups.reduce((n, g) => n + g.payables.length, 0),
+            badge: payables.length,
             node: (
-              <SubmitPanel groups={groups} submissions={submissionRows} />
+              <SubmitPanel payables={payables} submissions={submissionRows} anyConfirmer={anyConfirmer} />
             ),
           },
           {

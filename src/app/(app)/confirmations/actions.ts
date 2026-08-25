@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser, isSuperUser } from "@/lib/roles";
-import { canConfirmBatches } from "@/lib/finance/confirmers";
+import { confirmableUnitIds } from "@/lib/finance/confirmers";
 import { canDecide } from "@/lib/finance/batches";
 import { fromPiastres, toPiastres } from "@/lib/finance/money";
 import { refuse, isRefusal } from "@/lib/finance/refusal";
@@ -30,10 +30,12 @@ function fail(msg: string): never {
 
 async function requireConfirmer() {
   const user = await requireUser();
-  const isConfirmer = await canConfirmBatches(user.id);
+  const units = await confirmableUnitIds(user.id);
   // No role fallback: holding top-level access lets you APPOINT a confirmer, not be one.
-  if (!isConfirmer && !isSuperUser(user.role)) redirect("/dashboard");
-  return { id: user.id, isConfirmer, isSuperUser: isSuperUser(user.role) };
+  // Which UNITS they hold is carried through to `canDecide`, which asks about this transaction's
+  // unit — reaching the page is not the same as being allowed to decide what is on it.
+  if (units.length === 0 && !isSuperUser(user.role)) redirect("/dashboard");
+  return { id: user.id, confirmableUnitIds: units, isSuperUser: isSuperUser(user.role) };
 }
 
 export async function markComplete(formData: FormData): Promise<void> {
@@ -49,6 +51,7 @@ export async function markComplete(formData: FormData): Promise<void> {
         select: {
           status: true,
           submittedById: true,
+          businessUnitId: true,
           totalAmount: true,
           valueDate: true,
           items: { select: { paybackRequestId: true, benefitClaimId: true, amountAtSubmission: true } },
@@ -57,8 +60,16 @@ export async function markComplete(formData: FormData): Promise<void> {
       if (!batch) refuse("That no longer exists.");
 
       const decision = canDecide(
-        { status: batch.status, submittedById: batch.submittedById },
-        { id: viewer.id, isConfirmer: viewer.isConfirmer, isSuperUser: viewer.isSuperUser },
+        {
+          status: batch.status,
+          submittedById: batch.submittedById,
+          businessUnitId: batch.businessUnitId,
+        },
+        {
+          id: viewer.id,
+          confirmableUnitIds: viewer.confirmableUnitIds,
+          isSuperUser: viewer.isSuperUser,
+        },
       );
       if (!decision.ok) refuse(decision.reason);
 
@@ -187,14 +198,23 @@ export async function returnToFinance(formData: FormData): Promise<void> {
         select: {
           status: true,
           submittedById: true,
+          businessUnitId: true,
           items: { select: { paybackRequestId: true, benefitClaimId: true } },
         },
       });
       if (!batch) refuse("That no longer exists.");
 
       const decision = canDecide(
-        { status: batch.status, submittedById: batch.submittedById },
-        { id: viewer.id, isConfirmer: viewer.isConfirmer, isSuperUser: viewer.isSuperUser },
+        {
+          status: batch.status,
+          submittedById: batch.submittedById,
+          businessUnitId: batch.businessUnitId,
+        },
+        {
+          id: viewer.id,
+          confirmableUnitIds: viewer.confirmableUnitIds,
+          isSuperUser: viewer.isSuperUser,
+        },
       );
       if (!decision.ok) refuse(decision.reason);
 

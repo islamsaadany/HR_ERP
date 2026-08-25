@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser, isSuperUser } from "@/lib/roles";
-import { canConfirmBatches } from "@/lib/finance/confirmers";
+import { confirmableUnitIds } from "@/lib/finance/confirmers";
 import { canDecide, describeBatch } from "@/lib/finance/batches";
 import { formatEGP2, formatDate } from "@/lib/labels";
 import { AutoRefresh } from "@/components/AutoRefresh";
@@ -24,8 +24,8 @@ export default async function ConfirmationDetailPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const user = await requireUser();
-  const isConfirmer = await canConfirmBatches(user.id);
-  if (!isConfirmer && !isSuperUser(user.role)) redirect("/dashboard");
+  const myUnits = await confirmableUnitIds(user.id);
+  if (myUnits.length === 0 && !isSuperUser(user.role)) redirect("/dashboard");
 
   const { id } = await params;
   const { error } = await searchParams;
@@ -35,6 +35,7 @@ export default async function ConfirmationDetailPage({
     include: {
       submittedBy: { select: { name: true } },
       decidedBy: { select: { name: true } },
+      businessUnit: { select: { name: true } },
       items: {
         include: {
           paybackRequest: { select: { evidence: { select: { id: true, fileName: true } } } },
@@ -52,8 +53,12 @@ export default async function ConfirmationDetailPage({
     total,
   );
   const decision = canDecide(
-    { status: batch.status, submittedById: batch.submittedById },
-    { id: user.id, isConfirmer, isSuperUser: isSuperUser(user.role) },
+    {
+      status: batch.status,
+      submittedById: batch.submittedById,
+      businessUnitId: batch.businessUnitId,
+    },
+    { id: user.id, confirmableUnitIds: myUnits, isSuperUser: isSuperUser(user.role) },
   );
 
   return (

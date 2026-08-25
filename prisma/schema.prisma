@@ -212,7 +212,7 @@ model User {
 
   // Bank confirmations (spec 041) — back-relations only; no column is added to User. Who may
   // confirm is a row in TransactionConfirmer, never an attribute of the person.
-  transactionConfirmer    TransactionConfirmer?  @relation("TransactionConfirmerSubject")
+  transactionConfirmers   TransactionConfirmer[] @relation("TransactionConfirmerSubject")
   confirmersAppointed     TransactionConfirmer[] @relation("TransactionConfirmerAppointer")
   paymentBatchesSubmitted PaymentBatch[]         @relation("PaymentBatchSubmitter")
   paymentBatchesDecided   PaymentBatch[]         @relation("PaymentBatchDecider")
@@ -1131,6 +1131,11 @@ model BusinessUnit {
   members         User[]
   /// Which copies of which messages this unit branded (spec 039).
   brandedMessages MessageRecipient[]
+
+  /// Finance (2026-08-25): each unit banks separately, so each has its own appointed confirmers
+  /// and its own submissions.
+  transactionConfirmers TransactionConfirmer[] @relation("TransactionConfirmerUnit")
+  paymentBatches        PaymentBatch[]         @relation("PaymentBatchUnit")
 }
 
 // ─── Notification settings (super-user, spec 020) ───────────────────────────
@@ -2062,8 +2067,16 @@ enum PaymentBatchStatus {
 /// THEMSELVES — an empty table is a pause, not a wall. Do not "fix" this into consistency.
 model TransactionConfirmer {
   id     String @id @default(cuid())
-  userId String @unique
+  userId String
   user   User   @relation("TransactionConfirmerSubject", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// WHICH UNIT they confirm for (added 2026-08-25 at the CEO's instruction: "we need it by
+  /// business unit — every business unit might have an account to confirm and accordingly
+  /// different people"). Each unit banks separately, so the appointment is per unit and one
+  /// person may hold several. There is deliberately NO row meaning "all units": a company-wide
+  /// appointment would silently cover a unit created next month.
+  businessUnitId String
+  businessUnit   BusinessUnit @relation("TransactionConfirmerUnit", fields: [businessUnitId], references: [id], onDelete: Cascade)
 
   /// Only a Super User can write this row — an appointed confirmer appointing another one would
   /// let the appointment hand itself out.
@@ -2071,6 +2084,9 @@ model TransactionConfirmer {
   appointedBy   User?   @relation("TransactionConfirmerAppointer", fields: [appointedById], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
+
+  @@unique([userId, businessUnitId])
+  @@index([businessUnitId])
 }
 
 /// The transactions Finance created in the bank in one sitting, submitted here for confirmation.
@@ -2083,6 +2099,13 @@ model PaymentBatch {
   reference String /// human-facing, e.g. "AUG-26-01"
   type      PaymentBatchType
   status    PaymentBatchStatus @default(SUBMITTED)
+
+  /// WHOSE BANK ACCOUNT this was created in (2026-08-25). Derived at submission from the people
+  /// being paid — never typed in — and a submission may only ever hold payables from this one
+  /// unit, because it corresponds to one transaction in one account. It also decides who is
+  /// emailed and whose queue it appears in.
+  businessUnitId String
+  businessUnit   BusinessUnit @relation("PaymentBatchUnit", fields: [businessUnitId], references: [id])
 
   bankReference String?
   valueDate     DateTime
@@ -2126,6 +2149,7 @@ model PaymentBatch {
   @@index([status])
   @@index([type])
   @@index([submittedAt])
+  @@index([businessUnitId, status])
 }
 
 /// One payable inside a batch. Two optional parents, exactly one set (check constraint in SQL).

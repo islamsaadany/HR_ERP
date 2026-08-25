@@ -27,6 +27,21 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ## Decisions log
 
+- **2026-08-25 — Confirmations are per BUSINESS UNIT (built, spec 041 amended, migration `074`).**
+  The CEO: *"for the transaction confirmation we need it by business unit. as every business unit
+  might have an account to confirm and accordingly different people. that's in general."* The
+  feature had shipped with one company-wide queue, which is wrong the moment two units bank
+  separately. **Three decisions**, each the recommended option of three offered: the unit is
+  **derived from who is being paid** and never typed (a payback and a benefit claim take the
+  employee's unit, a float top-up its custodian's); **salaries run per unit per month**, so a month
+  is covered only when every unit has been sent; and a unit with **nobody appointed refuses and says
+  so** rather than falling back to anyone — self-appointment remains the escape hatch. An
+  appointment became a (person, unit) pair, with deliberately no row meaning "every unit". A mockup
+  was signed off before any component was touched; his one correction to it was that **Forefront
+  Group is not a business unit**, so it has no band and the feature creates no units. Somebody with
+  no business unit is grouped, shown and unsendable — guessing a unit would mean guessing a bank
+  account.
+
 - **2026-08-24 — Finance module: petty cash, payback, and the CEO's bank confirmation (specs 040
   + 041, both built).** The CEO asked for three things: manage petty cash the way the MARCOM
   workbook does today, let anyone request their money back with evidence attached, and be told
@@ -403,4 +418,4 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ---
 
-*Last Updated: 2026-08-24 (Reviews & 1:1s merged in, renumbered to spec 042 / migration 071 — it had claimed 040/068 while those were free, and Finance took them first. Earlier the same day: Finance merged with Communications — petty cash & payback at spec 040 / migration 068, bank confirmations & salary runs at spec 041 / migrations 069 + 070; Communications keeps spec 039 / migration 067; constitution v1.4.0.)*
+*Last Updated: 2026-08-25 (Confirmations split per business unit — spec 041 amended, migration 074, mockup signed off first; and the marketing float loaded with its whole workbook history — migrations 072 + 073. Previously: 2026-08-24 (Reviews & 1:1s merged in, renumbered to spec 042 / migration 071 — it had claimed 040/068 while those were free, and Finance took them first. Earlier the same day: Finance merged with Communications — petty cash & payback at spec 040 / migration 068, bank confirmations & salary runs at spec 041 / migrations 069 + 070; Communications keeps spec 039 / migration 067; constitution v1.4.0.))*

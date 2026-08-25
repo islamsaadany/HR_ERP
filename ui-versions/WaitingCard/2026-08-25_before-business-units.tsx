@@ -12,18 +12,14 @@ export type WaitingRow = {
   waitingDays: number;
   itemCount: number;
   headcount: number | null;
-  businessUnitName: string;
 };
 
 /**
  * One thing waiting on the confirmer (spec 041).
  *
- * The amount is the largest thing on the card because it is what is being decided about. The age
+ * The amount is the largest thing on the card because it is what he is deciding about. The age
  * chip is gold — somebody is waiting — and reads "today" until a full day has passed, so it never
  * arrives as a reproach the moment Finance submits.
- *
- * The business unit is named beside the age (2026-08-25): somebody who confirms for two units is
- * looking at two accounts, and two cards of similar size are otherwise indistinguishable.
  */
 export function WaitingCard({ row }: { row: WaitingRow }) {
   const age =
@@ -37,13 +33,8 @@ export function WaitingCard({ row }: { row: WaitingRow }) {
     <article className="overflow-hidden rounded-xl border border-line bg-surface">
       <div className="flex flex-wrap items-start justify-between gap-4 bg-gradient-to-b from-[#fbfaf7] to-surface px-5 py-4">
         <div>
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-gold-300 bg-gold-100 px-2 py-0.5 text-[10px] font-bold text-gold-800">
-              {age}
-            </span>
-            <span className="text-[10.5px] font-bold uppercase tracking-[0.06em] text-navy-700">
-              {row.businessUnitName}
-            </span>
+          <span className="rounded-full border border-gold-300 bg-gold-100 px-2 py-0.5 text-[10px] font-bold text-gold-800">
+            {age}
           </span>
           <p className="mt-2 text-[13.5px] font-semibold text-ink">{row.summary}</p>
           <p className="mt-1 text-[12px] text-muted">

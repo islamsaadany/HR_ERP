@@ -31,8 +31,11 @@ export function batchTotal(items: { amountPiastres: number }[]): number {
 
 export type Viewer = {
   id: string;
-  /** Holds the confirmer appointment. NOT implied by any role — see lib/finance/confirmers.ts. */
-  isConfirmer: boolean;
+  /**
+   * The business units this person is appointed to confirm for. NOT implied by any role — see
+   * lib/finance/confirmers.ts. An empty list confirms nothing.
+   */
+  confirmableUnitIds: string[];
   /** Top-level access. The single exception to the submitter/confirmer split (CEO, 2026-08-24). */
   isSuperUser: boolean;
 };
@@ -51,16 +54,22 @@ export type Decision = { ok: true } | { ok: false; reason: string };
  * single person holding both Finance and the confirmer appointment would otherwise release money
  * alone. The CEO ruled that top-level access is the sole exception — and when it is used, the
  * record shows the same person on both halves, so it is visible rather than silent.
+ *
+ * And since 2026-08-25 the appointment is per BUSINESS UNIT, so "are they allowed" is asked about
+ * this transaction's unit and not about the company. Being appointed for Marketing does not let
+ * you confirm money leaving another unit's account — that is the whole of what the CEO asked for,
+ * and it is enforced here rather than only in the query that builds the queue, because a screen
+ * that merely omits something is not a control.
  */
 export function canDecide(
-  batch: { status: BatchStatus; submittedById: string | null },
+  batch: { status: BatchStatus; submittedById: string | null; businessUnitId: string },
   viewer: Viewer,
 ): Decision {
   if (batch.status !== "SUBMITTED") {
     return { ok: false, reason: "That has already been dealt with." };
   }
-  if (!viewer.isConfirmer && !viewer.isSuperUser) {
-    return { ok: false, reason: "You aren't appointed to confirm transactions." };
+  if (!viewer.confirmableUnitIds.includes(batch.businessUnitId) && !viewer.isSuperUser) {
+    return { ok: false, reason: "You aren't appointed to confirm this business unit's transactions." };
   }
   if (batch.submittedById === viewer.id && !viewer.isSuperUser) {
     return { ok: false, reason: "You created these in the bank, so somebody else has to confirm them." };
@@ -118,6 +127,36 @@ export function describeBatch(
   // "3 transactions", never "batch" — the CEO's wording (2026-08-24): the group has no collective
   // noun on screen, it is simply how many transactions there are.
   return `${n} ${n === 1 ? "transaction" : "transactions"} totalling ${formattedTotal}`;
+}
+
+/**
+ * Whether a set of payables may go into ONE submission (2026-08-25).
+ *
+ * A submission is one transaction in one bank account, so everything in it must belong to the same
+ * business unit — and to a unit at all. The screen already makes mixing impossible by never
+ * putting two units in one list; this is the server's own check, because a form can be posted by
+ * hand and "the UI doesn't offer it" has never been a control.
+ */
+export function sameBusinessUnit(
+  items: { businessUnitId: string | null }[],
+  expected: string,
+): Decision {
+  if (items.length === 0) return { ok: false, reason: "Nothing selected." };
+  for (const item of items) {
+    if (item.businessUnitId === null) {
+      return {
+        ok: false,
+        reason: "Somebody in that list has no business unit set, so there is no account to pay them from.",
+      };
+    }
+    if (item.businessUnitId !== expected) {
+      return {
+        ok: false,
+        reason: "Those belong to more than one business unit. Each unit is sent separately, because each has its own account.",
+      };
+    }
+  }
+  return { ok: true };
 }
 
 /** A reference like "AUG-26-01" — readable in a bank statement and in a sentence. */

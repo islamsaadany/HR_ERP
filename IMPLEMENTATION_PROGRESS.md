@@ -17,10 +17,47 @@
 | 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |
 | 10 — Finance: petty cash & payback | 🟢 **Built** (spec 040 — custodian floats, period reconciliation, evidence, payback requests; migration `068`) |
-| 11 — Finance: bank confirmations & salaries | 🟢 **Built** (spec 041 — the confirmer appointment, submissions with a frozen total, the CEO's confirmation screen, monthly salary runs, the daily nudge; migrations `069` + `070`) |
+| 11 — Finance: bank confirmations & salaries | 🟢 **Built** (spec 041 — the confirmer appointment **per business unit**, submissions with a frozen total, the CEO's confirmation screen, monthly salary runs, the daily nudge; migrations `069`, `070` + `074`) |
 | 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
 | 12 — Team Communications | 🟢 **Built** (spec 039 — announcements to a chosen audience, birthday & work-anniversary congratulations drafted by the platform and sent by a human; migration `067`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
+
+## Confirmations, one business unit at a time (built 2026-08-25 — migration `074`)
+The CEO: *"for the transaction confirmation we need it by business unit. as every business unit
+might have an account to confirm and accordingly different people. that's in general."* The feature
+had shipped with one company-wide queue.
+
+- **Three decisions taken first**, then a mockup signed off before any component was touched: the
+  unit is derived from who is being paid (never typed), salaries run per unit per month, and a unit
+  with nobody appointed refuses rather than falling back to anyone. He corrected one thing on the
+  mockup — *"there is no forefront group transactions now as it's not a business unit"* — so only
+  real units appear and the feature creates none.
+- **An appointment is a (person, unit) pair.** One person may hold several. There is no row meaning
+  "every unit": a unit added next month starts with nobody, visibly.
+- **A submission cannot mix two units**, because Finance's screen has no list containing two —
+  `payableGroups()` is the shape it is built from — and `sameBusinessUnit` re-checks it on the
+  server anyway, since a form can be posted by hand.
+- **Everything narrows together**: the queue, the sidebar count, the emails, the daily nudge and the
+  salary file are each limited to the units a person holds, all from one derivation.
+- **Somebody with no business unit** is grouped, shown and unsendable — guessing a unit would mean
+  guessing a bank account.
+- **A bug the checks caught, not the output.** The upgrade expands each old company-wide appointment
+  into one row per unit. On the first run it produced 2 rows where 10 were expected: the old
+  one-row-per-person unique index was still in place, so every extra insert violated it and
+  `ON CONFLICT DO NOTHING` swallowed the lot without a word. The drop now happens **before** the
+  expansion. Separately, the no-business-units case was changed from warn-and-skip to **refuse**:
+  a skipped file is recorded as applied and never runs again, which would have left one database
+  nullable forever while a fresh one got NOT NULL.
+
+**Verified:** all 77 migrations applied in order to a throwaway Postgres 16; the upgrade path run
+against a database seeded in the old shape (two company-wide appointments across five units → ten
+rows, keeping each original appointer and date; the existing submission attributed; both columns
+NOT NULL; the old unique replaced by the pair); re-applied with no change; the no-units path proven
+to refuse, then apply cleanly once a unit exists. The scoping itself was read back through the app's
+own derivations — two people, three units, three submissions — showing each person's queue holding
+only their own, `canDecide` refusing the other two by name, and the third unit unsendable for want
+of anybody appointed. `npx tsc --noEmit`, `next build` and `npm test` (201) all clean.
+**Not yet run against the live database.**
 
 ## The marketing float, with its history (built 2026-08-25 — migrations `072` + `073`)
 The petty cash screen shipped empty: accounts are created by Finance in the app, and nobody had

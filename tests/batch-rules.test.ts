@@ -5,6 +5,11 @@
  * may not be the one who confirms them. Two signatures is the whole point of the feature, and
  * without this a single person holding both Finance and the confirmer appointment could release
  * money alone.
+ *
+ * And, since 2026-08-25, the second rule the CEO did ask for: an appointment belongs to a BUSINESS
+ * UNIT, so confirming one unit's money is not confirming another's. That one is enforced here
+ * rather than only by the query that builds the queue — a screen which merely omits something is
+ * not a control.
  */
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
@@ -15,14 +20,22 @@ import {
   releasesItems,
   describeBatch,
   nextBatchReference,
+  sameBusinessUnit,
   type Viewer,
 } from "@/lib/finance/batches";
 import { toPiastres, fromPiastres } from "@/lib/finance/money";
 
-const FINANCE: Viewer = { id: "u_finance", isConfirmer: false, isSuperUser: false };
-const CEO: Viewer = { id: "u_ceo", isConfirmer: true, isSuperUser: false };
-const BOSS: Viewer = { id: "u_boss", isConfirmer: false, isSuperUser: true };
-const OPEN = { status: "SUBMITTED" as const, submittedById: "u_finance" };
+const CONSULTING = "bu_consulting";
+const VISUAL_SHIFT = "bu_visual_shift";
+
+const FINANCE: Viewer = { id: "u_finance", confirmableUnitIds: [], isSuperUser: false };
+const CEO: Viewer = { id: "u_ceo", confirmableUnitIds: [CONSULTING], isSuperUser: false };
+const BOSS: Viewer = { id: "u_boss", confirmableUnitIds: [], isSuperUser: true };
+const OPEN = {
+  status: "SUBMITTED" as const,
+  submittedById: "u_finance",
+  businessUnitId: CONSULTING,
+};
 
 describe("whoever created them in the bank may not confirm them", () => {
   test("an appointed confirmer who didn't create them: allowed", () => {
@@ -30,18 +43,18 @@ describe("whoever created them in the bank may not confirm them", () => {
   });
 
   test("the person who created them: refused, and told why", () => {
-    const d = canDecide({ status: "SUBMITTED", submittedById: CEO.id }, CEO);
+    const d = canDecide({ ...OPEN, submittedById: CEO.id }, CEO);
     assert.equal(d.ok, false);
     assert.match((d as { reason: string }).reason, /somebody else has to confirm them/);
   });
 
   test("holding BOTH Finance and the appointment is still not enough", () => {
-    const both: Viewer = { id: "u_x", isConfirmer: true, isSuperUser: false };
-    assert.equal(canDecide({ status: "SUBMITTED", submittedById: "u_x" }, both).ok, false);
+    const both: Viewer = { id: "u_x", confirmableUnitIds: [CONSULTING], isSuperUser: false };
+    assert.equal(canDecide({ ...OPEN, submittedById: "u_x" }, both).ok, false);
   });
 
   test("top-level access is the single exception the CEO allowed", () => {
-    assert.deepEqual(canDecide({ status: "SUBMITTED", submittedById: BOSS.id }, BOSS), { ok: true });
+    assert.deepEqual(canDecide({ ...OPEN, submittedById: BOSS.id }, BOSS), { ok: true });
   });
 
   test("somebody with no appointment at all: refused", () => {
@@ -51,11 +64,68 @@ describe("whoever created them in the bank may not confirm them", () => {
   });
 });
 
+describe("an appointment belongs to a business unit, not to the company", () => {
+  test("the unit they hold: allowed", () => {
+    assert.deepEqual(canDecide(OPEN, CEO), { ok: true });
+  });
+
+  test("a unit they do NOT hold: refused, and told which kind of refusal it is", () => {
+    const d = canDecide({ ...OPEN, businessUnitId: VISUAL_SHIFT }, CEO);
+    assert.equal(d.ok, false);
+    assert.match((d as { reason: string }).reason, /this business unit's transactions/);
+  });
+
+  test("holding several units is normal and each one works", () => {
+    const both: Viewer = {
+      id: "u_two",
+      confirmableUnitIds: [CONSULTING, VISUAL_SHIFT],
+      isSuperUser: false,
+    };
+    assert.deepEqual(canDecide(OPEN, both), { ok: true });
+    assert.deepEqual(canDecide({ ...OPEN, businessUnitId: VISUAL_SHIFT }, both), { ok: true });
+  });
+
+  test("an empty appointment list confirms nothing, in any unit", () => {
+    for (const unit of [CONSULTING, VISUAL_SHIFT]) {
+      assert.equal(canDecide({ ...OPEN, businessUnitId: unit }, FINANCE).ok, false);
+    }
+  });
+});
+
+describe("one submission is one transaction in one account", () => {
+  const here = { businessUnitId: CONSULTING };
+  const there = { businessUnitId: VISUAL_SHIFT };
+
+  test("all from the same unit: allowed", () => {
+    assert.deepEqual(sameBusinessUnit([here, here, here], CONSULTING), { ok: true });
+  });
+
+  test("a stray from another unit: refused, because one account cannot settle both", () => {
+    const d = sameBusinessUnit([here, there], CONSULTING);
+    assert.equal(d.ok, false);
+    assert.match((d as { reason: string }).reason, /more than one business unit/);
+  });
+
+  test("claiming a unit that none of them belong to: refused", () => {
+    assert.equal(sameBusinessUnit([here, here], VISUAL_SHIFT).ok, false);
+  });
+
+  test("somebody with no business unit at all: refused, and says so plainly", () => {
+    const d = sameBusinessUnit([here, { businessUnitId: null }], CONSULTING);
+    assert.equal(d.ok, false);
+    assert.match((d as { reason: string }).reason, /no business unit set/);
+  });
+
+  test("nothing selected is refused rather than quietly succeeding", () => {
+    assert.equal(sameBusinessUnit([], CONSULTING).ok, false);
+  });
+});
+
 describe("once decided, it is finished", () => {
   for (const status of ["COMPLETE", "RETURNED", "WITHDRAWN"] as const) {
     test(`${status}: no further decision, whoever asks`, () => {
-      assert.equal(canDecide({ status, submittedById: "u_finance" }, CEO).ok, false);
-      assert.equal(canDecide({ status, submittedById: "u_finance" }, BOSS).ok, false);
+      assert.equal(canDecide({ ...OPEN, status }, CEO).ok, false);
+      assert.equal(canDecide({ ...OPEN, status }, BOSS).ok, false);
       assert.equal(nextStatus(status, "complete"), null);
     });
   }

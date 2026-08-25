@@ -3,7 +3,7 @@ import { requireUser, getImpersonation } from "@/lib/roles";
 import { hasLearningAppointment } from "@/lib/learning/managers";
 import { isAdmin, isFinance, canAccessIncentive } from "@/lib/roles";
 import { canManagePettyCash } from "@/lib/finance/access";
-import { confirmableUnitIds } from "@/lib/finance/confirmers";
+import { canConfirmBatches } from "@/lib/finance/confirmers";
 import { getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
 import { prisma } from "@/lib/prisma";
@@ -33,17 +33,12 @@ export default async function AppLayout({
   const showManageLearning = !hrAdmin && (await hasLearningAppointment(user.id));
 
   // The confirmations door (spec 041): the appointment and nothing else — no role fallback, so the
-  // door tells the same truth the page behind it does. Per business unit since 2026-08-25, so the
-  // count is only ever this person's own units — a badge that includes somebody else's money is
-  // a badge that never reaches zero.
-  const myConfirmUnits = await confirmableUnitIds(user.id);
-  const showConfirmations = myConfirmUnits.length > 0;
+  // door tells the same truth the page behind it does.
+  const showConfirmations = await canConfirmBatches(user.id);
   let confirmationsWaiting = 0;
   if (showConfirmations) {
     try {
-      confirmationsWaiting = await prisma.paymentBatch.count({
-        where: { status: "SUBMITTED", businessUnitId: { in: myConfirmUnits } },
-      });
+      confirmationsWaiting = await prisma.paymentBatch.count({ where: { status: "SUBMITTED" } });
     } catch {
       confirmationsWaiting = 0;
     }
