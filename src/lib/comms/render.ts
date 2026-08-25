@@ -37,7 +37,6 @@ const INK = "#1B2330";
 const QUIET = "#6B7686";
 const LINE = "#E3E8EF";
 const GROUND = "#F4F6FA";
-const OUTER = "#626C7C";
 
 /** What a person with no unit gets: the group's own colour. */
 const GROUP_FALLBACK = "#0F2444";
@@ -167,7 +166,9 @@ export function renderMessage(input: RenderInput): { html: string; text: string 
     `<p style="margin:0;font:400 11.5px/1.55 Helvetica,Arial,sans-serif;color:${QUIET}">${footerLine}</p>` +
     `</td></tr>` +
     `</table>` +
-    `<div style="font:400 10.5px/1.5 Helvetica,Arial,sans-serif;color:${OUTER};padding:12px 8px 0">${esc(input.groupName)}</div>` +
+    // Nothing below the card. There used to be a second, smaller group name printed on the page
+    // background beneath it — the group already appears in the coloured header AND in the footer
+    // line inside the card, so a third mention was repetition sitting on its own in grey.
     `</td></tr></table></body></html>`;
 
   return { html, text: plainText(input) };

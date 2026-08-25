@@ -27,7 +27,7 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ## Decisions log
 
-- **2026-08-25 — Confirmations are per BUSINESS UNIT (built, spec 041 amended, migration `074`).**
+- **2026-08-25 — Confirmations are per BUSINESS UNIT (built, spec 041 amended, migration `075`).**
   The CEO: *"for the transaction confirmation we need it by business unit. as every business unit
   might have an account to confirm and accordingly different people. that's in general."* The
   feature had shipped with one company-wide queue, which is wrong the moment two units bank
@@ -418,4 +418,4 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ---
 
-*Last Updated: 2026-08-25 (Confirmations split per business unit — spec 041 amended, migration 074, mockup signed off first; and the marketing float loaded with its whole workbook history — migrations 072 + 073. Previously: 2026-08-24 (Reviews & 1:1s merged in, renumbered to spec 042 / migration 071 — it had claimed 040/068 while those were free, and Finance took them first. Earlier the same day: Finance merged with Communications — petty cash & payback at spec 040 / migration 068, bank confirmations & salary runs at spec 041 / migrations 069 + 070; Communications keeps spec 039 / migration 067; constitution v1.4.0.))*
+*Last Updated: 2026-08-25 (Confirmations split per business unit — spec 041 amended, migration 075, mockup signed off first; and the marketing float loaded with its whole workbook history — migrations 072 + 073. Previously: 2026-08-24 (Reviews & 1:1s merged in, renumbered to spec 042 / migration 071 — it had claimed 040/068 while those were free, and Finance took them first. Earlier the same day: Finance merged with Communications — petty cash & payback at spec 040 / migration 068, bank confirmations & salary runs at spec 041 / migrations 069 + 070; Communications keeps spec 039 / migration 067; constitution v1.4.0.))*

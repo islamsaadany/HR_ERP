@@ -6,7 +6,6 @@ import {
   sendTestToSelf,
   setCongratsLeadDays,
   setDisplayName,
-  setGroupName,
 } from "@/app/(app)/admin/communications/settings-actions";
 import { BTN_GHOST, BTN_NAVY, CHIP, INPUT, LABEL } from "@/components/learning/ui";
 
@@ -14,12 +13,10 @@ type Result = { ok: boolean; error?: string; message?: string };
 
 export function CommsSettingsForm({
   fromName,
-  groupName,
   congratsLeadDays,
   canSend,
 }: {
   fromName: string;
-  groupName: string;
   congratsLeadDays: number;
   /** False when the secrets are missing — the test button would only ever fail. */
   canSend: boolean;
@@ -61,25 +58,6 @@ export function CommsSettingsForm({
           <b>This changes every email the platform sends</b>, not only announcements — a benefit-claim
           notification and a holiday announcement will arrive under this name too. There is one
           sender name for the whole platform.
-        </p>
-      </form>
-
-      <form className="rounded-xl border border-line bg-surface p-4" action={(fd) => run(() => setGroupName(fd))}>
-        <h2 className="text-[13px] font-bold text-navy-800">The group above the business unit</h2>
-        <p className="mb-2 mt-0.5 text-[11.5px] text-muted">
-          The small line printed above the unit&rsquo;s name in the coloured band at the top of every
-          email. The large line underneath is the recipient&rsquo;s own business unit.
-        </p>
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="min-w-[220px] flex-1">
-            <label className={LABEL} htmlFor="groupName">Group name</label>
-            <input id="groupName" name="groupName" defaultValue={groupName} placeholder="Forefront Group" className={INPUT} />
-          </div>
-          <button type="submit" disabled={pending} className={BTN_GHOST}>Save</button>
-        </div>
-        <p className="mt-2 text-[11.5px] text-muted">
-          Unlike the sender name above, this changes <b>only</b> how these emails look — the platform
-          is named separately, on Admin → Brand.
         </p>
       </form>
 

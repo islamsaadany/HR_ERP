@@ -370,7 +370,7 @@ asserted against the total the sheet itself states, and the import against 9,726
 a modern tab throws rather than shipping. Four of the workbook's own SUM formulas are short by a
 row; those differences are reported by the generator, never absorbed.
 
-### Finance: bank confirmations & salary runs (spec 041, migrations `069`, `070` + `074`)
+### Finance: bank confirmations & salary runs (spec 041, migrations `069`, `070` + `075`)
 Finance creates transactions in the bank and submits them here; the appointed confirmer confirms
 them at the bank and marks them **Transaction complete**. Nothing in the app releases money.
 
@@ -768,12 +768,59 @@ readiness, test send).
 **Not in this release**: marketing email, external recipients, scheduling a send for later,
 per-unit sending addresses (each brand's domain would need verifying), an employee opt-out
 (deliberately none — a congratulation may carry a gift).
+## Team Communications (spec 039) — one door, three options
+
+Announcements and Communications were two admin tiles whose names meant nearly the same word and
+which knew nothing about each other: posting to the dashboard emailed nobody, emailing an
+announcement put nothing on the dashboard, and telling everyone something important meant doing it
+twice in two places. They are one entry as of 2026-08-25, and the choice is made on **where the
+message lands** — the only difference that matters to the person deciding.
+
+| Option | Route | Lands | Audience | Reversible |
+|---|---|---|---|---|
+| Noticeboard | `/admin/communications/noticeboard` | Everyone's dashboard | None — everyone | Yes, delete the post |
+| Email | `/admin/communications/email` | Chosen people's inboxes | Seven ways of choosing | **No** |
+| Congratulations | `/admin/communications/queue` | One person's inbox | The subject | **No** |
+
+They are kept apart rather than merged into one compose screen because their **requirements**
+differ, not their wording: the noticeboard has no audience, no preview and nothing irreversible;
+email has all three; congratulations are written by the platform and sent by somebody else. A
+single form serving all three would need a branch per difference.
+
+`/admin/announcements` **redirects** rather than 404s — the address is in bookmarks and history, and
+a dead link teaches an operator the feature was removed, which is not what happened.
+
+### The group name is its own setting (migration `074`)
+The small-caps line above the business unit read `BrandSettings.companyName` — the name of the
+**platform** — so the header said "Forefront Consulting" where "Forefront Group" had been agreed,
+and the only way to correct it was to rename the whole application including the sign-in page. It
+is now `NotificationSettings.groupName`, editable at Communications → Settings, defaulting to
+`DEFAULT_GROUP_NAME`. Unlike the sender name it touches **only** these emails.
+
+### The audience panel is one button
+`AudiencePicker` (`src/components/audience/AudiencePicker.tsx`) shows every choice already made as
+tags with their own counts, and one **+ Add people** button that opens the kind picker and then the
+tick-list. It shares `TickList` with Learning's Access tab and nothing else: Learning's screen,
+where the seven ways of choosing ARE the subject, is untouched.
+
+### Saving and previewing are one action
+The editor tracks **dirty**, not **saved**. The old green chip was set on a successful write and
+cleared only by the next action, so it stayed on screen while the operator kept typing — claiming
+the draft was stored when it was not, and making the preview (which correctly rendered what *was*
+stored) look like it was dropping text. One button now saves and rebuilds; the chip says "Not saved
+yet" the moment anything changes.
+
+`EmailPreview` sizes itself to the email instead of scrolling inside a fixed box. Two things it
+learned the hard way: the email is a 600px table but the **document** is wider, so the width is
+measured rather than assumed; and the frame's own 1px border ate 2px of its inner width, clipping
+the right edge — the border lives on the wrapper.
+
 ## Reviews & 1:1s (spec 042)
 
 A quarterly performance review that is filled **across** the quarter rather than the night before,
 plus the ad-hoc 1:1s that feed it. Private to each manager↔report pair.
 
-**By business unit (migration `074`, 2026-08-25).** The CEO: *"we need it by business unit — every
+**By business unit (migration `075`, 2026-08-25).** The CEO: *"we need it by business unit — every
 business unit might have an account to confirm and accordingly different people."* An appointment is
 now a (person, unit) pair, and one person may hold several; there is deliberately **no** row meaning
 "every unit", so a unit added later starts with nobody rather than inheriting whoever was appointed

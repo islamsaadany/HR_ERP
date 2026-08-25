@@ -12,7 +12,8 @@ export async function createAnnouncement(formData: FormData): Promise<void> {
   await prisma.announcement.create({
     data: { title, body, authorId: admin.id },
   });
-  revalidatePath("/admin/announcements");
+  revalidatePath("/admin/communications/noticeboard");
+  revalidatePath("/admin/communications");
   revalidatePath("/dashboard");
 }
 
@@ -21,6 +22,7 @@ export async function deleteAnnouncement(formData: FormData): Promise<void> {
   const id = formData.get("id") as string;
   if (!id) return;
   await prisma.announcement.delete({ where: { id } });
-  revalidatePath("/admin/announcements");
+  revalidatePath("/admin/communications/noticeboard");
+  revalidatePath("/admin/communications");
   revalidatePath("/dashboard");
 }

@@ -12,7 +12,8 @@
  *   • a draft past its day cannot be sent;
  *   • a leaver's draft cannot be sent;
  *   • the cron creates nothing on a second run, and emails NO employee;
- *   • the rendered HTML contains none of the three things that silently break in mail clients.
+ *   • the rendered HTML contains none of the three things that silently break in mail clients;
+ *   • the group name above the unit is the COMMUNICATIONS setting, never the platform's own name.
  *
  * Run against a THROWAWAY database only.
  */
@@ -21,6 +22,7 @@ import { renderMessage } from "../src/lib/comms/render.js";
 import { reachedUserIds } from "../src/lib/audience/reach.js";
 import { assigneeFor, closePassed, draftFor, prepareOccasions } from "../src/lib/comms/drafts.js";
 import { occasionsInWindow } from "../src/lib/comms/occasions.js";
+import { DEFAULT_GROUP_NAME, getCommsSettings, groupName } from "../src/lib/comms/settings.js";
 
 const db = new PrismaClient();
 let pass = 0, fail = 0;
@@ -319,6 +321,42 @@ await db.message.update({
   data: { state: "MISSED", missedAt: new Date() },
 });
 check("closing the last one empties the queue", await mine(manager.id), 0);
+
+// ── The group name above the unit ────────────────────────────────────────
+//
+// This shipped reading `BrandSettings.companyName` — the PLATFORM's name — so the header said
+// "Forefront Consulting" where "Forefront Group" had been agreed, and the only way to correct it
+// was to rename the whole application. The checks below are written against that specific mistake:
+// it is not enough that the right name appears, the wrong one must be unable to.
+await db.notificationSettings.deleteMany({});
+await db.brandSettings.deleteMany({});
+
+check("with nothing set, the group name is the agreed default", await groupName(), DEFAULT_GROUP_NAME);
+
+await db.brandSettings.create({ data: { id: "singleton", companyName: "A Platform Name" } });
+check("the platform's own name no longer decides it", await groupName(), DEFAULT_GROUP_NAME);
+
+await db.notificationSettings.create({ data: { id: "singleton", groupName: "Forefront Group" } });
+check("an operator's value is used", await groupName(), "Forefront Group");
+// Two readers, one answer — a settings page disagreeing with the renderer is how a header goes
+// wrong without anybody editing the renderer.
+check("and the settings screen agrees with the renderer", (await getCommsSettings()).groupName, "Forefront Group");
+
+await db.notificationSettings.update({ where: { id: "singleton" }, data: { groupName: "   " } });
+check("whitespace is not a name — it falls back", await groupName(), DEFAULT_GROUP_NAME);
+
+await db.notificationSettings.update({ where: { id: "singleton" }, data: { groupName: "Forefront Group" } });
+const branded = renderMessage({
+  unit: { name: "Visual Shift Consulting", primaryColor: "#450059" },
+  groupName: await groupName(),
+  fallbackLabel: "Announcement",
+  subject: "We are coming",
+  body: "What is going on?",
+  cta: null,
+}).html;
+check("the rendered header carries the group name", branded.includes("Forefront Group"), true);
+check("and cannot carry the platform's name", branded.includes("A Platform Name"), false);
+check("the unit is still the large line beneath it", branded.includes("Visual Shift Consulting"), true);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await db.$disconnect();

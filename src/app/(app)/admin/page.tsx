@@ -65,11 +65,12 @@ const CATEGORIES: Category[] = [
       { href: "/admin/onboarding", title: "Onboarding Content", body: "Author onboarding stages and activities.", ready: true },
       { href: "/admin/handbook", title: "Handbook & Resources", body: "Author handbook sections and upload resources.", ready: true },
       { href: "/admin/knowledge", title: "Knowledge Base", body: "Author consulting reads & references (paste from the Claude prompt).", ready: true },
-      { href: "/admin/announcements", title: "Announcements", body: "Post company announcements.", ready: true },
       {
         href: "/admin/communications",
         title: "Communications",
-        body: "Email the team — announcements, and birthday or anniversary notes a manager sends.",
+        // One tile since 2026-08-25. "Announcements" sat beside it meaning almost the same word,
+        // and the difference that actually matters — dashboard or inbox — was invisible from here.
+        body: "Reach the team: the dashboard noticeboard, email to chosen people, and birthday or anniversary notes.",
         ready: true,
       },
     ],
@@ -144,7 +145,6 @@ const GLYPH: Record<string, string> = {
   "/admin/onboarding": "▶",
   "/admin/handbook": "▣",
   "/admin/knowledge": "◈",
-  "/admin/announcements": "✦",
   "/admin/communications": "✉",
   "/admin/impersonate": "◉",
   "/admin/modules": "⊞",

@@ -8,26 +8,40 @@ import { getNotificationSettings } from "@/lib/notifications/settings";
  * `NotificationSettings` and are reused: adding a second display name would have meant two places
  * deciding who the platform sounds like, and the second one would eventually win somewhere
  * nobody was looking (research D10).
+ *
+ * The GROUP name is the exception, and it is the opposite lesson (2026-08-25). It borrowed
+ * `BrandSettings.companyName` — the platform's own name — on the same "don't invent a second
+ * field" instinct, and that was wrong: the two are different ideas that merely share a shape. The
+ * header read "Forefront Consulting" when it had been agreed as "Forefront Group", and the only
+ * way to fix it was to rename the whole application. Reuse a field when it is the same fact;
+ * add one when it is a different fact that happens to look alike.
  */
 
 export type CommsSettings = {
   /** The display name every email is sent under, e.g. "People of Forefront Group". */
   fromName: string | null;
+  /** The umbrella name in small caps above the unit, e.g. "Forefront Group". */
+  groupName: string;
   /** Whether sending is on at all. */
   emailEnabled: boolean;
   /** How many days ahead congratulations are prepared. */
   congratsLeadDays: number;
 };
 
+/** The name shown when nobody has set one. Named once so the fallback cannot drift. */
+export const DEFAULT_GROUP_NAME = "Forefront Group";
+
 export async function getCommsSettings(): Promise<CommsSettings> {
   const s = await getNotificationSettings();
   const row = await prisma.notificationSettings
-    .findUnique({ where: { id: "singleton" }, select: { congratsLeadDays: true } })
+    .findUnique({ where: { id: "singleton" }, select: { congratsLeadDays: true, groupName: true } })
     .catch(() => null);
   return {
     fromName: s.fromName,
+    groupName: row?.groupName?.trim() || DEFAULT_GROUP_NAME,
     emailEnabled: s.emailEnabled,
-    // Before migration 067 the column does not exist; the documented default is the honest answer.
+    // Before migrations 067 / 074 these columns do not exist; the documented defaults are the
+    // honest answer rather than an error on a database that has not caught up yet.
     congratsLeadDays: row?.congratsLeadDays ?? 3,
   };
 }
@@ -35,15 +49,16 @@ export async function getCommsSettings(): Promise<CommsSettings> {
 /**
  * The group's name, as it appears in small caps above the unit on every email.
  *
- * Read from `BrandSettings.companyName` — the app-wide brand, which IS the group level. A business
- * unit's name is the LARGE line and comes from the recipient's own record; this is the constant
- * above it.
+ * Its OWN setting. It read `BrandSettings.companyName` until 2026-08-25 on the reasoning that the
+ * app-wide brand IS the group level — which is wrong: that column names the platform ("Forefront
+ * Consulting"), and the group above the units is "Forefront Group". A business unit's name is the
+ * LARGE line and comes from the recipient's own record; this is the constant above it.
  */
 export async function groupName(): Promise<string> {
-  const brand = await prisma.brandSettings
-    .findUnique({ where: { id: "singleton" }, select: { companyName: true } })
+  const row = await prisma.notificationSettings
+    .findUnique({ where: { id: "singleton" }, select: { groupName: true } })
     .catch(() => null);
-  return brand?.companyName?.trim() || "Forefront Group";
+  return row?.groupName?.trim() || DEFAULT_GROUP_NAME;
 }
 
 /**
