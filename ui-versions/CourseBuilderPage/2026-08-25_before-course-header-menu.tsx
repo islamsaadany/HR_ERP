@@ -8,7 +8,6 @@ import { audienceReachByRule } from "@/lib/learning/queries";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { CourseBuilder, type BuilderSection } from "@/components/learning/CourseBuilder";
 import { CourseStatusControl } from "@/components/learning/CourseStatusControl";
-import { CourseHeaderActions } from "@/components/learning/CourseActions";
 import { AccessSetup, type FieldSpec } from "@/components/learning/AccessSetup";
 import { CourseRoster, type RosterRow } from "@/components/learning/CourseRoster";
 import { LearningTabs } from "@/components/learning/LearningTabs";
@@ -50,8 +49,6 @@ export default async function CourseBuilderPage({
       status: true,
       visibility: true,
       renewAfterMonths: true,
-      // What deleting refuses over, counted the way the write counts it.
-      _count: { select: { enrollments: true } },
       sections: {
         where: { deletedAt: null },
         orderBy: { order: "asc" },
@@ -341,13 +338,6 @@ export default async function CourseBuilderPage({
           <Link href="/admin/learning/groups" className="text-sm text-muted hover:text-ink">
             Manage groups →
           </Link>
-          {/* Rename and delete, behind the same ⋯ as on the list (mockup-approved 2026-08-25). */}
-          <CourseHeaderActions
-            courseId={course.id}
-            title={course.title}
-            summary={course.summary}
-            startedCount={course._count.enrollments}
-          />
         </div>
       </div>
       {course.summary ? (

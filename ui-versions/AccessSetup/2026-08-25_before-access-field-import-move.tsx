@@ -7,9 +7,8 @@ import {
   clearEveryoneRule,
   removeAccessChoice,
   setVisibility,
+  type AccessField,
 } from "@/app/(app)/admin/learning/access-actions";
-// The field list comes from the plain module, never from the action file — see its note.
-import type { AccessField } from "@/lib/learning/access-fields";
 import { BTN_GHOST, BTN_NAVY, CHIP, INPUT } from "@/components/learning/ui";
 
 /** One thing already chosen, as it is shown on its field. */

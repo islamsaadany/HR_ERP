@@ -5,6 +5,10 @@ import type { AudienceKind } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireLearningManager } from "@/lib/learning/managers";
 import { courseAccessFor } from "@/lib/learning/access";
+// ACCESS_FIELDS lives in a plain module, NOT here: a "use server" file may export only
+// async functions, and one exported array made every action on the course page 500 before
+// it ran. See the note in that file.
+import { ACCESS_FIELDS, type AccessField } from "@/lib/learning/access-fields";
 
 /**
  * Who a course reaches (spec 038 US2). HR Admin + Super User.
@@ -59,17 +63,6 @@ async function validateRule(kind: AudienceKind, value: string | null): Promise<s
     }
   }
 }
-
-export const ACCESS_FIELDS = [
-  "DEPARTMENT",
-  "BUSINESS_UNIT",
-  "EMPLOYMENT_TYPE",
-  "TENURE_BAND",
-  "REPORTS_TO",
-  "GROUP",
-  "PERSON",
-] as const;
-export type AccessField = (typeof ACCESS_FIELDS)[number];
 
 const AUDIENCE_FIELDS: AccessField[] = [
   "DEPARTMENT",

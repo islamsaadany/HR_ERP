@@ -1,0 +1,215 @@
+<title>Renaming &amp; Deleting Courses</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-400:#4f6d97;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;--red-bg:#fdf3f3;--red-line:#f3c6c6;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .proposal{margin-top:36px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:76ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-navy{border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:9px}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px}
+  .btn-danger{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--red-line);background:var(--red-bg);color:var(--red);font-size:12px;font-weight:700;padding:5px 11px;border-radius:8px}
+  .kebab{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:14px;font-weight:800;letter-spacing:1px;flex:none}
+  .kebab.on{border-color:var(--navy-300,#8ea6c8);background:var(--navy-50);color:var(--navy-800)}
+  .row{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:13px 14px;margin-bottom:8px}
+  .row .grow{min-width:0;flex:1}
+  .row .t{font-size:14.5px;font-weight:700;color:var(--navy-800)}
+  .row .meta{display:block;margin-top:2px;font-size:11.5px;color:var(--muted)}
+  .arrow{color:var(--muted);font-size:13px}
+  .menu{position:relative;margin:-4px 0 10px auto;width:196px;border:1px solid var(--line);border-radius:11px;background:var(--surface);box-shadow:0 6px 20px rgba(15,36,68,.10);overflow:hidden}
+  .menu button,.menu span.item{display:flex;width:100%;align-items:center;gap:9px;padding:8px 11px;font-size:12.5px;font-weight:600;color:var(--ink);background:transparent;border:0;border-bottom:1px solid var(--line);text-align:left}
+  .menu .item:last-child{border-bottom:0}
+  .menu .danger{color:var(--red)}
+  .confirm{display:flex;flex-wrap:wrap;align-items:center;gap:10px;border:1px solid var(--red-line);background:var(--red-bg);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+  .confirm .msg{flex:1;min-width:260px;font-size:12.5px;color:var(--ink)}
+  .fld{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:3px;font-weight:700}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 9px;font-size:13px;color:var(--ink)}
+  .stack{display:grid;gap:11px}
+  .hdr{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
+  .hdr h3{font-family:Georgia,serif;font-size:21px;margin:0;color:var(--ink)}
+  .back{font-size:12.5px;color:var(--muted)}
+  .refuse{border-left:3px solid var(--gold-500);background:#fbf9f2;padding:11px 14px;border-radius:0 10px 10px 0;font-size:12.5px;max-width:70ch}
+  .decision{margin-top:34px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;max-width:860px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ol{margin:6px 0 0;padding-left:20px}.decision li{margin:7px 0}
+  .note{font-size:11.5px;color:var(--muted);margin-top:9px}
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+  .cap{font-size:11px;color:var(--muted);margin:8px 0 0;font-style:italic}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Learning · course housekeeping</p>
+  <h1>Renaming and deleting a course</h1>
+  <p class="lede">Two things the module has never offered: there is no way to <b>change a course's name</b> after you create it, and no way to <b>throw a course away</b> — so the drafts pile up. Both already work on the server; nothing exists on screen to reach them. This is the proposed screen work, for your sign-off before anything is built. Illustrative content throughout.</p>
+
+  <!-- 1 -->
+  <section class="proposal">
+    <h2><span class="num">1</span> A quiet menu on each course in the list</h2>
+    <p class="sub">The Learning list is where you'd clear out drafts, so the two controls live there — one small <b>⋯</b> on the right of each row, outside the link, so the row still opens the course when you click it. Nothing else about the row changes.</p>
+
+    <div class="frame">
+      <div class="row">
+        <span class="grow">
+          <span class="t">Consulting Fundamentals</span> <span class="chip c-ok">Published</span>
+          <span class="meta">3 sections · 14 started · 2 access routes · published 21/08/2026</span>
+        </span>
+        <span class="kebab">⋯</span>
+        <span class="arrow">→</span>
+      </div>
+
+      <div class="row" style="margin-bottom:0">
+        <span class="grow">
+          <span class="t">Untitled course</span> <span class="chip c-gold">Draft</span>
+          <span class="meta">0 sections · 0 started</span>
+        </span>
+        <span class="kebab on">⋯</span>
+        <span class="arrow">→</span>
+      </div>
+      <div class="menu">
+        <span class="item">✎ Rename</span>
+        <span class="item danger">🗑 Delete course</span>
+      </div>
+
+      <div class="row">
+        <span class="grow">
+          <span class="t">Onboarding: week one</span> <span class="chip c-gold">Paused</span>
+          <span class="meta">5 sections · 31 started · 4 access routes</span>
+        </span>
+        <span class="kebab">⋯</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+    <p class="cap">The menu opens under the row it belongs to. Only one is ever open.</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="proposal">
+    <h2><span class="num">2</span> Delete asks once, in the row itself</h2>
+    <p class="sub">No pop-up. The row turns into a confirmation that <b>names the course</b> and says what goes with it, because a delete you can't undo should read like a sentence rather than a dialog you dismiss on reflex. Cancel puts the row straight back.</p>
+
+    <div class="frame">
+      <div class="row">
+        <span class="grow">
+          <span class="t">Consulting Fundamentals</span> <span class="chip c-ok">Published</span>
+          <span class="meta">3 sections · 14 started · 2 access routes · published 21/08/2026</span>
+        </span>
+        <span class="kebab">⋯</span>
+        <span class="arrow">→</span>
+      </div>
+
+      <div class="confirm">
+        <span class="msg">
+          Delete <b>“Untitled course”</b>? Its sections, lessons and materials go with it, and nobody has started it, so no record is lost. <b>This can't be undone.</b>
+        </span>
+        <span class="btn-danger">Delete it</span>
+        <span class="btn-ghost">Cancel</span>
+      </div>
+
+      <div class="row" style="margin-bottom:0">
+        <span class="grow">
+          <span class="t">Onboarding: week one</span> <span class="chip c-gold">Paused</span>
+          <span class="meta">5 sections · 31 started · 4 access routes</span>
+        </span>
+        <span class="kebab">⋯</span>
+        <span class="arrow">→</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="proposal">
+    <h2><span class="num">3</span> A course people have started is refused</h2>
+    <p class="sub">This rule is already written on the server and it does not change: deleting a course somebody has worked through would destroy their record of having done it. The refusal says who and what to do instead.</p>
+
+    <div class="frame">
+      <div class="confirm" style="border-color:var(--gold-300);background:#fbf9f2">
+        <span class="msg">
+          <b>31 people have started “Onboarding: week one”</b>, so deleting it would destroy their record. Pause it instead — nobody can open it, and everything they've done is kept.
+        </span>
+        <span class="btn-ghost">Close</span>
+      </div>
+      <p class="note" style="margin:2px 0 0">Same wording wherever Delete is offered. Pausing and returning to draft stay where they are, on the course's own page.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="proposal">
+    <h2><span class="num">4</span> Renaming: the same details you typed when you created it</h2>
+    <p class="sub">Rename opens the course's name and one-line description — the two things the create form asks for — right where you are. It is the same small panel from the list and from the course page, so there is one place a course's name is changed, not two.</p>
+
+    <div class="frame">
+      <div class="panel" style="max-width:520px">
+        <p style="margin:0 0 11px;font-size:13px;font-weight:700;color:var(--navy-800)">Course details</p>
+        <div class="stack">
+          <div>
+            <span class="fld">Title</span>
+            <span class="inp" style="display:block">Consulting Fundamentals</span>
+          </div>
+          <div>
+            <span class="fld">One-line description <span style="text-transform:none;letter-spacing:0;font-weight:400">— shown under the title on the employee's card</span></span>
+            <span class="inp" style="display:block">How we run an engagement, end to end.</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="btn-navy">Save</span>
+            <span class="btn-ghost">Cancel</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="proposal">
+    <h2><span class="num">5</span> The same ⋯ on the course's own page</h2>
+    <p class="sub">Once you're inside a course, the header already carries its status and its buttons. The menu joins them at the end of that line — so you can rename or delete without going back to the list. The status ladder (Publish · Pause · Return to draft) is untouched.</p>
+
+    <div class="frame">
+      <div class="hdr">
+        <span style="display:flex;flex-wrap:wrap;align-items:baseline;gap:12px">
+          <span class="back">← Learning</span>
+          <h3>Consulting Fundamentals</h3>
+        </span>
+        <span style="display:flex;align-items:center;gap:10px">
+          <span class="chip c-ok">Published</span>
+          <span class="btn-ghost">Pause</span>
+          <span class="btn-ghost">Return to draft</span>
+          <span class="back">Manage groups →</span>
+          <span class="kebab">⋯</span>
+        </span>
+      </div>
+      <p style="margin:0;font-size:13px;color:var(--muted)">How we run an engagement, end to end.</p>
+    </div>
+    <p class="cap">Nothing on the four tabs below changes.</p>
+  </section>
+
+  <div class="decision">
+    <h3>What I need you to confirm</h3>
+    <ol>
+      <li><b>The menu, not a row of buttons.</b> Two extra buttons on every row would compete with the course title; a single ⋯ keeps the list looking exactly as it does now.</li>
+      <li><b>One course at a time.</b> You said the drafts need clearing — this is two clicks each, with no page to leave. If you would rather tick several and delete them together, say so now and I'll mock that instead; it adds a selection mode to the list, which is why I haven't assumed it.</li>
+      <li><b>Delete is refused for a course anyone has started</b>, published or not, and pausing is offered instead. Deleting is otherwise allowed at any status — a published course nobody ever opened can go.</li>
+      <li><b>Rename edits the title and the description only.</b> Everything else about a course is already editable on its own tabs.</li>
+    </ol>
+    <p class="note">Nothing is built yet. Say yes, or tell me what to change, and I'll build exactly this.</p>
+  </div>
+
+  <footer>Forefront People · Learning · mockup for sign-off, 25/08/2026</footer>
+</div>
