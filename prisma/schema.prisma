@@ -1149,6 +1149,13 @@ model NotificationSettings {
   /// How many days before a birthday or joining anniversary the platform prepares the draft
   /// (spec 039 FR-018). Mirrors verificationLeadDays above rather than inventing a second idiom.
   congratsLeadDays     Int      @default(3)
+  /// The UMBRELLA name in small caps above the business unit on every email — "Forefront Group".
+  ///
+  /// Its own column on purpose. This read `BrandSettings.companyName` until 2026-08-25, which is
+  /// the name of the PLATFORM ("Forefront Consulting") — a different idea that happens to be a
+  /// company name too, so the header said the wrong thing and could only be corrected by renaming
+  /// the whole application. Two ideas, two columns.
+  groupName            String?
   updatedAt            DateTime @default(now()) @updatedAt
 }
 

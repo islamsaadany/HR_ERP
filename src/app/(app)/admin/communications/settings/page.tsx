@@ -59,6 +59,7 @@ export default async function CommsSettingsPage() {
       <div className="mt-5">
         <CommsSettingsForm
           fromName={settings.fromName ?? ""}
+          groupName={settings.groupName}
           congratsLeadDays={settings.congratsLeadDays}
           canSend={emailConfigured()}
         />

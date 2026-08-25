@@ -19,7 +19,7 @@
 | 10 — Finance: petty cash & payback | 🟢 **Built** (spec 040 — custodian floats, period reconciliation, evidence, payback requests; migration `068`) |
 | 11 — Finance: bank confirmations & salaries | 🟢 **Built** (spec 041 — the confirmer appointment, submissions with a frozen total, the CEO's confirmation screen, monthly salary runs, the daily nudge; migrations `069` + `070`) |
 | 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
-| 12 — Team Communications | 🟢 **Built** (spec 039 — announcements to a chosen audience, birthday & work-anniversary congratulations drafted by the platform and sent by a human; migration `067`) |
+| 12 — Team Communications | 🟢 **Built** (spec 039 — one door with three options: the dashboard noticeboard, email to a chosen audience, and birthday & work-anniversary congratulations drafted by the platform and sent by a human; migrations `067` + `074`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
 
 ## The marketing float, with its history (built 2026-08-25 — migrations `072` + `073`)
@@ -203,6 +203,39 @@ Both reported from live data; neither needed a schema change, and neither had mi
   puts prose. They now live behind a gear at the top right, each with a line saying what it is.
 - The grey links are **removed**, not kept alongside — two doors to one page would leave the same
   confusion. Menu closes on an outside click and on Escape; nothing else on the page moved.
+
+## Communications, combined (2026-08-25 — migration `074`)
+- **Announcements folded into Communications** at the CEO's request: one door, three options split
+  inside, each with its own settings and its own requirements. You choose by **where the message
+  lands** — the dashboard noticeboard, chosen people's inboxes, or one person's. Mockup approved
+  first (`design-mockups/communications/2026-08-25_communications-combined.html`).
+- **Three options, not two, and it was a judgement call** — congratulations are written by the
+  platform and sent by a manager to one person, which is not what an announcement is. Flagged for
+  the CEO to overrule.
+- **The old address redirects.** A bookmark that 404s teaches an operator the feature was deleted.
+- **The email header said the wrong name, and my mistake was the interesting part**: the group line
+  read `BrandSettings.companyName`, which names the PLATFORM. Reusing a field rather than adding one
+  is usually right — but only when it is the same fact. Two ideas that merely look alike now have
+  two columns, and the group name touches nothing outside these emails.
+- **The audience panel is one button** instead of seven stacked sections. Shares the tick-list with
+  Learning and nothing else; Learning's Access tab, where those seven ARE the subject, is untouched
+  and re-verified (18/18 access, 21/21 audiences).
+- **"Saved" was lying.** The reported symptom — a preview showing less than was typed — was not a
+  stale preview. The green chip was set on a write and never cleared while the operator kept typing,
+  so the screen claimed the draft was stored when it was not, and the preview was faithfully
+  rendering the last thing actually saved. Saving and refreshing are one button now, and the chip
+  tracks whether the screen matches the record.
+- **The preview fits, and fixing it introduced a second fault worth recording**: removing the
+  vertical scrollbar clipped the right-hand edge, because the email is a 600px table in a narrower
+  panel. Caught by driving a real browser, not by reading the code. It now scales to fit — and the
+  frame's own border had to move to the wrapper, because it ate 2px of the inner width and clipped
+  the edge again, small enough to miss.
+- **Verified in a real browser**, not only compiled: signed in, opened all four screens, typed,
+  saved, and read the rendered iframe. The preview reports no overflow in either direction, the chip
+  goes Saved → Not saved yet → Saved, both paragraphs reach the preview, and the header carries the
+  group name and cannot carry the platform's.
+- **Also**: migration `074` applied twice to a pre-074 schema (idempotent, no schema difference);
+  `npm test` 179/179; all 21 verification scripts green (432 checks); `tsc` and `build` clean.
 
 ## Spec 039 — Team Communications (built 2026-08-24 — migration `067`)
 - **Announcements** to a chosen audience and **personal congratulations** for birthdays and joining

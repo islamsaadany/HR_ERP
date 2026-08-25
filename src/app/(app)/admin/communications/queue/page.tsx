@@ -52,7 +52,7 @@ export default async function CommsQueuePage() {
       <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">
         Communications
       </p>
-      <h1 className="mt-1 font-serif text-3xl text-ink">Messages waiting to send</h1>
+      <h1 className="mt-1 font-serif text-3xl text-ink">Congratulations waiting to send</h1>
       <p className="mt-1 max-w-[70ch] text-muted">
         Every congratulation the platform has prepared, and who it is waiting on. You can send any
         of them — useful when a manager is away, because a message that misses its day is closed

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/roles";
 import { sendBatch } from "@/lib/email/client";
 import { renderMessage } from "@/lib/comms/render";
-import { groupName } from "@/lib/comms/settings";
+import { DEFAULT_GROUP_NAME, groupName } from "@/lib/comms/settings";
 
 /**
  * Communication setup (spec 039 US3).
@@ -48,6 +48,36 @@ export async function setDisplayName(formData: FormData): Promise<Result> {
   });
   revalidate();
   return { ok: true, message: name ? `Emails will arrive from “${name}”.` : "Sender name cleared." };
+}
+
+/**
+ * The umbrella name in small caps above the business unit on every email.
+ *
+ * Separate from the sender name deliberately: one is who the mail is FROM, the other is the group
+ * the recipient's own unit belongs to. They read differently and they change for different
+ * reasons. Unlike the sender name, this touches ONLY the communications design — nothing else in
+ * the platform reads it.
+ */
+export async function setGroupName(formData: FormData): Promise<Result> {
+  await requireAdmin();
+  const name = clean(formData.get("groupName"));
+  if (name.length > 60) return { ok: false, error: "That name is too long (60 characters max)." };
+  // Rendered into the email's HTML. Escaped at render time, but a line break would still split the
+  // header, so it is refused here where the operator can see why.
+  if (/[\r\n]/.test(name)) return { ok: false, error: "A group name can't contain line breaks." };
+
+  await prisma.notificationSettings.upsert({
+    where: { id: "singleton" },
+    create: { id: "singleton", groupName: name || null },
+    update: { groupName: name || null },
+  });
+  revalidate();
+  return {
+    ok: true,
+    message: name
+      ? `Emails will carry “${name}” above the business unit.`
+      : `Cleared — emails fall back to “${DEFAULT_GROUP_NAME}”.`,
+  };
 }
 
 export async function setCongratsLeadDays(formData: FormData): Promise<Result> {

@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { AudienceField } from "@/lib/audience/types";
 import {
   removeAudienceChoice,
   sendAnnouncement,
   setAnnouncementAudience,
   updateAnnouncement,
 } from "@/app/(app)/admin/communications/actions";
-import { type FieldSpec } from "@/components/audience/AudienceFields";
-import { AudiencePicker } from "@/components/audience/AudiencePicker";
+import { AudienceField_, type FieldSpec } from "@/components/audience/AudienceFields";
 import { BTN_GHOST, BTN_NAVY, CHIP, INPUT, LABEL } from "@/components/learning/ui";
 
 /**
@@ -42,18 +42,15 @@ export function AnnouncementEditor({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  // `dirty` rather than `saved`. The chip used to be set true on a successful write and cleared
-  // only by the NEXT action — so it stayed on screen while the operator carried on typing, telling
-  // them their work was stored when it was not, and the preview (which reads what IS stored) was
-  // then blamed for showing older text. The screen now tracks the one thing that matters: whether
-  // what is on screen has been written down.
-  const [dirty, setDirty] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [openField, setOpenField] = useState<AudienceField | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [previewUnit, setPreviewUnit] = useState<string>(units[0]?.id ?? "");
   const [previewKey, setPreviewKey] = useState(0);
 
   function run(fn: () => Promise<{ ok: boolean; error?: string }>, after?: () => void) {
     setError(null);
+    setSaved(false);
     startTransition(async () => {
       const result = await fn();
       if (!result.ok) setError(result.error ?? "That didn't work.");
@@ -69,18 +66,7 @@ export function AnnouncementEditor({
       <div>
         <form
           className="rounded-xl border border-line bg-surface p-4"
-          // Saving and rebuilding the preview are ONE action. Two controls that can disagree is
-          // exactly what made a correctly-rendered preview look broken.
-          onInput={() => setDirty(true)}
-          action={(formData) =>
-            run(
-              () => updateAnnouncement(messageId, formData),
-              () => {
-                setDirty(false);
-                setPreviewKey((k) => k + 1);
-              }
-            )
-          }
+          action={(formData) => run(() => updateAnnouncement(messageId, formData), () => setSaved(true))}
         >
           <div>
             <label className={LABEL} htmlFor="subject">Subject</label>
@@ -109,29 +95,40 @@ export function AnnouncementEditor({
               <input id="ctaHref" name="ctaHref" defaultValue={initial.ctaHref} placeholder="https://" className={INPUT} />
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <button type="submit" disabled={pending} className={BTN_NAVY}>
-              {pending ? "Saving…" : "Save & refresh preview"}
+          <div className="mt-3 flex items-center gap-3">
+            <button type="submit" disabled={pending} className={BTN_GHOST}>
+              {pending ? "Saving…" : "Save draft"}
             </button>
-            {dirty ? (
-              <span className={CHIP.attention}>Not saved yet</span>
-            ) : (
-              <span className={CHIP.done}>Saved</span>
-            )}
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => setPreviewKey((k) => k + 1)}
+              className="text-[12px] font-semibold text-navy-700 hover:underline disabled:opacity-60"
+            >
+              Refresh preview →
+            </button>
+            {saved ? <span className={CHIP.done}>Saved</span> : null}
           </div>
         </form>
 
         <section className="mt-4 rounded-xl border border-line bg-surface p-4">
           <h2 className="text-[13px] font-bold text-navy-800">Who gets this?</h2>
           <p className="mb-2 mt-0.5 text-[11.5px] text-muted">
-            Each choice shows how many people it reaches today. Gold means it reaches nobody.
+            Each choice shows how many people it reaches today.
           </p>
-          <AudiencePicker
-            fields={fields}
-            pending={pending}
-            onAdd={(field, values) => run(() => setAnnouncementAudience(messageId, field, values))}
-            onRemove={(_field, rowId) => run(() => removeAudienceChoice(messageId, rowId))}
-          />
+          {fields.map((spec) => (
+            <AudienceField_
+              key={spec.field}
+              spec={spec}
+              open={openField === spec.field}
+              pending={pending}
+              onOpen={() => setOpenField(openField === spec.field ? null : spec.field)}
+              onAdd={(field, values) =>
+                run(() => setAnnouncementAudience(messageId, field, values), () => setOpenField(null))
+              }
+              onRemove={(field, rowId) => run(() => removeAudienceChoice(messageId, rowId))}
+            />
+          ))}
 
           <div className="mt-3 flex flex-wrap items-baseline gap-2 border-t border-line pt-3 text-[13px]">
             <span className="text-muted">Right now this reaches</span>
@@ -225,151 +222,17 @@ export function AnnouncementEditor({
             ))}
           </select>
         </div>
-        <EmailPreview
+        <iframe
           key={`${previewUnit}-${previewKey}`}
+          title="Email preview"
           src={`/api/admin/communications/preview?id=${messageId}${previewUnit ? `&unit=${previewUnit}` : ""}`}
+          className="h-[620px] w-full rounded-lg border border-line bg-white"
         />
         <p className="mt-1.5 text-[11.5px] text-muted">
           This is the real email, built by the same code that sends it — not an impression of it.
-          It shows what was last saved.
+          Save the draft to see edits.
         </p>
       </aside>
-    </div>
-  );
-}
-
-/**
- * The email preview: the WHOLE email, scaled to the panel.
- *
- * Two faults, and the second was introduced by fixing the first (2026-08-25).
- *
- * It began as a fixed 620px box with its own scrollbar, so a normal-length announcement was read
- * through a letterbox. Removing the scrollbar and measuring the document fixed the height — and
- * silently clipped the RIGHT-HAND EDGE, because the email is a 600px table (the only layout every
- * mail client agrees on) inside a panel narrower than that. Losing the end of every line is worse
- * than scrolling to it.
- *
- * So the frame is laid out at the email's own width and scaled down to fit, rather than squeezed.
- * The email is a fixed-width design; showing it at 70% is honest, showing 70% of it is not. Height
- * is measured from the document and scaled by the same factor, so the panel is exactly as tall as
- * the scaled email and nothing scrolls in either direction.
- *
- * Measured on load AND on resize: a font arriving after `load` changes the height, and a preview
- * that settles a line short of its own footer is the kind of small wrongness that makes an operator
- * distrust the screen.
- */
-// `render.ts` builds the email table at exactly 600px. The DOCUMENT is wider than that — the body
-// carries its own padding — so this is only a starting guess, and the real width is measured. An
-// assumed 600 left 24px of the right-hand edge outside the frame, which is the same clipping this
-// component exists to avoid, just smaller and harder to notice.
-const PREVIEW_WIDTH_GUESS = 600;
-
-function EmailPreview({ src }: { src: string }) {
-  const holder = useRef<HTMLDivElement | null>(null);
-  const ref = useRef<HTMLIFrameElement | null>(null);
-  // Plausible starting values, so the panel does not visibly jump on first paint.
-  const [height, setHeight] = useState(420);
-  const [width, setWidth] = useState(PREVIEW_WIDTH_GUESS);
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    const frame = ref.current;
-    if (!frame) return;
-    let contentObserver: ResizeObserver | null = null;
-    let holderObserver: ResizeObserver | null = null;
-
-    // Measured, not assumed — see the note on the constant above.
-    function contentWidth(): number {
-      try {
-        const doc = frame?.contentDocument;
-        return Math.max(
-          doc?.documentElement?.scrollWidth ?? 0,
-          doc?.body?.scrollWidth ?? 0,
-          PREVIEW_WIDTH_GUESS
-        );
-      } catch {
-        return PREVIEW_WIDTH_GUESS;
-      }
-    }
-
-    function fit() {
-      const natural = contentWidth();
-      setWidth(natural);
-      const available = holder.current?.clientWidth ?? natural;
-      // Never scale UP — a 600px email blown up to fill a wide panel would be a lie about its size.
-      setScale(Math.min(1, available / natural));
-    }
-
-    function measure() {
-      // Cross-origin would throw. It cannot be — the src is our own route — but a preview is not
-      // worth an unhandled error on the page it is previewing for.
-      try {
-        const doc = frame?.contentDocument;
-        const body = doc?.body;
-        if (!body) return;
-        const next = Math.max(body.scrollHeight, doc?.documentElement?.scrollHeight ?? 0);
-        if (next > 0) setHeight(next);
-        // Height and width are measured together: a re-wrap changes both.
-        fit();
-      } catch {
-        /* leave the last known height */
-      }
-    }
-
-    function onLoad() {
-      // measure() calls fit() itself — width and height are one question.
-      measure();
-      try {
-        const body = frame?.contentDocument?.body;
-        if (body && typeof ResizeObserver !== "undefined") {
-          contentObserver = new ResizeObserver(measure);
-          contentObserver.observe(body);
-        }
-      } catch {
-        /* the load measurement stands on its own */
-      }
-    }
-
-    frame.addEventListener("load", onLoad);
-    // Already loaded by the time this effect runs (a cached response) — the load event has been and
-    // gone and will not fire again, so measure now.
-    if (frame.contentDocument?.readyState === "complete") onLoad();
-
-    if (holder.current && typeof ResizeObserver !== "undefined") {
-      holderObserver = new ResizeObserver(fit);
-      holderObserver.observe(holder.current);
-    }
-    fit();
-
-    return () => {
-      frame.removeEventListener("load", onLoad);
-      contentObserver?.disconnect();
-      holderObserver?.disconnect();
-    };
-  }, [src]);
-
-  return (
-    // The border lives HERE, not on the iframe. On the iframe it ate 2px of the frame's own inner
-    // width, so the document was 2px wider than its viewport and the right edge was clipped — the
-    // very thing this component exists to prevent, just small enough to miss.
-    <div
-      ref={holder}
-      style={{ height: height * scale }}
-      className="w-full overflow-hidden rounded-lg border border-line bg-white"
-    >
-      <iframe
-        ref={ref}
-        title="Email preview"
-        src={src}
-        scrolling="no"
-        style={{
-          width,
-          height,
-          transform: `scale(${scale})`,
-          transformOrigin: "top left",
-        }}
-        className="block overflow-hidden border-0 bg-white"
-      />
     </div>
   );
 }
