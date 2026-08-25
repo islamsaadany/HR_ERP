@@ -206,6 +206,48 @@ Both reported from live data; neither needed a schema change, and neither had mi
   smaller ceiling will start showing **over pool** in Reporting. Nothing new was spent — the old
   ceiling was wrong — and a Super User can RAISE the ceiling to accept it.
 
+## Learning: every action on the course page was 500-ing (fixed 2026-08-25 — no migration)
+- **Reported as** "adding people, accessibility and publishing gives an error", with two bare 500s
+  in the browser console and no message — the digest-only Server Components error a production
+  build gives.
+- **One exported array.** `access-actions.ts` is a `"use server"` file and also exported
+  `ACCESS_FIELDS`. Next validates a page's WHOLE server-action entry the first time any action on
+  that page is called, so the array made every action on `/admin/learning/[courseId]` throw before
+  it ran — *A "use server" file can only export async functions, found object.* The Everyone /
+  Only-certain-people switch, adding people, removing a choice and Publish all POST to the page URL,
+  which is why one fault presented as three and why none of them could report anything: the failure
+  is in the action entry, above any code that could catch it.
+- **Nothing catches this class.** It is not a type error and `next build` compiles it happily — the
+  check is generated code that runs when the action module loads. The constant moved to
+  `src/lib/learning/access-fields.ts` with the rule written beside it; a sweep of every other
+  `"use server"` file in `src/` found no second instance.
+- **Verified in a browser against a real Postgres**: before the fix, 500 on the visibility switch
+  and no access fields rendered at all; after, three actions all 200 — visibility set, a person
+  assigned, the course published. `npx tsc --noEmit` and `npm run build` clean.
+
+## Learning: renaming and deleting a course (built 2026-08-25 — no migration)
+- **Mockup-approved first** (`design-mockups/learning/2026-08-25_course-edit-and-delete.html`).
+- **Both actions already existed on the server and nothing on screen reached them** — `updateCourse`
+  and `deleteCourse` had no caller anywhere in `src/`. So a course could never be renamed after it
+  was created, and a draft could never be thrown away, which is how the list filled up with them.
+- **One ⋯ menu, two places**: each row of the Learning list, and the course's own header. Both drive
+  the same rename panel and the same confirmation, so a course's name is changed in one place.
+- **Delete asks in the row itself**, naming the course and saying what goes with it. A course
+  anybody has started is **refused before the confirmation** rather than after it, and pausing is
+  offered instead — the count comes from `_count.enrollments`, exactly what the write counts, and
+  the server refuses again on its own authority.
+- **A course's FILES are deleted with it.** Every child row cascades, but the cover, the uploaded
+  documents and any file attached to a lesson live in blob storage and would have been left with
+  nothing referencing them. They are gathered before the row goes and removed after it,
+  fire-and-forget — a file that will not delete is litter, but a delete that reports failure after
+  succeeding is a screen nobody can trust.
+- **`updateCourse` no longer wipes a field the form did not carry.** It read an absent `category` as
+  an empty string and wrote null, so renaming a course would have silently thrown away the category
+  the workbook importer set.
+- **Verified in a browser against a real Postgres**: renamed from both places, deleted a draft
+  carrying a section, a lesson, a block and an audience rule (all four rows gone with it), and the
+  refusal shown for a course with one person on it. `npx tsc --noEmit` and `npm run build` clean.
+
 ## Learning: course status ladder + access as a setup (built 2026-08-22 — migration `066`)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_course-access-setup.html`). The
   Excel template was deliberately left alone — who takes a course is set on the course, not in a

@@ -511,6 +511,14 @@ a live `CourseAssignment` to them, a `CourseAssignment` to a `LearnerGroup` they
 `courseAccessFor` (per person), `accessibleCoursesFor` (My learning), `courseRoster` (HR roster).
 Nothing else may decide access.
 
+**Renaming and deleting a course** (added 2026-08-25, mockup-approved): one ⋯ menu on each row of
+`/admin/learning` and in the course header, driving one rename panel (title + summary) and one
+confirmation. Deleting is **refused the moment anybody has started it**, at any status — an
+enrollment is somebody's record of having done the thing — and pausing is offered instead. The
+course's blob files (cover, documents, lesson attachments) are gathered before the row is deleted
+and removed after it, since every child row cascades and nothing would otherwise reference them.
+`updateCourse` leaves a field the form did not carry alone rather than reading absent as cleared.
+
 **Audiences are rules, not lists**: `CourseAudience` stores `{kind, value}` — ALL_ACTIVE, DEPARTMENT,
 BUSINESS_UNIT, EMPLOYMENT_TYPE, TENURE_BAND, REPORTS_TO — compiled by `audience.ts` into ONE
 `where`. Rules union. A TENURE_BAND rule compiles to a **startDate range**, never the stored

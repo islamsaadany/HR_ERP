@@ -5,7 +5,6 @@ import { isAdmin } from "@/lib/roles";
 import { formatDate } from "@/lib/labels";
 import { BackLink } from "@/components/admin/BackLink";
 import { NewCourseForm } from "@/components/learning/NewCourseForm";
-import { CourseRow } from "@/components/learning/CourseActions";
 import { CHIP } from "@/components/learning/ui";
 import { SuggestionQueue, type Suggestion } from "@/components/learning/SuggestionQueue";
 import { LearningSettingsMenu } from "@/components/learning/LearningSettingsMenu";
@@ -92,19 +91,9 @@ export default async function AdminLearningPage() {
         <ul className="mt-6 space-y-2">
           {courses.map((course) => (
             <li key={course.id}>
-              {/* The card frame, the ⋯ menu and the rename / delete panels belong to CourseRow;
-                  the link and everything in it is still rendered here, on the server. The kebab
-                  cannot live INSIDE the link — a button inside an anchor is invalid, and clicking
-                  it would follow the link — so the frame moved out to sit around both. */}
-              <CourseRow
-                courseId={course.id}
-                title={course.title}
-                summary={course.summary}
-                startedCount={course._count.enrollments}
-              >
               <Link
                 href={`/admin/learning/${course.id}`}
-                className="flex min-w-0 flex-1 items-center gap-4 p-4"
+                className="ff-card flex items-center gap-4 rounded-xl border border-line bg-surface p-4 hover:border-navy-300"
               >
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
@@ -143,8 +132,8 @@ export default async function AdminLearningPage() {
                     ) : null}
                   </span>
                 </span>
+                <span className="text-sm text-muted">→</span>
               </Link>
-              </CourseRow>
             </li>
           ))}
         </ul>
