@@ -1,0 +1,337 @@
+<title>Communications — combined</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-50:#eef2f8; --navy-100:#d6deea; --navy-200:#aebfd6; --navy-300:#7d97ba;
+    --navy-600:#1f3a63; --navy-700:#163055; --navy-800:#0f2444;
+    --gold-100:#f6ecca; --gold-300:#e0c05a; --gold-500:#c9a227; --gold-600:#a8821e; --gold-800:#6f521c;
+    --paper:#f5f3ee; --surface:#fefdfb; --ink:#16202e; --muted:#5f6472; --line:#e7e3da;
+    --green-bg:#e8f3ec; --green-ink:#256b45;
+    --shadow:0 1px 2px rgba(16,36,68,.04),0 1px 3px rgba(16,36,68,.06);
+    --serif:"Fraunces",Georgia,serif; --sans:"Hanken Grotesk",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:36px 22px 90px}
+  .doc-head{border-bottom:2px solid var(--navy-800);padding-bottom:18px;margin-bottom:8px}
+  .eyebrow{font:700 11px/1.4 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--gold-600);margin:0}
+  h1{font:600 34px/1.15 var(--serif);margin:6px 0 0}
+  .lede{color:var(--muted);max-width:70ch;margin:8px 0 0;font-size:14.5px}
+  .screen{margin-top:44px}
+  .screen-label{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .screen-n{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:var(--navy-800);color:#fff;font:700 12px/1 var(--sans)}
+  .screen-t{font:600 20px/1.2 var(--serif)}
+  .screen-note{color:var(--muted);font-size:13px;max-width:72ch;margin:0 0 14px}
+  .frame{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow)}
+  .crumb{font-size:12.5px;color:var(--muted);margin:0 0 10px}
+  .ph1{font:600 27px/1.15 var(--serif);margin:4px 0 0}
+  .sub{color:var(--muted);font-size:13.5px;margin:6px 0 0;max-width:66ch}
+
+  .opts{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));margin-top:18px}
+  .opt{border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--surface);display:flex;flex-direction:column;gap:9px}
+  .opt.sel{border-color:var(--navy-300);box-shadow:0 0 0 2px var(--navy-50)}
+  .opt-top{display:flex;align-items:center;gap:9px}
+  .glyph{width:30px;height:30px;border-radius:8px;background:var(--navy-50);color:var(--navy-800);display:inline-flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+  .opt-name{font:700 15px/1.2 var(--sans);color:var(--navy-800)}
+  .opt-what{font-size:12.8px;color:var(--muted);margin:0;flex:1}
+  .opt-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:9px;margin-top:2px}
+  .opt-count{font-size:12.5px;color:var(--muted)}
+  .opt-count b{font:600 17px/1 var(--serif);color:var(--navy-800)}
+  .cog{font-size:12px;color:var(--navy-700);text-decoration:none;border-bottom:1px dashed var(--navy-200)}
+
+  .btn{display:inline-flex;align-items:center;gap:6px;border-radius:9px;padding:9px 15px;font:600 13.5px/1 var(--sans);border:1px solid transparent;cursor:default}
+  .btn-navy{background:var(--navy-800);color:#fff}
+  .btn-ghost{background:var(--surface);color:var(--navy-800);border-color:var(--navy-200)}
+  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font:600 11.5px/1.5 var(--sans)}
+  .chip-draft{background:var(--gold-100);color:var(--gold-800)}
+  .chip-sent{background:var(--green-bg);color:var(--green-ink)}
+  .chip-live{background:var(--navy-50);color:var(--navy-700)}
+
+  .rows{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+  .row{border:1px solid var(--line);border-radius:11px;padding:12px 14px;display:flex;align-items:center;gap:12px;background:var(--surface)}
+  .row-main{min-width:0;flex:1}
+  .row-t{font:700 14px/1.3 var(--sans);color:var(--navy-800)}
+  .row-m{font-size:12.3px;color:var(--muted);margin-top:2px}
+
+  .two{display:grid;gap:16px;grid-template-columns:minmax(0,1fr) 430px;align-items:start;margin-top:16px}
+  @media (max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
+  .card{border:1px solid var(--line);border-radius:12px;padding:15px;background:var(--surface)}
+  .lab{font:700 10.5px/1.4 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px}
+  .inp{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:400 13.5px/1.45 var(--sans);background:#fff;color:var(--ink)}
+  .ta{min-height:118px;resize:none}
+  .hint{font-size:11.5px;color:var(--muted);margin:5px 0 0}
+  .field{margin-top:12px}
+  .actions{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .unsaved{font:600 11.5px/1.5 var(--sans);color:var(--gold-800);background:var(--gold-100);border-radius:999px;padding:3px 10px}
+
+  .aud-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .aud-t{font:700 13.5px/1.3 var(--sans);color:var(--navy-800)}
+  .tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+  .tag{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--navy-100);background:var(--navy-50);border-radius:999px;padding:5px 7px 5px 11px;font:500 12.5px/1.4 var(--sans);color:var(--navy-800)}
+  .tag .kind{font:700 9.5px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--navy-600);opacity:.8}
+  .tag .n{font-size:11.5px;color:var(--muted)}
+  .tag .x{width:16px;height:16px;border-radius:999px;background:#fff;border:1px solid var(--navy-100);color:var(--muted);display:inline-flex;align-items:center;justify-content:center;font-size:10px}
+  .add{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--navy-200);background:var(--surface);color:var(--navy-700);border-radius:999px;padding:5px 13px;font:600 12.5px/1.4 var(--sans)}
+  .reach{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:13px;padding-top:11px;font-size:13px;color:var(--muted)}
+  .reach b{font:600 21px/1 var(--serif);color:var(--navy-800)}
+
+  .pop{border:1px solid var(--navy-200);border-radius:12px;background:#fff;box-shadow:0 8px 24px rgba(16,36,68,.13);padding:13px;margin-top:11px;max-width:400px}
+  .pop-t{font:700 12px/1.3 var(--sans);color:var(--navy-800);margin-bottom:9px}
+  .kinds{display:flex;flex-wrap:wrap;gap:6px}
+  .kind-b{border:1px solid var(--line);border-radius:999px;padding:5px 11px;font:500 12px/1.4 var(--sans);color:var(--ink);background:var(--surface)}
+  .kind-b.on{background:var(--navy-800);color:#fff;border-color:var(--navy-800)}
+  .pop-list{margin-top:11px;border:1px solid var(--line);border-radius:9px;max-height:150px;overflow:auto}
+  .pop-row{display:flex;align-items:center;gap:9px;padding:7px 11px;border-bottom:1px solid var(--line);font-size:13px}
+  .pop-row:last-child{border-bottom:0}
+  .box{width:14px;height:14px;border:1.5px solid var(--navy-200);border-radius:3.5px;flex:none;background:#fff}
+  .box.on{background:var(--navy-800);border-color:var(--navy-800)}
+  .pop-foot{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:10px}
+
+  .mail{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+  .mail-h{background:#450059;padding:15px 17px}
+  .mail-g{font:700 9px/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:#e9d9ef}
+  .mail-u{font:700 17px/1.25 var(--sans);letter-spacing:.02em;color:#fff;margin-top:2px}
+  .mail-rule{height:3px;background:var(--gold-500)}
+  .mail-b{padding:17px}
+  .mail-s{font:700 16px/1.3 var(--sans);color:var(--ink);margin:0 0 9px}
+  .mail-p{font-size:13.2px;line-height:1.65;color:var(--ink);margin:0 0 11px}
+  .mail-btn{display:inline-block;background:#450059;color:#fff;border-radius:6px;padding:9px 17px;font:600 12.5px/1 var(--sans)}
+  .mail-f{border-top:1px solid var(--line);padding:11px 17px;font-size:11px;color:var(--muted)}
+
+  .cmp{display:grid;gap:14px;grid-template-columns:1fr 1fr;margin-top:14px}
+  @media (max-width:820px){.cmp{grid-template-columns:1fr}}
+  .cmp-c{border:1px solid var(--line);border-radius:11px;padding:14px;background:var(--surface)}
+  .cmp-c.bad{border-color:#e6cfcf;background:#fdf7f6}
+  .cmp-h{font:700 11px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;margin:0 0 9px}
+  .bad .cmp-h{color:#9a4b41}
+  .good .cmp-h{color:var(--green-ink)}
+  .tall{height:150px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff;padding:11px;font-size:12.5px;color:var(--muted)}
+
+  .note{border-left:3px solid var(--gold-500);background:var(--gold-100);color:var(--gold-800);border-radius:0 8px 8px 0;padding:11px 14px;font-size:13px;margin-top:16px}
+  .note b{color:var(--gold-800)}
+  table.req{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+  table.req th,table.req td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.req th{font:700 10.5px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  table.req td:first-child{font-weight:600;color:var(--navy-800);white-space:nowrap}
+  .scrollx{overflow-x:auto}
+</style>
+
+<div class="wrap">
+  <div class="doc-head">
+    <p class="eyebrow">Mockup for sign-off · 25 August 2026</p>
+    <h1>Communications, combined</h1>
+    <p class="lede">One door called Communications, with three ways of reaching people inside it — each with its own
+      settings and its own requirements. Plus the fixes to the announcement editor: the audience panel, the preview,
+      and the group name in the email header. Nothing is built yet.</p>
+  </div>
+
+  <!-- 1 -->
+  <section class="screen">
+    <div class="screen-label"><span class="screen-n">1</span><span class="screen-t">Admin → Communications</span></div>
+    <p class="screen-note">Announcements and Communications become one entry. What used to be two admin tiles saying
+      almost the same word are now three clearly different things, and you pick by what you want to happen.</p>
+    <div class="frame">
+      <p class="crumb">← Admin</p>
+      <p class="eyebrow">Admin</p>
+      <h2 class="ph1">Communications</h2>
+      <p class="sub">Three ways to reach people. The difference is where the message lands.</p>
+
+      <div class="opts">
+        <div class="opt">
+          <div class="opt-top"><span class="glyph">▤</span><span class="opt-name">Noticeboard</span></div>
+          <p class="opt-what">Appears on everyone's dashboard when they next open the app. Nobody is emailed and nobody
+            is chosen — it is there for whoever looks.</p>
+          <div class="opt-foot"><span class="opt-count"><b>4</b> posted</span><a class="cog" href="#">Settings</a></div>
+        </div>
+        <div class="opt sel">
+          <div class="opt-top"><span class="glyph">✉</span><span class="opt-name">Email</span></div>
+          <p class="opt-what">Lands in the inbox of the people you choose, each copy branded with that person's own
+            business unit. It cannot be recalled.</p>
+          <div class="opt-foot"><span class="opt-count"><b>2</b> drafts · 6 sent</span><a class="cog" href="#">Settings</a></div>
+        </div>
+        <div class="opt">
+          <div class="opt-top"><span class="glyph">✦</span><span class="opt-name">Congratulations</span></div>
+          <p class="opt-what">Birthdays and joining anniversaries, written in advance and put in the manager's hands.
+            Nothing sends on its own.</p>
+          <div class="opt-foot"><span class="opt-count"><b>3</b> waiting</span><a class="cog" href="#">Settings</a></div>
+        </div>
+      </div>
+
+      <div class="note"><b>Why three and not two:</b> congratulations already behave differently from an announcement —
+        the platform writes them, a manager sends them, and they go to one person. Hiding them inside "Email" would
+        make that invisible.</div>
+
+      <div class="scrollx">
+      <table class="req">
+        <tr><th>Option</th><th>What you fill in</th><th>Its own settings</th></tr>
+        <tr><td>Noticeboard</td><td>A title and a message. No audience — everyone sees it.</td>
+          <td>How many show on the dashboard · whether a post fades after a while</td></tr>
+        <tr><td>Email</td><td>Subject, message, who gets it, an optional button. Preview before sending.</td>
+          <td>Sender name · group name in the header · delivery status</td></tr>
+        <tr><td>Congratulations</td><td>Nothing — they arrive written. The manager edits the wording and sends.</td>
+          <td>How many days ahead they are prepared · who covers people with no manager</td></tr>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="screen">
+    <div class="screen-label"><span class="screen-n">2</span><span class="screen-t">Noticeboard — unchanged, just moved</span></div>
+    <p class="screen-note">Exactly what Announcements does today. It keeps its own screen inside Communications rather
+      than being merged into the email form, because it needs none of the email machinery.</p>
+    <div class="frame">
+      <p class="crumb">← Communications</p>
+      <h2 class="ph1">Noticeboard</h2>
+      <p class="sub">Posts appear on everyone's dashboard. No email is sent.</p>
+      <div class="card" style="margin-top:16px;max-width:560px">
+        <label class="lab">Title</label>
+        <input class="inp" value="Office closed on Thursday">
+        <div class="field"><label class="lab">Message</label>
+          <textarea class="ta inp">The building has a scheduled power cut. Work from home that day.</textarea></div>
+        <div class="actions"><span class="btn btn-navy">Post to the noticeboard</span></div>
+      </div>
+      <div class="rows" style="max-width:560px">
+        <div class="row"><span class="row-main"><span class="row-t">Ramadan working hours</span>
+          <span class="row-m">Posted 18/08/2026</span></span><span class="chip chip-live">On the dashboard</span></div>
+        <div class="row"><span class="row-main"><span class="row-t">New joiners this month</span>
+          <span class="row-m">Posted 11/08/2026</span></span><span class="chip chip-live">On the dashboard</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="screen">
+    <div class="screen-label"><span class="screen-n">3</span><span class="screen-t">Email — the audience panel, rebuilt</span></div>
+    <p class="screen-note">Seven stacked sections become one button. The panel is now only as tall as what you have
+      actually chosen, and each choice carries its own count.</p>
+
+    <div class="cmp">
+      <div class="cmp-c bad">
+        <p class="cmp-h">Today</p>
+        <p style="font-size:12.8px;color:var(--muted);margin:0 0 9px">Seven headings, seven hints, seven buttons —
+          all on screen whether you use them or not, before you have chosen anybody.</p>
+        <div class="tall">Departments &nbsp;+ add<br><br>Business units &nbsp;+ add<br><br>Employment type &nbsp;+ add<br><br>
+          Tenure &nbsp;+ add<br><br>A manager's team &nbsp;+ add<br><br>Groups &nbsp;+ add<br><br>Specific people &nbsp;+ add</div>
+      </div>
+      <div class="cmp-c good">
+        <p class="cmp-h">Proposed</p>
+        <p style="font-size:12.8px;color:var(--muted);margin:0 0 9px">One button. Your choices sit as tags underneath,
+          each showing how many people it reaches.</p>
+        <div class="card" style="padding:13px">
+          <div class="aud-head"><span class="aud-t">Who gets this?</span></div>
+          <div class="tags">
+            <span class="tag"><span class="kind">Dept</span> Design Department <span class="n">9</span><span class="x">×</span></span>
+            <span class="tag"><span class="kind">Unit</span> Visual Shift <span class="n">14</span><span class="x">×</span></span>
+            <span class="tag"><span class="kind">Person</span> Nadia Rashad <span class="n">1</span><span class="x">×</span></span>
+            <span class="add">+ Add people</span>
+          </div>
+          <div class="reach"><span>Reaches</span><b>21 people</b><span>— fewer than the tags add up to, because some
+            people are in more than one.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="screen-note" style="margin-top:20px">Pressing <b>+ Add people</b> opens one small panel: choose the kind
+      first, then tick who. The seven ways are still all there — they just stop taking up room until you want them.</p>
+    <div class="frame">
+      <div class="card" style="max-width:430px">
+        <div class="aud-head"><span class="aud-t">Who gets this?</span></div>
+        <div class="tags">
+          <span class="tag"><span class="kind">Dept</span> Design Department <span class="n">9</span><span class="x">×</span></span>
+          <span class="add">+ Add people</span>
+        </div>
+        <div class="pop">
+          <p class="pop-t">Add by…</p>
+          <div class="kinds">
+            <span class="kind-b on">Department</span><span class="kind-b">Business unit</span>
+            <span class="kind-b">Employment type</span><span class="kind-b">Tenure</span>
+            <span class="kind-b">A manager's team</span><span class="kind-b">Group</span>
+            <span class="kind-b">Specific people</span>
+          </div>
+          <div class="pop-list">
+            <div class="pop-row"><span class="box on"></span>Consulting Department</div>
+            <div class="pop-row"><span class="box"></span>Financial Department</div>
+            <div class="pop-row"><span class="box"></span>Top Management</div>
+            <div class="pop-row"><span class="box on"></span>Marketing &amp; Community</div>
+            <div class="pop-row"><span class="box"></span>Data Management Unit</div>
+            <div class="pop-row"><span class="box"></span>People Department</div>
+          </div>
+          <div class="pop-foot"><span style="font-size:12px;color:var(--muted)">2 selected</span>
+            <span><span class="btn btn-ghost" style="padding:6px 12px">Cancel</span>
+            <span class="btn btn-navy" style="padding:6px 12px">Add</span></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="screen">
+    <div class="screen-label"><span class="screen-n">4</span><span class="screen-t">Email — writing, saving, previewing</span></div>
+    <p class="screen-note">Three fixes on one screen: the header says the group's name, the preview grows to the whole
+      email instead of scrolling inside a box, and the screen stops claiming your work is saved when it isn't.</p>
+    <div class="frame">
+      <div class="two">
+        <div>
+          <div class="card">
+            <label class="lab">Subject</label>
+            <input class="inp" value="We are coming">
+            <div class="field"><label class="lab">Message</label>
+              <textarea class="ta inp">What is going on? What is going on? What is going on? What is going on?
+
+And a second paragraph, because a blank line between them is how they arrive.</textarea>
+              <p class="hint">Leave a blank line between paragraphs — that is how they arrive.</p></div>
+            <div class="actions">
+              <span class="btn btn-navy">Save &amp; refresh preview</span>
+              <span class="unsaved">Not saved yet</span>
+            </div>
+            <p class="hint">One button now. It saves what you wrote and rebuilds the preview from it — the two can no
+              longer disagree.</p>
+          </div>
+        </div>
+        <aside class="card">
+          <div class="aud-head" style="margin-bottom:9px"><span class="aud-t">Preview</span>
+            <span style="font-size:12px;color:var(--muted)">as Visual Shift ▾</span></div>
+          <div class="mail">
+            <div class="mail-h"><div class="mail-g">Forefront Group</div><div class="mail-u">Visual Shift Consulting</div></div>
+            <div class="mail-rule"></div>
+            <div class="mail-b">
+              <p class="mail-s">We are coming</p>
+              <p class="mail-p">What is going on? What is going on? What is going on? What is going on?</p>
+              <p class="mail-p">And a second paragraph, because a blank line between them is how they arrive.</p>
+              <span class="mail-btn">hops</span>
+            </div>
+            <div class="mail-f">Visual Shift Consulting, part of Forefront Group</div>
+          </div>
+          <p class="hint">No scrollbar — the preview is as tall as the email.</p>
+        </aside>
+      </div>
+
+      <div class="note"><b>The header now reads Forefront Group.</b> It was showing Forefront Consulting because the
+        email borrowed the platform's own company name. The group name becomes its own setting, so changing it never
+        touches the sign-in page or anything else.</div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="screen">
+    <div class="screen-label"><span class="screen-n">5</span><span class="screen-t">What changes for people using it</span></div>
+    <div class="frame">
+      <div class="scrollx">
+      <table class="req">
+        <tr><th>Now</th><th>After</th></tr>
+        <tr><td>Two admin tiles, both about announcements</td><td>One tile: Communications. Three options inside.</td></tr>
+        <tr><td>Posting to the dashboard and emailing are unrelated screens</td><td>Same door, so you choose where the message lands rather than which tile you remembered</td></tr>
+        <tr><td>Audience panel is seven blocks tall before you choose anyone</td><td>One button; the panel grows only as you add</td></tr>
+        <tr><td>"Saved" stays on screen while you keep typing</td><td>Says "Not saved yet" the moment you change something</td></tr>
+        <tr><td>Preview scrolls inside a fixed box, and can show older text</td><td>Shows the whole email, always from what was just saved</td></tr>
+        <tr><td>Email header says Forefront Consulting</td><td>Says Forefront Group — its own setting</td></tr>
+      </table>
+      </div>
+      <div class="note"><b>Nothing already posted or sent is affected.</b> Existing noticeboard posts stay where they
+        are and keep appearing on the dashboard; sent emails are untouched records.</div>
+    </div>
+  </section>
+</div>
