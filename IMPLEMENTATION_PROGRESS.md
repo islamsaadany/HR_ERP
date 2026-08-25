@@ -241,6 +241,26 @@ Both reported from live data; neither needed a schema change, and neither had mi
 - The grey links are **removed**, not kept alongside — two doors to one page would leave the same
   confusion. Menu closes on an outside click and on Escape; nothing else on the page moved.
 
+## Congratulations seen ahead (2026-08-25 — no migration)
+- **Asked for**: a list of upcoming congratulations with a period filter, and messages written
+  early and scheduled to send. Mockup approved first
+  (`design-mockups/communications/2026-08-25_congratulations-ahead.html`).
+- **Scheduling was put to the CEO as a conflict and he declined it.** Automatic sending crosses the
+  rule he set: nothing reaches an employee's inbox unless a person presses send. So the writing
+  moved earlier and the sending did not.
+- **Three periods** — due now, this month, this quarter — on both HR's screen and a manager's own,
+  from ONE loader, so the two cannot drift about who may see what. Nothing is stored: the
+  look-ahead is the existing occasion derivation asked with a wider window.
+- **Write it now** creates a draft on demand for any future occasion. It does not bring the send
+  forward.
+- **Two bugs of mine, both found by driving the browser rather than by reading the code**: the "Due
+  now" window pointed backwards, so a birthday two days away fell outside it; and the tab filtered
+  to written drafts, so a birthday happening TODAY that nobody had written simply vanished — the
+  exact case the screen exists to catch.
+- **Verified**: `scripts/verify-communications.mts` **78/78**, including the send window at both
+  ends and the look-ahead per role; `npm test` 188/188; all 21 scripts green (467 checks); `tsc`
+  and `build` clean; and a real browser run through all three tabs and the write-early flow.
+
 ## Communications, combined (2026-08-25 — migration `074`)
 - **Announcements folded into Communications** at the CEO's request: one door, three options split
   inside, each with its own settings and its own requirements. You choose by **where the message

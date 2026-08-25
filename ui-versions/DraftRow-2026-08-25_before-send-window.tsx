@@ -22,14 +22,6 @@ export type DraftItem = {
   years: number | null;
   /** Only shown on HR's queue — a manager already knows it is theirs. */
   assigneeName?: string | null;
-  /**
-   * The day the send button opens, when it has not yet. Null means it is open now.
-   *
-   * Since drafts can be written months ahead, a live Send button would sit there for weeks waiting
-   * to be pressed by mistake. The server refuses an early send regardless — this is what stops the
-   * operator finding that out the hard way.
-   */
-  sendOpensOn?: Date | null;
 };
 
 /** "tomorrow" · "in 3 days" · "today". A date alone makes you count. */
@@ -52,7 +44,6 @@ function whenLabel(date: Date | null): { text: string; urgent: boolean } {
  * glancing at three rows and sending the one that is due tomorrow.
  */
 export function DraftRow({ item, canPreview }: { item: DraftItem; canPreview: boolean }) {
-  const notYet = item.sendOpensOn ?? null;
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -131,23 +122,14 @@ export function DraftRow({ item, canPreview }: { item: DraftItem; canPreview: bo
           </form>
 
           <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-            {notYet ? (
-              <span
-                className="rounded-lg border border-line bg-paper px-3.5 py-2 text-[12.5px] font-semibold text-muted"
-                title="A message that arrives weeks early reads worse than one that is late"
-              >
-                Send opens {formatDate(notYet)}
-              </span>
-            ) : (
-              <button
-                type="button"
-                disabled={pending}
-                className={BTN_NAVY}
-                onClick={() => run(() => sendCongratulation(item.id))}
-              >
-                {pending ? "Sending…" : `Send to ${item.personName.split(/\s+/)[0]}`}
-              </button>
-            )}
+            <button
+              type="button"
+              disabled={pending}
+              className={BTN_NAVY}
+              onClick={() => run(() => sendCongratulation(item.id))}
+            >
+              {pending ? "Sending…" : `Send to ${item.personName.split(/\s+/)[0]}`}
+            </button>
 
             {confirmDismiss ? (
               <>

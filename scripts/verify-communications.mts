@@ -13,7 +13,10 @@
  *   • a leaver's draft cannot be sent;
  *   • the cron creates nothing on a second run, and emails NO employee;
  *   • the rendered HTML contains none of the three things that silently break in mail clients;
- *   • the group name above the unit is the COMMUNICATIONS setting, never the platform's own name.
+ *   • the group name above the unit is the COMMUNICATIONS setting, never the platform's own name;
+ *   • the look-ahead shows a manager their own team and HR everybody, and nobody else anything;
+ *   • the send window opens on the lead day and shuts after the day — early is refused, not just
+ *     hidden.
  *
  * Run against a THROWAWAY database only.
  */
@@ -23,6 +26,7 @@ import { reachedUserIds } from "../src/lib/audience/reach.js";
 import { assigneeFor, closePassed, draftFor, prepareOccasions } from "../src/lib/comms/drafts.js";
 import { occasionsInWindow } from "../src/lib/comms/occasions.js";
 import { DEFAULT_GROUP_NAME, getCommsSettings, groupName } from "../src/lib/comms/settings.js";
+import { monthWindow, quarterWindow, sendWindow, upcomingFor } from "../src/lib/comms/upcoming.js";
 
 const db = new PrismaClient();
 let pass = 0, fail = 0;
@@ -357,6 +361,77 @@ const branded = renderMessage({
 check("the rendered header carries the group name", branded.includes("Forefront Group"), true);
 check("and cannot carry the platform's name", branded.includes("A Platform Name"), false);
 check("the unit is still the large line beneath it", branded.includes("Visual Shift Consulting"), true);
+
+// ── The send window ──────────────────────────────────────────────────────
+//
+// The upper bound already existed (a missed congratulation closes rather than going out late).
+// This is the lower bound, and it only became necessary because messages can now be written
+// months ahead: the button would otherwise sit there for weeks waiting to be pressed by mistake.
+{
+  const day = new Date(Date.UTC(2026, 8, 20));
+  const on = (d: number) => new Date(Date.UTC(2026, 8, d));
+  check("three weeks early: shut", sendWindow(day, on(1), 3).open, false);
+  check("four days early: still shut", sendWindow(day, on(16), 3).open, false);
+  check("exactly the lead day: open", sendWindow(day, on(17), 3).open, true);
+  check("the day itself: open", sendWindow(day, on(20), 3).open, true);
+  check("the day after: shut", sendWindow(day, on(21), 3).open, false);
+  check("...and reported as past, not merely early", sendWindow(day, on(21), 3).past, true);
+  check("it says WHEN it opens", sendWindow(day, on(1), 3).opensOn.toISOString().slice(0, 10), "2026-09-17");
+  // Zero lead days is a legitimate setting: send on the day only.
+  check("with no lead, only the day itself", sendWindow(day, on(19), 0).open, false);
+  check("...and the day itself still works", sendWindow(day, on(20), 0).open, true);
+}
+
+// ── Who the look-ahead shows ─────────────────────────────────────────────
+//
+// A list is not a permission, but a list that shows more than the viewer may see is a leak of
+// birth dates. Asserted per role rather than trusted to the query.
+{
+  const dom = "@ahead.test";
+  await db.message.deleteMany({ where: { subjectUser: { email: { endsWith: dom } } } });
+  await db.occasion.deleteMany({ where: { user: { email: { endsWith: dom } } } });
+  await db.user.deleteMany({ where: { email: { endsWith: dom } } });
+
+  const today = new Date(Date.UTC(2026, 5, 15)); // mid-June: Q3 is Jul-Sep, so June is Q2
+  const mk = (id: string, over: Record<string, unknown> = {}) =>
+    db.user.create({ data: { id, email: `${id}${dom}`, name: id, status: "ACTIVE", ...over } });
+
+  const boss = await mk("ahead-boss");
+  const mine1 = await mk("ahead-mine1", { reportsToId: boss.id, dateOfBirth: new Date(Date.UTC(1990, 5, 20)) });
+  await mk("ahead-mine2", { reportsToId: boss.id, dateOfBirth: new Date(Date.UTC(1988, 7, 3)) });
+  await mk("ahead-theirs", { dateOfBirth: new Date(Date.UTC(1992, 5, 22)) });
+
+  const { from: mFrom, to: mTo } = monthWindow(today);
+  check("a month window is that calendar month", [mFrom.toISOString().slice(0, 10), mTo.toISOString().slice(0, 10)], ["2026-06-01", "2026-06-30"]);
+  const { from: qFrom, to: qTo } = quarterWindow(today);
+  check("a quarter window is that calendar quarter", [qFrom.toISOString().slice(0, 10), qTo.toISOString().slice(0, 10)], ["2026-04-01", "2026-06-30"]);
+
+  const managerSees = await upcomingFor({ id: boss.id, role: "EMPLOYEE" }, qFrom, qTo, today, 3);
+  const mineNames = managerSees.map((r) => r.userId).filter((id) => id.startsWith("ahead-")).sort();
+  check("a manager sees their own reports", mineNames, ["ahead-mine1"]);
+  check("...and NOT somebody else's report", mineNames.includes("ahead-theirs"), false);
+
+  const hrSees = await upcomingFor({ id: boss.id, role: "HR_ADMIN" }, qFrom, qTo, today, 3);
+  const hrNames = hrSees.map((r) => r.userId).filter((id) => id.startsWith("ahead-")).sort();
+  check("HR sees everybody, including people who report to nobody", hrNames, ["ahead-mine1", "ahead-theirs"]);
+
+  const stranger = await mk("ahead-stranger");
+  const strangerSees = await upcomingFor({ id: stranger.id, role: "EMPLOYEE" }, qFrom, qTo, today, 3);
+  check("somebody who manages nobody sees nothing", strangerSees.length, 0);
+
+  // An occasion with no draft is the NORMAL state months out — it must read as unwritten rather
+  // than as missing.
+  const row = managerSees.find((r) => r.userId === "ahead-mine1");
+  check("an occasion with no draft reads unwritten", row?.state, "UNWRITTEN");
+  check("...and carries no message id", row?.messageId, null);
+  check("a birthday in the look-ahead still carries no age", row?.years, undefined);
+
+  // August is outside June's quarter — the window is a real filter, not decoration.
+  check("the quarter excludes what falls outside it", managerSees.some((r) => r.userId === "ahead-mine2"), false);
+
+  await db.user.deleteMany({ where: { email: { endsWith: dom } } });
+  void mine1;
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await db.$disconnect();

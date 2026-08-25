@@ -790,6 +790,31 @@ single form serving all three would need a branch per difference.
 `/admin/announcements` **redirects** rather than 404s — the address is in bookmarks and history, and
 a dead link teaches an operator the feature was removed, which is not what happened.
 
+### Congratulations are seen ahead, and still sent by a person
+The CEO asked for a look-ahead with a period filter, and for messages to be scheduled. The
+look-ahead was built; **scheduling was declined by him** once the conflict was put to him, so the
+rule from spec 037 stands unchanged: *no scheduled process may email an employee*. What moved
+earlier is the **writing**, not the sending.
+
+- **The look-ahead is derived, never stored.** `occasionsInWindow` already answers "whose birthday
+  or anniversary falls between these dates" for any window, so a quarter of visibility needs no
+  table, no job filling one in, and no list anyone maintains. `upcomingFor` asks the same question
+  with a wider window and joins whatever drafts exist.
+- **Drafts are not pre-created for the quarter.** A hundred untouched rows would inflate every
+  manager's badge and bury the two that matter today. A draft appears when the platform prepares
+  one near the day, or when somebody presses **Write it now** (`writeCongratulation`, idempotent by
+  the `(userId, kind, occasionYear)` constraint rather than by checking first).
+- **The send window has two ends.** A missed congratulation already closed rather than going out
+  late; `sendWindow` adds the lower bound, because once a draft can exist for months the button
+  sits there waiting to be pressed by mistake. Enforced in `sendCongratulation`, not merely
+  disabled on screen.
+- **"Due now" includes what nobody has written.** Filtering it to drafts hid the one case the
+  screen exists to catch — a birthday today that preparation never reached.
+- **The badge counts only what is due**, through the same derivation. A badge that is always lit
+  says nothing.
+- **Who sees what**: HR everybody, a line manager their own reports, anyone else nothing — the same
+  people whose dates they can already read, so the look-ahead opens nothing new.
+
 ### The group name is its own setting (migration `074`)
 The small-caps line above the business unit read `BrandSettings.companyName` — the name of the
 **platform** — so the header said "Forefront Consulting" where "Forefront Group" had been agreed,

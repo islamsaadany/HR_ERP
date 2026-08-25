@@ -29,6 +29,8 @@ export default async function CommunicationsPage() {
     prisma.announcement.count(),
     prisma.message.count({ where: { kind: "ANNOUNCEMENT", state: "DRAFT" } }),
     prisma.message.count({ where: { kind: "ANNOUNCEMENT", state: "SENT" } }),
+    // Everything written and not yet sent, across the company. Unlike a manager's own badge this
+    // is a workload figure rather than a call to action, so it counts the lot.
     prisma.message.count({
       where: { kind: { in: ["BIRTHDAY", "WORK_ANNIVERSARY"] }, state: "DRAFT" },
     }),
@@ -56,7 +58,7 @@ export default async function CommunicationsPage() {
       glyph: "✦",
       name: "Congratulations",
       what: "Birthdays and joining anniversaries, written in advance and put in the manager's hands. Nothing sends on its own.",
-      count: `${waiting} waiting`,
+      count: `${waiting} written, waiting`,
       settings: "/admin/communications/settings",
     },
   ];

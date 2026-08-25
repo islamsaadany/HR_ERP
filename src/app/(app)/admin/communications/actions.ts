@@ -327,9 +327,11 @@ export async function deleteDraft(id: string): Promise<Result> {
 // Different guards from an announcement, because a congratulation is different in three ways: it
 // goes to ONE person, it is sent by their MANAGER rather than HR, and it has a DAY it is for.
 
-import { requireUser } from "@/lib/roles";
-import { canActOn } from "@/lib/comms/drafts";
-import { hasPassed } from "@/lib/comms/occasions";
+import { isAdmin, requireUser } from "@/lib/roles";
+import { assigneeFor, canActOn, draftFor } from "@/lib/comms/drafts";
+import { hasPassed, occasionsInWindow } from "@/lib/comms/occasions";
+import { sendWindow } from "@/lib/comms/upcoming";
+import { formatDate } from "@/lib/labels";
 
 /** HR, or the person the draft is assigned to. Returns the actor — never takes an id. */
 async function requireAssignee(messageId: string) {
@@ -366,6 +368,92 @@ export async function updateCongratulation(id: string, formData: FormData): Prom
  * is REFUSED, not sent. You cannot wish somebody a happy birthday three days afterwards, and a
  * platform that tries is worse than one that stays quiet.
  */
+/**
+ * Write a congratulation now, for an occasion the platform has not prepared yet.
+ *
+ * The look-ahead is derived from people's dates, so most of what it lists has no draft behind it.
+ * This makes one on demand — the point of the whole change: a manager writes when they have the
+ * time, rather than in the three days before the day.
+ *
+ * Idempotent by CONSTRAINT, not by checking first. `Occasion` is unique on
+ * (userId, kind, occasionYear), so two managers pressing this at once produce one occasion and one
+ * draft; the loser reads the winner's row rather than creating a second.
+ *
+ * It does NOT bring the send forward. `sendCongratulation` refuses until the day arrives.
+ */
+export async function writeCongratulation(
+  userId: string,
+  kind: "BIRTHDAY" | "WORK_ANNIVERSARY",
+  occasionYear: number
+): Promise<Result<{ id: string }>> {
+  const actor = await requireUser();
+
+  const person = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, status: true, dateOfBirth: true, startDate: true, reportsToId: true },
+  });
+  if (!person) return { ok: false, error: "That person is no longer on the system." };
+  if (person.status !== "ACTIVE") return { ok: false, error: `${person.name} has left.` };
+
+  // Who may write one: HR for anybody, a manager for their own reports. The same rule the
+  // look-ahead uses to decide what to show, asked again at the write — a list is not a permission.
+  const mayWrite = isAdmin(actor.role) || person.reportsToId === actor.id;
+  if (!mayWrite) return { ok: false, error: "This isn't yours to write." };
+
+  // Recomputed here rather than taken from the caller. A date arriving in a form argument is a
+  // date somebody can change; the occasion has to be the one the person's record actually implies.
+  const [occasion] = occasionsInWindow(
+    [{ id: person.id, name: person.name ?? "Someone", status: person.status, dateOfBirth: person.dateOfBirth, startDate: person.startDate }],
+    new Date(Date.UTC(occasionYear, 0, 1)),
+    new Date(Date.UTC(occasionYear, 11, 31))
+  ).filter((o) => o.kind === kind);
+  if (!occasion) return { ok: false, error: "There is no such occasion on that person's record." };
+
+  const existing = await prisma.occasion.findUnique({
+    where: { userId_kind_occasionYear: { userId, kind, occasionYear } },
+    select: { messageId: true },
+  });
+  if (existing?.messageId) {
+    revalidate(existing.messageId);
+    return { ok: true, data: { id: existing.messageId } };
+  }
+
+  const assignedToId = (await assigneeFor(userId)) ?? actor.id;
+  const { subject, body } = draftFor(occasion);
+
+  try {
+    // Message first, then the Occasion pointing at it — the same order `prepareOccasions` uses,
+    // because the foreign key lives on Occasion. One transaction, so a failure leaves neither.
+    const id = await prisma.$transaction(async (tx) => {
+      const message = await tx.message.create({
+        data: { kind, state: "DRAFT", subject, body, subjectUserId: userId, assignedToId },
+        select: { id: true },
+      });
+      await tx.occasion.create({
+        data: {
+          userId,
+          kind,
+          occasionYear,
+          occasionDate: occasion.occasionDate,
+          years: occasion.years ?? null,
+          messageId: message.id,
+        },
+      });
+      return message.id;
+    });
+    revalidate(id);
+    return { ok: true, data: { id } };
+  } catch {
+    // Lost the race against another writer — the unique index refused it. Their row is the answer.
+    const now = await prisma.occasion.findUnique({
+      where: { userId_kind_occasionYear: { userId, kind, occasionYear } },
+      select: { messageId: true },
+    });
+    if (now?.messageId) return { ok: true, data: { id: now.messageId } };
+    return { ok: false, error: "That couldn't be written just now." };
+  }
+}
+
 export async function sendCongratulation(id: string): Promise<Result> {
   const actor = await requireAssignee(id);
   if (!actor) return { ok: false, error: "This isn't yours to send." };
@@ -414,6 +502,20 @@ export async function sendCongratulation(id: string): Promise<Result> {
       ok: false,
       error: "That day has passed. A late birthday message reads worse than none, so this one is closed.",
     };
+  }
+
+  // ...and the same argument pointed the other way. Since drafts can be written months ahead, the
+  // send button now sits there for weeks before it should be pressed, and a birthday message three
+  // weeks early is worse than one that is late. Enforced here rather than only disabled on screen:
+  // the button is a courtesy, this is the rule.
+  if (message.occasion) {
+    const window = sendWindow(message.occasion.occasionDate, new Date(), settings.congratsLeadDays);
+    if (!window.open && !window.past) {
+      return {
+        ok: false,
+        error: `Too early — this one opens on ${formatDate(window.opensOn)}. Sending it now would arrive weeks before the day.`,
+      };
+    }
   }
 
   // Claim it before sending. Two people looking at the same queue, and only one gets past here.
