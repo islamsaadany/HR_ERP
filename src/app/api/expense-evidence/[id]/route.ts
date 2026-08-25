@@ -26,6 +26,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     where: { id },
     select: {
       blobUrl: true,
+      externalUrl: true,
       fileName: true,
       uploadedById: true,
       paybackRequest: { select: { userId: true } },
@@ -55,6 +56,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     evidence.pettyCashLine?.period.account.custodianId === viewerId;
 
   if (!entitled) return notFound;
+
+  // A receipt that lives elsewhere — the imported workbook history, whose receipts are Drive
+  // links (migration 071). The decision above was still made here; only the delivery differs.
+  // Whoever follows the redirect needs access to the file at the other end; we cannot grant it.
+  if (evidence.externalUrl) return NextResponse.redirect(evidence.externalUrl);
+
+  // Exactly one of the two is set (check constraint `ExpenseEvidence_one_location`), so this is
+  // unreachable — but a receipt with nowhere to go is a 404, never a crash.
+  if (!evidence.blobUrl) return notFound;
 
   return streamPrivateBlob(evidence.blobUrl, { fileName: evidence.fileName });
 }

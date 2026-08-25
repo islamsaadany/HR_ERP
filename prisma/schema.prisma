@@ -1956,8 +1956,20 @@ model PaybackRequest {
 /// `/api/expense-evidence/[id]`, which re-decides access at the door and answers 404 — never
 /// 403, which would confirm the file exists.
 model ExpenseEvidence {
-  id          String @id @default(cuid())
-  blobUrl     String
+  id String @id @default(cuid())
+
+  /// Where the file actually lives. EXACTLY ONE of these is set (enforced by a check
+  /// constraint, `ExpenseEvidence_one_location`):
+  ///   • `blobUrl` — uploaded here, served through /api/expense-evidence/[id] after the
+  ///     entitlement check, and private.
+  ///   • `externalUrl` — the receipt lives somewhere else and always did. The marketing
+  ///     workbook's receipts are Google Drive links, so importing its history (spec 040,
+  ///     migration 072) had nothing to upload. The same route answers, makes the same
+  ///     decision, and REDIRECTS instead of streaming — so there is still one door, and
+  ///     still 404 rather than 403 for anyone not entitled. Whoever follows it needs
+  ///     access to the file in Drive; the platform cannot grant that.
+  blobUrl     String?
+  externalUrl String?
   fileName    String
   contentType String
   sizeBytes   Int
