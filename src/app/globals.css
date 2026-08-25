@@ -345,3 +345,44 @@ body {
     transform: none;
   }
 }
+
+/*
+  PWA safe areas + the phone menu (2026-08-25).
+
+  `env(safe-area-inset-*)` is 0 in a browser tab, on desktop, and on any phone without a notch
+  or a home indicator — so every rule here is inert until the app is installed and running
+  full-screen. They are written as HEIGHT and MARGIN rather than padding on purpose: the
+  elements they sit on already carry Tailwind padding utilities, and a class that fought
+  `py-3`/`p-6` for the same property would change spacing on desktop too.
+*/
+.ff-safe-top {
+  height: env(safe-area-inset-top, 0px);
+}
+.ff-safe-bottom {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* The panel slides in from the right; `prefers-reduced-motion` drops it to a plain appear. */
+@keyframes ff-panel-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.ff-panel-in {
+  animation: ff-panel-in 180ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* A row cut by the bottom edge should read as "the list continues", not as clipping. */
+.ff-menu-scroll {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-panel-in {
+    animation: none;
+  }
+}
