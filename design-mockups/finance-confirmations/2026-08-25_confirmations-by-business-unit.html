@@ -1,0 +1,420 @@
+<title>Confirmations by Business Unit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-500:#2f4d78;
+    --navy-600:#1f3a63;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;
+    --red:#b91c1c;--red-bg:#fdf3f3;--red-line:#f3c6c6;
+    --sans:"Hanken Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Fraunces","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    color-scheme:light;
+  }
+  /* Renders in the product's own light navy/gold world — it exists to show what the app will
+     look like, so it deliberately does not follow the viewer's theme. */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:34px 20px 90px}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  h1{font-family:var(--serif);font-weight:600;font-size:30px;margin:4px 0 0;text-wrap:balance}
+  .lede{color:var(--muted);font-size:14.5px;margin:8px 0 0;max-width:70ch}
+  .meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+
+  .flow{margin-top:30px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:18px 20px}
+  .flow h2{font-family:var(--serif);font-weight:600;font-size:18px;margin:0 0 12px}
+  .steps{display:flex;gap:0;flex-wrap:wrap;align-items:stretch}
+  .step{flex:1 1 190px;padding:12px 14px;border-left:3px solid var(--navy-200);background:#fafbfd;margin-right:10px;border-radius:0 8px 8px 0;margin-bottom:8px}
+  .step.here{border-left-color:var(--gold-500);background:#fdfaf0}
+  .step b{display:block;font-size:12.5px;color:var(--navy-800)}
+  .step span{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .step .who{display:inline-block;margin-top:6px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+  section.screen{margin-top:46px}
+  section.screen>h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0 0 3px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  section.screen>h2 .who{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-500);border:1px solid var(--navy-200);background:var(--navy-50);border-radius:999px;padding:3px 9px}
+  section.screen>.sub{color:var(--muted);font-size:13.5px;margin:0 0 15px;max-width:80ch}
+
+  .frame{border:1px solid var(--line);border-radius:14px;background:#e9ebf0;padding:16px;box-shadow:0 1px 3px rgba(16,36,68,.06)}
+  .app{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--navy-800);color:#fff}
+  .bar .dot{width:9px;height:9px;border-radius:99px;background:rgba(255,255,255,.28)}
+  .bar .path{margin-left:8px;font-size:11.5px;color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums}
+  .page{padding:22px 22px 26px}
+  .page-eyebrow{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .page h3{font-family:var(--serif);font-weight:600;font-size:23px;margin:3px 0 0}
+  .page .hint{color:var(--muted);font-size:13px;margin:6px 0 0;max-width:78ch}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+  .btn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:8px;padding:8px 13px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);cursor:default}
+  .btn.primary{background:var(--navy-800);border-color:var(--navy-800);color:#fff}
+  .btn.big{font-size:14px;padding:11px 20px}
+  .btn.ghost{border-color:var(--line);color:var(--muted)}
+  .btn.warn{border-color:var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-wait{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-done{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-back{border:1px solid var(--red-line);background:var(--red-bg);color:var(--red)}
+  .c-flat{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+
+  /* waiting cards — the confirmer's whole screen */
+  .waiting{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+  .wcard{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+  .wcard .top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:16px 18px;background:linear-gradient(180deg,#fbfaf7,var(--surface))}
+  .wcard .amt{font-family:var(--serif);font-weight:600;font-size:30px;font-variant-numeric:tabular-nums;line-height:1.1}
+  .wcard .what{font-size:13.5px;font-weight:600;margin-top:2px}
+  .wcard .when{font-size:12px;color:var(--muted);margin-top:3px}
+  .wcard .act{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 18px;border-top:1px solid var(--line);background:#fbfaf7}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
+  .scroll{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+  thead th{background:var(--navy-800);color:#fff;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:9px 12px;white-space:nowrap}
+  tbody td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
+  tbody tr:nth-child(even){background:#faf9f6}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tfoot td{padding:11px 12px;border-top:2px solid var(--navy-200);font-weight:600;background:var(--navy-50)}
+  .paperclip{color:var(--navy-500);font-weight:600;font-size:11.5px;text-decoration:underline;text-underline-offset:2px}
+
+  .form{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  @media(max-width:760px){.form{grid-template-columns:1fr}}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field.wide{grid-column:1/-1}
+  .field label{font-size:11.5px;font-weight:600;color:var(--navy-700)}
+  .field .input{border:1px solid var(--navy-200);border-radius:8px;background:var(--surface);padding:9px 11px;font-size:13px;min-height:38px;display:flex;align-items:center}
+  .field .input.placeholder{color:#9aa0ad}
+  .field .help{font-size:11px;color:var(--muted)}
+  .check{display:flex;gap:9px;align-items:flex-start;font-size:12.5px}
+  .box{width:15px;height:15px;border:1.5px solid var(--navy-500);border-radius:4px;flex:none;margin-top:2px}
+  .box.on{background:var(--navy-800);border-color:var(--navy-800)}
+
+  /* the email */
+  .mail{width:100%;max-width:440px;background:#fff;border:1px solid #E3E8EF;border-radius:10px;overflow:hidden;font-family:Helvetica,Arial,sans-serif;box-shadow:0 2px 10px rgba(10,26,48,.05)}
+  .m-head{padding:17px 22px;background:var(--navy-800)}
+  .m-org{font:700 15px/1.3 Helvetica,Arial,sans-serif;color:#fff}
+  .m-unit{font:600 10px/1.4 Helvetica,Arial,sans-serif;letter-spacing:.15em;text-transform:uppercase;padding-top:4px;color:var(--gold-300)}
+  .m-bar{height:3px;background:var(--gold-500);font-size:0;line-height:0}
+  .m-body{padding:22px 22px 6px}
+  .m-title{margin:0 0 12px;font:700 19px/1.3 Helvetica,Arial,sans-serif;color:#1B2330}
+  .m-p{margin:0 0 13px;font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#1B2330}
+  .m-row{margin:0 0 7px;font:400 14px/1.5 Helvetica,Arial,sans-serif;color:#1B2330}
+  .m-row span{color:#6B7686}
+  .m-cta{display:inline-block;padding:10px 19px;border-radius:6px;font:600 13px/1 Helvetica,Arial,sans-serif;color:#fff;text-decoration:none;background:#0f2444;margin:8px 0 18px}
+  .m-foot{padding:14px 22px 20px;font:400 11.5px/1.55 Helvetica,Arial,sans-serif;color:#6B7686;border-top:1px solid #E3E8EF;margin:0 22px;padding-left:0;padding-right:0}
+  .two{display:grid;grid-template-columns:minmax(0,440px) 1fr;gap:24px;align-items:start;margin-top:16px}
+  @media(max-width:860px){.two{grid-template-columns:1fr}}
+
+  .notes{margin-top:16px;border-left:3px solid var(--navy-800);background:#f7f8fb;border-radius:0 10px 10px 0;padding:13px 16px}
+  .notes b{font-family:var(--serif);font-weight:600;font-size:14.5px;display:block;margin-bottom:5px}
+  .notes ul{margin:0;padding-left:17px;font-size:13px}
+  .notes li{margin:5px 0}
+  .notes .q{color:var(--gold-800);font-weight:600}
+  footer{margin-top:52px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12.5px}
+  footer b{color:var(--ink)}
+
+  /* NEW in this mockup — the unit band. Each business unit banks separately and has its own
+     person, so the grouping is the structure of the screen, not a filter on top of it. */
+  .unit{margin-top:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+  .unit>.uhead{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:12px 16px;background:#fbfaf7;border-bottom:1px solid var(--line);border-left:4px solid var(--navy-800)}
+  .unit.u-vs>.uhead{border-left-color:#450059}
+  .unit.u-grp>.uhead{border-left-color:var(--gold-500)}
+  .uhead .nm{font-family:var(--serif);font-weight:600;font-size:16px}
+  .uhead .who2{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .uhead .rt{text-align:right}
+  .uhead .tot{font-family:var(--serif);font-weight:600;font-size:19px;font-variant-numeric:tabular-nums}
+  .unit .body{padding:4px 16px 14px}
+  .unit table{min-width:0}
+  .unit .scroll{margin-top:10px;border:0;border-radius:0}
+  .unit .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--line);background:#fbfaf7}
+  .blocked{border-left:3px solid var(--gold-500);background:var(--gold-100);color:var(--gold-800);border-radius:0 8px 8px 0;padding:10px 14px;font-size:12.5px;margin:12px 16px 14px}
+  .btn.off{opacity:.45}
+  .uname{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--navy-700)}
+  .uname i{width:8px;height:8px;border-radius:2px;background:var(--navy-800);display:inline-block;font-style:normal}
+  .uname.vs i{background:#450059}
+  .uname.grp i{background:var(--gold-500)}
+  .alist{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .alist li{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:12.5px}
+  .alist .sub{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+  .appoint{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .appoint .input{border:1px solid var(--navy-200);border-radius:8px;background:var(--surface);padding:8px 11px;font-size:12.5px;min-width:230px;color:#9aa0ad}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Spec 041 · Change for sign-off · 25 Aug 2026</p>
+  <h1>Confirmations, one business unit at a time</h1>
+  <p class="lede">Today the platform treats confirmation as one company-wide queue. You've asked for
+    it per business unit — each unit banks separately, so each has its own person to confirm.
+    Three screens change. Nothing else about the flow moves: Finance still creates the transactions
+    in the bank, the appointed person still confirms them there, and the people being paid are still
+    told only once that happens.</p>
+  <div class="meta">
+    <span class="tag">A unit is decided by who is being paid</span>
+    <span class="tag">One submission never mixes two units</span>
+    <span class="tag">Salaries: one run per unit per month</span>
+    <span class="tag">No confirmer appointed → nothing can be sent, and it says so</span>
+  </div>
+
+  <div class="flow">
+    <h2>What actually changes</h2>
+    <div class="steps">
+      <div class="step"><b>Who is paid decides the unit</b><span>A payback, a benefit claim or a float top-up belongs to a person, and that person belongs to a unit. Nobody types it in.</span><span class="who">Automatic</span></div>
+      <div class="step here"><b>Finance sends per unit</b><span>What's waiting is grouped by unit, with its own total and its own Send. Two units' money can't land in one bank account.</span><span class="who">Finance</span></div>
+      <div class="step"><b>Each person sees only theirs</b><span>The queue, the email and the sidebar count are all limited to the units they were appointed for.</span><span class="who">Confirmer</span></div>
+      <div class="step"><b>You appoint per unit</b><span>One person can hold several units. A unit with nobody appointed blocks — it never quietly falls to somebody else.</span><span class="who">You</span></div>
+    </div>
+  </div>
+
+  <section class="screen">
+    <h2>1 · Finance — what's waiting <span class="who">Finance</span></h2>
+    <p class="sub">The same single question as today — “what did I just create in the bank?” — but asked
+      once per unit, because that's once per bank account. The confirmer for each unit is named on the
+      band, so Finance knows who it's going to before they send it.</p>
+    <div class="frame">
+      <div class="app">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">/finance · Send for confirmation</span></div>
+        <div class="page">
+          <p class="page-eyebrow">Finance</p>
+          <h3>Send for confirmation</h3>
+          <p class="hint">Tick what you have created in the bank, then send. Each unit goes to its own
+            confirmer, who is emailed straight away. The people being paid are told only once it is
+            confirmed.</p>
+
+          <div class="unit">
+            <div class="uhead">
+              <div>
+                <div class="nm">Forefront Consulting</div>
+                <div class="who2">Confirmed by Islam Saadany</div>
+              </div>
+              <div class="rt">
+                <div class="tot">EGP 21,376.26</div>
+                <div class="who2">3 of 4 ticked</div>
+              </div>
+            </div>
+            <div class="body">
+              <div class="scroll">
+                <table>
+                  <thead><tr><th>·</th><th>Paying</th><th>For</th><th>Waiting since</th><th class="num">Amount</th></tr></thead>
+                  <tbody>
+                    <tr><td><span class="box on"></span></td><td>Raneem Sarhaan</td><td>Marketing petty cash — top-up</td><td>23/08/2026</td><td class="num">9,726.26</td></tr>
+                    <tr><td><span class="box on"></span></td><td>Marwa Abdelazeem</td><td>Paid out of pocket · Transportation</td><td>19/08/2026</td><td class="num">1,650.00</td></tr>
+                    <tr><td><span class="box on"></span></td><td>Youssef Kamal</td><td>Benefit claim — Medical</td><td>18/08/2026</td><td class="num">10,000.00</td></tr>
+                    <tr><td><span class="box"></span></td><td>Nada Hassan</td><td>Paid out of pocket · Office supply</td><td>24/08/2026</td><td class="num">480.00</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="foot">
+              <span class="who2">Goes to Islam Saadany the moment you send it.</span>
+              <span class="btns"><span class="btn primary">Send 3 for confirmation</span></span>
+            </div>
+          </div>
+
+          <div class="unit u-vs">
+            <div class="uhead">
+              <div>
+                <div class="nm">Visual Shift</div>
+                <div class="who2">Confirmed by Mohamed Selim</div>
+              </div>
+              <div class="rt">
+                <div class="tot">EGP 4,925.00</div>
+                <div class="who2">2 of 2 ticked</div>
+              </div>
+            </div>
+            <div class="body">
+              <div class="scroll">
+                <table>
+                  <thead><tr><th>·</th><th>Paying</th><th>For</th><th>Waiting since</th><th class="num">Amount</th></tr></thead>
+                  <tbody>
+                    <tr><td><span class="box on"></span></td><td>Salma Ezzat</td><td>Paid out of pocket · Media coverage</td><td>20/08/2026</td><td class="num">3,925.00</td></tr>
+                    <tr><td><span class="box on"></span></td><td>Omar Fathy</td><td>Paid out of pocket · Printings</td><td>21/08/2026</td><td class="num">1,000.00</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="foot">
+              <span class="who2">Goes to Mohamed Selim the moment you send it.</span>
+              <span class="btns"><span class="btn primary">Send 2 for confirmation</span></span>
+            </div>
+          </div>
+
+          <div class="unit u-grp">
+            <div class="uhead">
+              <div>
+                <div class="nm">Forefront Group</div>
+                <div class="who2">Nobody appointed</div>
+              </div>
+              <div class="rt">
+                <div class="tot">EGP 2,300.00</div>
+                <div class="who2">1 waiting</div>
+              </div>
+            </div>
+            <p class="blocked"><b>Nothing can be sent for Forefront Group.</b> Nobody is appointed to
+              confirm this unit's transactions, and nobody else stands in. A Super User can appoint
+              somebody — including themselves — and this unblocks immediately.</p>
+            <div class="foot">
+              <span class="who2">Ali Mansour · Paid out of pocket · Booking · 22/08/2026 · 2,300.00</span>
+              <span class="btns"><span class="btn primary off">Send for confirmation</span></span>
+            </div>
+          </div>
+
+          <div class="notes">
+            <b>Salaries, on the same page</b>
+            <ul>
+              <li>The monthly salary run becomes <b>one run per unit</b> — August, that unit's total,
+                that unit's headcount — confirmed by that unit's person.</li>
+              <li>Finance still never sees an individual's pay: a run carries the month, the total, the
+                headcount and the bank reference, and nothing else.</li>
+              <li>A month shows as covered only when every unit's run has been sent, so a unit cannot be
+                quietly forgotten.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>2 · The confirmer's screen <span class="who">You, or whoever holds a unit</span></h2>
+    <p class="sub">Unchanged in shape — one list, one button, ten seconds. What changes is that it only
+      ever contains the units that person was appointed for, and each card says which unit it is, so two
+      cards of similar size can't be mistaken for each other.</p>
+    <div class="frame">
+      <div class="app">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">/confirmations</span></div>
+        <div class="page">
+          <p class="page-eyebrow">Waiting on you</p>
+          <h3>Confirmations</h3>
+          <p class="hint">Finance created these in the bank. Confirm them there, then mark them complete
+            here — that is what tells the person they have been paid.</p>
+
+          <div class="waiting">
+            <div class="wcard">
+              <div class="top">
+                <div>
+                  <span class="uname"><i></i>Forefront Consulting</span>
+                  <div class="what">3 transactions</div>
+                  <div class="when">Sent by Mohamed Selim on 24/08/2026 · value date 26/08/2026 · ref AUG-26-04</div>
+                </div>
+                <div class="rt"><div class="amt">EGP 21,376.26</div><span class="chip c-wait">Waiting 1 day</span></div>
+              </div>
+              <div class="act"><span class="btn primary">Transaction complete</span><span class="btn">Return to Finance</span><span class="who2">Marking it complete is what tells the three people they've been paid.</span></div>
+            </div>
+
+            <div class="wcard">
+              <div class="top">
+                <div>
+                  <span class="uname grp"><i></i>Forefront Group</span>
+                  <div class="what">August salaries · 14 people</div>
+                  <div class="when">Sent by Mohamed Selim on 23/08/2026 · value date 28/08/2026 · ref SAL-AUG-26-GRP</div>
+                </div>
+                <div class="rt"><div class="amt">EGP 412,500.00</div><span class="chip c-wait">Waiting 2 days</span></div>
+              </div>
+              <div class="act"><span class="btn primary">Transaction complete</span><span class="btn">Return to Finance</span><span class="paperclip">Salary file (xlsx)</span></div>
+            </div>
+          </div>
+
+          <div class="notes">
+            <b>What this person does not see</b>
+            <ul>
+              <li>Visual Shift's 4,925.00, which is Mohamed Selim's to confirm — it is not in their list,
+                not in their email, and not in their sidebar count.</li>
+              <li>Any individual's salary. A run is a month, a total and a headcount.</li>
+              <li>Who is being paid, in the email. The email carries the unit, the count and the total,
+                and a link — as it does today.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>3 · Admin — who confirms transactions <span class="who">Super User</span></h2>
+    <p class="sub">One list becomes one list per unit. A person can hold several units — Mohamed Selim
+      holds two here. A unit with nobody appointed is stated plainly rather than left blank, because an
+      empty row is exactly the thing that stops Finance from sending.</p>
+    <div class="frame">
+      <div class="app">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="path">/admin/confirmers</span></div>
+        <div class="page">
+          <p class="page-eyebrow">Admin · Finance</p>
+          <h3>Who confirms transactions</h3>
+          <p class="hint">Finance creates transactions in the bank; these people confirm them there and
+            record it here. Each business unit banks separately, so each one is appointed separately.
+            The appointment changes nothing else about what they can see.</p>
+
+          <div class="unit">
+            <div class="uhead"><div><div class="nm">Forefront Consulting</div><div class="who2">1 appointed · 3 transactions waiting</div></div></div>
+            <div class="body">
+              <ul class="alist">
+                <li><span><b>Islam Saadany</b><span class="sub">CEO · islam.saadany@forefront.consulting · appointed by himself · 24/08/2026</span></span><span class="btn ghost">Remove</span></li>
+              </ul>
+              <div class="appoint"><span class="input">Appoint somebody…</span><span class="btn primary">Appoint</span></div>
+            </div>
+          </div>
+
+          <div class="unit u-vs">
+            <div class="uhead"><div><div class="nm">Visual Shift</div><div class="who2">1 appointed · 2 transactions waiting</div></div></div>
+            <div class="body">
+              <ul class="alist">
+                <li><span><b>Mohamed Selim</b><span class="sub">Finance · appointed by Islam Saadany · 24/08/2026</span></span><span class="btn ghost">Remove</span></li>
+              </ul>
+              <div class="appoint"><span class="input">Appoint somebody…</span><span class="btn primary">Appoint</span></div>
+            </div>
+          </div>
+
+          <div class="unit u-grp">
+            <div class="uhead"><div><div class="nm">Forefront Group</div><div class="who2">Nobody appointed</div></div></div>
+            <p class="blocked"><b>Forefront Group has 1 transaction and nobody to confirm it.</b>
+              Finance cannot send this unit's transactions until somebody is appointed. Appointing
+              yourself takes one click.</p>
+            <div class="body">
+              <div class="appoint"><span class="input">Appoint somebody…</span><span class="btn primary">Appoint</span></div>
+            </div>
+          </div>
+
+          <div class="notes">
+            <b>The rule that stays</b>
+            <ul>
+              <li>Holding top-level access does <b>not</b> by itself let you confirm anything — only the
+                people listed against a unit can, and only for that unit.</li>
+              <li>Only a Super User appoints. Appointing yourself is allowed on purpose: it is the way an
+                empty list is never a lock-out.</li>
+              <li>Somebody who leaves the company stops confirming without anyone having to remember to
+                remove them.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>Three things I'd like you to check</h2>
+    <div class="notes">
+      <b>Before I build it</b>
+      <ul>
+        <li><span class="q">The unit names are placeholders.</span> I've used Forefront Consulting,
+          Visual Shift and Forefront Group because those are the ones I know exist. The real list is
+          whatever is already set up under Business Units — nothing new gets created.</li>
+        <li><span class="q">A float top-up follows its custodian.</span> The marketing float's top-up is
+          paid to Raneem, so it lands under her unit. If a float should ever belong to a different unit
+          from the person holding it, tell me and I'll make it a property of the float instead.</li>
+        <li><span class="q">Somebody with no unit.</span> A person not assigned to any business unit
+          falls to the default one (Forefront Group today). If you'd rather that blocked instead, say so
+          — it's a one-line difference.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <b>Mockup only.</b> Nothing here is built yet. Sign this off and I'll implement exactly this —
+    the palette, the layout and the wording are the product's existing ones, with the unit band as the
+    only new element.
+  </footer>
+</div>
