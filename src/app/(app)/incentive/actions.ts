@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireIncentiveAccess } from "@/lib/roles";
 import { parsePeople, parseAssignments, parseContributions } from "@/lib/incentive/import";
+import { validateReview, type ReviewPayload } from "@/lib/incentive/review";
+import { writeReviewTables } from "@/lib/incentive/persist";
 
 export async function createCycle(formData: FormData): Promise<void> {
   await requireIncentiveAccess();
@@ -158,5 +160,44 @@ export async function uploadSheet(
     return { ok: true, message: `Imported ${rows.length} contribution rows from "${file.name}" (${sizeKb} KB).`, warnings: issues };
   } catch (e) {
     return { ok: false, error: `Upload failed while saving: ${errMsg(e)}` };
+  }
+}
+
+/** Result of a Recalculate — every fault is returned at once, never just the first. */
+export type ReviewSaveState =
+  | { ok: true; message: string }
+  | { ok: false; errors: string[] }
+  | null;
+
+/**
+ * Save the three review sheets as edited on screen, then let the page re-render
+ * so the whole report is recomputed from the stored rows. Recalculate IS the
+ * save — there is no second button — so the tables below can never show figures
+ * the database doesn't hold.
+ */
+export async function saveReviewTables(
+  cycleId: string,
+  _prev: ReviewSaveState,
+  payload: ReviewPayload
+): Promise<ReviewSaveState> {
+  await requireIncentiveAccess();
+
+  const checked = validateReview(payload);
+  if (!checked.ok) return { ok: false, errors: checked.errors };
+
+  try {
+    const n = await writeReviewTables(cycleId, checked.clean);
+    revalidatePath(`/incentive/${cycleId}`);
+    const count = (c: number, one: string, many: string) => `${c} ${c === 1 ? one : many}`;
+    return {
+      ok: true,
+      message: `Saved and recalculated — ${count(n.people, "person", "people")}, ${count(
+        n.assignments,
+        "assignment",
+        "assignments"
+      )}, ${count(n.contributions, "contribution", "contributions")}.`,
+    };
+  } catch (e) {
+    return { ok: false, errors: [`Nothing was saved — the write failed: ${errMsg(e)}`] };
   }
 }

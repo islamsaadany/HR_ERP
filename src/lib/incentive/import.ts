@@ -55,16 +55,25 @@ function headerIndex(header: string[]): Record<string, number> {
   return idx;
 }
 
-function num(v: string | undefined): number | null {
+/**
+ * Read a figure the way an operator writes one. Strips thousands separators,
+ * spaces, currency, and a trailing percent sign so "7%", "1,000", "EGP 500", and
+ * "66 %" all parse (percent values are converted to a fraction by the caller
+ * where relevant); "pending"/"TBD"/"n/a" read as "not known yet" (null).
+ *
+ * Exported because the on-screen review editor (`./review`) must read a typed
+ * figure identically — the same number pasted into a cell and into a CSV cannot
+ * be allowed to mean two different things.
+ */
+export function parseSheetNumber(v: string | undefined): number | null {
   if (v == null) return null;
-  // Strip thousands separators, spaces, currency, and a trailing percent sign so
-  // "7%", "1,000", "EGP 500", and "66 %" all parse (percent values are converted
-  // to a fraction by the caller where relevant).
   const s = v.replace(/[,%\s]/g, "").replace(/egp/i, "").trim();
   if (s === "" || /pending|tbd|n\/a/i.test(s)) return null;
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
+
+const num = parseSheetNumber;
 
 function boolYes(v: string | undefined): boolean {
   return /^(y|yes|true|1)$/i.test((v ?? "").trim());
