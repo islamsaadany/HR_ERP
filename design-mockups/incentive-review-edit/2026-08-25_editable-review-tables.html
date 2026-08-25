@@ -1,0 +1,588 @@
+<title>Editable Review Tables</title>
+<style>
+  /* Single-theme by design: mirrors the live product, which is light navy/gold only.
+     Every colour is painted explicitly so the page holds on any host background. */
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-400:#4f6d97;
+    --navy-500:#2f4d78;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;
+    --amber:#92400e;--amber-bg:#fffbeb;--amber-line:#fcd34d;
+    --red:#b91c1c;--red-bg:#fef2f2;--red-line:#f3c6c6;
+    --blue:#1d4ed8;--blue-bg:#eff6ff;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:32px 20px 90px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:8px 0 0;max-width:74ch}
+
+  .screen{margin-top:42px}
+  .screen>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:82ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+
+  /* The report section shell, as it is today */
+  .section{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+  .sechead{display:flex;align-items:center;gap:10px;padding:11px 14px;flex-wrap:wrap}
+  .sechead .chev{width:14px;height:14px;flex:none;color:var(--muted)}
+  .sechead .stitle{font-family:Georgia,serif;font-size:17px}
+  .sechead .ssub{font-size:12px;color:var(--muted)}
+  .sechead .spacer{flex:1}
+  .secbody{padding:0 14px 14px}
+  .caption{font-size:12px;color:var(--muted);margin:0 0 7px}
+  .caption.mt{margin-top:16px}
+
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;letter-spacing:.02em}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-red{border:1px solid var(--red-line);background:var(--red-bg);color:var(--red)}
+  .c-green{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12px;font-weight:600;padding:7px 13px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .btn-navy:hover{background:var(--navy-700)}
+  .btn-navy[disabled]{opacity:.4;cursor:not-allowed}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .btn-ghost:hover{background:var(--navy-50)}
+
+  /* Data tables — the shared ff-data-table treatment */
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+  .scroll.narrow{max-width:760px}
+  table{width:100%;border-collapse:collapse;background:var(--surface)}
+  thead th{background:var(--navy-800);color:#fff;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:8px 10px;white-space:nowrap;vertical-align:middle}
+  tbody td{padding:7px 10px;font-size:13px;white-space:nowrap;border-top:1px solid var(--line)}
+  tbody tr:first-child td{border-top:0}
+  .r{text-align:right;font-variant-numeric:tabular-nums}
+  th.r{text-align:right}
+  .zebra td{background:#eef0f2}
+  .totalrow td{background:var(--navy-50);font-weight:600}
+  .flagged td{background:var(--amber-bg)}
+  .badcell{background:var(--red-bg)!important;color:var(--red);font-weight:700}
+
+  .pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:10.5px;font-weight:700}
+  .p-ongoing{background:#dcfce7;color:#15803d}
+  .p-ended{background:#dbeafe;color:#1d4ed8}
+  .p-prog{background:#fef3c7;color:#b45309}
+  .p-pending{background:#f3f4f6;color:#6b7280}
+
+  /* Edit-mode cell controls */
+  .inp{width:100%;min-width:64px;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:5px 7px;font-size:12.5px;color:var(--ink);font-family:inherit}
+  .inp:focus{outline:2px solid var(--gold-300);outline-offset:1px;border-color:var(--navy-400)}
+  .inp.num{text-align:right;font-variant-numeric:tabular-nums}
+  .inp.w-name{min-width:130px}
+  .inp.w-sm{min-width:78px}
+  .inp.w-date{min-width:112px}
+  td.edit{padding:4px 6px;vertical-align:middle}
+  .pctwrap{position:relative;display:block}
+  .pctwrap .sfx{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--muted);pointer-events:none}
+  .pctwrap .inp{padding-right:20px}
+
+  .rowdel{width:34px;padding:4px 6px!important}
+  .xbtn{display:grid;place-items:center;width:24px;height:24px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:13px;line-height:1;cursor:pointer;font-family:inherit}
+  .xbtn:hover{border-color:var(--red-line);background:var(--red-bg);color:var(--red)}
+  th .xbtn{border-color:rgba(255,255,255,.3);background:transparent;color:rgba(255,255,255,.75);width:20px;height:20px;font-size:11px;margin-left:6px}
+  th .xbtn:hover{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.6)}
+  th .colhead{display:inline-flex;align-items:center}
+
+  .addrow td{border-top:1px dashed var(--navy-200);background:var(--paper)}
+  .addbtn{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--navy-500);font-size:12px;font-weight:650;cursor:pointer;padding:3px 0;font-family:inherit}
+  .addbtn:hover{color:var(--navy-800);text-decoration:underline}
+
+  .editbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--navy-50);border:1px solid var(--navy-100);border-radius:10px;padding:9px 12px;margin-bottom:12px}
+  .editbar .msg{font-size:12.5px;color:var(--navy-700);flex:1;min-width:220px}
+  .editbar .msg b{color:var(--navy-900)}
+
+  .banner{border-radius:12px;padding:12px 14px;font-size:13px}
+  .b-amber{border:1px solid var(--amber-line);background:var(--amber-bg);color:var(--amber)}
+  .b-green{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .banner b{font-weight:700}
+  .banner ul{margin:6px 0 0;padding-left:20px}
+  .banner li{margin-top:2px}
+
+  .notes{margin-top:44px;border-top:2px solid var(--navy-800);padding-top:18px}
+  .notes h2{font-family:Georgia,serif;font-size:20px;margin:0 0 14px}
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  .rule{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 15px}
+  .rule h3{font-size:12.5px;margin:0 0 5px;font-weight:750;color:var(--navy-800)}
+  .rule p{margin:0;font-size:12.5px;color:var(--muted)}
+  .rule p+p{margin-top:6px}
+  .q{margin-top:18px;border:1px solid var(--gold-300);background:var(--gold-100);border-radius:12px;padding:14px 15px}
+  .q h3{font-size:12.5px;margin:0 0 5px;font-weight:750;color:var(--gold-800);text-transform:uppercase;letter-spacing:.06em}
+  .q p{margin:0;font-size:13px;color:var(--ink)}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Incentive Scheme · Super User · Confidential</p>
+  <h1>Editing the review tables in place</h1>
+  <p class="lede">
+    Today the three sheets at the top of a cycle report are read-only: a wrong salary or a missing
+    contribution means going back to Excel and re-uploading. This proposal makes those three tables
+    editable in place — change a cell, add a row, remove one — and one <b>Recalculate</b> button saves
+    the change and regenerates every table below it. Uploading a sheet still works exactly as it does
+    now, for the first load.
+  </p>
+
+  <!-- ── 1 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">1</span> Reading, as it is today — plus one new button</h2>
+    <p class="sub">Nothing about the read-only view changes. The section header gains <b>Edit tables</b> on the right.</p>
+    <div class="frame">
+      <div class="section">
+        <div class="sechead">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(90deg)"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="stitle">Review &amp; validation</span>
+          <span class="chip c-red">⚠ 1 data issue</span>
+          <span class="ssub">the three sheets, as read</span>
+          <span class="spacer"></span>
+          <button class="btn-ghost" type="button">✎ Edit tables</button>
+        </div>
+        <div class="secbody">
+          <p class="caption">People</p>
+          <div class="scroll narrow">
+            <table>
+              <thead><tr><th>Name</th><th>Role</th><th class="r">Net monthly salary</th><th>Start date</th></tr></thead>
+              <tbody>
+                <tr><td>Ahmed Fathy</td><td>Partner</td><td class="r">92,000</td><td>01/03/2021</td></tr>
+                <tr><td>Nour Hassan</td><td>Senior Consultant</td><td class="r">61,500</td><td>15/09/2022</td></tr>
+                <tr><td>Yara Kamel</td><td>Consultant</td><td class="r">44,000</td><td>01/02/2024</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="caption mt">Assignments</p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Client</th><th>Type</th><th>Lead</th><th>BD</th><th>Lead source</th><th class="r">Revenue</th><th class="r">Direct cost</th><th class="r">Vendor cost</th><th class="r">Markup %</th><th>Start date</th><th>Closure date</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>Raya Holding</td><td>RET</td><td>Ahmed Fathy</td><td>Ahmed Fathy</td><td>Ahmed Fathy</td><td class="r">1,850,000</td><td class="r">410,000</td><td class="r">—</td><td class="r">—</td><td>01/01/2026</td><td>—</td><td><span class="pill p-ongoing">Ongoing</span></td></tr>
+                <tr><td>El Abd Foods</td><td>PRJ</td><td>Nour Hassan</td><td>Ahmed Fathy</td><td>Referral</td><td class="r">640,000</td><td class="r">155,000</td><td class="r">—</td><td class="r">—</td><td>10/02/2026</td><td>28/05/2026</td><td><span class="pill p-ended">Ended</span></td></tr>
+                <tr><td>Delta Mills</td><td>PRJ</td><td>Yara Kamel</td><td>Nour Hassan</td><td>Nour Hassan</td><td class="r">305,000</td><td class="r">—</td><td class="r">—</td><td class="r">—</td><td>02/04/2026</td><td>—</td><td><span class="pill p-prog">In progress</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="caption mt">Contributions (client × person) — the <b style="color:var(--ink)">Total</b> column flags any client that isn’t 100%</p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Client</th><th class="r">Ahmed Fathy</th><th class="r">Nour Hassan</th><th class="r">Yara Kamel</th><th class="r">Total</th></tr></thead>
+              <tbody>
+                <tr><td>Raya Holding</td><td class="r">60.0%</td><td class="r">40.0%</td><td class="r">—</td><td class="r">100.0%</td></tr>
+                <tr class="flagged"><td>El Abd Foods <span style="color:var(--red);font-weight:700">⚠</span></td><td class="r">—</td><td class="r">55.0%</td><td class="r">38.0%</td><td class="r badcell">93.0% ⚠</td></tr>
+                <tr><td>Delta Mills</td><td class="r">—</td><td class="r">25.0%</td><td class="r">75.0%</td><td class="r">100.0%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">2</span> Editing — live, and yours to try</h2>
+    <p class="sub">
+      This one works. Type in a cell, remove a row with <b>×</b>, add one at the bottom, add or drop a person
+      column in the contributions matrix. The <b>Total</b> column re-adds as you type, so a client reaches 100%
+      before you press anything. El Abd is short 7 points — give Yara 45% and watch it clear.
+    </p>
+    <div class="frame">
+      <div class="section">
+        <div class="sechead">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(90deg)"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="stitle">Review &amp; validation</span>
+          <span id="dirtyChip" class="chip c-gold" hidden>Unsaved edits</span>
+          <span class="spacer"></span>
+        </div>
+        <div class="secbody">
+
+          <div class="editbar">
+            <span class="msg" id="editMsg">Editing all three sheets. <b>Recalculate</b> saves your changes and rebuilds every table below.</span>
+            <button class="btn-ghost" type="button" id="btnDiscard">Discard changes</button>
+            <button class="btn-navy" type="button" id="btnRecalc" disabled>↻ Recalculate</button>
+          </div>
+
+          <p class="caption">People</p>
+          <div class="scroll narrow">
+            <table>
+              <thead><tr><th>Name</th><th>Role</th><th class="r">Net monthly salary</th><th>Start date</th><th></th></tr></thead>
+              <tbody id="peopleBody"></tbody>
+              <tbody>
+                <tr class="addrow"><td colspan="5"><button class="addbtn" type="button" id="addPerson">＋ Add person</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="caption mt">Assignments</p>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Client</th><th>Type</th><th>Lead</th><th>BD</th><th>Lead source</th><th class="r">Revenue</th><th class="r">Direct cost</th><th class="r">Vendor cost</th><th class="r">Markup %</th><th>Start date</th><th>Closure date</th><th>Status</th><th></th></tr></thead>
+              <tbody id="asgBody"></tbody>
+              <tbody>
+                <tr class="addrow"><td colspan="13"><button class="addbtn" type="button" id="addAsg">＋ Add assignment</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="caption mt">Contributions (client × person) — <b style="color:var(--ink)">Total</b> updates as you type</p>
+          <div class="scroll">
+            <table>
+              <thead><tr id="contribHead"></tr></thead>
+              <tbody id="contribBody"></tbody>
+              <tbody>
+                <tr class="addrow"><td id="addClientCell" colspan="9">
+                  <button class="addbtn" type="button" id="addClient">＋ Add client</button>
+                  <span style="color:var(--line);margin:0 10px">|</span>
+                  <button class="addbtn" type="button" id="addPersonCol">＋ Add person column</button>
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">3</span> After Recalculate — everything below rebuilds</h2>
+    <p class="sub">
+      The edits are saved and the engine re-runs on the server, exactly as it does after an upload. The
+      warning banner, the fee tables, the by-person totals, the firm P&amp;L and the watch list all
+      regenerate from the corrected figures. Here El Abd Foods stopped being blocked and now pays.
+    </p>
+    <div class="frame">
+      <div class="banner b-green"><b>Saved and recalculated.</b> 3 people, 3 assignments, 7 contribution cells. Every client now totals 100%.</div>
+
+      <div class="section" style="margin-top:12px">
+        <div class="sechead">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(90deg)"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="stitle">Business Partner Fee</span>
+          <span class="spacer"></span>
+        </div>
+        <div class="secbody">
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Client</th><th>Type</th><th class="r">GP</th><th class="r">GP%</th><th class="r">Envelope</th><th class="r">Ded</th><th>Lead</th><th class="r">Lead fee</th><th class="r">Contributor</th><th class="r">Firm</th></tr></thead>
+              <tbody>
+                <tr><td>Raya Holding</td><td>RET</td><td class="r">1,440,000.00</td><td class="r">77.8%</td><td class="r">43,200.00</td><td class="r">20.0%</td><td>Ahmed Fathy</td><td class="r">34,560.00</td><td class="r">8,640.00</td><td class="r">—</td></tr>
+                <tr class="zebra"><td>El Abd Foods</td><td>PRJ</td><td class="r">485,000.00</td><td class="r">75.8%</td><td class="r">14,550.00</td><td class="r">30.0%</td><td>Nour Hassan</td><td class="r">10,185.00</td><td class="r">4,365.00</td><td class="r">—</td></tr>
+                <tr class="totalrow"><td colspan="7">Total</td><td class="r">44,745.00</td><td class="r">13,005.00</td><td class="r">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="caption mt" style="margin-bottom:0">…and the same for Contributor detail, Commission, Compensation by person, Firm P&amp;L, Profit Share, Cost recovery and the Watch list.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Rules ─────────────────────────────────────────────────────── -->
+  <section class="notes">
+    <h2>How it behaves</h2>
+    <div class="rules">
+      <div class="rule">
+        <h3>Recalculate is the save</h3>
+        <p>There is no separate Save. One button writes the three sheets and re-runs the engine, so the tables below can never show figures the database doesn’t hold.</p>
+        <p>It stays greyed out until something actually changes, and the gold <b>Unsaved edits</b> chip is on screen the whole time your edits are only in the browser — it disappears the moment they land.</p>
+      </div>
+      <div class="rule">
+        <h3>Same rules as an upload</h3>
+        <p>A name and a client are required and can’t repeat; salary, revenue and cost must be numbers; type is PRJ or RET. A cell that fails says so in plain words and nothing is saved until it’s fixed.</p>
+      </div>
+      <div class="rule">
+        <h3>A client short of 100% still saves</h3>
+        <p>That is a payout rule, not a save rule — it already blocks that client from the payout and flags it in red. You can save half-finished shares and come back; you just won’t get paid figures for that client until they add up.</p>
+      </div>
+      <div class="rule">
+        <h3>Status is chosen, not guessed</h3>
+        <p>On upload the status is worked out from the closure-date column. In the editor it’s a plain dropdown — Ongoing, Ended, In progress, Pending — because you’re looking straight at it. Setting a closure date does not silently change it.</p>
+      </div>
+      <div class="rule">
+        <h3>Discard means discard</h3>
+        <p>Leaving edit mode with unsaved edits asks first. Discard puts every cell back to what the database holds — nothing half-applied.</p>
+      </div>
+      <div class="rule">
+        <h3>Uploading still works</h3>
+        <p>The upload row is untouched, and a re-upload still replaces that whole sheet. Editing is for the correction you spotted on screen; the upload is for the first load.</p>
+      </div>
+    </div>
+
+    <div class="q">
+      <h3>One thing to decide</h3>
+      <p>
+        If you rename someone in the People table — say a typo in “Nour Hassan” — should we rename them
+        everywhere else at the same time (as Lead, as BD, as a contributions column)? Saying yes keeps the
+        cycle intact from one edit. Saying no means the name only changes where you changed it, and the
+        report will flag the lead as “not in the people sheet” until you fix the others by hand.
+      </p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ── Seed data: the same figures as screen 1, so the two read as one cycle.
+  var people = [
+    { name: "Ahmed Fathy", role: "Partner",            salary: "92000", start: "2021-03-01" },
+    { name: "Nour Hassan", role: "Senior Consultant",  salary: "61500", start: "2022-09-15" },
+    { name: "Yara Kamel",  role: "Consultant",         salary: "44000", start: "2024-02-01" }
+  ];
+  var assignments = [
+    { client: "Raya Holding",  type: "RET", lead: "Ahmed Fathy", bd: "Ahmed Fathy", src: "Ahmed Fathy", rev: "1850000", dc: "410000", vc: "", mk: "", start: "2026-01-01", close: "",           status: "ongoing" },
+    { client: "El Abd Foods",  type: "PRJ", lead: "Nour Hassan", bd: "Ahmed Fathy", src: "Referral",    rev: "640000",  dc: "155000", vc: "", mk: "", start: "2026-02-10", close: "2026-05-28", status: "closed" },
+    { client: "Delta Mills",   type: "PRJ", lead: "Yara Kamel",  bd: "Nour Hassan", src: "Nour Hassan", rev: "305000",  dc: "",       vc: "", mk: "", start: "2026-04-02", close: "",           status: "in_progress" }
+  ];
+  var persons = ["Ahmed Fathy", "Nour Hassan", "Yara Kamel"];
+  var clients = ["Raya Holding", "El Abd Foods", "Delta Mills"];
+  // shares[client][person] as a percentage string ("" = blank cell)
+  var shares = {
+    "Raya Holding": { "Ahmed Fathy": "60", "Nour Hassan": "40", "Yara Kamel": "" },
+    "El Abd Foods": { "Ahmed Fathy": "",   "Nour Hassan": "55", "Yara Kamel": "38" },
+    "Delta Mills":  { "Ahmed Fathy": "",   "Nour Hassan": "25", "Yara Kamel": "75" }
+  };
+  var pristine = JSON.stringify({ people: people, assignments: assignments, persons: persons, clients: clients, shares: shares });
+
+  var STATUSES = [["ongoing", "Ongoing"], ["closed", "Ended"], ["in_progress", "In progress"], ["pending", "Pending"]];
+
+  var dirty = false;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function markDirty() {
+    if (dirty) return;
+    dirty = true;
+    $("dirtyChip").hidden = false;
+    $("btnRecalc").disabled = false;
+  }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function input(value, cls, type, onInput) {
+    var i = el("input", "inp " + (cls || ""));
+    i.type = type || "text";
+    i.value = value == null ? "" : value;
+    i.addEventListener("input", function () { markDirty(); if (onInput) onInput(i.value); });
+    return i;
+  }
+
+  function cell(row, node) {
+    var td = el("td", "edit");
+    td.appendChild(node);
+    row.appendChild(td);
+    return td;
+  }
+
+  function delCell(row, label, onClick) {
+    var td = el("td", "rowdel");
+    var b = el("button", "xbtn", "✕");
+    b.type = "button";
+    b.title = label;
+    b.setAttribute("aria-label", label);
+    b.addEventListener("click", function () { markDirty(); onClick(); });
+    td.appendChild(b);
+    row.appendChild(td);
+  }
+
+  // ── People ──────────────────────────────────────────────────────
+  function renderPeople() {
+    var body = $("peopleBody");
+    body.textContent = "";
+    people.forEach(function (p, i) {
+      var tr = el("tr");
+      cell(tr, input(p.name, "w-name", "text", function (v) { p.name = v; }));
+      cell(tr, input(p.role, "w-name", "text", function (v) { p.role = v; }));
+      cell(tr, input(p.salary, "num w-sm", "number", function (v) { p.salary = v; }));
+      cell(tr, input(p.start, "w-date", "date", function (v) { p.start = v; }));
+      delCell(tr, "Remove " + (p.name || "this person"), function () { people.splice(i, 1); renderPeople(); });
+      body.appendChild(tr);
+    });
+  }
+
+  // ── Assignments ─────────────────────────────────────────────────
+  function renderAssignments() {
+    var body = $("asgBody");
+    body.textContent = "";
+    assignments.forEach(function (a, i) {
+      var tr = el("tr");
+      cell(tr, input(a.client, "w-name", "text", function (v) { a.client = v; }));
+
+      var typeSel = el("select", "inp w-sm");
+      [["PRJ", "PRJ"], ["RET", "RET"]].forEach(function (o) {
+        var op = el("option", null, o[1]); op.value = o[0]; if (a.type === o[0]) op.selected = true; typeSel.appendChild(op);
+      });
+      typeSel.addEventListener("change", function () { markDirty(); a.type = typeSel.value; });
+      cell(tr, typeSel);
+
+      cell(tr, input(a.lead, "w-name", "text", function (v) { a.lead = v; }));
+      cell(tr, input(a.bd, "w-name", "text", function (v) { a.bd = v; }));
+      cell(tr, input(a.src, "w-name", "text", function (v) { a.src = v; }));
+      cell(tr, input(a.rev, "num w-sm", "number", function (v) { a.rev = v; }));
+      cell(tr, input(a.dc, "num w-sm", "number", function (v) { a.dc = v; }));
+      cell(tr, input(a.vc, "num w-sm", "number", function (v) { a.vc = v; }));
+      cell(tr, input(a.mk, "num w-sm", "number", function (v) { a.mk = v; }));
+      cell(tr, input(a.start, "w-date", "date", function (v) { a.start = v; }));
+      cell(tr, input(a.close, "w-date", "date", function (v) { a.close = v; }));
+
+      var stSel = el("select", "inp w-sm");
+      STATUSES.forEach(function (o) {
+        var op = el("option", null, o[1]); op.value = o[0]; if (a.status === o[0]) op.selected = true; stSel.appendChild(op);
+      });
+      stSel.addEventListener("change", function () { markDirty(); a.status = stSel.value; });
+      cell(tr, stSel);
+
+      delCell(tr, "Remove " + (a.client || "this assignment"), function () { assignments.splice(i, 1); renderAssignments(); });
+      body.appendChild(tr);
+    });
+  }
+
+  // ── Contributions matrix ────────────────────────────────────────
+  function totalFor(client) {
+    var row = shares[client] || {};
+    return persons.reduce(function (s, p) {
+      var n = parseFloat(row[p]);
+      return s + (isFinite(n) ? n : 0);
+    }, 0);
+  }
+
+  function paintTotal(td, client) {
+    var t = totalFor(client);
+    var off = Math.abs(t - 100) > 1.0001;
+    td.textContent = t.toFixed(1) + "%" + (off ? " ⚠" : "");
+    td.className = "r" + (off ? " badcell" : "");
+    var tr = td.parentNode;
+    tr.className = off ? "flagged" : "";
+  }
+
+  function renderContrib() {
+    var head = $("contribHead");
+    head.textContent = "";
+    head.appendChild(el("th", null, "Client"));
+    persons.forEach(function (p, pi) {
+      var th = el("th", "r");
+      var span = el("span", "colhead");
+      span.appendChild(document.createTextNode(p));
+      var b = el("button", "xbtn", "✕");
+      b.type = "button";
+      b.title = "Remove the " + p + " column";
+      b.setAttribute("aria-label", "Remove the " + p + " column");
+      b.addEventListener("click", function () {
+        markDirty();
+        persons.splice(pi, 1);
+        clients.forEach(function (c) { delete shares[c][p]; });
+        renderContrib();
+      });
+      span.appendChild(b);
+      th.appendChild(span);
+      head.appendChild(th);
+    });
+    head.appendChild(el("th", "r", "Total"));
+    head.appendChild(el("th"));
+    $("addClientCell").colSpan = persons.length + 3;
+
+    var body = $("contribBody");
+    body.textContent = "";
+    clients.forEach(function (c, ci) {
+      var tr = el("tr");
+      var nameInput = input(c, "w-name", "text", null);
+      nameInput.addEventListener("input", function () {
+        markDirty();
+        var old = clients[ci];
+        shares[nameInput.value] = shares[old];
+        if (nameInput.value !== old) delete shares[old];
+        clients[ci] = nameInput.value;
+      });
+      cell(tr, nameInput);
+
+      var totalTd = el("td", "r");
+      persons.forEach(function (p) {
+        var wrap = el("span", "pctwrap");
+        var i = input((shares[c] || {})[p], "num", "number", null);
+        i.addEventListener("input", function () {
+          markDirty();
+          shares[clients[ci]][p] = i.value;
+          paintTotal(totalTd, clients[ci]);
+        });
+        wrap.appendChild(i);
+        wrap.appendChild(el("span", "sfx", "%"));
+        cell(tr, wrap);
+      });
+
+      tr.appendChild(totalTd);
+      delCell(tr, "Remove " + c, function () {
+        delete shares[clients[ci]];
+        clients.splice(ci, 1);
+        renderContrib();
+      });
+      body.appendChild(tr);
+      paintTotal(totalTd, c);
+    });
+  }
+
+  // ── Adding ──────────────────────────────────────────────────────
+  $("addPerson").addEventListener("click", function () {
+    markDirty();
+    people.push({ name: "", role: "", salary: "", start: "" });
+    renderPeople();
+    var rows = $("peopleBody").querySelectorAll("input");
+    if (rows.length) rows[rows.length - 4].focus();
+  });
+
+  $("addAsg").addEventListener("click", function () {
+    markDirty();
+    assignments.push({ client: "", type: "PRJ", lead: "", bd: "", src: "", rev: "", dc: "", vc: "", mk: "", start: "", close: "", status: "pending" });
+    renderAssignments();
+  });
+
+  $("addClient").addEventListener("click", function () {
+    markDirty();
+    var name = "New client " + (clients.length + 1);
+    clients.push(name);
+    shares[name] = {};
+    renderContrib();
+  });
+
+  $("addPersonCol").addEventListener("click", function () {
+    markDirty();
+    var name = window.prompt("Which person? (in the real screen this is a dropdown of the people above)");
+    if (!name) return;
+    persons.push(name);
+    renderContrib();
+  });
+
+  // ── Bar buttons ─────────────────────────────────────────────────
+  $("btnDiscard").addEventListener("click", function () {
+    if (dirty && !window.confirm("Discard your edits and put every cell back to what is saved?")) return;
+    var seed = JSON.parse(pristine);
+    people = seed.people; assignments = seed.assignments;
+    persons = seed.persons; clients = seed.clients; shares = seed.shares;
+    dirty = false;
+    $("dirtyChip").hidden = true;
+    $("btnRecalc").disabled = true;
+    $("editMsg").innerHTML = "Editing all three sheets. <b>Recalculate</b> saves your changes and rebuilds every table below.";
+    renderPeople(); renderAssignments(); renderContrib();
+  });
+
+  $("btnRecalc").addEventListener("click", function () {
+    dirty = false;
+    $("dirtyChip").hidden = true;
+    $("btnRecalc").disabled = true;
+    $("editMsg").innerHTML = "<b>Saved.</b> " + people.length + " people, " + assignments.length +
+      " assignments — every table below has been rebuilt. (Mockup: the tables below are fixed.)";
+  });
+
+  renderPeople();
+  renderAssignments();
+  renderContrib();
+})();
+</script>
