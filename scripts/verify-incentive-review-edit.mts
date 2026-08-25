@@ -27,6 +27,9 @@ import {
   type ReviewPayload,
 } from "../src/lib/incentive/review";
 import { writeReviewTables } from "../src/lib/incentive/persist";
+import { parseAssignments } from "../src/lib/incentive/import";
+import { INCENTIVE_TEMPLATES } from "../src/lib/incentive/templates";
+import { formatDateISO } from "../src/lib/labels";
 import { computeCycle, type CycleAssignment } from "../src/lib/incentive/compute";
 import type { AssignmentType } from "../src/lib/incentive/rules";
 
@@ -152,7 +155,7 @@ async function main() {
   eq("salary reaches the cell as typed", draft.people.map((p) => p.netMonthlySalary), ["90000", "60000", "40000"]);
   eq("a 0.55 share shows as 55 percent", draft.rows.find((r) => r.client === C.prj)?.shares, ["", "55", "38"]);
   eq("a blank direct cost stays blank", toDraft({ ...seeded, assignments: [{ ...seeded.assignments[0], directCost: null }] }).assignments[0].directCost, "");
-  eq("a stored date reaches the date field", draft.assignments.find((a) => a.client === C.prj)?.closeDate, "2026-05-28");
+  eq("a stored date reaches the cell as dd/mm/yyyy", draft.assignments.find((a) => a.client === C.prj)?.closeDate, "28/05/2026");
 
   const roundTrip = validateReview(untouched(seeded));
   check("an untouched draft validates", roundTrip.ok, roundTrip.ok ? "" : (roundTrip as { errors: string[] }).errors.join(" · "));
@@ -168,6 +171,55 @@ async function main() {
       [90000, 60000, 40000]
     );
   }
+
+  // ── 1b. Dates: dd/mm/yyyy on screen, day-first off a sheet ────────────────
+  console.log("\n1b. Dates read and print the house way round");
+  eq("a stored date prints dd/mm/yyyy", formatDateISO("2026-05-28"), "28/05/2026");
+  eq("an unambiguous day prints unchanged", formatDateISO("2021-03-01"), "01/03/2021");
+  eq("a missing date prints an em dash", formatDateISO(null), "—");
+  // Reordered textually, so it cannot shift a day in a timezone behind UTC.
+  eq("the first of the month is not the day before", formatDateISO("2026-01-01"), "01/01/2026");
+
+  // The typed cells: dd/mm/yyyy in, dd/mm/yyyy back out, and a refusal in between.
+  const typed = (start: string) => {
+    const p2 = untouched(seeded);
+    p2.people[0].startDate = start;
+    return validateReview(p2);
+  };
+  const okTyped = typed("07/11/2023");
+  check("a typed 07/11/2023 is accepted", okTyped.ok);
+  if (okTyped.ok) eq("…as 7 November", okTyped.clean.people[0].startDate?.toISOString().slice(0, 10), "2023-11-07");
+  const isoTyped = typed("2023-11-07");
+  check("an untouched ISO value is still accepted", isoTyped.ok);
+  const bogus = typed("11/07/23");
+  check("a two-digit year is refused, not guessed", !bogus.ok);
+  if (!bogus.ok) check("…and the message names the format", bogus.errors.some((e) => /dd\/mm\/yyyy/.test(e)), bogus.errors.join(" · "));
+  check("31/02/2026 is refused", !typed("31/02/2026").ok);
+  check("13/13/2026 is refused", !typed("13/13/2026").ok);
+
+  // The importer: "01/03/2021" is 1 March, not 3 January (which is what
+  // `new Date(...)` returns and what this module used to store).
+  const dayFirst = parseAssignments(
+    [
+      "client,type,lead,bd,revenue,direct_cost,start_date,close_date",
+      `${C.ret} DF,RET,${P.lead},${P.lead},100,10,01/03/2021,05/12/2021`,
+      `${C.prj} ISO,PRJ,${P.lead},${P.lead},100,10,2021-03-01,2021-12-05`,
+      `${C.prj} US,PRJ,${P.lead},${P.lead},100,10,3/22/2021,12/5/2021`,
+    ].join("\n")
+  );
+  const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
+  eq("01/03/2021 is 1 March", iso(dayFirst.rows[0].startDate), "2021-03-01");
+  eq("05/12/2021 is 5 December", iso(dayFirst.rows[0].closeDate), "2021-12-05");
+  eq("an ISO cell is still read as ISO", iso(dayFirst.rows[1].startDate), "2021-03-01");
+  // A legacy m/d sheet can only mean month-first when the middle field is > 12.
+  eq("3/22/2021 can only be 22 March", iso(dayFirst.rows[2].startDate), "2021-03-22");
+  eq("…and 12/5/2021 beside it stays day-first", iso(dayFirst.rows[2].closeDate), "2021-05-12");
+
+  // The template an operator downloads must be in the form the parser reads back.
+  const tpl = parseAssignments(INCENTIVE_TEMPLATES.assignments.csv);
+  eq("the sample template round-trips", iso(tpl.rows[1].closeDate), "2026-05-30");
+  eq("…and its start date too", iso(tpl.rows[1].startDate), "2026-01-01");
+  check("the template shows dates dd/mm/yyyy", INCENTIVE_TEMPLATES.people.csv.includes("01/06/2024"));
 
   // ── 2. The live total the operator watches ────────────────────────────────
   console.log("\n2. The Total column");

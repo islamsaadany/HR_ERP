@@ -119,6 +119,21 @@ error-prone; this reproduces the document's figures exactly and server-side.
   indexes when two people trade names — with `eligibleToLead` and `utilization`
   carried across by row id so the two retired columns aren't silently dropped.
   Uploading is unchanged and still replaces a whole sheet.
+- **FR-006e** (2026-08-25): **Dates follow the house dd/mm/yyyy standard throughout
+  this module.** The read-back tables print `formatDateISO` (reordered textually, so
+  a viewer in a timezone behind UTC never sees the previous day); the editor's date
+  cells are **typed text stating `dd/mm/yyyy`**, not `<input type="date">` — a native
+  picker draws itself in the *browser's* UI language and rendered 1 March as
+  `03/01/2021` under en-GB, ar-EG **and** en-US when measured, so it cannot carry a
+  house format. Cells accept dd/mm/yyyy (ISO too, unstated, so an untouched stored
+  value can't be rejected on its way back out) and refuse anything else — including
+  a two-digit year and an unreal date like 31/02 — by name. The **CSV importer is
+  day-first** (`parseDate`), which fixed a silent misread: `new Date("01/03/2021")`
+  is American, so an operator's 1 March was being stored as 3 January with nothing
+  to show for it. ISO cells and Excel serials are unchanged, and a legacy m/d/y
+  sheet is still read correctly where the middle field can only be a day. The
+  downloadable templates (static and pre-filled) emit dd/mm/yyyy, so a template
+  downloaded, filled in and uploaded round-trips unchanged.
 - **FR-007**: Per-hour performance metrics (GP/hour, break-even, pricing floor)
   are **out of scope** until an hours column is provided; cost recovery uses
   contribution-weighted GP.
@@ -150,7 +165,8 @@ contributions, and survives two people trading names; and the real
 lead. The screen itself was driven in a real browser (sign-in → edit → save →
 rejected save): the live total, the dirty chip, the disabled-until-dirty button,
 the rebuilt report, the announced error banner and zero page-level horizontal
-overflow were all confirmed there — which is also where the missing
+overflow were all confirmed there, as was the dd/mm/yyyy round trip (a typed
+09/11/2023 saved and read back as 9 November, and 31/02/2026 refused by name) — which is also where the missing
 `startTransition` around the save was caught, without which the button never
 reported "Recalculating…" nor blocked a second click.
 

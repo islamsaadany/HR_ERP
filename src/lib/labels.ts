@@ -126,6 +126,23 @@ export function formatDate(d: Date | null | undefined): string {
   });
 }
 
+/**
+ * The same dd/mm/yyyy standard for a date that is already a **date-only string**
+ * ("YYYY-MM-DD") rather than a Date — e.g. a value carried to the browser beside
+ * an `<input type="date">`, which needs the ISO form for the field and the house
+ * form for the text beside it.
+ *
+ * Reordered textually rather than via `new Date(...)`: an ISO date-only string
+ * parses as UTC midnight, and formatting THAT in a timezone behind UTC prints
+ * the previous day. Nobody's start date should move because of where they are
+ * sitting.
+ */
+export function formatDateISO(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+}
+
 /** Date → "YYYY-MM-DD" for <input type="date">, or "" when null. */
 export function toDateInput(d: Date | null | undefined): string {
   if (!d) return "";

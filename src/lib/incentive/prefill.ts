@@ -27,7 +27,17 @@ function cell(value: string | number | null | undefined): string {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-const isoDate = (d: Date | null | undefined): string => (d ? d.toISOString().slice(0, 10) : "");
+/**
+ * Dates go into the template **dd/mm/yyyy** — the house standard, and the same
+ * form the parser reads back (`parseDate` is day-first), so a template that is
+ * downloaded, filled in and uploaded round-trips unchanged. Built from the UTC
+ * parts rather than a locale format so a server in another timezone can't shift
+ * somebody's start date by a day.
+ */
+const sheetDate = (d: Date | null | undefined): string =>
+  d
+    ? `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`
+    : "";
 
 type Prefilled = { filename: string; csv: string };
 
@@ -57,7 +67,7 @@ async function priorCycle(currentCycleId: string) {
 function peopleCsv(people: Awaited<ReturnType<typeof incentivePeople>>): string {
   const header = "name,role,net_monthly_salary,start_date";
   const rows = people.map((p) =>
-    [cell(p.name), cell(p.title), cell(p.monthlySalary ?? ""), cell(isoDate(p.startDate))].join(",")
+    [cell(p.name), cell(p.title), cell(p.monthlySalary ?? ""), cell(sheetDate(p.startDate))].join(",")
   );
   return [header, ...rows].join("\n") + "\n";
 }

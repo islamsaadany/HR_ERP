@@ -21,7 +21,7 @@
  * Every fault is reported at once: a form that rejects on the first problem makes
  * someone fix a table one round-trip at a time.
  */
-import { parseSheetNumber } from "./import";
+import { buildUTC, parseSheetNumber } from "./import";
 import type { AssignmentType } from "./rules";
 
 export const ASSIGNMENT_STATUSES = ["ongoing", "closed", "in_progress", "pending"] as const;
@@ -95,13 +95,40 @@ export type ReviewValidation =
 
 const key = (s: string) => s.trim().toLowerCase();
 
-/** A `<input type="date">` value ("" or yyyy-mm-dd) → Date, or `undefined` when unusable. */
+/**
+ * A typed date cell → Date, `null` when blank, or `undefined` when unusable.
+ *
+ * The cells are **dd/mm/yyyy** — the house standard, stated on the field itself.
+ * A native `<input type="date">` was the obvious choice and was wrong: it draws
+ * itself in the *browser's* UI language, which renders 1 March 2021 as
+ * `03/01/2021` on a default Chromium whatever locale the page asks for. A field
+ * whose format nobody can promise is not a field you enter a closure date in.
+ *
+ * ISO is still accepted, unstated, so a value that arrived from a sheet and was
+ * never touched can't be rejected on its way back out.
+ */
+const DMY = /^(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(\d{4})$/;
+const ISO = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
+
 function parseDateInput(v: string): Date | null | undefined {
   const s = v.trim();
   if (!s) return null;
-  const d = new Date(s);
-  return isNaN(d.getTime()) ? undefined : d;
+  const dmy = DMY.exec(s);
+  if (dmy) return buildUTC(Number(dmy[3]), Number(dmy[2]), Number(dmy[1])) ?? undefined;
+  const iso = ISO.exec(s);
+  if (iso) return buildUTC(Number(iso[1]), Number(iso[2]), Number(iso[3])) ?? undefined;
+  return undefined;
 }
+
+/** A stored ISO date → the dd/mm/yyyy the cell shows, or "" when there is none. */
+function toDateCell(iso: string | null): string {
+  if (!iso) return "";
+  const m = ISO.exec(iso);
+  return m ? `${m[3].padStart(2, "0")}/${m[2].padStart(2, "0")}/${m[1]}` : iso;
+}
+
+/** What the date cells tell the operator to type, and what an error repeats back. */
+export const DATE_CELL_FORMAT = "dd/mm/yyyy";
 
 /**
  * Collect the names that appear more than once (case-insensitively), so the
@@ -135,7 +162,7 @@ export function validateReview(payload: ReviewPayload): ReviewValidation {
     else if (salary < 0) errors.push(`${where}: net monthly salary can't be negative.`);
 
     const startDate = parseDateInput(p.startDate);
-    if (startDate === undefined) errors.push(`${where}: start date isn't a valid date.`);
+    if (startDate === undefined) errors.push(`${where}: start date must be a real date, as ${DATE_CELL_FORMAT}.`);
 
     people.push({
       id: p.id,
@@ -178,9 +205,9 @@ export function validateReview(payload: ReviewPayload): ReviewValidation {
     };
 
     const startDate = parseDateInput(a.startDate);
-    if (startDate === undefined) errors.push(`${where}: start date isn't a valid date.`);
+    if (startDate === undefined) errors.push(`${where}: start date must be a real date, as ${DATE_CELL_FORMAT}.`);
     const closeDate = parseDateInput(a.closeDate);
-    if (closeDate === undefined) errors.push(`${where}: closure date isn't a valid date.`);
+    if (closeDate === undefined) errors.push(`${where}: closure date must be a real date, as ${DATE_CELL_FORMAT}.`);
 
     assignments.push({
       client,
@@ -305,7 +332,7 @@ export function toDraft(data: ReviewData): Draft {
       name: p.name,
       role: p.role ?? "",
       netMonthlySalary: String(p.netMonthlySalary),
-      startDate: p.startDate ?? "",
+      startDate: toDateCell(p.startDate),
     })),
     assignments: data.assignments.map((a) => ({
       id: a.id,
@@ -318,8 +345,8 @@ export function toDraft(data: ReviewData): Draft {
       directCost: numText(a.directCost),
       vendorCost: a.vendorCost ? String(a.vendorCost) : "",
       markupPct: a.markupPct ? String(a.markupPct) : "",
-      startDate: a.startDate ?? "",
-      closeDate: a.closeDate ?? "",
+      startDate: toDateCell(a.startDate),
+      closeDate: toDateCell(a.closeDate),
       status: a.status,
     })),
     persons,
