@@ -60,6 +60,27 @@ export type PersonTotals = {
   months: number; // (leadFee + contributor) ÷ monthly salary
 };
 
+/** One client's worth of a person's Business Partner Fee, in the hat they earned it in. */
+export type BpfLine =
+  | {
+      role: "lead";
+      client: string;
+      grossMarginPct: number;
+      envelope: number;
+      /** The share of the envelope the lead keeps after contributor deductions (1 − total deduction). */
+      keeps: number;
+      amount: number;
+    }
+  | {
+      role: "contributor";
+      client: string;
+      share: number;
+      tier: number;
+      amount: number;
+      /** Allocation fell below the 5%-of-month floor, so nothing was paid. */
+      flooredToZero: boolean;
+    };
+
 export type CostRecoveryRow = {
   name: string;
   sixMonthSalary: number;
@@ -81,6 +102,21 @@ export type CycleReport = {
     schemeCost: number; // lead fees + contributor payments + commission
   };
   byPerson: PersonTotals[];
+  /**
+   * The Business Partner Fee **per person** — their lead fees plus their contributor
+   * payments, which is exactly `PersonTotals.total`. Nothing new is computed: the same
+   * figures the per-client fee tables already produce, gathered by who earned them, with
+   * the per-client lines behind each name.
+   *
+   * Each line says which hat it was earned in, because the two are different rules and
+   * carry different evidence — a lead line the client's margin and the envelope it
+   * generated, a contributor line the share and the tier it fell in.
+   */
+  businessPartnerFeeByPerson: {
+    name: string;
+    amount: number;
+    lines: BpfLine[];
+  }[];
   commissionByPerson: {
     name: string;
     amount: number;
@@ -237,6 +273,48 @@ export function computeCycle(
     };
   });
   byPerson.sort((a, b) => b.total - a.total);
+  // Per-client fee detail, grouped by earner (for the expandable rows). A person is
+  // listed when they earned something; a contribution floored to zero still appears as a
+  // LINE under whoever earned elsewhere, so a 0 is explained rather than simply absent.
+  const bpfLinesByPerson = new Map<string, BpfLine[]>();
+  const addBpfLine = (name: string, line: BpfLine) => {
+    const list = bpfLinesByPerson.get(key(name)) ?? [];
+    list.push(line);
+    bpfLinesByPerson.set(key(name), list);
+  };
+  for (const r of results) {
+    if (r.leadFee > 0) {
+      addBpfLine(r.leadName, {
+        role: "lead",
+        client: r.client,
+        grossMarginPct: r.grossMarginPct,
+        envelope: money(r.envelope),
+        keeps: 1 - r.totalDeduction,
+        amount: money(r.leadFee),
+      });
+    }
+    for (const c of r.contributors) {
+      if (c.payment > 0 || c.flooredToZero) {
+        addBpfLine(c.name, {
+          role: "contributor",
+          client: r.client,
+          share: c.share,
+          tier: c.tier,
+          amount: money(c.payment),
+          flooredToZero: c.flooredToZero,
+        });
+      }
+    }
+  }
+  const businessPartnerFeeByPerson = byPerson
+    .filter((p) => p.total > 0)
+    .map((p) => ({
+      name: p.name,
+      amount: p.total,
+      lines: (bpfLinesByPerson.get(key(p.name)) ?? []).slice().sort((a, b) => b.amount - a.amount),
+    }))
+    .sort((a, b) => b.amount - a.amount);
+
   // Per-deal commission detail, grouped by earner (for the expandable rows).
   const commDealsByPerson = new Map<string, CycleReport["commissionByPerson"][number]["deals"]>();
   for (const r of results) {
@@ -341,6 +419,7 @@ export function computeCycle(
     issues,
     totals: { leadFees, contributorPayments, commission, firmRetained, schemeCost },
     byPerson,
+    businessPartnerFeeByPerson,
     commissionByPerson,
     firm: firmBlock,
     costRecovery,

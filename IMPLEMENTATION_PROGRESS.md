@@ -40,6 +40,59 @@ closes the employee door only, so money already submitted can still be decided a
 with the row off the nav drops it and the page redirects; back on and it returns. `npx tsc --noEmit`
 and `npm run build` clean.
 
+## Incentive: the Business Partner Fee, per person (built 2026-08-26 — no migration)
+
+**Asked for:** *"in the screen of the incentive I need a table above the commission per person
+similar to this table but for the business partner fee per person. with the same view and
+breakdown on click"* — and, alongside it, *"for the compensation per person table name it Total
+compensation by person and make the title take the line and the subline can come under it"*.
+
+**Built.** A **Business Partner Fee by person** section sits directly above Commission by person,
+in the same shape: compact, one row per person, the per-client breakdown one click away. The
+report already said what the fee did per *client* and what each person ended up with in *total*,
+but never what the fee itself came to per person.
+
+It computes nothing new — a person's fee is their lead fees plus their contributor payments, which
+is exactly the `Total` column of the table below it. What it adds is the *attribution*, derived
+once in `computeCycle` (`businessPartnerFeeByPerson`) so the screen and any later export cannot
+drift apart. Each breakdown line is tagged **Lead** or **Contributor**, because the two are earned
+by different rules and the evidence differs: a lead line carries the client's gross margin, the
+envelope it generated and the share the lead keeps; a contributor line carries the share and the
+tier it fell in. A contribution below the 5%-of-month floor still appears, as **0 (floored)** with
+its hover reason, rather than quietly vanishing.
+
+Both per-person tables now share **one** expansion store keyed by table *and* name, so expanding
+somebody under the fee does not open them under commission.
+
+**Also:** *Compensation by person* is now **Total compensation by person**, and the shared section
+header puts the **title on its own line with the subtitle beneath it**. That header belongs to
+every section in the report, so the change lands on all of them — which is the point, and it fixes
+something real: title, subtitle and the section's action button were competing for one line, so
+the subtitle was truncated to fit and the longer the title the less of it survived. The longer new
+name would not have fitted. The downloadable workbook is untouched — its sheets are named
+`Summary` and one per person, not from the section's wording (I had told the CEO otherwise when
+proposing it; checking the export showed it was not so).
+
+Code: `src/lib/incentive/compute.ts` (the `BpfLine` type and the derivation, beside its commission
+sibling), `src/components/incentive/CycleReport.tsx` (the section, the shared expansion store, the
+rename), `src/components/incentive/ReportSection.tsx` (the stacked header). Snapshots:
+`ui-versions/CycleReport/2026-08-26_before-bpf-by-person.tsx`,
+`ui-versions/ReportSection/2026-08-26_before-stacked-header.tsx`. Mockup:
+`design-mockups/incentive-bpf-by-person/2026-08-26_bpf-and-headers.html`.
+
+**Verified:** `tsc --noEmit` clean, `npm run build` green. `verify-incentive-cycle` grew from
+**16 to 23** checks on the real sample sheets — the per-person total equals lead fees +
+contributor payments, each person's lines add up to their own figure, each figure matches their
+row in the by-person table, everyone listed earned something, largest-first order, a Lead line
+exists for the client somebody led, and a floored-to-zero contribution is still present and
+marked. `verify-incentive` 27/27 unchanged. Driven in a real browser against a real Postgres: the
+section renders in the right place, the two breakdown tables expand independently, the rename and
+the stacked header render, and the page gains no horizontal scroll. Three faults were caught in
+the mockup stage the same way (a 173px sideways push from a grid item's default `min-width:auto`,
+an amount column clipped by `white-space:nowrap` inherited into the breakdown cell, and a role tag
+running into the client name with no real space) — the last of which was present in the React
+version too and fixed there.
+
 ## Incentive: correcting a cycle on screen instead of re-uploading (built 2026-08-25 — no migration)
 
 **Asked for:** *"the incentive scheme for the 3 tables of review and validation — allow me to
