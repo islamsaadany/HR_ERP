@@ -76,31 +76,41 @@ browser end to end, which is where the missing `startTransition` around the save
 without it React never reported the pending state, so the button neither said "Recalculating…"
 nor blocked a second click landing a second write.
 
-**Dates, the house way round (same day, follow-up).** Asked for: *"all should follow the
-dd/mm/yyyy."* Three things came out of it:
-- **The read-back tables** printed `2021-03-01`; they now print **01/03/2021** via a new
-  `formatDateISO` (`src/lib/labels.ts`) that reorders the string textually rather than parsing it
-  — an ISO date-only string is UTC midnight, and formatting *that* in a timezone behind UTC prints
-  the previous day. Nobody's start date should move because of where they are sitting.
-- **The editor's date cells are typed text stating `dd/mm/yyyy`, not a native date picker.** The
-  obvious `<input type="date">` was wrong: it draws itself in the **browser's** UI language, and
-  measured in a real browser it rendered 1 March as `03/01/2021` under en-GB, ar-EG *and* en-US.
-  A field whose format nobody can promise is not a field you type a closure date into. Cells accept
-  dd/mm/yyyy (and ISO, unstated, so an untouched stored value can't be rejected on the way back
-  out) and refuse everything else by name — a two-digit year, or an unreal date like 31/02.
-- **The CSV importer now reads dates day-first**, which fixed a silent misread nobody had noticed:
-  `new Date("01/03/2021")` is American, so an operator's **1 March was being stored as 3 January**
-  — no warning, no wrong-looking output, just an assignment closing in the wrong quarter. ISO cells
-  and Excel serials are unchanged, and a legacy m/d/y sheet still reads correctly wherever the
-  middle field can only be a day. The downloadable templates emit dd/mm/yyyy too, so a template
-  downloaded, filled in and uploaded round-trips unchanged.
+**Dates read as `14-Jul 2026` (same day, two follow-ups).** First asked: *"all should follow
+the dd/mm/yyyy."* Then, on seeing it: *"for the dates across this part it should show in the
+format of dd-mmm yy so 14-Jul 2026 just to make sure that the entries are correct."* That second
+request is the settled one, and its reason is the design: a spelled month **cannot be read the
+wrong way round**, so an operator typing compensation dates in off a spreadsheet can check at a
+glance that what they typed is what landed. It is a **deliberate exception** to the platform-wide
+dd/mm/yyyy standard, which is unchanged everywhere else.
 
-The rest of the app was audited and was already compliant — every other date display goes through
-`formatDate` or an explicit `en-GB` format. Verified: the script grew to **63/63** (the printed
-form, the typed-cell round trip, the refusals, the day-first parse including the m/d/y fallback,
-and the template round trip), `verify-incentive` 27/27 and `verify-incentive-cycle` 16/16 still
-pass on the changed parser, and the browser confirmed a typed 09/11/2023 saving and reading back
-as 9 November with 31/02/2026 refused by name. Snapshot:
+`src/lib/incentive/dates.ts` is the one module that both formats and parses, so the displayed
+value, the typed cell, the saved value and a CSV cell cannot disagree. Three things came out of it:
+- **Display.** The read-back tables printed `2021-03-01`; they now print **01-Mar 2021**, built
+  from the date's **UTC** parts — a date-only value is stored at UTC midnight, and reading it
+  locally in a timezone behind UTC prints the day before. Nobody's start date should move because
+  of where they are sitting.
+- **Entry.** The editor's date cells are **typed text stating `dd-mmm yyyy`, not a native date
+  picker.** The obvious `<input type="date">` was wrong: it draws itself in the **browser's** UI
+  language, and measured in a real browser it rendered 1 March as `03/01/2021` under en-GB, ar-EG
+  *and* en-US. A field whose format nobody can promise is not a field you type a closure date into.
+  Cells accept the spelled month (short or full, any case), and dd/mm/yyyy and ISO unstated so
+  nothing pasted in is needlessly refused; a made-up month, an unreal 31-Feb, or a bare number is
+  refused by name — a bare number is an Excel serial only off a **sheet**, never when typed.
+- **Import.** All-numeric sheet cells are now read **day-first**, which fixed a silent misread
+  nobody had noticed: `new Date("01/03/2021")` is American, so an operator's **1 March was being
+  stored as 3 January** — no warning, no wrong-looking output, just an assignment closing in the
+  wrong quarter. ISO cells and Excel serials are unchanged, and a legacy m/d/y sheet still reads
+  correctly wherever the middle field can only be a day. The templates emit `14-Jul 2026` too, so
+  download → fill → upload round-trips unchanged.
+
+The rest of the app was audited and was already compliant with its own standard — every other date
+display goes through `formatDate` or an explicit `en-GB` format. Verified: the script grew to
+**71/71** (the printed form, the typed-cell round trip in every accepted spelling, each refusal,
+the day-first parse including the m/d/y fallback and the typed-vs-sheet serial split, and the
+template round trip); `verify-incentive` 27/27 and `verify-incentive-cycle` 16/16 still pass on the
+changed parser; and the browser confirmed `14-Jul 2026` typed, saved and read back unchanged, with
+`31-Feb 2026` refused by name. Snapshot:
 `ui-versions/ReviewTables/2026-08-25_before-ddmmyyyy.tsx`.
 
 ## Confirmations, one business unit at a time (built 2026-08-25 — migration `075`)

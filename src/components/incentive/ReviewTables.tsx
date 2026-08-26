@@ -17,7 +17,7 @@ import {
   type ReviewData,
   type ReviewPayload,
 } from "@/lib/incentive/review";
-import { formatDateISO } from "@/lib/labels";
+import { displayIncentiveDate } from "@/lib/incentive/dates";
 import { HoverTip } from "./HoverTip";
 import { Section, scrollWrap, td, tdr, th } from "./ReportSection";
 
@@ -91,26 +91,27 @@ function TextCell({
 }
 
 /**
- * A date cell, typed as dd/mm/yyyy.
+ * A date cell, typed as `14-Jul 2026`.
+ *
+ * The spelled month is the point: an operator entering compensation dates off a
+ * spreadsheet can see at a glance that what they typed is what landed, which two
+ * numbers separated by a slash can never show them.
  *
  * Deliberately NOT `<input type="date">`: a native picker draws itself in the
  * browser's own UI language, so on a default Chromium the first of March reads
  * `03/01/2021` — American — no matter what locale the page asks for. Measured in
- * a real browser under en-GB, ar-EG and en-US; all three drew mm/dd/yyyy. The
- * house standard has to hold on the operator's screen, not just in our intent,
- * so the format is stated on the field and enforced on the server.
+ * a real browser under en-GB, ar-EG and en-US; all three drew mm/dd/yyyy.
  */
 function DateCell({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
   return (
     <td className={editCell}>
       <input
         type="text"
-        inputMode="numeric"
         aria-label={`${label} (${DATE_CELL_FORMAT})`}
         placeholder={DATE_CELL_FORMAT}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={inputCls + " min-w-[7rem] tabular-nums"}
+        className={inputCls + " min-w-[8rem] tabular-nums"}
       />
     </td>
   );
@@ -422,7 +423,7 @@ export function ReviewTables({
                     <td className={td}>{p.name}</td>
                     <td className={td}>{p.role ?? "—"}</td>
                     <td className={tdr}>{whole(p.netMonthlySalary)}</td>
-                    <td className={td}>{formatDateISO(p.startDate)}</td>
+                    <td className={td}>{displayIncentiveDate(p.startDate)}</td>
                   </tr>
                 ))}
             {editing ? (
@@ -517,8 +518,8 @@ export function ReviewTables({
                       <td className={tdr}>{a.directCost == null ? "—" : whole(a.directCost)}</td>
                       <td className={tdr}>{a.vendorCost ? whole(a.vendorCost) : "—"}</td>
                       <td className={tdr}>{a.markupPct ? `${a.markupPct}%` : "—"}</td>
-                      <td className={td}>{formatDateISO(a.startDate)}</td>
-                      <td className={td}>{formatDateISO(a.closeDate)}</td>
+                      <td className={td}>{displayIncentiveDate(a.startDate)}</td>
+                      <td className={td}>{displayIncentiveDate(a.closeDate)}</td>
                       <td className={td}>
                         <StatusPill status={a.status} />
                       </td>

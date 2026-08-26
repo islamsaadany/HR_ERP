@@ -21,7 +21,8 @@
  * Every fault is reported at once: a form that rejects on the first problem makes
  * someone fix a table one round-trip at a time.
  */
-import { buildUTC, parseSheetNumber } from "./import";
+import { parseSheetNumber } from "./import";
+import { INCENTIVE_DATE_FORMAT, formatIncentiveDateISO, parseTypedDate } from "./dates";
 import type { AssignmentType } from "./rules";
 
 export const ASSIGNMENT_STATUSES = ["ongoing", "closed", "in_progress", "pending"] as const;
@@ -98,37 +99,25 @@ const key = (s: string) => s.trim().toLowerCase();
 /**
  * A typed date cell → Date, `null` when blank, or `undefined` when unusable.
  *
- * The cells are **dd/mm/yyyy** — the house standard, stated on the field itself.
- * A native `<input type="date">` was the obvious choice and was wrong: it draws
- * itself in the *browser's* UI language, which renders 1 March 2021 as
- * `03/01/2021` on a default Chromium whatever locale the page asks for. A field
- * whose format nobody can promise is not a field you enter a closure date in.
+ * The cells are **`14-Jul 2026`** (`dd-mmm yyyy`): a spelled month cannot be read
+ * the wrong way round, so an operator can check at a glance that what they typed is
+ * what landed. Other forms a person might paste in — dd/mm/yyyy and ISO — are still
+ * accepted rather than rejected, so an untouched stored value or a value copied off
+ * a sheet can't be refused on its way back out. Everything is read by the module's
+ * one date reader (./dates), the same one the CSV importer uses.
  *
- * ISO is still accepted, unstated, so a value that arrived from a sheet and was
- * never touched can't be rejected on its way back out.
+ * A native `<input type="date">` was the obvious control and was wrong: it draws
+ * itself in the *browser's* UI language, rendering 1 March 2021 as `03/01/2021`
+ * under en-GB, ar-EG and en-US alike when measured. A field whose format nobody can
+ * promise is not a field you enter a closure date in.
  */
-const DMY = /^(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(\d{4})$/;
-const ISO = /^(\d{4})-(\d{1,2})-(\d{1,2})$/;
-
 function parseDateInput(v: string): Date | null | undefined {
-  const s = v.trim();
-  if (!s) return null;
-  const dmy = DMY.exec(s);
-  if (dmy) return buildUTC(Number(dmy[3]), Number(dmy[2]), Number(dmy[1])) ?? undefined;
-  const iso = ISO.exec(s);
-  if (iso) return buildUTC(Number(iso[1]), Number(iso[2]), Number(iso[3])) ?? undefined;
-  return undefined;
+  if (!v.trim()) return null;
+  return parseTypedDate(v) ?? undefined;
 }
 
-/** A stored ISO date → the dd/mm/yyyy the cell shows, or "" when there is none. */
-function toDateCell(iso: string | null): string {
-  if (!iso) return "";
-  const m = ISO.exec(iso);
-  return m ? `${m[3].padStart(2, "0")}/${m[2].padStart(2, "0")}/${m[1]}` : iso;
-}
-
-/** What the date cells tell the operator to type, and what an error repeats back. */
-export const DATE_CELL_FORMAT = "dd/mm/yyyy";
+/** What the date cells tell the operator to type, and what a refusal repeats back. */
+export const DATE_CELL_FORMAT = INCENTIVE_DATE_FORMAT;
 
 /**
  * Collect the names that appear more than once (case-insensitively), so the
@@ -162,7 +151,7 @@ export function validateReview(payload: ReviewPayload): ReviewValidation {
     else if (salary < 0) errors.push(`${where}: net monthly salary can't be negative.`);
 
     const startDate = parseDateInput(p.startDate);
-    if (startDate === undefined) errors.push(`${where}: start date must be a real date, as ${DATE_CELL_FORMAT}.`);
+    if (startDate === undefined) errors.push(`${where}: start date must be a real date, e.g. 14-Jul 2026.`);
 
     people.push({
       id: p.id,
@@ -205,9 +194,9 @@ export function validateReview(payload: ReviewPayload): ReviewValidation {
     };
 
     const startDate = parseDateInput(a.startDate);
-    if (startDate === undefined) errors.push(`${where}: start date must be a real date, as ${DATE_CELL_FORMAT}.`);
+    if (startDate === undefined) errors.push(`${where}: start date must be a real date, e.g. 14-Jul 2026.`);
     const closeDate = parseDateInput(a.closeDate);
-    if (closeDate === undefined) errors.push(`${where}: closure date must be a real date, as ${DATE_CELL_FORMAT}.`);
+    if (closeDate === undefined) errors.push(`${where}: closure date must be a real date, e.g. 14-Jul 2026.`);
 
     assignments.push({
       client,
@@ -332,7 +321,7 @@ export function toDraft(data: ReviewData): Draft {
       name: p.name,
       role: p.role ?? "",
       netMonthlySalary: String(p.netMonthlySalary),
-      startDate: toDateCell(p.startDate),
+      startDate: formatIncentiveDateISO(p.startDate),
     })),
     assignments: data.assignments.map((a) => ({
       id: a.id,
@@ -345,8 +334,8 @@ export function toDraft(data: ReviewData): Draft {
       directCost: numText(a.directCost),
       vendorCost: a.vendorCost ? String(a.vendorCost) : "",
       markupPct: a.markupPct ? String(a.markupPct) : "",
-      startDate: toDateCell(a.startDate),
-      closeDate: toDateCell(a.closeDate),
+      startDate: formatIncentiveDateISO(a.startDate),
+      closeDate: formatIncentiveDateISO(a.closeDate),
       status: a.status,
     })),
     persons,

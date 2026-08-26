@@ -119,21 +119,31 @@ error-prone; this reproduces the document's figures exactly and server-side.
   indexes when two people trade names — with `eligibleToLead` and `utilization`
   carried across by row id so the two retired columns aren't silently dropped.
   Uploading is unchanged and still replaces a whole sheet.
-- **FR-006e** (2026-08-25): **Dates follow the house dd/mm/yyyy standard throughout
-  this module.** The read-back tables print `formatDateISO` (reordered textually, so
-  a viewer in a timezone behind UTC never sees the previous day); the editor's date
-  cells are **typed text stating `dd/mm/yyyy`**, not `<input type="date">` — a native
-  picker draws itself in the *browser's* UI language and rendered 1 March as
-  `03/01/2021` under en-GB, ar-EG **and** en-US when measured, so it cannot carry a
-  house format. Cells accept dd/mm/yyyy (ISO too, unstated, so an untouched stored
-  value can't be rejected on its way back out) and refuse anything else — including
-  a two-digit year and an unreal date like 31/02 — by name. The **CSV importer is
-  day-first** (`parseDate`), which fixed a silent misread: `new Date("01/03/2021")`
-  is American, so an operator's 1 March was being stored as 3 January with nothing
-  to show for it. ISO cells and Excel serials are unchanged, and a legacy m/d/y
-  sheet is still read correctly where the middle field can only be a day. The
-  downloadable templates (static and pre-filled) emit dd/mm/yyyy, so a template
-  downloaded, filled in and uploaded round-trips unchanged.
+- **FR-006e** (2026-08-25): **Dates in this module read and write as `14-Jul 2026`**
+  (`dd-mmm yyyy`). A **deliberate exception** to the platform-wide dd/mm/yyyy
+  standard, requested so an entry can be *checked at a glance*: this is the one
+  screen where somebody types compensation dates in off a spreadsheet, and a
+  spelled month cannot be read the wrong way round. One module (`lib/incentive/
+  dates.ts`) both formats and parses, so display, typed cell, saved value and CSV
+  cell can never disagree.
+  - **Display**: the read-back tables print the spelled form, built from the date's
+    **UTC** parts — a date-only value is stored at UTC midnight, and reading it
+    locally in a timezone behind UTC prints the day before.
+  - **Entry**: the editor's date cells are **typed text stating `dd-mmm yyyy`**, not
+    `<input type="date">` — a native picker draws itself in the *browser's* UI
+    language and rendered 1 March as `03/01/2021` under en-GB, ar-EG **and** en-US
+    when measured, so it cannot carry a house format. Cells accept the spelled form
+    (short or full month, any case), plus dd/mm/yyyy and ISO unstated, so nothing a
+    person pastes in is needlessly refused. A made-up month, an unreal date like
+    31-Feb, or a bare number is refused by name — a bare number is **not** read as
+    an Excel serial when typed, only when it arrives off a sheet.
+  - **Import**: all-numeric sheet cells are read **day-first**, which fixed a silent
+    misread — `new Date("01/03/2021")` is American, so an operator's 1 March was
+    being stored as 3 January with nothing to show for it. ISO cells and Excel
+    serials are unchanged, and a legacy m/d/y sheet still reads correctly wherever
+    the middle field can only be a day.
+  - **Templates**: static and pre-filled both emit `14-Jul 2026`, so a template
+    downloaded, filled in and uploaded round-trips unchanged.
 - **FR-007**: Per-hour performance metrics (GP/hour, break-even, pricing floor)
   are **out of scope** until an hours column is provided; cost recovery uses
   contribution-weighted GP.
@@ -165,8 +175,8 @@ contributions, and survives two people trading names; and the real
 lead. The screen itself was driven in a real browser (sign-in → edit → save →
 rejected save): the live total, the dirty chip, the disabled-until-dirty button,
 the rebuilt report, the announced error banner and zero page-level horizontal
-overflow were all confirmed there, as was the dd/mm/yyyy round trip (a typed
-09/11/2023 saved and read back as 9 November, and 31/02/2026 refused by name) — which is also where the missing
+overflow were all confirmed there, as was the date round trip (a typed
+14-Jul 2026 saved and read back as 14-Jul 2026, and 31-Feb 2026 refused by name) — which is also where the missing
 `startTransition` around the save was caught, without which the button never
 reported "Recalculating…" nor blocked a second click.
 

@@ -16,6 +16,7 @@
  * (reads the DB); the pure static fallback still lives in ./templates.
  */
 import { prisma } from "@/lib/prisma";
+import { formatIncentiveDate } from "./dates";
 
 /** Registry departments whose people seed the Incentive people sheet. */
 const INCENTIVE_DEPARTMENTS = ["Consulting Department", "Data Management Unit"] as const;
@@ -28,16 +29,12 @@ function cell(value: string | number | null | undefined): string {
 }
 
 /**
- * Dates go into the template **dd/mm/yyyy** — the house standard, and the same
- * form the parser reads back (`parseDate` is day-first), so a template that is
- * downloaded, filled in and uploaded round-trips unchanged. Built from the UTC
- * parts rather than a locale format so a server in another timezone can't shift
- * somebody's start date by a day.
+ * Dates go into the template as `14-Jul 2026`, the same form the module displays
+ * and the parser reads back, so a template that is downloaded, filled in and
+ * uploaded round-trips unchanged — and an operator scanning the sheet can see the
+ * month spelled out rather than guessing at a number.
  */
-const sheetDate = (d: Date | null | undefined): string =>
-  d
-    ? `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`
-    : "";
+const sheetDate = formatIncentiveDate;
 
 type Prefilled = { filename: string; csv: string };
 

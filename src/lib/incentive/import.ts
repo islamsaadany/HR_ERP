@@ -6,6 +6,7 @@
  * with problems are reported and the affected assignment is excluded from the
  * payout until the data is corrected.
  */
+import { parseSheetDate } from "./dates";
 import type { AssignmentType } from "./rules";
 
 /** Minimal robust CSV parser (handles quotes, embedded commas, CRLF). */
@@ -75,66 +76,16 @@ export function parseSheetNumber(v: string | undefined): number | null {
 
 const num = parseSheetNumber;
 
+/**
+ * Dates off a sheet are read by the module's one date reader (./dates): a spelled
+ * month first, then ISO, then all-numeric **day-first**, plus Excel serials. Before
+ * that reader existed this fell through to `new Date(s)`, which is American — so an
+ * operator's 01/03/2021 was stored as 3 January, silently.
+ */
+const parseDate = parseSheetDate;
+
 function boolYes(v: string | undefined): boolean {
   return /^(y|yes|true|1)$/i.test((v ?? "").trim());
-}
-
-/** Excel serial date → JS Date (Excel epoch 1899-12-30). */
-function fromExcelSerial(serial: number): Date {
-  return new Date(Math.round((serial - 25569) * 86400 * 1000));
-}
-
-/**
- * Read a date from a sheet cell, **day-first** — the house standard (dd/mm/yyyy)
- * and the same convention the employee importer follows.
- *
- * This matters more than it looks: `new Date("01/03/2021")` is *American*, so
- * before this the whole module silently read an operator's 1 March as 3 January
- * — no warning, no wrong-looking output, just an assignment closing in the wrong
- * quarter. Order of preference:
- *   1. `yyyy-mm-dd` (ISO) — unambiguous, taken as written.
- *   2. An Excel serial number.
- *   3. Numeric d/m/y, d-m-y, d.m.y — day-first, EXCEPT where the second field is
- *      over 12 and the first isn't (a legacy m/d/y sheet), which can only be
- *      month-first and is read that way rather than refused.
- *   4. Anything with a month name ("28 Feb 2013") — no ambiguity to resolve.
- */
-function parseDate(v: string | undefined): Date | null {
-  const s = (v ?? "").trim();
-  if (!s) return null;
-
-  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
-  if (iso) return buildUTC(Number(iso[1]), Number(iso[2]), Number(iso[3]));
-
-  if (/^\d+(\.\d+)?$/.test(s)) {
-    const n = Number(s);
-    if (n > 20000 && n < 80000) return fromExcelSerial(n); // plausible Excel serial
-    return null;
-  }
-
-  const parts = s.split(/[./\-\s]+/).filter(Boolean);
-  if (parts.length === 3 && parts.every((p) => /^\d+$/.test(p))) {
-    const [a, b, c] = parts.map(Number);
-    const year = parts[2].length === 4 ? c : c + (c < 70 ? 2000 : 1900);
-    // Day-first unless the middle field can only be a day.
-    const [day, month] = b > 12 && a <= 12 ? [b, a] : [a, b];
-    return buildUTC(year, month, day);
-  }
-
-  const d = new Date(s);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-/**
- * A calendar date at UTC midnight, or null if the parts aren't a real date
- * (31/02 included). Exported so the on-screen editor's typed date cells build a
- * date exactly the same way — a date must not depend on which door it came in
- * through.
- */
-export function buildUTC(year: number, month: number, day: number): Date | null {
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  const d = new Date(Date.UTC(year, month - 1, day));
-  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day ? d : null;
 }
 
 export type ParsedPerson = {
