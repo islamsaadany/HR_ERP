@@ -1,4 +1,6 @@
 import { requireSuperUser } from "@/lib/roles";
+import { IncentiveMessageEditor } from "@/components/admin/IncentiveMessageEditor";
+import { resolveIncentiveMessage } from "@/lib/email/incentive-message";
 import { getNotificationSettings } from "@/lib/notifications/settings";
 import { emailConfigured, emailFromAddress } from "@/lib/email/client";
 import { BackLink } from "@/components/admin/BackLink";
@@ -136,6 +138,15 @@ export default async function AdminNotificationsPage() {
           <p className="mt-2 text-xs text-muted">Configure the environment variables above first.</p>
         ) : null}
       </section>
+      <IncentiveMessageEditor
+        stored={resolveIncentiveMessage({
+          subject: settings.incentiveEmailSubject,
+          heading: settings.incentiveEmailHeading,
+          body: settings.incentiveEmailBody,
+          footer: settings.incentiveEmailFooter,
+        })}
+      />
+
     </div>
   );
 }

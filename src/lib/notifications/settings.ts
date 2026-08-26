@@ -11,6 +11,15 @@ export type NotificationSettingsData = {
   fromName: string | null;
   /** Days before a holiday that HR is asked to confirm its date (spec 037 FR-015). */
   verificationLeadDays: number;
+  /**
+   * The incentive payment message, edited at Admin → Email notifications (FR-006g).
+   * NULL per field means "use the built-in wording", which lives in code — so a field
+   * left alone keeps tracking the product rather than freezing a copy of it.
+   */
+  incentiveEmailSubject: string | null;
+  incentiveEmailHeading: string | null;
+  incentiveEmailBody: string | null;
+  incentiveEmailFooter: string | null;
 };
 
 export const NOTIFICATION_DEFAULTS: NotificationSettingsData = {
@@ -19,6 +28,10 @@ export const NOTIFICATION_DEFAULTS: NotificationSettingsData = {
   financeInbox: null,
   fromName: null,
   verificationLeadDays: 14,
+  incentiveEmailSubject: null,
+  incentiveEmailHeading: null,
+  incentiveEmailBody: null,
+  incentiveEmailFooter: null,
 };
 
 /** The singleton notification settings, or safe defaults (also when the table doesn't exist yet). */
@@ -35,6 +48,10 @@ export const getNotificationSettings = cache(
         financeInbox: row.financeInbox,
         fromName: row.fromName,
         verificationLeadDays: row.verificationLeadDays,
+        incentiveEmailSubject: row.incentiveEmailSubject,
+        incentiveEmailHeading: row.incentiveEmailHeading,
+        incentiveEmailBody: row.incentiveEmailBody,
+        incentiveEmailFooter: row.incentiveEmailFooter,
       };
     } catch {
       // Pre-migration DB (no NotificationSettings table) → inert, never throws.

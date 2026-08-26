@@ -163,6 +163,41 @@ error-prone; this reproduces the document's figures exactly and server-side.
   button, so a subtitle was truncated to fit and the longer the title the less survived.
   The downloadable workbook is unaffected: its sheets are named `Summary` and one per
   person, not from the section's wording.
+- **FR-006g** (2026-08-26): A cycle's payments can be **released into Finance**. The
+  business unit **head** (a new appointment) ticks what they agree to pay; those lines join
+  the queue Finance already works from, and end at the same per-unit bank confirmation as
+  paybacks, petty-cash top-ups and benefit reimbursements. Incentive payouts are a fourth
+  kind of payable — the CEO: *"the finance should see the release of amounts in the same
+  place not to confuse him"* — so no new screen and nothing new for Finance to learn.
+  - **Three steps, named for what the person does**, in one place: Admin →
+    **Who moves money** (widened from "Who confirms transactions") shows, per unit,
+    *Releases payments* → *Creates the transaction* → *Confirms at the bank*. The first and
+    third are appointments held per unit; the middle is the Finance account role, shown
+    read-only and set on the employee record, so two screens never own one setting.
+    Deliberately not called "roles" — that already means an account's role.
+  - **`BusinessUnitHead`** is a twin of `TransactionConfirmer` and makes the same departure:
+    holding Super User does **not** let you release. Lock-out is prevented by
+    self-appointment, and there is no appointment meaning "all units".
+  - **Matched on Employee ID, cross-checked on name.** `User.employeeId` is optional and
+    deliberately not unique, so a line is releasable only when the ID lands on exactly one
+    active account; the four other outcomes (no ID in the sheet, no such employee, two
+    accounts, no business unit) are refused and named. An ID matching one person whose
+    registry name differs from the sheet is releasable but **held and shown**. The People
+    sheet, template and review table gain an **Employee ID** column.
+  - **Scheme fees and commission release separately**, so each traces to the rule that
+    produced it and either can be held back. Ticking is per line, in as many releases as
+    wanted; `(cycle, user, kind)` is unique so two people pressing at once cannot pay twice.
+  - **The amount and the unit are frozen at release** — the money was released against that
+    account, and a later transfer between units must not move where it is paid from.
+  - **An edit that would change an already-released figure is refused, naming the person.**
+    Worked from the released payments rather than from the report's lines, because deleting
+    a person produces no line at all and would otherwise sail through.
+  - **The person is emailed only when the confirmer marks the transaction complete** — the
+    fifth email workflow and the third "your money is here" message. One email per person
+    rather than per payout. Its **words are editable** at Admin → Email notifications
+    (subject, heading, body, closing line, six placeholders, live preview); the amount rows
+    are not, because they are the payment rather than wording. An unknown placeholder and a
+    missing `{total}` are both refused on save.
 - **FR-007**: Per-hour performance metrics (GP/hour, break-even, pricing floor)
   are **out of scope** until an hours column is provided; cost recovery uses
   contribution-weighted GP.
@@ -181,6 +216,18 @@ The engine is proven against **Appendix A** (H1 2026) — `scripts/verify-incent
 gate, the Profit Share table). The full parse→compute path is proven on the real
 sample sheets — `scripts/verify-incentive-cycle.ts` (16/16, incl. El Abd blocked
 at 93%). Migrations 013 applied and verified on a throwaway Postgres.
+
+Releasing (FR-006g) is proven on a throwaway Postgres — `scripts/verify-incentive-release.mts`
+(37/37): every matching outcome including the two-accounts and no-unit refusals; a differing
+name still matching on the ID but flagged; the appointment granting one unit and not another;
+a release writing once and a repeat writing nothing; the frozen amount; the payable appearing
+in Finance's one queue in the right unit and piastres; the guard refusing both an edit that
+would zero a released fee and one that would halve it; and the message checks. Migration 076
+was applied to a throwaway Postgres, re-applied twice, and its objects inspected rather than
+assumed. The whole flow was then driven in a real browser: the three appointment rows, the
+Release door, the blocked group naming its reason, one unit actionable and another read-only,
+the release landing in Finance's queue, the payment column on the report, and the editor
+refusing a mis-cased placeholder by name.
 
 The Business Partner Fee by person table (FR-006f) is proven on the real sample sheets —
 `scripts/verify-incentive-cycle.ts` grew from 16 to 23 checks: the per-person total equals

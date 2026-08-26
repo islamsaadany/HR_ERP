@@ -377,6 +377,7 @@ export function ReviewTables({
           <thead className="bg-navy-50/40">
             <tr>
               <th className={th}>Name</th>
+              <th className={th}>Employee ID</th>
               <th className={th}>Role</th>
               <th className={th + " text-right"}>Net monthly salary</th>
               <th className={th}>Start date</th>
@@ -393,6 +394,13 @@ export function ReviewTables({
                       width="min-w-[10rem]"
                       onChange={(v) => edit((d) => void (d.people[i].name = v))}
                       onCommit={propagateRename}
+                    />
+                    <TextCell
+                      label={`Employee ID, people row ${i + 1}`}
+                      value={p.employeeId}
+                      width="min-w-[7rem]"
+                      placeholder="e.g. FF-0001"
+                      onChange={(v) => edit((d) => void (d.people[i].employeeId = v))}
                     />
                     <TextCell
                       label={`Role, people row ${i + 1}`}
@@ -421,16 +429,26 @@ export function ReviewTables({
               : review.people.map((p) => (
                   <tr key={p.id}>
                     <td className={td}>{p.name}</td>
+                    <td className={td}>
+                      {p.employeeId ?? (
+                        <HoverTip
+                          text="No Employee ID, so this person's incentive cannot be released. Add the ID HR holds for them."
+                          className="font-semibold text-gold-600"
+                        >
+                          — none
+                        </HoverTip>
+                      )}
+                    </td>
                     <td className={td}>{p.role ?? "—"}</td>
                     <td className={tdr}>{whole(p.netMonthlySalary)}</td>
                     <td className={td}>{displayIncentiveDate(p.startDate)}</td>
                   </tr>
                 ))}
             {editing ? (
-              <AddRow colSpan={5}>
+              <AddRow colSpan={6}>
                 <AddButton
                   onClick={() =>
-                    edit((d) => void d.people.push({ id: null, name: "", role: "", netMonthlySalary: "", startDate: "" }))
+                    edit((d) => void d.people.push({ id: null, name: "", employeeId: "", role: "", netMonthlySalary: "", startDate: "" }))
                   }
                 >
                   ＋ Add person

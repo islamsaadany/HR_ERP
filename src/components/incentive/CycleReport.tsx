@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Fragment, useState } from "react";
 import type { CycleReport } from "@/lib/incentive/compute";
 import { HoverTip } from "./HoverTip";
@@ -45,6 +46,59 @@ function InfoTip({ text }: { text: React.ReactNode }) {
   );
 }
 
+/**
+ * What a person's two payable halves are doing, in one cell.
+ *
+ * Deliberately shows the WORST state rather than a tidy single label: "one released, one
+ * still to go" is the thing worth seeing, and a cell that said only "Released" would hide
+ * the half that had not been.
+ */
+function PaymentState({
+  fees,
+  commission,
+}: {
+  fees?: "blocked" | "released" | "paid" | "open";
+  commission?: "blocked" | "released" | "paid" | "open";
+}) {
+  const parts = [
+    { label: "Fee", state: fees },
+    { label: "Commission", state: commission },
+  ].filter((p): p is { label: string; state: "blocked" | "released" | "paid" | "open" } => !!p.state);
+
+  if (parts.length === 0) return <span className="text-xs text-muted">—</span>;
+
+  const style: Record<string, string> = {
+    blocked: "border-red-300 bg-red-50 text-red-700",
+    released: "border-navy-200 bg-blue-50 text-blue-700",
+    paid: "border-green-200 bg-green-50 text-green-700",
+    open: "border-line bg-paper text-muted",
+  };
+  const word: Record<string, string> = {
+    blocked: "can't release",
+    released: "awaiting confirmation",
+    paid: "paid",
+    open: "not released",
+  };
+
+  // Both halves in the same state read as one chip; otherwise each is named.
+  const same = parts.length === 2 && parts[0].state === parts[1].state;
+  const chips = same ? [{ label: "", state: parts[0].state }] : parts;
+
+  return (
+    <span className="flex flex-wrap gap-1">
+      {chips.map((c, i) => (
+        <span
+          key={i}
+          className={"whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold " + style[c.state]}
+        >
+          {c.label ? `${c.label}: ` : ""}
+          {word[c.state]}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /** A 0 value with a hover reason (e.g. below the 70% gate). */
 function ZeroCell({ note, value = "0.00" }: { note: string; value?: string }) {
   return (
@@ -58,10 +112,16 @@ export function CycleReportView({
   report,
   cycleId,
   review,
+  canRelease = false,
+  paymentState = {},
 }: {
   report: CycleReport;
   cycleId: string;
   review: ReviewData;
+  /** Does this viewer head any business unit? Decides whether the Release door is drawn. */
+  canRelease?: boolean;
+  /** Keyed "person|KIND" — what each payable half of a person's compensation is doing. */
+  paymentState?: Record<string, "blocked" | "released" | "paid" | "open">;
 }) {
   const r = report;
 
@@ -419,12 +479,22 @@ export function CycleReportView({
         open={open.byPerson}
         onToggle={() => toggle("byPerson")}
         action={
-          <a
-            href={`/api/incentive/${cycleId}/calculation`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-navy-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-700"
-          >
-            ⬇ Download calculation (.xlsx)
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={`/api/incentive/${cycleId}/calculation`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-navy-700 hover:bg-navy-50"
+            >
+              ⬇ Download calculation (.xlsx)
+            </a>
+            {canRelease ? (
+              <Link
+                href={`/incentive/${cycleId}/release`}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-navy-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-navy-700"
+              >
+                Release payments…
+              </Link>
+            ) : null}
+          </div>
         }
       >
         <div className={scrollWrap}>
@@ -435,6 +505,7 @@ export function CycleReportView({
                 <th className={th + " text-right"}>Lead fee</th><th className={th + " text-right"}>Contributor</th>
                 <th className={th + " text-right"}>Total</th><th className={th + " text-right"}>Months</th>
                 <th className={th + " text-right"}>Commission</th><th className={th + " text-right"}>Grand total</th>
+                <th className={th}>Payment</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -448,6 +519,12 @@ export function CycleReportView({
                   <td className={tdr}>{p.months || "—"}</td>
                   <td className={tdr}>{p.commission ? m(p.commission) : "—"}</td>
                   <td className={tdr + " font-semibold"}>{m(p.total + p.commission)}</td>
+                  <td className={td}>
+                    <PaymentState
+                      fees={p.total > 0 ? paymentState[`${p.name}|SCHEME_FEES`] : undefined}
+                      commission={p.commission > 0 ? paymentState[`${p.name}|COMMISSION`] : undefined}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>

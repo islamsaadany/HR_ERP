@@ -5,7 +5,7 @@
  * Not shipped — a local audit harness.
  */
 import { PrismaClient, type Prisma } from "@prisma/client";
-import { employeeSchema } from "../src/lib/validation.ts";
+import { employeeSchema } from "../src/lib/validation";
 
 const prisma = new PrismaClient();
 
@@ -33,7 +33,10 @@ async function wouldCycle(employeeId: string, managerId: string): Promise<boolea
     if (current === employeeId) return true;
     if (seen.has(current)) break;
     seen.add(current);
-    const mgr = await prisma.user.findUnique({ where: { id: current }, select: { reportsToId: true } });
+    const mgr: { reportsToId: string | null } | null = await prisma.user.findUnique({
+      where: { id: current },
+      select: { reportsToId: true },
+    });
     current = mgr?.reportsToId ?? null;
   }
   return false;

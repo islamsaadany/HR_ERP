@@ -212,10 +212,14 @@ model User {
 
   // Bank confirmations (spec 041) — back-relations only; no column is added to User. Who may
   // confirm is a row in TransactionConfirmer, never an attribute of the person.
-  transactionConfirmers   TransactionConfirmer[] @relation("TransactionConfirmerSubject")
-  confirmersAppointed     TransactionConfirmer[] @relation("TransactionConfirmerAppointer")
-  paymentBatchesSubmitted PaymentBatch[]         @relation("PaymentBatchSubmitter")
-  paymentBatchesDecided   PaymentBatch[]         @relation("PaymentBatchDecider")
+  transactionConfirmers    TransactionConfirmer[] @relation("TransactionConfirmerSubject")
+  confirmersAppointed      TransactionConfirmer[] @relation("TransactionConfirmerAppointer")
+  businessUnitsHeaded      BusinessUnitHead[]     @relation("BusinessUnitHeadSubject")
+  unitHeadsAppointed       BusinessUnitHead[]     @relation("BusinessUnitHeadAppointer")
+  incentivePayouts         IncentivePayout[]      @relation("IncentivePayoutSubject")
+  incentivePayoutsReleased IncentivePayout[]      @relation("IncentivePayoutReleaser")
+  paymentBatchesSubmitted  PaymentBatch[]         @relation("PaymentBatchSubmitter")
+  paymentBatchesDecided    PaymentBatch[]         @relation("PaymentBatchDecider")
 
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -1000,6 +1004,7 @@ model IncentiveCycle {
   people        IncentivePerson[]
   assignments   IncentiveAssignment[]
   contributions IncentiveContribution[]
+  payouts       IncentivePayout[]
 }
 
 /// A person in a cycle (from people.csv). Salary is sensitive.
@@ -1008,6 +1013,11 @@ model IncentivePerson {
   cycleId          String
   cycle            IncentiveCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   name             String
+  /// The registry Employee ID from the People sheet (spec 009 FR-006g). This is what a
+  /// payment is matched on — NOT the name, which is only the cross-check. Optional
+  /// because a cycle can be reviewed before anybody is paid; a payout simply cannot be
+  /// released for a row without one.
+  employeeId       String?
   role             String?
   netMonthlySalary Float
   startDate        DateTime?
@@ -1050,6 +1060,58 @@ model IncentiveContribution {
   share   Float // fraction 0..1 as entered; validated to total ~1 per client
 
   @@unique([cycleId, client, person])
+  @@index([cycleId])
+}
+
+/// What each half of the scheme pays. Released, sent and confirmed SEPARATELY (the CEO's
+/// choice, 2026-08-26) so each traces back to the rule that produced it and either can be
+/// held back while the other goes.
+enum IncentivePayoutKind {
+  SCHEME_FEES // lead fees + contributor payments — the Business Partner Fee
+  COMMISSION
+}
+
+/// One released incentive payment: a person, a cycle, one half of the scheme (spec 009
+/// FR-006g, 2026-08-26).
+///
+/// Releasing does not pay anybody — it puts the amount in Finance's queue, from where it
+/// travels the ordinary path: Finance creates the bank transaction, the unit's appointed
+/// confirmer confirms it, and only then is the person told.
+model IncentivePayout {
+  id      String         @id @default(cuid())
+  cycleId String
+  cycle   IncentiveCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  /// WHO IS PAID, matched on Employee ID rather than on name. Kept as a hard link, so a
+  /// later rename in the sheet cannot re-point money that has already gone.
+  userId String
+  user   User   @relation("IncentivePayoutSubject", fields: [userId], references: [id])
+
+  /// The name as the sheet had it at release, kept for the audit trail — the sheet is
+  /// editable, so the name on screen may not be the name this was released under.
+  personName String
+  kind       IncentivePayoutKind
+
+  /// FROZEN AT RELEASE. What Finance sends and the confirmer signs for is the figure as it
+  /// stood when it was released, never one that could change underneath them — and it is
+  /// what an edit to the cycle is checked against before being allowed.
+  amount Decimal @db.Decimal(10, 2)
+
+  /// WHOSE ACCOUNT PAYS. Derived from the person at release and then fixed: the money was
+  /// released against this unit's account, and a later transfer between units must not
+  /// silently move where it is paid from.
+  businessUnitId String
+  businessUnit   BusinessUnit @relation("IncentivePayoutUnit", fields: [businessUnitId], references: [id])
+
+  releasedById String?
+  releasedBy   User?    @relation("IncentivePayoutReleaser", fields: [releasedById], references: [id], onDelete: SetNull)
+  releasedAt   DateTime @default(now())
+
+  batchItems PaymentBatchItem[]
+
+  /// One release per person per half per cycle — the backstop behind the screen not
+  /// offering an already-released line, so two people pressing at once cannot pay twice.
+  @@unique([cycleId, userId, kind])
   @@index([cycleId])
 }
 
@@ -1135,7 +1197,9 @@ model BusinessUnit {
   /// Finance (2026-08-25): each unit banks separately, so each has its own appointed confirmers
   /// and its own submissions.
   transactionConfirmers TransactionConfirmer[] @relation("TransactionConfirmerUnit")
+  heads                 BusinessUnitHead[]     @relation("BusinessUnitHeadUnit")
   paymentBatches        PaymentBatch[]         @relation("PaymentBatchUnit")
+  incentivePayouts      IncentivePayout[]      @relation("IncentivePayoutUnit")
 }
 
 // ─── Notification settings (super-user, spec 020) ───────────────────────────
@@ -1144,16 +1208,16 @@ model BusinessUnit {
 /// The Resend API key and sender address live in env (RESEND_API_KEY, EMAIL_FROM),
 /// never here. With emails off or unconfigured the workflow still runs; nothing is sent.
 model NotificationSettings {
-  id                   String   @id @default("singleton")
-  emailEnabled         Boolean  @default(false)
+  id                   String  @id @default("singleton")
+  emailEnabled         Boolean @default(false)
   hrInbox              String?
   financeInbox         String?
   fromName             String?
   /// Days before a holiday that HR is asked to confirm its date (spec 037 FR-015).
-  verificationLeadDays Int      @default(14)
+  verificationLeadDays Int     @default(14)
   /// How many days before a birthday or joining anniversary the platform prepares the draft
   /// (spec 039 FR-018). Mirrors verificationLeadDays above rather than inventing a second idiom.
-  congratsLeadDays     Int      @default(3)
+  congratsLeadDays     Int     @default(3)
   /// The UMBRELLA name in small caps above the business unit on every email — "Forefront Group".
   ///
   /// Its own column on purpose. This read `BrandSettings.companyName` until 2026-08-25, which is
@@ -1161,7 +1225,19 @@ model NotificationSettings {
   /// company name too, so the header said the wrong thing and could only be corrected by renaming
   /// the whole application. Two ideas, two columns.
   groupName            String?
-  updatedAt            DateTime @default(now()) @updatedAt
+
+  /// The incentive payment message, editable at Admin → Email notifications (the CEO,
+  /// 2026-08-26: "for the email structure, please make it editable in the settings").
+  /// NULL means "use the built-in wording" — the defaults live in one place in code
+  /// (`incentivePaymentDefaults`) rather than being copied into the database, so a
+  /// deployment that has never been edited cannot drift from a deployment that has.
+  /// Only the WORDS are editable; the amount rows are the payment, not wording.
+  incentiveEmailSubject String?
+  incentiveEmailHeading String?
+  incentiveEmailBody    String?
+  incentiveEmailFooter  String?
+
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 // ─── Profile change requests (spec 029) ─────────────────────────────────
@@ -2072,6 +2148,37 @@ enum PaymentBatchStatus {
 /// an implicit power held by every top-level account would make that promise false. The lock-out
 /// this pattern normally guards against is covered instead by letting a Super User appoint
 /// THEMSELVES — an empty table is a pause, not a wall. Do not "fix" this into consistency.
+/// Who may RELEASE payments for a business unit (spec 009 FR-006g, 2026-08-26).
+///
+/// Built deliberately as a twin of `TransactionConfirmer` below, because it answers the
+/// same shape of question — who is allowed to do this with THIS unit's money — and the
+/// two are shown side by side on one screen so they cannot drift apart.
+///
+/// The CEO: "the business unit head is the one responsible for the release ... me in case
+/// of forefront and Alaa in case of visual shift". So: per (person, unit); one person may
+/// hold several; no row means "all units", which would silently cover a unit created next
+/// month; and no role-holder holds it implicitly — the same deliberate departure from the
+/// house pattern that `canConfirmBatches` makes, for the same reason. Lock-out is
+/// prevented the same way too: a Super User can appoint themselves at any moment.
+model BusinessUnitHead {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("BusinessUnitHeadSubject", fields: [userId], references: [id], onDelete: Cascade)
+
+  businessUnitId String
+  businessUnit   BusinessUnit @relation("BusinessUnitHeadUnit", fields: [businessUnitId], references: [id], onDelete: Cascade)
+
+  /// Only a Super User writes this row — a head appointing another head would let the
+  /// appointment hand itself out.
+  appointedById String?
+  appointedBy   User?   @relation("BusinessUnitHeadAppointer", fields: [appointedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, businessUnitId])
+  @@index([businessUnitId])
+}
+
 model TransactionConfirmer {
   id     String @id @default(cuid())
   userId String
@@ -2178,6 +2285,11 @@ model PaymentBatchItem {
   /// employee is told when HE confirms at the bank, not when Finance records a transfer.
   benefitClaimId String?
   benefitClaim   BenefitClaim? @relation(fields: [benefitClaimId], references: [id], onDelete: SetNull)
+
+  /// Released incentive payments travel the same path (2026-08-26), so Finance keeps ONE
+  /// queue: paybacks, float top-ups, benefit reimbursements and incentive side by side.
+  incentivePayoutId String?
+  incentivePayout   IncentivePayout? @relation(fields: [incentivePayoutId], references: [id], onDelete: SetNull)
 
   amountAtSubmission Decimal @db.Decimal(10, 2)
   payeeName          String

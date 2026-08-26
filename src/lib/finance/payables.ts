@@ -10,7 +10,11 @@ import { unitsWithConfirmers } from "@/lib/finance/confirmers";
  *   • an approved payback request — somebody paid out of their own pocket,
  *   • a petty cash top-up — money going out to a float holder,
  *   • an approved benefit claim awaiting reimbursement (added at the CEO's note, 2026-08-24:
- *     the employee is told when HE confirms at the bank, not when Finance records a transfer).
+ *     the employee is told when HE confirms at the bank, not when Finance records a transfer),
+ *   • a released incentive payment (2026-08-26) — the CEO: "the finance should see the release
+ *     of amounts in the same place not to confuse him, he always sees the amounts to release in
+ *     1 place coming from the different areas". So it joins this list rather than getting a
+ *     screen of its own; nothing about Finance's job changes.
  *
  * "Available" means: in the right state, and not already awaiting confirmation in a live
  * submission. Membership lives in `PaymentBatchItem`, so the second half is a simple absence check
@@ -22,6 +26,9 @@ import { unitsWithConfirmers } from "@/lib/finance/confirmers";
  * being paid — the CEO's choice of three offered — so nobody types it and it cannot be got wrong:
  *
  *   • a payback and a benefit claim belong to an employee, so they take that employee's unit;
+ *   • an incentive payout carries the unit it was RELEASED against — frozen at release rather
+ *     than re-derived, because that is the account the money was released from and a later
+ *     transfer between units must not silently move where it is paid;
  *   • a float top-up is paid to the custodian holding the float, so it takes the custodian's.
  *
  * Somebody with no business unit yields a payable with `businessUnitId: null`. That is not a
@@ -30,7 +37,7 @@ import { unitsWithConfirmers } from "@/lib/finance/confirmers";
  * bank account.
  */
 
-export type PayableKind = "PAYBACK" | "FLOAT_TOPUP" | "BENEFIT_CLAIM";
+export type PayableKind = "PAYBACK" | "FLOAT_TOPUP" | "BENEFIT_CLAIM" | "INCENTIVE_PAYOUT";
 
 export type Payable = {
   kind: PayableKind;
@@ -60,7 +67,7 @@ export type PayableGroup = {
 };
 
 export async function availablePayables(): Promise<Payable[]> {
-  const [paybacks, topUps, claims] = await Promise.all([
+  const [paybacks, topUps, payouts, claims] = await Promise.all([
     prisma.paybackRequest.findMany({
       where: { status: "APPROVED", batchItems: { none: {} } },
       include: {
@@ -80,6 +87,15 @@ export async function availablePayables(): Promise<Payable[]> {
         },
       },
       orderBy: { date: "asc" },
+    }),
+    prisma.incentivePayout.findMany({
+      where: { batchItems: { none: {} } },
+      include: {
+        user: { select: { name: true } },
+        cycle: { select: { label: true } },
+        businessUnit: { select: { id: true, name: true } },
+      },
+      orderBy: { releasedAt: "asc" },
     }),
     prisma.benefitClaim.findMany({
       where: { status: "APPROVED", batchItems: { none: {} } },
@@ -114,6 +130,19 @@ export async function availablePayables(): Promise<Payable[]> {
       businessUnitId: f.account.custodian.businessUnit?.id ?? null,
       businessUnitName: f.account.custodian.businessUnit?.name ?? null,
     })),
+    ...payouts.map((p): Payable => ({
+      kind: "INCENTIVE_PAYOUT",
+      id: p.id,
+      payeeName: p.user.name ?? p.personName,
+      purpose: `Incentive ${p.cycle.label} · ${
+        p.kind === "SCHEME_FEES" ? "Business Partner Fee" : "commission"
+      }`,
+      amountPiastres: toPiastres(p.amount),
+      since: p.releasedAt,
+      // Frozen at release — see the note above; never re-derived from the person now.
+      businessUnitId: p.businessUnit.id,
+      businessUnitName: p.businessUnit.name,
+    })),
     ...claims.map((c): Payable => ({
       kind: "BENEFIT_CLAIM",
       id: c.id,
@@ -138,6 +167,8 @@ export function itemParentFor(kind: PayableKind, id: string) {
       return { pettyCashFundingId: id };
     case "BENEFIT_CLAIM":
       return { benefitClaimId: id };
+    case "INCENTIVE_PAYOUT":
+      return { incentivePayoutId: id };
   }
 }
 

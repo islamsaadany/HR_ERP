@@ -7,6 +7,7 @@
  * the access check and hands the already-validated rows here.
  */
 import { prisma } from "@/lib/prisma";
+import type { IncentivePayoutKind } from "@prisma/client";
 import type { CleanAssignment, CleanContribution, CleanPerson } from "./review";
 
 export type ReviewWriteCounts = { people: number; assignments: number; contributions: number };
@@ -59,4 +60,43 @@ export async function writeReviewTables(
     assignments: clean.assignments.length,
     contributions: clean.contributions.length,
   };
+}
+
+/**
+ * Release a set of lines into Finance's queue (spec 009 FR-006g).
+ *
+ * Deliberately in this plain module rather than in the `"use server"` actions file, where
+ * every export becomes a URL the browser can post to — an unauthenticated write that
+ * creates payables would be worse than the unauthenticated write this module was created
+ * to avoid. The action does the access check and hands the already-checked lines here.
+ *
+ * `createMany` with `skipDuplicates` leans on the (cycle, user, kind) unique index: if two
+ * people press Release at the same moment, the second one's overlap is dropped rather than
+ * paying twice, and the count returned is what actually landed.
+ */
+export async function releaseIncentivePayouts(
+  cycleId: string,
+  releasedById: string,
+  lines: {
+    userId: string;
+    personName: string;
+    kind: IncentivePayoutKind;
+    amount: number;
+    businessUnitId: string;
+  }[]
+): Promise<number> {
+  if (lines.length === 0) return 0;
+  const result = await prisma.incentivePayout.createMany({
+    data: lines.map((l) => ({
+      cycleId,
+      userId: l.userId,
+      personName: l.personName,
+      kind: l.kind,
+      amount: l.amount.toFixed(2),
+      businessUnitId: l.businessUnitId,
+      releasedById,
+    })),
+    skipDuplicates: true,
+  });
+  return result.count;
 }

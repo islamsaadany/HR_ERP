@@ -7,6 +7,7 @@ import { requireIncentiveAccess } from "@/lib/roles";
 import { parsePeople, parseAssignments, parseContributions } from "@/lib/incentive/import";
 import { validateReview, type ReviewPayload } from "@/lib/incentive/review";
 import { writeReviewTables } from "@/lib/incentive/persist";
+import { releasedFiguresWouldBreak } from "@/lib/incentive/released-guard";
 
 export async function createCycle(formData: FormData): Promise<void> {
   await requireIncentiveAccess();
@@ -104,6 +105,7 @@ export async function uploadSheet(
             data: {
               cycleId,
               name: p.name,
+              employeeId: p.employeeId,
               role: p.role,
               netMonthlySalary: p.netMonthlySalary,
               startDate: p.startDate,
@@ -184,6 +186,13 @@ export async function saveReviewTables(
 
   const checked = validateReview(payload);
   if (!checked.ok) return { ok: false, errors: checked.errors };
+
+  // ── Money that has already gone cannot be re-decided ──────────────────────
+  // Compute what the report WOULD say with these rows, without writing anything, and
+  // refuse if that changes a figure somebody has already been released. The report has
+  // to keep agreeing with what the bank actually did.
+  const broken = await releasedFiguresWouldBreak(cycleId, checked.clean);
+  if (broken.length > 0) return { ok: false, errors: broken };
 
   try {
     const n = await writeReviewTables(cycleId, checked.clean);

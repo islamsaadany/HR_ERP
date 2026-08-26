@@ -1,3 +1,4 @@
+import { fillMessage, type IncentiveMessage, type MessageValues } from "./incentive-message";
 import { appBaseUrl } from "@/lib/email/client";
 
 // Plain, transactional claim-workflow emails (spec 020). Each returns { subject, html };
@@ -532,6 +533,50 @@ export function confirmationReminder(d: {
         row("Business unit", units) +
         row("Combined total", d.total),
       { href: link("/confirmations"), label: "Open confirmations" }
+    ),
+  };
+}
+
+// ─── Incentive payments (spec 009 FR-006g, 2026-08-26) ──────────────────────
+//
+// The fifth email workflow, and the third "your money is here" message. It fires ONLY when
+// the confirmer marks the transaction complete — never on release, never when Finance
+// creates it — the same rule as the other two: nobody is told money arrived until it has.
+//
+// The words come from settings (`resolveIncentiveMessage`); the amount rows do not. There
+// is deliberately no button: most people receiving this cannot open the incentive module,
+// so a link would lead them to a locked door.
+
+/** T-INC — an incentive payment confirmed at the bank → the person paid. */
+export function incentivePaymentToEmployee(d: {
+  message: IncentiveMessage;
+  values: MessageValues;
+  /** One row per half of the scheme actually paid in this transaction. */
+  amounts: { label: string; amount: string }[];
+  total: string;
+  transferDate: string;
+  groupName?: string | null;
+  businessUnitName?: string | null;
+}) {
+  const paragraphs = fillMessage(d.message.body, d.values)
+    .split(/\n{2,}/)
+    .map((p) => para(escapeHtml(p).replace(/\n/g, "<br>")))
+    .join("");
+
+  return {
+    subject: fillMessage(d.message.subject, d.values),
+    html: layout(
+      fillMessage(d.message.heading, d.values),
+      paragraphs +
+        d.amounts.map((a) => row(a.label, a.amount)).join("") +
+        // Only worth a separate total line when there is more than one figure above it.
+        (d.amounts.length > 1 ? row("Total transferred", d.total) : "") +
+        row("Transferred on", d.transferDate),
+      undefined,
+      {
+        eyebrow: [d.groupName, d.businessUnitName].filter(Boolean).join(" · ") || undefined,
+        footer: fillMessage(d.message.footer, d.values) || null,
+      }
     ),
   };
 }

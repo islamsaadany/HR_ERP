@@ -32,6 +32,8 @@ export type AssignmentStatus = (typeof ASSIGNMENT_STATUSES)[number];
 export type ReviewPersonInput = {
   id: string | null;
   name: string;
+  /** Registry Employee ID — what a released payment is matched on (FR-006g). */
+  employeeId: string;
   role: string;
   netMonthlySalary: string;
   startDate: string;
@@ -68,6 +70,7 @@ export type ReviewPayload = {
 export type CleanPerson = {
   id: string | null;
   name: string;
+  employeeId: string | null;
   role: string | null;
   netMonthlySalary: number;
   startDate: Date | null;
@@ -156,6 +159,7 @@ export function validateReview(payload: ReviewPayload): ReviewValidation {
     people.push({
       id: p.id,
       name,
+      employeeId: p.employeeId.trim() || null,
       role: p.role.trim() || null,
       netMonthlySalary: salary ?? 0,
       startDate: startDate ?? null,
@@ -163,6 +167,11 @@ export function validateReview(payload: ReviewPayload): ReviewValidation {
   });
   for (const d of duplicates(people.map((p) => p.name))) {
     errors.push(`Two people are called "${d}" — each name must appear once.`);
+  }
+  // Two rows sharing one Employee ID is one person entered twice, which would pay them
+  // twice. Refused here rather than discovered at release.
+  for (const d of duplicates(people.map((p) => p.employeeId ?? ""))) {
+    errors.push(`Employee ID "${d}" is on two rows — each person appears once.`);
   }
 
   // ── Assignments ───────────────────────────────────────────────────────────
@@ -265,7 +274,14 @@ export function validateReview(payload: ReviewPayload): ReviewValidation {
 
 /** The three sheets as stored, which the section renders read-only and seeds the draft from. */
 export type ReviewData = {
-  people: { id: string; name: string; role: string | null; netMonthlySalary: number; startDate: string | null }[];
+  people: {
+    id: string;
+    name: string;
+    employeeId: string | null;
+    role: string | null;
+    netMonthlySalary: number;
+    startDate: string | null;
+  }[];
   assignments: {
     id: string;
     client: string;
@@ -319,6 +335,7 @@ export function toDraft(data: ReviewData): Draft {
     people: data.people.map((p) => ({
       id: p.id,
       name: p.name,
+      employeeId: p.employeeId ?? "",
       role: p.role ?? "",
       netMonthlySalary: String(p.netMonthlySalary),
       startDate: formatIncentiveDateISO(p.startDate),

@@ -10,7 +10,8 @@ import { fromPiastres, toPiastres } from "@/lib/finance/money";
 import { refuse, isRefusal } from "@/lib/finance/refusal";
 import { formatEGP2, formatDate } from "@/lib/labels";
 import { sendEmail } from "@/lib/email/client";
-import { paybackPaidToEmployee, claimReimbursedToEmployee } from "@/lib/email/templates";
+import { paybackPaidToEmployee, claimReimbursedToEmployee, incentivePaymentToEmployee } from "@/lib/email/templates";
+import { resolveIncentiveMessage } from "@/lib/email/incentive-message";
 
 /**
  * What the confirmer does (spec 041).
@@ -42,7 +43,12 @@ export async function markComplete(formData: FormData): Promise<void> {
   const viewer = await requireConfirmer();
   const id = ((formData.get("id") as string | null) ?? "").trim();
 
-  let told: { paybacks: string[]; claims: string[] } = { paybacks: [], claims: [] };
+  let told: { paybacks: string[]; claims: string[]; payouts: string[]; valueDate: Date | null } = {
+    paybacks: [],
+    claims: [],
+    payouts: [],
+    valueDate: null,
+  };
 
   try {
     told = await prisma.$transaction(async (tx) => {
@@ -54,7 +60,7 @@ export async function markComplete(formData: FormData): Promise<void> {
           businessUnitId: true,
           totalAmount: true,
           valueDate: true,
-          items: { select: { paybackRequestId: true, benefitClaimId: true, amountAtSubmission: true } },
+          items: { select: { paybackRequestId: true, benefitClaimId: true, incentivePayoutId: true, amountAtSubmission: true } },
         },
       });
       if (!batch) refuse("That no longer exists.");
@@ -87,6 +93,10 @@ export async function markComplete(formData: FormData): Promise<void> {
 
       const paybackIds = batch.items.map((i) => i.paybackRequestId).filter((v): v is string => !!v);
       const claimIds = batch.items.map((i) => i.benefitClaimId).filter((v): v is string => !!v);
+      // An incentive payout needs no state change of its own: it is paid exactly when the
+      // transaction carrying it is COMPLETE, which is derived rather than copied. Only the
+      // ids travel out, so the person can be told.
+      const payoutIds = batch.items.map((i) => i.incentivePayoutId).filter((v): v is string => !!v);
 
       for (const item of batch.items) {
         if (item.paybackRequestId) {
@@ -116,7 +126,7 @@ export async function markComplete(formData: FormData): Promise<void> {
         }
       }
 
-      return { paybacks: paybackIds, claims: claimIds };
+      return { paybacks: paybackIds, claims: claimIds, payouts: payoutIds, valueDate: batch.valueDate };
     });
   } catch (e) {
     if (isRefusal(e)) fail(e.reason);
@@ -133,8 +143,13 @@ export async function markComplete(formData: FormData): Promise<void> {
   redirect(`${BACK}?ok=${q("Recorded as complete. Everyone in it has been told.")}`);
 }
 
-/** The two "your money has arrived" emails in the whole application. Fire-and-forget. */
-async function tellEveryonePaid(told: { paybacks: string[]; claims: string[] }) {
+/** The three "your money has arrived" emails in the whole application. Fire-and-forget. */
+async function tellEveryonePaid(told: {
+  paybacks: string[];
+  claims: string[];
+  payouts: string[];
+  valueDate: Date | null;
+}) {
   if (told.paybacks.length) {
     const rows = await prisma.paybackRequest.findMany({
       where: { id: { in: told.paybacks } },
@@ -175,6 +190,63 @@ async function tellEveryonePaid(told: { paybacks: string[]; claims: string[] }) 
           benefitName: r.guaranteedBenefit?.name ?? r.catalogItem?.name ?? "a benefit",
           amount: r.amountTransferred ?? 0,
           transferDate: formatDate(r.transferDate),
+        }),
+      });
+    }
+  }
+
+  // ── Incentive payments ────────────────────────────────────────────────────
+  // One email per PERSON, not per payout: somebody's Business Partner Fee and their
+  // commission are separate payments, but when both are confirmed in the same transaction
+  // two near-identical messages a second apart help nobody.
+  if (told.payouts.length) {
+    const rows = await prisma.incentivePayout.findMany({
+      where: { id: { in: told.payouts } },
+      select: {
+        kind: true,
+        amount: true,
+        personName: true,
+        cycle: { select: { label: true } },
+        businessUnit: { select: { name: true } },
+        user: { select: { name: true, email: true } },
+      },
+    });
+    const settings = await prisma.notificationSettings.findUnique({ where: { id: "singleton" } });
+    const message = resolveIncentiveMessage({
+      subject: settings?.incentiveEmailSubject,
+      heading: settings?.incentiveEmailHeading,
+      body: settings?.incentiveEmailBody,
+      footer: settings?.incentiveEmailFooter,
+    });
+
+    const byPerson = new Map<string, typeof rows>();
+    for (const r of rows) byPerson.set(r.user.email, [...(byPerson.get(r.user.email) ?? []), r]);
+
+    for (const [email, mine] of byPerson) {
+      const total = mine.reduce((s, r) => s + Number(r.amount), 0);
+      const person = mine[0];
+      const fullName = person.user.name ?? person.personName;
+      const transferDate = formatDate(told.valueDate);
+      await sendEmail({
+        to: email,
+        ...incentivePaymentToEmployee({
+          message,
+          values: {
+            "{first name}": fullName.trim().split(/\s+/)[0] ?? fullName,
+            "{full name}": fullName,
+            "{cycle}": person.cycle.label,
+            "{total}": formatEGP2(total),
+            "{transfer date}": transferDate,
+            "{business unit}": person.businessUnit.name,
+          },
+          amounts: mine.map((r) => ({
+            label: r.kind === "SCHEME_FEES" ? "Business Partner Fee" : "Commission",
+            amount: formatEGP2(Number(r.amount)),
+          })),
+          total: formatEGP2(total),
+          transferDate,
+          groupName: settings?.groupName,
+          businessUnitName: person.businessUnit.name,
         }),
       });
     }
@@ -220,7 +292,9 @@ export async function returnToFinance(formData: FormData): Promise<void> {
 
       const paybackIds = batch.items.map((i) => i.paybackRequestId).filter((v): v is string => !!v);
       const claimIds = batch.items.map((i) => i.benefitClaimId).filter((v): v is string => !!v);
-
+      // Incentive payouts need nothing here: a payout is "waiting" precisely when it has no
+      // live batch item, so deleting the items below already returns it to Finance's queue.
+      // And nobody is told anything — they were not paid.
       await tx.paymentBatchItem.deleteMany({ where: { batchId: id } });
       if (paybackIds.length) {
         await tx.paybackRequest.updateMany({ where: { id: { in: paybackIds } }, data: { status: "APPROVED" } });

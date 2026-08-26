@@ -10,9 +10,9 @@
 export const INCENTIVE_TEMPLATES: Record<"people" | "assignments" | "contributions", { filename: string; csv: string }> = {
   people: {
     filename: "people.csv",
-    csv: `name,role,net_monthly_salary,start_date
-Sample Lead,Senior Consultant,120000,01-Jan 2024
-Sample Contributor,Consultant,70000,01-Jun 2024
+    csv: `name,employee_id,role,net_monthly_salary,start_date
+Sample Lead,FF-0001,Senior Consultant,120000,01-Jan 2024
+Sample Contributor,FF-0002,Consultant,70000,01-Jun 2024
 `,
   },
   assignments: {

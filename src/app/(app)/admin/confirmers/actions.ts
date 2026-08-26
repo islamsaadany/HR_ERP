@@ -67,3 +67,54 @@ export async function removeConfirmer(formData: FormData): Promise<void> {
   revalidatePath(BACK);
   redirect(`${BACK}?ok=${q("Removed. They will no longer be emailed about that unit.")}`);
 }
+
+/**
+ * Appointing who RELEASES payments for a business unit (spec 009 FR-006g, 2026-08-26).
+ *
+ * The CEO: "the business unit head is the one responsible for the release." Built as a
+ * twin of the confirmer appointment above, and Super-User-only for the same reason — a
+ * head appointing another head would let the appointment hand itself out, and being able
+ * to appoint yourself is what keeps an empty list from being a lock-out.
+ */
+export async function appointUnitHead(formData: FormData): Promise<void> {
+  const actor = await requireSuperUser();
+  const userId = String(formData.get("userId") ?? "").trim();
+  const businessUnitId = String(formData.get("businessUnitId") ?? "").trim();
+  if (!userId || !businessUnitId) redirect(`${BACK}?error=${q("Pick somebody to appoint.")}`);
+
+  const [person, unit] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true, status: true } }),
+    prisma.businessUnit.findUnique({ where: { id: businessUnitId }, select: { name: true } }),
+  ]);
+  if (!person || !unit) redirect(`${BACK}?error=${q("That person or unit no longer exists.")}`);
+  if (person.status !== "ACTIVE") {
+    redirect(`${BACK}?error=${q("That person is no longer active, so they could not release anything.")}`);
+  }
+
+  await prisma.businessUnitHead.upsert({
+    where: { userId_businessUnitId: { userId, businessUnitId } },
+    update: {},
+    create: { userId, businessUnitId, appointedById: actor.id },
+  });
+
+  revalidatePath(BACK);
+  redirect(`${BACK}?ok=${q(`${person.name} now releases payments for ${unit.name}.`)}`);
+}
+
+export async function removeUnitHead(formData: FormData): Promise<void> {
+  await requireSuperUser();
+  const userId = String(formData.get("userId") ?? "").trim();
+  const businessUnitId = String(formData.get("businessUnitId") ?? "").trim();
+  if (!userId || !businessUnitId) redirect(BACK);
+
+  const [person, unit] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    prisma.businessUnit.findUnique({ where: { id: businessUnitId }, select: { name: true } }),
+  ]);
+
+  await prisma.businessUnitHead.deleteMany({ where: { userId, businessUnitId } });
+  revalidatePath(BACK);
+  redirect(
+    `${BACK}?ok=${q(`${person?.name ?? "They"} no longer releases payments for ${unit?.name ?? "that unit"}.`)}`
+  );
+}
