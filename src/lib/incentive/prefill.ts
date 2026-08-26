@@ -43,7 +43,7 @@ async function incentivePeople() {
   return prisma.user.findMany({
     where: { status: "ACTIVE", department: { in: [...INCENTIVE_DEPARTMENTS] } },
     orderBy: { name: "asc" },
-    select: { name: true, title: true, monthlySalary: true, startDate: true },
+    select: { name: true, employeeId: true, title: true, monthlySalary: true, startDate: true },
   });
 }
 
@@ -62,9 +62,9 @@ async function priorCycle(currentCycleId: string) {
 }
 
 function peopleCsv(people: Awaited<ReturnType<typeof incentivePeople>>): string {
-  const header = "name,role,net_monthly_salary,start_date";
+  const header = "name,employee_id,role,net_monthly_salary,start_date";
   const rows = people.map((p) =>
-    [cell(p.name), cell(p.title), cell(p.monthlySalary ?? ""), cell(sheetDate(p.startDate))].join(",")
+    [cell(p.name), cell(p.employeeId ?? ""), cell(p.title), cell(p.monthlySalary ?? ""), cell(sheetDate(p.startDate))].join(",")
   );
   return [header, ...rows].join("\n") + "\n";
 }

@@ -90,6 +90,8 @@ function boolYes(v: string | undefined): boolean {
 
 export type ParsedPerson = {
   name: string;
+  /** Registry Employee ID — what a released payment is matched on (FR-006g). */
+  employeeId: string | null;
   role: string | null;
   netMonthlySalary: number;
   startDate: Date | null;
@@ -133,6 +135,7 @@ export function parsePeople(csv: string): ParseResult<ParsedPerson> {
     const util = num(cells[h["utilization"] ?? h["utilisation"]]);
     rows.push({
       name,
+      employeeId: (cells[h["employeeid"]] ?? "").trim() || null,
       role: (cells[h["role"]] ?? "").trim() || null,
       netMonthlySalary: salary ?? 0,
       startDate: parseDate(cells[h["startdate"]]),

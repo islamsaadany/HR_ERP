@@ -258,7 +258,9 @@ function parseTab(wb: ExcelJS.Workbook, spec: TabSpec): ParsedTab {
     // The footer sits in H (label) and I (value), below the lines.
     let headerRow = 0;
     ws.eachRow((row, i) => {
-      if (!headerRow && asText(row.values[1 as keyof typeof row.values]).toLowerCase() === "date") headerRow = i;
+      // `row.values` is an array OR a keyed map depending on how the sheet was written;
+      // the cast picks the array shape, which is what every other read here assumes.
+      if (!headerRow && asText((row.values as Cell[])[1]).toLowerCase() === "date") headerRow = i;
     });
 
     ws.eachRow((row, i) => {

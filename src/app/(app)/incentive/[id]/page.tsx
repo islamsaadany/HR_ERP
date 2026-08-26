@@ -10,6 +10,8 @@ import { FirmFiguresCard } from "@/components/incentive/FirmFiguresCard";
 import { SheetUpload } from "@/components/incentive/SheetUpload";
 import { DownloadTemplates } from "@/components/incentive/DownloadTemplates";
 import { saveFirmFigures } from "../actions";
+import { canReleaseAnything } from "@/lib/finance/unit-heads";
+import { payoutLines } from "@/lib/incentive/payouts";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +22,7 @@ export default async function CyclePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ warn?: string; error?: string }>;
 }) {
-  await requireIncentiveAccess();
+  const viewer = await requireIncentiveAccess();
   const { id } = await params;
   const { warn, error } = await searchParams;
 
@@ -60,6 +62,23 @@ export default async function CyclePage({
   );
 
   const saveFirm = saveFirmFigures.bind(null, cycle.id);
+
+  // What each person's two payable halves are doing, for the Payment column — and whether
+  // this viewer heads any unit at all, which decides if the Release door is even drawn.
+  const [canRelease, lines] = await Promise.all([
+    canReleaseAnything(viewer.id),
+    payoutLines(cycle.id, report),
+  ]);
+  const paymentState: Record<string, "blocked" | "released" | "paid" | "open"> = {};
+  for (const l of lines) {
+    paymentState[l.key] = l.blocked
+      ? "blocked"
+      : l.released?.confirmed
+      ? "paid"
+      : l.released
+      ? "released"
+      : "open";
+  }
 
   const uploads: { kind: "people" | "assignments" | "contributions"; label: string; count: number }[] = [
     { kind: "people", label: "People", count: cycle.people.length },
@@ -121,6 +140,8 @@ export default async function CyclePage({
         <CycleReportView
           report={report}
           cycleId={cycle.id}
+          canRelease={canRelease}
+          paymentState={paymentState}
           review={{
             people: cycle.people.map((p) => ({
               // The id travels to the browser so an edited row can be matched back
@@ -128,6 +149,7 @@ export default async function CyclePage({
               // (eligibleToLead, utilization) across a save.
               id: p.id,
               name: p.name,
+              employeeId: p.employeeId,
               role: p.role,
               netMonthlySalary: p.netMonthlySalary,
               startDate: p.startDate ? p.startDate.toISOString().slice(0, 10) : null,

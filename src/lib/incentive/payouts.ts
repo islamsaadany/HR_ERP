@@ -66,12 +66,23 @@ const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
  * `commissionByPerson` — so a figure on the release screen and a figure on the report can
  * never disagree.
  */
-export async function payoutLines(cycleId: string, report: CycleReport): Promise<PayoutLine[]> {
-  const [people, payouts] = await Promise.all([
-    prisma.incentivePerson.findMany({
-      where: { cycleId },
-      select: { name: true, employeeId: true },
-    }),
+export async function payoutLines(
+  cycleId: string,
+  report: CycleReport,
+  /**
+   * The People rows to match against. Defaults to what is stored; the Recalculate guard
+   * passes the rows about to be SAVED, so it asks what the edit would actually produce
+   * rather than what the old sheet said.
+   */
+  peopleOverride?: { name: string; employeeId: string | null }[]
+): Promise<PayoutLine[]> {
+  const [storedPeople, payouts] = await Promise.all([
+    peopleOverride
+      ? Promise.resolve(peopleOverride)
+      : prisma.incentivePerson.findMany({
+          where: { cycleId },
+          select: { name: true, employeeId: true },
+        }),
     prisma.incentivePayout.findMany({
       where: { cycleId },
       select: {
@@ -84,7 +95,7 @@ export async function payoutLines(cycleId: string, report: CycleReport): Promise
     }),
   ]);
 
-  const sheetIdByName = new Map(people.map((p) => [norm(p.name), (p.employeeId ?? "").trim()]));
+  const sheetIdByName = new Map(storedPeople.map((p) => [norm(p.name), (p.employeeId ?? "").trim()]));
 
   // Every Employee ID the sheet mentions, resolved in one query. Inactive accounts are
   // excluded here rather than filtered later: paying somebody who has left is a decision,
@@ -164,18 +175,35 @@ export const isReleasable = (l: PayoutLine): boolean => l.blocked === null && l.
 
 /**
  * What an edit to the cycle would break: any figure that has ALREADY been released and no
- * longer matches what the engine now says. Recalculate is refused on these, naming the
- * person — that money has gone, and the report has to keep agreeing with the bank.
+ * longer matches what the engine would now say.
  *
- * Pure, so the caller can compute a PROSPECTIVE report from unsaved rows and ask this
- * before writing anything.
+ * ═══ WORKED FROM THE RELEASED PAYMENTS, NOT FROM THE LINES ═══
+ * The obvious version — walk the report's lines and check the ones marked released — has a
+ * hole exactly where it matters most. Deleting a person, or deleting the assignment their
+ * fee came from, produces NO line at all, so there is nothing to check and the edit sails
+ * through: their money has gone and the report now says they earned nothing. Caught by the
+ * verification script, which wiped a cycle and expected a refusal.
+ *
+ * So: start from what was released, and look up what the edit would now produce, treating
+ * "no longer in the report" as the 0.00 it is.
+ * ══════════════════════════════════════════════════════════════
+ *
+ * Pure over its inputs, so the caller can compute a PROSPECTIVE report from unsaved rows
+ * and ask before writing anything.
  */
 export function releasedFiguresBroken(
-  lines: PayoutLine[]
+  lines: PayoutLine[],
+  released: { userId: string; personName: string; kind: IncentivePayoutKind; amount: number }[]
 ): { personName: string; kind: IncentivePayoutKind; was: number; now: number }[] {
-  return lines
-    .filter((l) => l.released != null && Math.abs(l.released.amount - l.amount) >= 0.005)
-    .map((l) => ({ personName: l.personName, kind: l.kind, was: l.released!.amount, now: l.amount }));
+  const now = new Map(lines.filter((l) => l.userId).map((l) => [`${l.userId}|${l.kind}`, l.amount]));
+  return released
+    .map((r) => ({
+      personName: r.personName,
+      kind: r.kind,
+      was: r.amount,
+      now: now.get(`${r.userId}|${r.kind}`) ?? 0,
+    }))
+    .filter((r) => Math.abs(r.was - r.now) >= 0.005);
 }
 
 /** What the operator sees a half of the scheme called, everywhere. */

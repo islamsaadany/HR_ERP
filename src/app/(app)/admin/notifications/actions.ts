@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireSuperUser } from "@/lib/roles";
 import { sendTestEmail } from "@/lib/email/client";
+import {
+  INCENTIVE_MESSAGE_DEFAULTS,
+  checkIncentiveMessage,
+  resolveIncentiveMessage,
+} from "@/lib/email/incentive-message";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -59,4 +64,52 @@ export async function sendTestEmailAction(formData: FormData): Promise<NotifResu
   const res = await sendTestEmail(to);
   if (res.ok) return { ok: true };
   return err(res.error ?? "Send failed.");
+}
+
+/**
+ * Save the incentive payment message (spec 009 FR-006g, 2026-08-26).
+ *
+ * Its own action rather than more fields on the settings form above: this is prose with
+ * its own rules, and a bad placeholder should not be able to block somebody changing the
+ * Finance inbox.
+ *
+ * Storing the DEFAULT text is deliberately avoided — a field left at the built-in wording
+ * is saved as NULL, so it keeps tracking the code rather than freezing a copy of whatever
+ * the default said on the day it was opened.
+ */
+export async function updateIncentiveMessage(formData: FormData): Promise<NotifResult> {
+  await requireSuperUser();
+
+  const text = (k: string) => ((formData.get(k) as string | null) ?? "").trim();
+  const proposed = {
+    subject: text("incentiveEmailSubject"),
+    heading: text("incentiveEmailHeading"),
+    body: text("incentiveEmailBody"),
+    footer: text("incentiveEmailFooter"),
+  };
+
+  const problems = checkIncentiveMessage(resolveIncentiveMessage(proposed));
+  if (problems.length > 0) return err(problems.join(" "));
+
+  const orNull = (v: string, fallback: string) => (v === "" || v === fallback ? null : v);
+
+  await prisma.notificationSettings.upsert({
+    where: { id: "singleton" },
+    update: {
+      incentiveEmailSubject: orNull(proposed.subject, INCENTIVE_MESSAGE_DEFAULTS.subject),
+      incentiveEmailHeading: orNull(proposed.heading, INCENTIVE_MESSAGE_DEFAULTS.heading),
+      incentiveEmailBody: orNull(proposed.body, INCENTIVE_MESSAGE_DEFAULTS.body),
+      incentiveEmailFooter: orNull(proposed.footer, INCENTIVE_MESSAGE_DEFAULTS.footer),
+    },
+    create: {
+      id: "singleton",
+      incentiveEmailSubject: orNull(proposed.subject, INCENTIVE_MESSAGE_DEFAULTS.subject),
+      incentiveEmailHeading: orNull(proposed.heading, INCENTIVE_MESSAGE_DEFAULTS.heading),
+      incentiveEmailBody: orNull(proposed.body, INCENTIVE_MESSAGE_DEFAULTS.body),
+      incentiveEmailFooter: orNull(proposed.footer, INCENTIVE_MESSAGE_DEFAULTS.footer),
+    },
+  });
+
+  revalidatePath("/admin/notifications");
+  return { ok: true };
 }

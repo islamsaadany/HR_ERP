@@ -100,8 +100,8 @@ const CATEGORIES: Category[] = [
       },
       {
         href: "/admin/confirmers",
-        title: "Who confirms transactions",
-        body: "Appoint who confirms bank transactions and marks them complete.",
+        title: "Who moves money",
+        body: "Per business unit: who releases payments, and who confirms them at the bank.",
         ready: true,
       },
       {

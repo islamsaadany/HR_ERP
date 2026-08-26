@@ -40,6 +40,62 @@ closes the employee door only, so money already submitted can still be decided a
 with the row off the nav drops it and the page redirects; back on and it returns. `npx tsc --noEmit`
 and `npm run build` clean.
 
+## Incentive: releasing a cycle's payments into Finance (built 2026-08-26 — migration `076`)
+
+**Asked for:** *"now I need a way to release a payment so it can go to the finance as a request to
+make the transaction and as usual comes back to the approver of the transaction"* — then, over
+several rounds: the **business unit head** releases (*"me in case of forefront and Alaa in case of
+visual shift"*), matching is **by employee ID** not name, Finance keeps **one place** to see
+everything, the three roles need **consistent terminology in one configuration screen**, and the
+email needs to be **editable in settings**.
+
+**Built.** The head of a business unit ticks what they agree to pay; those lines join the queue
+Finance already works from and end at the same per-unit bank confirmation as paybacks, petty-cash
+top-ups and benefit reimbursements. Incentive payouts are simply a fourth kind of payable — no new
+screen for Finance, nothing new to learn.
+
+- **One screen for the whole chain.** Admin → **Who moves money** (widened from "Who confirms
+  transactions") shows, per unit and in the order money moves: *Releases payments* → *Creates the
+  transaction* → *Confirms at the bank*. The first and third are appointments; the middle is the
+  Finance account role, shown read-only and set on the employee record, so two screens never claim
+  one setting. Named for what the person does; deliberately not called "roles", which already means
+  an account's role.
+- **`BusinessUnitHead`** is a deliberate twin of `TransactionConfirmer`, including the departure
+  from the house pattern: holding Super User does not let you release. Self-appointment keeps that
+  from being a lock-out, and there is no appointment meaning "all units".
+- **Matched on Employee ID, cross-checked on name.** The ID is optional and deliberately
+  non-unique, so a line releases only when it lands on exactly one active account; no ID, no such
+  employee, two accounts, or no business unit are each refused and named. An ID matching somebody
+  whose registry name differs from the sheet is releasable but held and shown — a mistyped ID that
+  happens to belong to a real colleague is the mistake nothing else would catch.
+- **Fee and commission release separately**, per line, in as many goes as wanted. The unique index
+  on (cycle, person, half) is the backstop behind the screen not offering an already-released line.
+- **Amount and unit frozen at release**, and **an edit that would change an already-released figure
+  is refused, naming the person**.
+- **The person is emailed only when the confirmer marks the transaction complete** — one email per
+  person rather than per payout. Its words are editable at Admin → Email notifications with a live
+  preview; the amount rows are not, because they are the payment rather than wording.
+
+**Two things worth recording.** The released-figures guard was written the obvious way first —
+walk the report's lines, check the ones marked released — and had a hole exactly where it mattered
+most: deleting a person produces no line at all, so wiping a cycle sailed through while their money
+had already gone. Caught by the verification script, which wiped a cycle and expected a refusal; it
+now works from the released payments and treats "no longer in the report" as the 0.00 it is. And
+`.mts` files were **never type-checked** — `tsconfig`'s `**/*.ts` does not match them — so all 21
+verification scripts compiled to nothing being checked. Two of the five errors that surfaced when
+it was switched on were breakage introduced earlier the same day, in a script whose whole job is to
+catch breakage. All five fixed and the glob added.
+
+**Verified:** `tsc --noEmit` clean (now including every `.mts`), `npm run build` green. Migration
+076 applied to a throwaway Postgres, re-applied twice, and its objects **inspected** rather than
+assumed — `numeric(10,2)`, the enum in declared order, the unique index, every foreign key.
+`scripts/verify-incentive-release.mts` **37/37**; `verify-incentive-review-edit` 71/71;
+`verify-incentive` 27/27; `verify-incentive-cycle` 23/23. Then driven end to end in a real browser:
+the three appointment rows on one screen, the Release door on the report, the blocked group naming
+its reason, one unit actionable and another read-only, the release landing in Finance's queue under
+the right unit, the payment column on the report, and the message editor refusing a mis-cased
+placeholder by name.
+
 ## Incentive: the Business Partner Fee, per person (built 2026-08-26 — no migration)
 
 **Asked for:** *"in the screen of the incentive I need a table above the commission per person

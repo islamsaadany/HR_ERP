@@ -66,6 +66,7 @@ async function readBack(cycleId: string): Promise<ReviewData> {
     people: cycle.people.map((p) => ({
       id: p.id,
       name: p.name,
+      employeeId: p.employeeId,
       role: p.role,
       netMonthlySalary: p.netMonthlySalary,
       startDate: p.startDate ? p.startDate.toISOString().slice(0, 10) : null,
@@ -282,7 +283,7 @@ async function main() {
   const renamed = "RVW Dalia Sobhi"; // the rename the screen propagates
   edited.people[leadIdx].name = renamed;
   edited.people[leadIdx].netMonthlySalary = "95,000"; // typed with a separator
-  edited.people.push({ id: null, name: "RVW Hana Wagdy", role: "Analyst", netMonthlySalary: "22000", startDate: "2026-01-05" });
+  edited.people.push({ id: null, name: "RVW Hana Wagdy", employeeId: "", role: "Analyst", netMonthlySalary: "22000", startDate: "05-Jan 2026" });
   for (const a of edited.assignments) {
     if (a.lead === P.lead) a.lead = renamed;
     if (a.bd === P.lead) a.bd = renamed;
