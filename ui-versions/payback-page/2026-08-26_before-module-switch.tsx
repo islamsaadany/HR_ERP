@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
-import { requireModuleEnabled } from "@/lib/modules";
 import { toDateInput } from "@/lib/labels";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { PendingSubmitButton } from "@/components/PendingSubmitButton";
@@ -21,7 +20,6 @@ export default async function PaybackPage({
 }: {
   searchParams: Promise<{ ok?: string; error?: string }>;
 }) {
-  await requireModuleEnabled("payback");
   const user = await requireUser();
   const { ok, error } = await searchParams;
 
