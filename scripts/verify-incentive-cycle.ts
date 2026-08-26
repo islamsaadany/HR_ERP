@@ -84,5 +84,49 @@ check("cost recovery has rows", rep.costRecovery.length, 7);
 check("firm P&L present", rep.firm != null, true);
 check("Bashar contribution parsed (Islam=1)", pc.rows.find((c) => c.client === "Bashar Soft")?.share, 1);
 
+console.log("\n— Business Partner Fee by person (2026-08-26) —");
+// The new per-person table must be the SAME money as the per-client one, only gathered
+// by who earned it. If these two ever disagree, one of them is lying to the operator.
+const bpf = rep.businessPartnerFeeByPerson;
+const bpfSum = Math.round(bpf.reduce((s, p) => s + p.amount, 0) * 100) / 100;
+check(
+  "per-person total = lead fees + contributor payments",
+  bpfSum,
+  Math.round((rep.totals.leadFees + rep.totals.contributorPayments) * 100) / 100
+);
+check(
+  "every listed person earned something",
+  bpf.every((p) => p.amount > 0),
+  true
+);
+check(
+  "each person's lines add up to their own total",
+  bpf.every((p) => Math.abs(p.lines.reduce((s, l) => s + l.amount, 0) - p.amount) < 0.005),
+  true
+);
+check("sorted largest first", bpf.every((p, i) => i === 0 || bpf[i - 1].amount >= p.amount), true);
+check(
+  "a person's figure matches their row in the by-person table",
+  bpf.every((p) => {
+    const row = rep.byPerson.find((b) => b.name === p.name);
+    return row != null && Math.abs(row.total - p.amount) < 0.005;
+  }),
+  true
+);
+// Omar led Raya Holding, so he must carry a Lead line for it; Islam's contribution there
+// floored to zero, so his line must still be PRESENT and marked, not silently dropped.
+check(
+  "Omar has a Lead line for Raya Holding",
+  bpf.find((p) => p.name === "Omar")?.lines.some((l) => l.role === "lead" && l.client === "Raya Holding"),
+  true
+);
+check(
+  "Islam's floored Raya Holding contribution is still shown",
+  bpf.find((p) => p.name === "Islam")?.lines.some(
+    (l) => l.role === "contributor" && l.client === "Raya Holding" && l.flooredToZero && l.amount === 0
+  ),
+  true
+);
+
 console.log(`\n${fail === 0 ? "✅ ALL PASS" : "❌ FAILURES"} — ${pass} passed, ${fail} failed\n`);
 process.exit(fail === 0 ? 0 : 1);

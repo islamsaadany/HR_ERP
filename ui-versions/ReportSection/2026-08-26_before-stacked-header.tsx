@@ -49,23 +49,14 @@ export function Section({
   onToggle: () => void;
   children: React.ReactNode;
 }) {
-  // The title takes its own line, with the subtitle beneath it (2026-08-26). Before this
-  // the two shared one line with the section's action button, so a subtitle was truncated
-  // to fit — and the longer the title, the less of it survived. Both now read in full.
   return (
     <section className="mt-4 overflow-hidden rounded-xl border border-line bg-surface">
-      <div className="flex items-start gap-2.5 px-4 py-3">
-        <button type="button" onClick={onToggle} className="flex min-w-0 flex-1 items-start gap-2.5 text-left" aria-expanded={open}>
-          <span className="mt-[7px] flex shrink-0">
-            <Chevron open={open} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="font-serif text-lg text-ink">{title}</span>
-              {titleExtra}
-            </span>
-            {subtitle ? <span className="mt-0.5 block text-xs text-muted">{subtitle}</span> : null}
-          </span>
+      <div className="flex items-center gap-2.5 px-4 py-3">
+        <button type="button" onClick={onToggle} className="flex min-w-0 flex-1 items-center gap-2.5 text-left" aria-expanded={open}>
+          <Chevron open={open} />
+          <span className="font-serif text-lg text-ink">{title}</span>
+          {titleExtra}
+          {subtitle ? <span className="truncate text-xs text-muted">{subtitle}</span> : null}
         </button>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>

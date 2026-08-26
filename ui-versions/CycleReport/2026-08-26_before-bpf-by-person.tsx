@@ -28,7 +28,7 @@ const multipleBand = (mx: number) =>
     : "bg-red-100 text-red-700";
 
 /** Section ids drive the collapse state and Expand/Collapse-all. */
-const SECTION_IDS = ["review", "bpf", "contrib", "bpfPerson", "commission", "byPerson", "firm", "profitShare", "costRecovery", "watch"] as const;
+const SECTION_IDS = ["review", "bpf", "contrib", "commission", "byPerson", "firm", "profitShare", "costRecovery", "watch"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
 
 /**
@@ -85,10 +85,8 @@ export function CycleReportView({
   const setAll = (v: boolean) => setOpen(Object.fromEntries(SECTION_IDS.map((s) => [s, v])) as Record<SectionId, boolean>);
 
   const [schemeOpen, setSchemeOpen] = useState(false);
-  // One store for both per-person breakdown tables; keys are prefixed by table so a
-  // person expanded in one does not open themselves in the other.
-  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  const toggleRow = (key: string) => setExpandedRows((e) => ({ ...e, [key]: !e[key] }));
+  const [expandedComm, setExpandedComm] = useState<Record<string, boolean>>({});
+  const toggleComm = (name: string) => setExpandedComm((e) => ({ ...e, [name]: !e[name] }));
 
   const firm = r.firm;
   const grossProfit = firm ? firm.revenue - firm.deliveryCost : 0;
@@ -270,93 +268,6 @@ export function CycleReportView({
         </div>
       </Section>
 
-      {/* 4. Business Partner Fee by person — the same figures as the per-client table
-          above, gathered by who earned them, so a person's fee can be read without
-          adding up rows. Sits directly above Commission by person: the two halves of
-          the scheme, in the same shape, before the totals that fold them together. */}
-      {r.businessPartnerFeeByPerson.length > 0 && (
-        <Section
-          title="Business Partner Fee by person"
-          subtitle="what each person earned from the fee, as lead and as contributor · click a name for the per-client breakdown"
-          open={open.bpfPerson}
-          onToggle={() => toggle("bpfPerson")}
-        >
-          <div className={scrollWrap + " max-w-xl"}>
-            <table className="ff-data-table min-w-full divide-y divide-line">
-              <thead className="bg-navy-50/40">
-                <tr><th className={th}>Person</th><th className={th + " text-right"}>Business Partner Fee</th></tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {r.businessPartnerFeeByPerson.map((p) => {
-                  const rowKey = "bpf:" + p.name;
-                  const isOpen = !!expandedRows[rowKey];
-                  return (
-                    <Fragment key={p.name}>
-                      <tr className="cursor-pointer hover:bg-navy-50/40" onClick={() => toggleRow(rowKey)}>
-                        <td className={td}>
-                          {/* A real button so the breakdown is reachable by keyboard;
-                              the row keeps its click target for the mouse. */}
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); toggleRow(rowKey); }}
-                            aria-expanded={isOpen}
-                            className="inline-flex items-center gap-1.5 rounded text-left"
-                          >
-                            <Chevron open={isOpen} />
-                            {p.name}
-                          </button>
-                        </td>
-                        <td className={tdr}>{m(p.amount)}</td>
-                      </tr>
-                      {isOpen && (
-                        <tr>
-                          <td colSpan={2} className="bg-paper px-3 pb-3 pl-9">
-                            {p.lines.map((l, i) => (
-                              <div
-                                key={i}
-                                className="flex items-baseline justify-between gap-4 border-t border-dashed border-line py-1 text-xs first:border-t-0"
-                              >
-                                <span className="text-muted">
-                                  <span
-                                    className={
-                                      "mr-1.5 inline-block rounded px-1.5 py-px text-[9px] font-bold uppercase tracking-wide " +
-                                      (l.role === "lead"
-                                        ? "border border-navy-100 bg-navy-50 text-navy-600"
-                                        : "border border-gold-200 bg-gold-100 text-gold-800")
-                                    }
-                                  >
-                                    {l.role === "lead" ? "Lead" : "Contributor"}
-                                  </span>{" "}
-                                  <span className="font-semibold text-ink">{l.client}</span>
-                                  {l.role === "lead"
-                                    ? ` · GP ${pct(l.grossMarginPct)} · envelope ${m(l.envelope)} · keeps ${pct(l.keeps)}`
-                                    : ` · share ${pct(l.share)}${l.tier ? ` · tier ${pct(l.tier)}` : ""}`}
-                                </span>
-                                <span className="shrink-0 font-semibold tabular-nums text-ink">
-                                  {l.role === "contributor" && l.flooredToZero ? (
-                                    <ZeroCell note="Below the 5%-of-month floor — paid as 0." value="0 (floored)" />
-                                  ) : (
-                                    m(l.amount)
-                                  )}
-                                </span>
-                              </div>
-                            ))}
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-                <tr className="ff-total-row font-semibold">
-                  <td className={td}>Total</td>
-                  <td className={tdr}>{m(r.totals.leadFees + r.totals.contributorPayments)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Section>
-      )}
-
       {/* 4. Commission by person — sits directly above By person so the commission
           figures are read before the per-person totals that fold them in.
           Compact by default; click a name to reveal that person's per-deal breakdown. */}
@@ -370,23 +281,23 @@ export function CycleReportView({
               <tbody className="divide-y divide-line">
                 {r.commissionByPerson.map((c) => (
                   <Fragment key={c.name}>
-                    <tr className="cursor-pointer hover:bg-navy-50/40" onClick={() => toggleRow("comm:" + c.name)}>
+                    <tr className="cursor-pointer hover:bg-navy-50/40" onClick={() => toggleComm(c.name)}>
                       <td className={td}>
                         {/* A real button so the breakdown is reachable by keyboard (audit F7);
                             the row keeps its click target for the mouse. */}
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); toggleRow("comm:" + c.name); }}
-                          aria-expanded={!!expandedRows["comm:" + c.name]}
+                          onClick={(e) => { e.stopPropagation(); toggleComm(c.name); }}
+                          aria-expanded={!!expandedComm[c.name]}
                           className="inline-flex items-center gap-1.5 rounded text-left"
                         >
-                          <Chevron open={!!expandedRows["comm:" + c.name]} />
+                          <Chevron open={!!expandedComm[c.name]} />
                           {c.name}
                         </button>
                       </td>
                       <td className={tdr}>{m(c.amount)}</td>
                     </tr>
-                    {expandedRows["comm:" + c.name] && (
+                    {expandedComm[c.name] && (
                       <tr>
                         <td colSpan={2} className="bg-paper px-3 pb-3 pl-9">
                           {c.deals.map((d, i) => (
@@ -414,7 +325,7 @@ export function CycleReportView({
 
       {/* 5. Compensation by person */}
       <Section
-        title="Total compensation by person"
+        title="Compensation by person"
         subtitle="released compensation, plus commission folded into the grand total"
         open={open.byPerson}
         onToggle={() => toggle("byPerson")}

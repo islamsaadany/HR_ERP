@@ -1,0 +1,369 @@
+<title>Business Partner Fee by Person</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-400:#4f6d97;
+    --navy-500:#2f4d78;--navy-600:#1f3a63;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --amber:#92400e;--amber-bg:#fffbeb;--amber-line:#fcd34d;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto;padding:32px 20px 90px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:8px 0 0;max-width:74ch}
+
+  .screen{margin-top:42px}
+  .screen>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:84ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+
+  /* The report's section shell */
+  .section{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;margin-top:14px}
+  .section:first-child{margin-top:0}
+  .sechead{display:flex;align-items:flex-start;gap:10px;padding:11px 14px}
+  .sechead .chev{width:14px;height:14px;flex:none;color:var(--muted);transform:rotate(90deg);margin-top:6px}
+  .sechead .titles{flex:1;min-width:0}
+  .sechead .stitle{font-family:Georgia,serif;font-size:17px;display:block}
+  .sechead .ssub{font-size:12px;color:var(--muted);display:block;margin-top:1px}
+  .sechead .act{flex:none;padding-top:2px}
+  .secbody{padding:0 14px 14px}
+
+  /* The OLD header, for the comparison only */
+  .sechead.old{align-items:center}
+  .sechead.old .titles{display:flex;align-items:baseline;gap:9px;min-width:0}
+  .sechead.old .ssub{margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12px;font-weight:600;padding:7px 13px;border-radius:9px;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .btn-navy:hover{background:var(--navy-700)}
+
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+  .narrow{max-width:600px}
+  table{width:100%;border-collapse:collapse;background:var(--surface)}
+  thead th{background:var(--navy-800);color:#fff;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:8px 10px;white-space:nowrap}
+  tbody td{padding:8px 10px;font-size:13px;white-space:nowrap;border-top:1px solid var(--line)}
+  tbody tr:first-child td{border-top:0}
+  .r{text-align:right;font-variant-numeric:tabular-nums}
+  th.r{text-align:right}
+  .zebra td{background:#eef0f2}
+  .totalrow td{background:var(--navy-50);font-weight:650}
+
+  .namebtn{display:inline-flex;align-items:center;gap:7px;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
+  .rowchev{width:13px;height:13px;color:var(--muted);transition:transform .15s;flex:none}
+  .rowchev.open{transform:rotate(90deg)}
+  tr.clickable{cursor:pointer}
+  tr.clickable:hover td{background:#f2f5f9}
+
+  .breakdown{background:var(--paper);padding:2px 12px 10px 34px;white-space:normal}
+  .bline{display:flex;justify-content:space-between;gap:16px;padding:5px 0;border-top:1px dashed var(--line);font-size:12px}
+  .bline:first-child{border-top:0}
+  .bline .what{color:var(--muted);min-width:0}
+  .bline .what b{color:var(--ink);font-weight:650}
+  .bline .amt{font-weight:650;font-variant-numeric:tabular-nums;flex:none}
+  .role{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:4px;margin:0 5px 0 0}
+  .r-lead{background:var(--navy-50);color:var(--navy-600);border:1px solid var(--navy-100)}
+  .r-con{background:var(--gold-100);color:var(--gold-800);border:1px solid var(--gold-200)}
+  .floored{color:var(--gold-600);border-bottom:1px dotted var(--navy-200)}
+
+  .banner{border-radius:12px;padding:12px 14px;font-size:13px;border:1px solid var(--navy-100);background:var(--navy-50);color:var(--navy-700);margin-bottom:12px}
+  .banner b{font-weight:700}
+  .banner.amber{border-color:var(--amber-line);background:var(--amber-bg);color:var(--amber)}
+  .banner ul{margin:6px 0 0;padding-left:20px}
+  .banner li{margin-top:3px}
+  .tag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--navy-800);color:#fff;border-radius:4px;padding:1px 5px;margin-left:7px;vertical-align:2px}
+
+  .cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+  .cmp>*{min-width:0}
+  @media (max-width:820px){.cmp{grid-template-columns:1fr}}
+  .cmp .lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 6px}
+
+  .notes{margin-top:44px;border-top:2px solid var(--navy-800);padding-top:18px}
+  .notes h2{font-family:Georgia,serif;font-size:20px;margin:0 0 14px}
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+  .rule{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 15px}
+  .rule h3{font-size:12.5px;margin:0 0 5px;font-weight:750;color:var(--navy-800)}
+  .rule p{margin:0;font-size:12.5px;color:var(--muted)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Incentive Scheme · Cycle report</p>
+  <h1>Business Partner Fee by person</h1>
+  <p class="lede">
+    The report tells you what the Business Partner Fee did per <em>client</em>, and what each person
+    ended up with in total &mdash; but never what the fee itself came to <em>per person</em>. This adds
+    that table, directly above Commission by person and built the same way: compact, with the
+    breakdown one click away.
+  </p>
+
+  <!-- ── 1 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">1</span> The three tables, in order &mdash; click a name</h2>
+    <p class="sub">
+      Both breakdown tables work. The new one is first; Commission is unchanged; the third is
+      renamed and re-headed. Ahmed is expanded to start so you can see the shape straight away.
+    </p>
+    <div class="frame">
+
+      <!-- NEW: Business Partner Fee by person -->
+      <div class="section">
+        <div class="sechead">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="titles">
+            <span class="stitle">Business Partner Fee by person<span class="tag">New</span></span>
+            <span class="ssub">what each person earned from the fee, as lead and as contributor · click a name for the per-client breakdown</span>
+          </span>
+        </div>
+        <div class="secbody">
+          <div class="scroll narrow">
+            <table>
+              <thead><tr><th>Person</th><th class="r">Business Partner Fee</th></tr></thead>
+              <tbody id="bpf"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commission by person — unchanged apart from the header stacking -->
+      <div class="section">
+        <div class="sechead">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="titles">
+            <span class="stitle">Commission by person</span>
+            <span class="ssub">protected — independent of the gates · click a name for the per-deal breakdown</span>
+          </span>
+        </div>
+        <div class="secbody">
+          <div class="scroll narrow">
+            <table>
+              <thead><tr><th>Person</th><th class="r">Commission</th></tr></thead>
+              <tbody id="comm"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Renamed -->
+      <div class="section">
+        <div class="sechead">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="titles">
+            <span class="stitle">Total compensation by person<span class="tag">Renamed</span></span>
+            <span class="ssub">released compensation, plus commission folded into the grand total</span>
+          </span>
+          <span class="act"><button class="btn-navy" type="button">⬇ Download calculation (.xlsx)</button></span>
+        </div>
+        <div class="secbody">
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Person</th><th class="r">Salary</th><th class="r">Lead fee</th><th class="r">Contributor</th>
+                  <th class="r">Total</th><th class="r">Months</th><th class="r">Commission</th><th class="r">Grand total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Ahmed Fathy</td><td class="r">92,000.00</td><td class="r">34,560.00</td><td class="r">—</td>
+                    <td class="r">34,560.00</td><td class="r">0.38</td><td class="r">46,250.00</td><td class="r"><b>80,810.00</b></td></tr>
+                <tr class="zebra"><td>Nour Hassan</td><td class="r">61,500.00</td><td class="r">10,185.00</td><td class="r">8,640.00</td>
+                    <td class="r">18,825.00</td><td class="r">0.31</td><td class="r">—</td><td class="r"><b>18,825.00</b></td></tr>
+                <tr><td>Yara Kamel</td><td class="r">44,000.00</td><td class="r">—</td><td class="r">4,365.00</td>
+                    <td class="r">4,365.00</td><td class="r">0.10</td><td class="r">—</td><td class="r"><b>4,365.00</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">2</span> The header change, on its own</h2>
+    <p class="sub">
+      You asked for the title to take the line with the subtitle beneath it. That is the section
+      header every section in the report shares, so the change lands on all of them &mdash; which is the
+      point: they should read the same way. It is worth seeing what it fixes.
+    </p>
+    <div class="frame">
+      <div class="cmp">
+        <div>
+          <p class="lbl">Today</p>
+          <div class="section" style="margin-top:0">
+            <div class="sechead old">
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+              <span class="titles">
+                <span class="stitle">Compensation by person</span>
+                <span class="ssub">released compensation, plus commission folded into the grand total</span>
+              </span>
+              <span class="act"><button class="btn-navy" type="button">⬇ Download calculation (.xlsx)</button></span>
+            </div>
+          </div>
+          <p class="sub" style="margin:8px 0 0 0;font-size:12px">
+            The subtitle fights the button for the same line, so it is cut off &mdash; and the longer the
+            title, the less of it survives.
+          </p>
+        </div>
+        <div>
+          <p class="lbl">Proposed</p>
+          <div class="section" style="margin-top:0">
+            <div class="sechead">
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+              <span class="titles">
+                <span class="stitle">Total compensation by person</span>
+                <span class="ssub">released compensation, plus commission folded into the grand total</span>
+              </span>
+              <span class="act"><button class="btn-navy" type="button">⬇ Download calculation (.xlsx)</button></span>
+            </div>
+          </div>
+          <p class="sub" style="margin:8px 0 0 0;font-size:12px">
+            Title on its own line, subtitle in full beneath it. The longer name now fits, and so does
+            every other section&rsquo;s.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Rules ─────────────────────────────────────────────────────── -->
+  <section class="notes">
+    <h2>How the new table behaves</h2>
+    <div class="rules">
+      <div class="rule">
+        <h3>It is the same figure, split open</h3>
+        <p>A person&rsquo;s Business Partner Fee is their lead fees plus their contributor payments &mdash;
+          exactly the <b>Total</b> column of the table below it. Nothing new is calculated; the same
+          derivation is shown per person instead of per client.</p>
+      </div>
+      <div class="rule">
+        <h3>The breakdown says which hat</h3>
+        <p>Each line is tagged <b>Lead</b> or <b>Contributor</b>, because the two are earned by
+          different rules. A lead line carries the client&rsquo;s margin and the envelope it generated; a
+          contributor line carries the share and the tier it fell in.</p>
+      </div>
+      <div class="rule">
+        <h3>A zero still says why</h3>
+        <p>A contribution that fell below the 5%-of-month floor shows as <b>0 (floored)</b> rather than
+          vanishing &mdash; the same treatment the fee tables already give it. A person who earned nothing
+          at all is simply not listed.</p>
+      </div>
+      <div class="rule">
+        <h3>Sorted by what was earned</h3>
+        <p>Largest first, like Commission by person, with a total row that reconciles to the Business
+          Partner Fee section&rsquo;s own totals &mdash; lead fees plus contributor payments.</p>
+      </div>
+    </div>
+
+    <div class="banner amber" style="margin-top:18px">
+      <b>One thing to confirm.</b> Renaming that section to <b>Total compensation by person</b> also
+      changes the sheet name inside the downloadable .xlsx, which is built from the same words. That
+      keeps the workbook and the screen agreeing, which is what you want &mdash; but anybody with an old
+      workbook open will see the old name. Say if you would rather the file kept its current wording.
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var m = function (n) { return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+
+  var BPF = [
+    { name: "Ahmed Fathy", amount: 34560, lines: [
+      { role: "lead", client: "Raya Holding", detail: "GP 77.8% · envelope 43,200.00 · keeps 80%", amount: 34560 }
+    ]},
+    { name: "Nour Hassan", amount: 18825, lines: [
+      { role: "lead", client: "El Abd Foods", detail: "GP 75.8% · envelope 14,550.00 · keeps 70%", amount: 10185 },
+      { role: "contributor", client: "Raya Holding", detail: "share 40% · tier 20%", amount: 8640 }
+    ]},
+    { name: "Yara Kamel", amount: 4365, lines: [
+      { role: "contributor", client: "El Abd Foods", detail: "share 45% · tier 30%", amount: 4365 },
+      { role: "contributor", client: "Delta Mills", detail: "share 8% · below the 5%-of-month floor", amount: 0, floored: true }
+    ]}
+  ];
+  var COMM = [
+    { name: "Ahmed Fathy", amount: 46250, lines: [
+      { role: "deal", client: "Raya Holding", detail: "Self-gen · 5% · net 925,000", amount: 46250 }
+    ]}
+  ];
+
+  function render(tbodyId, data, totalLabel) {
+    var tb = document.getElementById(tbodyId);
+    tb.textContent = "";
+    var total = 0;
+
+    data.forEach(function (p, i) {
+      total += p.amount;
+      var tr = document.createElement("tr");
+      tr.className = "clickable" + (i % 2 === 1 ? " zebra" : "");
+
+      var td1 = document.createElement("td");
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "namebtn";
+      btn.setAttribute("aria-expanded", "false");
+      btn.innerHTML = '<svg class="rowchev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+      btn.appendChild(document.createTextNode(p.name));
+      td1.appendChild(btn);
+
+      var td2 = document.createElement("td");
+      td2.className = "r";
+      td2.textContent = m(p.amount);
+      tr.appendChild(td1); tr.appendChild(td2);
+
+      var det = document.createElement("tr");
+      det.hidden = true;
+      var dtd = document.createElement("td");
+      dtd.colSpan = 2;
+      dtd.className = "breakdown";
+      p.lines.forEach(function (l) {
+        var row = document.createElement("div");
+        row.className = "bline";
+        var what = document.createElement("span");
+        what.className = "what";
+        if (l.role !== "deal") {
+          var tag = document.createElement("span");
+          tag.className = "role " + (l.role === "lead" ? "r-lead" : "r-con");
+          tag.textContent = l.role === "lead" ? "Lead" : "Contributor";
+          what.appendChild(tag);
+          what.appendChild(document.createTextNode(" "));
+        }
+        var b = document.createElement("b"); b.textContent = l.client;
+        what.appendChild(b);
+        what.appendChild(document.createTextNode(" · " + l.detail));
+        var amt = document.createElement("span");
+        amt.className = "amt" + (l.floored ? " floored" : "");
+        amt.textContent = l.floored ? "0 (floored)" : m(l.amount);
+        row.appendChild(what); row.appendChild(amt);
+        dtd.appendChild(row);
+      });
+      det.appendChild(dtd);
+
+      function toggle() {
+        det.hidden = !det.hidden;
+        btn.setAttribute("aria-expanded", det.hidden ? "false" : "true");
+        btn.querySelector(".rowchev").classList.toggle("open", !det.hidden);
+      }
+      tr.addEventListener("click", toggle);
+      btn.addEventListener("click", function (e) { e.stopPropagation(); toggle(); });
+
+      tb.appendChild(tr); tb.appendChild(det);
+      if (i === 0) toggle();
+    });
+
+    var t = document.createElement("tr");
+    t.className = "totalrow";
+    var a = document.createElement("td"); a.textContent = totalLabel;
+    var c = document.createElement("td"); c.className = "r"; c.textContent = m(total);
+    t.appendChild(a); t.appendChild(c);
+    tb.appendChild(t);
+  }
+
+  render("bpf", BPF, "Total");
+  render("comm", COMM, "Total");
+})();
+</script>

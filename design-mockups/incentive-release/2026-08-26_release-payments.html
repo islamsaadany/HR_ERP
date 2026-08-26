@@ -1,0 +1,838 @@
+<title>Releasing Incentive Payments</title>
+<style>
+  /* Single-theme by design: mirrors the live product, which is light navy/gold only.
+     Every colour is painted explicitly so the page holds on any host background. */
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-400:#4f6d97;
+    --navy-500:#2f4d78;--navy-600:#1f3a63;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;
+    --amber:#92400e;--amber-bg:#fffbeb;--amber-line:#fcd34d;
+    --red:#b91c1c;--red-bg:#fef2f2;--red-line:#f3c6c6;
+    --blue:#1d4ed8;--blue-bg:#eff6ff;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:32px 20px 90px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:8px 0 0;max-width:74ch}
+
+  .path{display:flex;gap:0;align-items:stretch;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);margin-top:26px;flex-wrap:wrap}
+  .step{flex:1 1 190px;padding:11px 14px;border-right:1px solid var(--line);min-width:0}
+  .step:last-child{border-right:0}
+  .step .who{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--gold-600)}
+  .step .act{font-size:13px;font-weight:650;margin-top:3px}
+  .step .det{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .step.new{background:var(--navy-50)}
+  .step.new .who{color:var(--navy-600)}
+  .step .tag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--navy-800);color:#fff;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:1px}
+
+  .screen{margin-top:44px}
+  .screen>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:84ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+
+  .section{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+  .sechead{display:flex;align-items:center;gap:10px;padding:11px 14px;flex-wrap:wrap}
+  .sechead .chev{width:14px;height:14px;flex:none;color:var(--muted);transform:rotate(90deg)}
+  .sechead .stitle{font-family:Georgia,serif;font-size:17px}
+  .sechead .ssub{font-size:12px;color:var(--muted)}
+  .sechead .spacer{flex:1}
+  .secbody{padding:0 14px 14px}
+
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;letter-spacing:.02em}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-green{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-blue{border:1px solid var(--navy-200);background:var(--blue-bg);color:var(--blue)}
+  .c-grey{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+  .c-red{border:1px solid var(--red-line);background:var(--red-bg);color:var(--red)}
+
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12px;font-weight:600;padding:8px 15px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .btn-navy:hover{background:var(--navy-700)}
+  .btn-navy[disabled]{opacity:.35;cursor:not-allowed}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:6px 12px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .btn-ghost:hover{background:var(--navy-50)}
+  .btn-sm{font-size:11px;padding:4px 9px}
+
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+  table{width:100%;border-collapse:collapse;background:var(--surface)}
+  thead th{background:var(--navy-800);color:#fff;font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;text-align:left;padding:8px 10px;white-space:nowrap}
+  tbody td{padding:8px 10px;font-size:13px;white-space:nowrap;border-top:1px solid var(--line)}
+  tbody tr:first-child td{border-top:0}
+  .r{text-align:right;font-variant-numeric:tabular-nums}
+  th.r{text-align:right}
+  .zebra td{background:#eef0f2}
+  .totalrow td{background:var(--navy-50);font-weight:650}
+  .muted{color:var(--muted)}
+
+  .unit{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;margin-top:12px}
+  .unit:first-of-type{margin-top:0}
+  .unithead{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--navy-50);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .unithead .name{font-weight:700;font-size:13.5px;color:var(--navy-900)}
+  .unithead .conf{font-size:11.5px;color:var(--muted)}
+  .unithead .spacer{flex:1}
+  .unitfoot{display:flex;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--line);background:var(--paper);flex-wrap:wrap}
+  .unitfoot .sum{font-size:12.5px;color:var(--muted);flex:1;min-width:200px}
+  .unitfoot .sum b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .unit.blocked{border-color:var(--amber-line)}
+  .unit.blocked .unithead{background:var(--amber-bg)}
+  .unit.theirs{opacity:.72}
+  .unit.theirs .unithead{background:var(--paper)}
+
+  input[type=checkbox]{width:15px;height:15px;accent-color:var(--navy-700);cursor:pointer;margin:0}
+  td.tick{width:34px;padding-left:12px}
+  .kind{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:5px}
+  .k-fees{background:var(--navy-50);color:var(--navy-600);border:1px solid var(--navy-100)}
+  .k-comm{background:var(--gold-100);color:var(--gold-800);border:1px solid var(--gold-200)}
+
+  .banner{border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:12px}
+  .b-amber{border:1px solid var(--amber-line);background:var(--amber-bg);color:var(--amber)}
+  .b-navy{border:1px solid var(--navy-100);background:var(--navy-50);color:var(--navy-700)}
+  .b-red{border:1px solid var(--red-line);background:var(--red-bg);color:var(--red)}
+  .banner b{font-weight:700}
+  .banner ul{margin:6px 0 0;padding-left:20px}
+  .banner li{margin-top:3px}
+
+  /* Appointment rows on the settings screen */
+  .appt{display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+  .appt .role{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;width:148px;flex:none;line-height:1.35}
+  .appt .role.rel{color:var(--navy-600)}
+  .appt .role.fin{color:var(--muted)}
+  .appt .role.con{color:#85641b}
+  .appt .people .p.ro{background:var(--surface);border-style:dashed;padding-right:11px;color:var(--muted)}
+  .appt .people .note{display:inline-block;font-size:11px;color:var(--muted);margin-left:2px}
+  .appt .people{flex:1;min-width:180px;font-size:13px}
+  .appt .people .p{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px 5px 3px 11px;margin:2px 6px 2px 0}
+  .appt .people .x{display:grid;place-items:center;width:17px;height:17px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:10px;cursor:pointer}
+  .appt .people .x:hover{border-color:var(--red-line);background:var(--red-bg);color:var(--red)}
+  .appt .none{color:var(--red);font-size:12.5px;font-weight:600}
+
+  /* Email preview — a fixed 600px document, scaled to fit rather than cropped. */
+  .mailwrap{background:#eceff2;border:1px solid var(--line);border-radius:12px;padding:22px;display:flex;justify-content:center}
+  .mail{width:600px;max-width:100%;background:#ffffff;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(16,36,68,.14);font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .mail .bar{background:#0f2444;padding:16px 26px}
+  .mail .bar .grp{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.66)}
+  .mail .bar .unitname{font-size:16px;font-weight:700;color:#fff;margin-top:2px}
+  .mail .body{padding:26px}
+  .mail h3{margin:0 0 13px;font-size:19px;color:#16202e;font-weight:700}
+  .mail p{margin:0 0 15px;font-size:14px;color:#3c4351;line-height:1.6}
+  .mail .rows{border-top:1px solid #e7e3da}
+  .mail .rw{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid #e7e3da;font-size:14px}
+  .mail .rw .k{color:#5f6472}
+  .mail .rw .v{font-weight:650;color:#16202e;font-variant-numeric:tabular-nums}
+  .mail .rw.tot .k{font-weight:700;color:#16202e}
+  .mail .rw.tot .v{font-weight:800}
+  .mail .foot{padding:16px 26px 22px;font-size:12px;color:#5f6472;border-top:1px solid #e7e3da;background:#faf9f6}
+  .mailmeta{font-size:12px;color:var(--muted);margin:0 0 10px}
+  .mailmeta b{color:var(--ink)}
+
+  /* Message editor */
+  .edit2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+  @media (max-width:860px){.edit2{grid-template-columns:1fr}}
+  .fld{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 5px;font-weight:800}
+  .fld:first-child{margin-top:0}
+  .inp,.ta{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--ink);font-family:inherit;line-height:1.55}
+  .ta{resize:vertical;min-height:76px}
+  .inp:focus,.ta:focus{outline:2px solid var(--gold-300);outline-offset:1px;border-color:var(--navy-400)}
+  .tokens{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+  .tok{font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--navy-50);border:1px solid var(--navy-100);color:var(--navy-700);border-radius:6px;padding:2px 7px;cursor:pointer}
+  .tok:hover{background:var(--navy-100)}
+  .fixedbit{border:1px dashed var(--navy-200);background:var(--paper);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--muted);margin-top:6px}
+  .editbar2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .editbar2 .spacer{flex:1}
+
+  .notes{margin-top:48px;border-top:2px solid var(--navy-800);padding-top:18px}
+  .notes h2{font-family:Georgia,serif;font-size:20px;margin:0 0 14px}
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  .rule{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 15px}
+  .rule h3{font-size:12.5px;margin:0 0 5px;font-weight:750;color:var(--navy-800)}
+  .rule p{margin:0;font-size:12.5px;color:var(--muted)}
+  .rule p+p{margin-top:6px}
+  .q{margin-top:18px;border:1px solid var(--gold-300);background:var(--gold-100);border-radius:12px;padding:14px 15px}
+  .q h3{font-size:12.5px;margin:0 0 5px;font-weight:750;color:var(--gold-800);text-transform:uppercase;letter-spacing:.06em}
+  .q p{margin:0;font-size:13px;color:var(--ink)}
+  .q p+p{margin-top:8px}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Incentive Scheme · Confidential</p>
+  <h1>Releasing a cycle&rsquo;s payments</h1>
+  <p class="lede">
+    A finished cycle works out what each person has earned, and there it stops &mdash; the figures sit
+    on a report and somebody re-types them somewhere else. This adds the missing step: the
+    <b>business unit head</b> releases the payments they agree to, and those join the queue Finance
+    already works from, ending at the same bank confirmation as everything else the company pays.
+  </p>
+
+  <div class="path">
+    <div class="step new">
+      <div class="who">The unit&rsquo;s head <span class="tag">New</span></div>
+      <div class="act">Releases payments</div>
+      <div class="det">Only for the unit they head. Nobody else, and no other unit.</div>
+    </div>
+    <div class="step">
+      <div class="who">Finance</div>
+      <div class="act">Creates the transaction</div>
+      <div class="det">In the bank, then submits it for confirmation.</div>
+    </div>
+    <div class="step">
+      <div class="who">The unit&rsquo;s confirmer</div>
+      <div class="act">Confirms at the bank</div>
+      <div class="det">Or returns it to Finance with a reason.</div>
+    </div>
+    <div class="step new">
+      <div class="who">The person <span class="tag">New</span></div>
+      <div class="act">Is emailed</div>
+      <div class="det">Only now has anybody been paid, so only now are they told.</div>
+    </div>
+  </div>
+
+  <!-- ── 1 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">1</span> One screen for the whole chain</h2>
+    <p class="sub">
+      Today&rsquo;s <b>Who confirms transactions</b> screen widens into <b>Who moves money</b> &mdash; the same
+      place in Admin, showing all three steps per business unit, in the order the money moves.
+      Deliberately not called &ldquo;roles&rdquo;: that word already means an account&rsquo;s role, and reusing it
+      here is the confusion we are removing.
+    </p>
+    <div class="frame">
+      <div class="banner b-navy">
+        <b>Two of the three are appointments; the middle one is an account role.</b> Releasing and
+        confirming are held <em>per business unit</em>, because each unit banks separately. Being
+        Finance is not about one unit, so it stays on the person&rsquo;s employee record &mdash; shown here,
+        but set there, so two screens never claim to own the same setting. Only a Super User can
+        appoint, and no appointment can hand itself out.
+      </div>
+
+      <div class="section">
+        <div class="sechead">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="stitle">Who moves money</span>
+          <span class="ssub">one list per business unit, in the order money moves</span>
+        </div>
+        <div class="secbody">
+          <div class="unit">
+            <div class="unithead">
+              <span class="name">Forefront Consulting</span>
+              <span class="spacer"></span>
+              <span class="chip c-grey">3 transactions awaiting confirmation</span>
+            </div>
+            <div class="appt">
+              <span class="role rel">Releases payments</span>
+              <span class="people"><span class="p">Islam Saadany <span class="x" title="Remove">✕</span></span></span>
+              <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
+            </div>
+            <div class="appt">
+              <span class="role fin">Creates the transaction</span>
+              <span class="people">
+                <span class="p ro">Nadia Roushdy</span><span class="p ro">Hossam Zaki</span>
+                <span class="note">the Finance role &mdash; set on the employee record</span>
+              </span>
+              <a class="btn-ghost btn-sm" href="#">Open registry</a>
+            </div>
+            <div class="appt">
+              <span class="role con">Confirms at the bank</span>
+              <span class="people"><span class="p">Islam Saadany <span class="x" title="Remove">✕</span></span></span>
+              <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
+            </div>
+          </div>
+
+          <div class="unit">
+            <div class="unithead">
+              <span class="name">Visual Shift</span>
+              <span class="spacer"></span>
+              <span class="chip c-grey">nothing waiting</span>
+            </div>
+            <div class="appt">
+              <span class="role rel">Releases payments</span>
+              <span class="people"><span class="p">Alaa Hegazy <span class="x" title="Remove">✕</span></span></span>
+              <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
+            </div>
+            <div class="appt">
+              <span class="role fin">Creates the transaction</span>
+              <span class="people">
+                <span class="p ro">Nadia Roushdy</span><span class="p ro">Hossam Zaki</span>
+                <span class="note">the Finance role &mdash; company-wide, not per unit</span>
+              </span>
+              <a class="btn-ghost btn-sm" href="#">Open registry</a>
+            </div>
+            <div class="appt">
+              <span class="role con">Confirms at the bank</span>
+              <span class="people"><span class="p">Mariam Adly <span class="x" title="Remove">✕</span></span></span>
+              <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
+            </div>
+          </div>
+
+          <div class="unit">
+            <div class="unithead">
+              <span class="name">Data Management Unit</span>
+              <span class="spacer"></span>
+              <span class="chip c-grey">nothing waiting</span>
+            </div>
+            <div class="appt">
+              <span class="role rel">Releases payments</span>
+              <span class="people"><span class="none">Nobody appointed — this unit&rsquo;s payments cannot be released.</span></span>
+              <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
+            </div>
+            <div class="appt">
+              <span class="role fin">Creates the transaction</span>
+              <span class="people">
+                <span class="p ro">Nadia Roushdy</span><span class="p ro">Hossam Zaki</span>
+                <span class="note">the Finance role &mdash; company-wide, not per unit</span>
+              </span>
+              <a class="btn-ghost btn-sm" href="#">Open registry</a>
+            </div>
+            <div class="appt">
+              <span class="role con">Confirms at the bank</span>
+              <span class="people"><span class="none">Nobody appointed — Finance cannot send this unit&rsquo;s transactions.</span></span>
+              <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="banner b-amber" style="margin:12px 0 0">
+        <b>One correction while I was in there.</b> The Finance role&rsquo;s own description in the system
+        reads <em>&ldquo;confirms benefit-claim payments&rdquo;</em> &mdash; &ldquo;confirms&rdquo; being the exact word we
+        settled to mean the person at the bank. Finance <em>creates</em> transactions. I&rsquo;ll correct it,
+        so the definition of the role stops contradicting the vocabulary.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">2</span> Where it starts</h2>
+    <p class="sub">
+      The cycle report&rsquo;s <b>Compensation by person</b> table gains one button, and each person&rsquo;s two
+      payable amounts get a status of their own. The button is only there for someone who heads a
+      unit with something releasable in this cycle.
+    </p>
+    <div class="frame">
+      <div class="section">
+        <div class="sechead">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="stitle">Compensation by person</span>
+          <span class="ssub">released compensation, plus commission folded into the grand total</span>
+          <span class="spacer"></span>
+          <button class="btn-ghost" type="button">⬇ Download calculation (.xlsx)</button>
+          <button class="btn-navy" type="button">Release payments…</button>
+        </div>
+        <div class="secbody">
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Person</th><th class="r">Salary</th><th class="r">Lead fee</th><th class="r">Contributor</th>
+                  <th class="r">Total</th><th class="r">Commission</th><th class="r">Grand total</th><th>Payment</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Ahmed Fathy</td><td class="r">92,000.00</td><td class="r">38,880.00</td><td class="r">—</td>
+                  <td class="r">38,880.00</td><td class="r">46,250.00</td><td class="r"><b>85,130.00</b></td>
+                  <td><span class="chip c-grey">Not released</span></td>
+                </tr>
+                <tr class="zebra">
+                  <td>Nour Hassan</td><td class="r">61,500.00</td><td class="r">13,095.00</td><td class="r">4,320.00</td>
+                  <td class="r">17,415.00</td><td class="r">—</td><td class="r"><b>17,415.00</b></td>
+                  <td><span class="chip c-grey">Not released</span></td>
+                </tr>
+                <tr>
+                  <td>Yara Kamel</td><td class="r">44,000.00</td><td class="r">—</td><td class="r">4,320.00</td>
+                  <td class="r">4,320.00</td><td class="r">8,100.00</td><td class="r"><b>12,420.00</b></td>
+                  <td><span class="chip c-blue">Awaiting confirmation</span></td>
+                </tr>
+                <tr class="zebra">
+                  <td>M. Sherif</td><td class="r">38,000.00</td><td class="r">6,200.00</td><td class="r">—</td>
+                  <td class="r">6,200.00</td><td class="r">—</td><td class="r"><b>6,200.00</b></td>
+                  <td><span class="chip c-red">⚠ Can&rsquo;t be released</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">3</span> Choosing what to release &mdash; this one works</h2>
+    <p class="sub">
+      Signed in as <b>you</b>, heading Forefront Consulting. Tick lines and watch the total. Scheme
+      fees and commission are separate lines, so either can be held back. Visual Shift&rsquo;s people are
+      shown so you know where the rest of the cycle stands &mdash; but only Alaa can release them.
+    </p>
+    <div class="frame">
+      <div class="banner b-amber">
+        <b>Four lines can&rsquo;t go yet.</b> A payment is matched to an employee by <b>Employee ID</b>, not
+        by name &mdash; that is what says which unit&rsquo;s account pays it and who confirms it. The People
+        sheet therefore gains an <b>Employee ID</b> column, and every line that doesn&rsquo;t land on
+        exactly one person is held and told to you by name. See the bottom group.
+      </div>
+
+      <div class="unit">
+        <div class="unithead">
+          <span class="name">Forefront Consulting</span>
+          <span class="conf">you release · confirmed by Islam Saadany</span>
+          <span class="spacer"></span>
+          <span class="chip c-grey" id="c1">0 of 3 selected</span>
+        </div>
+        <div class="scroll" style="border:0;border-radius:0">
+          <table>
+            <thead>
+              <tr><th style="width:34px"></th><th>Person</th><th>For</th><th>Cycle</th><th class="r">Amount</th></tr>
+            </thead>
+            <tbody id="u1">
+              <tr><td class="tick"><input type="checkbox" data-unit="1" data-amt="38880" aria-label="Release scheme fees for Ahmed Fathy"></td>
+                  <td>Ahmed Fathy</td><td><span class="kind k-fees">Scheme fees</span></td><td class="muted">H1-2026</td><td class="r">38,880.00</td></tr>
+              <tr class="zebra"><td class="tick"><input type="checkbox" data-unit="1" data-amt="46250" aria-label="Release commission for Ahmed Fathy"></td>
+                  <td>Ahmed Fathy</td><td><span class="kind k-comm">Commission</span></td><td class="muted">H1-2026</td><td class="r">46,250.00</td></tr>
+              <tr><td class="tick"><input type="checkbox" data-unit="1" data-amt="17415" aria-label="Release scheme fees for Nour Hassan"></td>
+                  <td>Nour Hassan</td><td><span class="kind k-fees">Scheme fees</span></td><td class="muted">H1-2026</td><td class="r">17,415.00</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="unitfoot">
+          <span class="sum">Releasing <b id="n1">0</b> payments totalling <b id="t1">0.00</b> EGP to Forefront Consulting&rsquo;s account.</span>
+          <button class="btn-navy" type="button" id="b1" disabled>Release to Finance</button>
+        </div>
+      </div>
+
+      <div class="unit theirs">
+        <div class="unithead">
+          <span class="name">Visual Shift</span>
+          <span class="conf">Alaa Hegazy releases this unit &mdash; you can see it, you cannot send it</span>
+        </div>
+        <div class="scroll" style="border:0;border-radius:0">
+          <table>
+            <thead>
+              <tr><th style="width:34px"></th><th>Person</th><th>For</th><th>Cycle</th><th class="r">Amount</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="tick"></td><td class="muted">Yara Kamel</td><td><span class="kind k-comm">Commission</span></td>
+                  <td class="muted">H1-2026</td><td class="r muted">8,100.00</td></tr>
+              <tr class="zebra"><td class="tick"></td><td class="muted">Yara Kamel</td><td><span class="kind k-fees">Scheme fees</span></td>
+                  <td class="muted">H1-2026</td><td class="r muted">4,320.00 &nbsp;<span class="chip c-blue">Awaiting confirmation</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="unit blocked">
+        <div class="unithead">
+          <span class="name">Can&rsquo;t be released yet</span>
+          <span class="conf">each line says which of the four things is wrong</span>
+        </div>
+        <div class="scroll" style="border:0;border-radius:0">
+          <table>
+            <thead>
+              <tr><th style="width:34px"></th><th>Name in the sheet</th><th>Employee ID</th><th>For</th><th class="r">Amount</th><th>Why not</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="tick"></td><td>M. Sherif</td><td class="muted">—</td>
+                  <td><span class="kind k-fees">Scheme fees</span></td><td class="r">6,200.00</td>
+                  <td class="muted">No Employee ID in the sheet</td></tr>
+              <tr class="zebra"><td class="tick"></td><td>Omar Zaki</td><td>FF-0412</td>
+                  <td><span class="kind k-comm">Commission</span></td><td class="r">3,900.00</td>
+                  <td class="muted">No employee holds FF-0412</td></tr>
+              <tr><td class="tick"></td><td>Hana Wagdy</td><td>FF-0207</td>
+                  <td><span class="kind k-fees">Scheme fees</span></td><td class="r">5,400.00</td>
+                  <td class="muted">Two accounts hold FF-0207 — Forefront Consulting and Visual Shift</td></tr>
+              <tr class="zebra"><td class="tick"><input type="checkbox" disabled aria-label="Held for checking"></td>
+                  <td>Mostafa Ali</td><td>FF-0155</td>
+                  <td><span class="kind k-fees">Scheme fees</span></td><td class="r">7,750.00</td>
+                  <td style="color:var(--amber)">FF-0155 is <b>Mostafa Aly</b> — check the spelling</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="unitfoot">
+          <span class="sum">
+            The first three cannot be released at all. The fourth <em>can</em> &mdash; the ID matches
+            one person &mdash; but the name differs from the sheet, so it is held and shown rather than
+            paid quietly.
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">4</span> What Finance sees &mdash; the queue they already use</h2>
+    <p class="sub">
+      Released payments join paybacks, petty-cash top-ups and benefit reimbursements in the same
+      list, grouped by unit exactly as now. Nothing about Finance&rsquo;s job changes; there is simply a
+      fourth kind of thing waiting.
+    </p>
+    <div class="frame">
+      <div class="section">
+        <div class="sechead">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="stitle">Ready to send</span>
+          <span class="ssub">Forefront Consulting</span>
+          <span class="spacer"></span>
+          <button class="btn-navy" type="button">Submit for confirmation</button>
+        </div>
+        <div class="secbody">
+          <div class="scroll">
+            <table>
+              <thead><tr><th style="width:34px"></th><th>Payee</th><th>Purpose</th><th>Waiting since</th><th class="r">Amount</th></tr></thead>
+              <tbody>
+                <tr><td class="tick"><input type="checkbox" checked aria-label="Include"></td><td>Ahmed Fathy</td>
+                    <td>Incentive H1-2026 · scheme fees</td><td class="muted">26-Aug 2026</td><td class="r">38,880.00</td></tr>
+                <tr class="zebra"><td class="tick"><input type="checkbox" checked aria-label="Include"></td><td>Ahmed Fathy</td>
+                    <td>Incentive H1-2026 · commission</td><td class="muted">26-Aug 2026</td><td class="r">46,250.00</td></tr>
+                <tr><td class="tick"><input type="checkbox" checked aria-label="Include"></td><td>Nour Hassan</td>
+                    <td>Incentive H1-2026 · scheme fees</td><td class="muted">26-Aug 2026</td><td class="r">17,415.00</td></tr>
+                <tr class="zebra"><td class="tick"><input type="checkbox" checked aria-label="Include"></td><td>Salma Nabil</td>
+                    <td>Payback · client travel</td><td class="muted">22-Aug 2026</td><td class="r">2,480.00</td></tr>
+                <tr><td class="tick"><input type="checkbox" checked aria-label="Include"></td><td>Dina Fouad</td>
+                    <td>Petty cash top-up · Marketing float</td><td class="muted">20-Aug 2026</td><td class="r">15,000.00</td></tr>
+                <tr class="totalrow"><td></td><td colspan="3">5 transactions</td><td class="r">120,025.00</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">5</span> The message &mdash; this is the part to align on</h2>
+    <p class="sub">
+      Sent to the person <b>only when the confirmer marks the transaction complete</b>, never when it
+      is released and never when Finance creates it &mdash; the same rule the benefit and payback emails
+      already follow: nobody is told money arrived until it has. This is the <em>default</em> wording;
+      the next screen is where you change it.
+    </p>
+    <div class="frame">
+      <p class="mailmeta">
+        <b>To</b> ahmed.fathy@forefront.consulting &nbsp;·&nbsp;
+        <b>Subject</b> Your incentive payment has been transferred — EGP 85,130
+      </p>
+      <div class="mailwrap">
+        <div class="mail">
+          <div class="bar">
+            <div class="grp">Forefront Group</div>
+            <div class="unitname">Forefront Consulting</div>
+          </div>
+          <div class="body">
+            <h3>Your incentive payment has been transferred</h3>
+            <p>Hello Ahmed,</p>
+            <p>
+              Your incentive for <strong>H1-2026</strong> has been transferred to your account. It may
+              take a little time to appear, depending on your bank.
+            </p>
+            <div class="rows">
+              <div class="rw"><span class="k">Business Partner Fee</span><span class="v">EGP 38,880.00</span></div>
+              <div class="rw"><span class="k">Commission</span><span class="v">EGP 46,250.00</span></div>
+              <div class="rw tot"><span class="k">Total transferred</span><span class="v">EGP 85,130.00</span></div>
+              <div class="rw"><span class="k">Transferred on</span><span class="v">26-Aug 2026</span></div>
+            </div>
+          </div>
+          <div class="foot">
+            If anything here doesn&rsquo;t look right, reply to this message or speak to Finance.
+          </div>
+        </div>
+      </div>
+
+      <div class="banner b-navy" style="margin:14px 0 0">
+        <b>Three choices inside that message, so you can overrule any of them.</b>
+        <ul>
+          <li><b>One email, not two.</b> A person&rsquo;s fee and commission are separate payments, but if
+            both are confirmed in the same transaction they arrive as one message with two lines &mdash;
+            rather than two near-identical emails a second apart.</li>
+          <li><b>No link.</b> Most people receiving this cannot open the incentive module, so a button
+            would lead them to a locked door. The message stands on its own.</li>
+          <li><b>No breakdown by client.</b> The amount and what it is for, nothing more. An emailed
+            list of which deals earned what lives in an inbox forever and gets forwarded by accident.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 6 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">6</span> Editing that message yourself</h2>
+    <p class="sub">
+      In <b>Admin &rarr; Email notifications</b>, beside the settings and the test-send that already
+      live there. The words are yours to change; the figures are not, because they are the payment.
+      The preview is the real thing, redrawn as you type.
+    </p>
+    <div class="frame">
+      <div class="section">
+        <div class="sechead">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="stitle">Incentive payment message</span>
+          <span id="dirty2" class="chip c-gold" hidden>Unsaved changes</span>
+          <span class="spacer"></span>
+          <button class="btn-ghost" type="button" id="reset2">Restore the original wording</button>
+        </div>
+        <div class="secbody">
+          <div class="edit2">
+            <div>
+              <label class="fld" for="m-sub">Subject</label>
+              <input class="inp" id="m-sub" value="Your incentive payment has been transferred — {total}">
+
+              <label class="fld" for="m-head">Heading</label>
+              <input class="inp" id="m-head" value="Your incentive payment has been transferred">
+
+              <label class="fld" for="m-body">Message</label>
+              <textarea class="ta" id="m-body" rows="4">Hello {first name},
+
+Your incentive for {cycle} has been transferred to your account. It may take a little time to appear, depending on your bank.</textarea>
+
+              <label class="fld" for="m-foot">Closing line</label>
+              <input class="inp" id="m-foot" value="If anything here doesn't look right, reply to this message or speak to Finance.">
+
+              <div class="tokens" id="toks">
+                <span class="tok">{first name}</span><span class="tok">{full name}</span>
+                <span class="tok">{cycle}</span><span class="tok">{total}</span>
+                <span class="tok">{transfer date}</span><span class="tok">{business unit}</span>
+              </div>
+              <div class="fixedbit">
+                <b>Not editable:</b> the amount rows and the brand header. What each person was paid,
+                and for what, is the payment itself &mdash; not wording. A message that could be edited
+                into not saying the amount would be worse than no message.
+              </div>
+
+              <div class="editbar2">
+                <span class="spacer"></span>
+                <button class="btn-ghost" type="button">Send me a test</button>
+                <button class="btn-navy" type="button" id="save2" disabled>Save</button>
+              </div>
+            </div>
+
+            <div>
+              <p class="mailmeta" style="margin-bottom:8px"><b>Preview</b> &mdash; with last cycle&rsquo;s figures</p>
+              <div class="mailwrap" style="padding:14px">
+                <div class="mail" style="width:100%">
+                  <div class="bar">
+                    <div class="grp">Forefront Group</div>
+                    <div class="unitname">Forefront Consulting</div>
+                  </div>
+                  <div class="body">
+                    <h3 id="pv-head">Your incentive payment has been transferred</h3>
+                    <div id="pv-body"></div>
+                    <div class="rows">
+                      <div class="rw"><span class="k">Business Partner Fee</span><span class="v">EGP 38,880.00</span></div>
+                      <div class="rw"><span class="k">Commission</span><span class="v">EGP 46,250.00</span></div>
+                      <div class="rw tot"><span class="k">Total transferred</span><span class="v">EGP 85,130.00</span></div>
+                      <div class="rw"><span class="k">Transferred on</span><span class="v">26-Aug 2026</span></div>
+                    </div>
+                  </div>
+                  <div class="foot" id="pv-foot"></div>
+                </div>
+              </div>
+              <p class="mailmeta" style="margin-top:8px"><b>Subject</b> <span id="pv-sub"></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="banner b-navy" style="margin:12px 0 0">
+        <b>Two guards.</b> A word in braces that isn&rsquo;t one of the six above is refused on save and
+        named &mdash; a stray <code>{Total}</code> with a capital T would otherwise reach somebody&rsquo;s inbox
+        as literal text. And if you save without <code>{total}</code> anywhere, it says so first: the
+        message would announce a payment without saying how much.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 6 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">7</span> Correcting a cycle after some of it has been paid</h2>
+    <p class="sub">
+      You can still fix anyone who hasn&rsquo;t been released. What is refused is an edit that would change
+      a figure already sent &mdash; that money has gone, and the report has to keep agreeing with what
+      the bank actually did. The refusal names the person and says which line.
+    </p>
+    <div class="frame">
+      <div class="banner b-red" style="margin-bottom:0">
+        <b>Nothing was saved — 1 thing to fix:</b>
+        <ul>
+          <li>
+            This change would make <b>Yara Kamel</b>&rsquo;s scheme fees <b>5,100.00</b>, but
+            <b>4,320.00</b> was already released and is awaiting confirmation at the bank. Release the
+            difference as a separate payment, or ask Finance to return that transaction first.
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Rules ─────────────────────────────────────────────────────── -->
+  <section class="notes">
+    <h2>How it behaves</h2>
+    <div class="rules">
+      <div class="rule">
+        <h3>Releasing is not paying</h3>
+        <p>Release puts a payment in Finance&rsquo;s queue &mdash; money the company has agreed it owes.
+          Nothing has moved. The person is paid, and told, when the confirmer marks the transaction
+          complete at the bank.</p>
+      </div>
+      <div class="rule">
+        <h3>You release your unit, and only yours</h3>
+        <p>The appointment is per business unit, like the confirmer one. Heading Forefront does not let
+          you release Visual Shift&rsquo;s people, and no admin account holds it implicitly. A unit with
+          nobody appointed says so plainly rather than sitting there looking empty.</p>
+      </div>
+      <div class="rule">
+        <h3>Two lines per person, never merged</h3>
+        <p>Scheme fees and commission are released, sent and confirmed separately, so each traces back
+          to the rule that produced it. You can release one and hold the other.</p>
+      </div>
+      <div class="rule">
+        <h3>Nobody is paid twice</h3>
+        <p>A released line leaves the choosing screen and shows its state on the report instead.
+          Releasing the same amount twice isn&rsquo;t something to remember not to do &mdash; it isn&rsquo;t offered,
+          and the server refuses it even if two people try at once.</p>
+      </div>
+      <div class="rule">
+        <h3>The unit is worked out, never chosen</h3>
+        <p>Which account pays comes from the person being paid, exactly as a payback or a benefit claim
+          already works. No dropdown to get wrong, and one release can only hold one unit&rsquo;s people.</p>
+      </div>
+      <div class="rule">
+        <h3>Matched on Employee ID, checked on name</h3>
+        <p>The ID decides who is paid; the name is the cross-check. If the ID lands on nobody, on
+          two people, or on somebody whose name differs from the sheet, the line is held and says
+          which &mdash; never guessed at. Guessing who somebody is means guessing whose bank account
+          the money leaves from.</p>
+        <p>One consequence: the cycle&rsquo;s <b>People</b> sheet, its template and its review table all
+          gain an Employee ID column.</p>
+      </div>
+      <div class="rule">
+        <h3>Finance keeps one queue</h3>
+        <p>Released incentive payments land in the same list Finance already works from, beside
+          paybacks, petty-cash top-ups and benefit reimbursements, grouped by unit exactly as now.
+          There is nothing new for Finance to find or learn.</p>
+      </div>
+    </div>
+
+    <div class="q">
+      <h3>One thing left, and one thing settled</h3>
+      <p>
+        <b>One person may hold two of the three &mdash; settled.</b> You release <em>and</em> confirm for
+        Forefront, and the screen will not warn or nag about it: it is a deliberate arrangement, not a
+        mistake to be flagged every time it is looked at. What the platform still guarantees is that
+        each act is a separate, recorded step with its own moment and its own name against it &mdash;
+        and the real control on the money remains the two signatures at the bank. Visual Shift stays
+        split: Alaa releases, Mariam confirms.
+      </p>
+      <p>
+        <b>Employee ID is optional today, and some people may not have one.</b> Anyone without one
+        cannot be paid through this until HR fills it in. That is the correct behaviour &mdash; but it
+        is worth knowing before the first release, rather than discovering it with a cycle open. I can
+        tell you exactly who is missing one as soon as you want to run it.
+      </p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var fmt = function (n) { return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('input[data-unit="1"]'));
+  var count = document.getElementById("n1");
+  var total = document.getElementById("t1");
+  var chip = document.getElementById("c1");
+  var btn = document.getElementById("b1");
+
+  function refresh() {
+    var picked = boxes.filter(function (b) { return b.checked; });
+    var sum = picked.reduce(function (s, b) { return s + Number(b.getAttribute("data-amt")); }, 0);
+    count.textContent = String(picked.length);
+    total.textContent = fmt(sum);
+    chip.textContent = picked.length + " of " + boxes.length + " selected";
+    chip.className = "chip " + (picked.length ? "c-gold" : "c-grey");
+    btn.disabled = picked.length === 0;
+  }
+  boxes.forEach(function (b) { b.addEventListener("change", refresh); });
+
+  // ── The message editor: preview redraws as you type ───────────────────────
+  var SAMPLE = {
+    "{first name}": "Ahmed", "{full name}": "Ahmed Fathy", "{cycle}": "H1-2026",
+    "{total}": "EGP 85,130.00", "{transfer date}": "26-Aug 2026", "{business unit}": "Forefront Consulting"
+  };
+  var fields = ["m-sub", "m-head", "m-body", "m-foot"];
+  var original = {};
+  fields.forEach(function (id) { original[id] = document.getElementById(id).value; });
+
+  function fill(text) {
+    return Object.keys(SAMPLE).reduce(function (t, k) { return t.split(k).join(SAMPLE[k]); }, text);
+  }
+  function esc(t) { var d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+
+  function draw() {
+    var get = function (id) { return document.getElementById(id).value; };
+    document.getElementById("pv-sub").textContent = fill(get("m-sub"));
+    document.getElementById("pv-head").textContent = fill(get("m-head"));
+    document.getElementById("pv-body").innerHTML = fill(get("m-body"))
+      .split(/\n{2,}/).map(function (p) { return "<p>" + esc(p).split("\n").join("<br>") + "</p>"; }).join("");
+    document.getElementById("pv-foot").textContent = fill(get("m-foot"));
+
+    var changed = fields.some(function (id) { return document.getElementById(id).value !== original[id]; });
+    document.getElementById("dirty2").hidden = !changed;
+    document.getElementById("save2").disabled = !changed;
+  }
+  fields.forEach(function (id) { document.getElementById(id).addEventListener("input", draw); });
+
+  // Clicking a placeholder drops it where the cursor is.
+  //
+  // Two things needed for that to be true. Pressing the mouse on the chip BLURS the
+  // field before any click handler runs, so `document.activeElement` is already gone
+  // by then — the token would land in whichever field the fallback named, not the one
+  // being edited. So: cancel the mousedown to keep focus where it is, and remember the
+  // last edited field anyway as a belt-and-braces fallback.
+  var lastField = document.getElementById("m-body");
+  fields.forEach(function (id) {
+    document.getElementById(id).addEventListener("focus", function () { lastField = document.getElementById(id); });
+  });
+  document.getElementById("toks").addEventListener("mousedown", function (e) { e.preventDefault(); });
+
+  document.getElementById("toks").addEventListener("click", function (e) {
+    var t = e.target;
+    if (!t.classList.contains("tok")) return;
+    var el = document.activeElement;
+    if (!el || (el.tagName !== "INPUT" && el.tagName !== "TEXTAREA")) el = lastField;
+    var at = el.selectionStart == null ? el.value.length : el.selectionStart;
+    el.value = el.value.slice(0, at) + t.textContent + el.value.slice(el.selectionEnd == null ? at : el.selectionEnd);
+    el.focus();
+    el.selectionStart = el.selectionEnd = at + t.textContent.length;
+    draw();
+  });
+
+  document.getElementById("reset2").addEventListener("click", function () {
+    fields.forEach(function (id) { document.getElementById(id).value = original[id]; });
+    draw();
+  });
+  document.getElementById("save2").addEventListener("click", function () {
+    fields.forEach(function (id) { original[id] = document.getElementById(id).value; });
+    draw();
+    window.alert("Saved. Every incentive payment email from now on uses this wording.");
+  });
+  draw();
+  btn.addEventListener("click", function () {
+    var picked = boxes.filter(function (b) { return b.checked; });
+    var sum = picked.reduce(function (s, b) { return s + Number(b.getAttribute("data-amt")); }, 0);
+    window.alert("Released " + picked.length + " payment" + (picked.length === 1 ? "" : "s") +
+      " totalling " + fmt(sum) + " EGP.\n\nThey are now in Finance's queue. Nobody has been paid yet — " +
+      "that happens when the transaction is confirmed at the bank, and that is when each person is emailed.");
+  });
+  refresh();
+})();
+</script>

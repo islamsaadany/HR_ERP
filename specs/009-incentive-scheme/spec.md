@@ -144,6 +144,25 @@ error-prone; this reproduces the document's figures exactly and server-side.
     the middle field can only be a day.
   - **Templates**: static and pre-filled both emit `14-Jul 2026`, so a template
     downloaded, filled in and uploaded round-trips unchanged.
+- **FR-006f** (2026-08-26): A **Business Partner Fee by person** table sits directly
+  above **Commission by person**, built in the same shape — compact, with a
+  **click-a-name** expansion to the per-client breakdown. It computes nothing new: a
+  person's fee is their lead fees plus their contributor payments, which is exactly the
+  `Total` column of the table below it; the same figures the per-client fee tables already
+  produce, gathered by who earned them. Each breakdown line is tagged **Lead** or
+  **Contributor**, because the two are earned by different rules and carry different
+  evidence — a lead line the client's gross margin, the envelope it generated and the
+  share the lead keeps; a contributor line the share and the tier it fell in. A
+  contribution below the 5%-of-month floor still appears, as **0 (floored)** with its
+  hover reason, rather than vanishing. Sorted largest first, with a total row reconciling
+  to lead fees + contributor payments. Derived once in `computeCycle`
+  (`businessPartnerFeeByPerson`), so the screen and any later export cannot disagree.
+  In the same change, **Compensation by person** is renamed **Total compensation by
+  person**, and the shared section header puts the **title on its own line with the
+  subtitle beneath it** — previously the two shared a line with the section's action
+  button, so a subtitle was truncated to fit and the longer the title the less survived.
+  The downloadable workbook is unaffected: its sheets are named `Summary` and one per
+  person, not from the section's wording.
 - **FR-007**: Per-hour performance metrics (GP/hour, break-even, pricing floor)
   are **out of scope** until an hours column is provided; cost recovery uses
   contribution-weighted GP.
@@ -162,6 +181,16 @@ The engine is proven against **Appendix A** (H1 2026) — `scripts/verify-incent
 gate, the Profit Share table). The full parse→compute path is proven on the real
 sample sheets — `scripts/verify-incentive-cycle.ts` (16/16, incl. El Abd blocked
 at 93%). Migrations 013 applied and verified on a throwaway Postgres.
+
+The Business Partner Fee by person table (FR-006f) is proven on the real sample sheets —
+`scripts/verify-incentive-cycle.ts` grew from 16 to 23 checks: the per-person total equals
+lead fees + contributor payments, each person's lines add up to their own figure, each
+figure matches their row in the by-person table, everyone listed earned something, the
+order is largest-first, a lead line appears for the client somebody led, and a
+floored-to-zero contribution is still present and marked rather than dropped. Driven in a
+real browser as well: the section renders directly above Commission by person, expanding a
+name there does not expand the same person in the commission table, and the page gains no
+horizontal scroll.
 
 The in-place editing of the review tables (FR-006d) is proven on a throwaway
 Postgres — `scripts/verify-incentive-review-edit.mts` (44/44): the round trip
