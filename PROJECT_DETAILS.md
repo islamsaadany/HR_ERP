@@ -340,6 +340,8 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 
 ### Module release switch (super user)
 - `ModuleFlag { key, enabled }` (migration `015`) + Admin → **Modules**. A module switched off is hidden from everyone's nav (`AppShell.hiddenNav`) and its pages redirect home (`requireModuleEnabled`). Lets a super user build in the background and release when ready.
+- The switchable list is `MODULES` in `src/lib/modules.ts` — **hand-written, not derived from the routes**, which is why Payback shipped un-switchable for two days (added 2026-08-26). A new employee-facing module is only actually under the switch once it is in that array *and* its page (and its write actions) call `requireModuleEnabled` — a nav entry that disappears while the address still works is not a switch.
+- **`payback` is the employee door only.** Off = no nav entry, `/payback` redirects home, and both `submitRequest`/`withdrawRequest` refuse. Finance's payback queue on `/finance` deliberately stays open, so requests already submitted can still be decided and paid rather than waiting, unseen, for the switch.
 
 ### Finance: petty cash & payback (spec 040, migration `068`)
 Replaces the MARCOM Expenses workbook. Routes: `/petty-cash` (accounts), `/petty-cash/[accountId]`
