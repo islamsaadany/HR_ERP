@@ -99,9 +99,12 @@
 
   /* Appointment rows on the settings screen */
   .appt{display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
-  .appt .role{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;width:78px;flex:none}
+  .appt .role{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;width:148px;flex:none;line-height:1.35}
   .appt .role.rel{color:var(--navy-600)}
-  .appt .role.con{color:var(--gold-700,#85641b)}
+  .appt .role.fin{color:var(--muted)}
+  .appt .role.con{color:#85641b}
+  .appt .people .p.ro{background:var(--surface);border-style:dashed;padding-right:11px;color:var(--muted)}
+  .appt .people .note{display:inline-block;font-size:11px;color:var(--muted);margin-left:2px}
   .appt .people{flex:1;min-width:180px;font-size:13px}
   .appt .people .p{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:3px 5px 3px 11px;margin:2px 6px 2px 0}
   .appt .people .x{display:grid;place-items:center;width:17px;height:17px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:10px;cursor:pointer}
@@ -155,48 +158,49 @@
   <div class="path">
     <div class="step new">
       <div class="who">The unit&rsquo;s head <span class="tag">New</span></div>
-      <div class="act">Release payments</div>
+      <div class="act">Releases payments</div>
       <div class="det">Only for the unit they head. Nobody else, and no other unit.</div>
     </div>
     <div class="step">
       <div class="who">Finance</div>
-      <div class="act">Create the transaction</div>
-      <div class="det">In the bank, then <em>Submit for confirmation</em>.</div>
+      <div class="act">Creates the transaction</div>
+      <div class="det">In the bank, then submits it for confirmation.</div>
     </div>
     <div class="step">
       <div class="who">The unit&rsquo;s confirmer</div>
-      <div class="act">Confirm at the bank</div>
-      <div class="det">Or <em>Return to Finance</em> with a reason.</div>
+      <div class="act">Confirms at the bank</div>
+      <div class="det">Or returns it to Finance with a reason.</div>
     </div>
     <div class="step new">
       <div class="who">The person <span class="tag">New</span></div>
-      <div class="act">Transaction complete &rarr; email</div>
+      <div class="act">Is emailed</div>
       <div class="det">Only now has anybody been paid, so only now are they told.</div>
     </div>
   </div>
 
   <!-- ── 1 ─────────────────────────────────────────────────────────── -->
   <section class="screen">
-    <h2><span class="num">1</span> Who may release &mdash; a new appointment, per unit</h2>
+    <h2><span class="num">1</span> One screen for the whole chain</h2>
     <p class="sub">
-      There is no &ldquo;head of a business unit&rdquo; in the system today, so this adds one, built exactly
-      like the confirmer appointment that already exists. Since both answer the same question &mdash;
-      <em>who is allowed to do this with this unit&rsquo;s money</em> &mdash; they belong on one screen, so
-      the two can never quietly drift apart. This is the only visual change to an existing page.
+      Today&rsquo;s <b>Who confirms transactions</b> screen widens into <b>Who moves money</b> &mdash; the same
+      place in Admin, showing all three steps per business unit, in the order the money moves.
+      Deliberately not called &ldquo;roles&rdquo;: that word already means an account&rsquo;s role, and reusing it
+      here is the confusion we are removing.
     </p>
     <div class="frame">
       <div class="banner b-navy">
-        Only a <b>Super User</b> can appoint. A unit head cannot appoint another one &mdash; otherwise the
-        appointment hands itself out. Nobody holds it implicitly by being an admin, and there is
-        deliberately no appointment meaning &ldquo;all units&rdquo;: that would silently cover a unit created
-        next month.
+        <b>Two of the three are appointments; the middle one is an account role.</b> Releasing and
+        confirming are held <em>per business unit</em>, because each unit banks separately. Being
+        Finance is not about one unit, so it stays on the person&rsquo;s employee record &mdash; shown here,
+        but set there, so two screens never claim to own the same setting. Only a Super User can
+        appoint, and no appointment can hand itself out.
       </div>
 
       <div class="section">
         <div class="sechead">
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-          <span class="stitle">Money &amp; payments people</span>
-          <span class="ssub">who releases, and who confirms &mdash; one list per business unit</span>
+          <span class="stitle">Who moves money</span>
+          <span class="ssub">one list per business unit, in the order money moves</span>
         </div>
         <div class="secbody">
           <div class="unit">
@@ -206,17 +210,21 @@
               <span class="chip c-grey">3 transactions awaiting confirmation</span>
             </div>
             <div class="appt">
-              <span class="role rel">Releases</span>
-              <span class="people">
-                <span class="p">Islam Saadany <span class="x" title="Remove">✕</span></span>
-              </span>
+              <span class="role rel">Releases payments</span>
+              <span class="people"><span class="p">Islam Saadany <span class="x" title="Remove">✕</span></span></span>
               <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
             </div>
             <div class="appt">
-              <span class="role con">Confirms</span>
+              <span class="role fin">Creates the transaction</span>
               <span class="people">
-                <span class="p">Islam Saadany <span class="x" title="Remove">✕</span></span>
+                <span class="p ro">Nadia Roushdy</span><span class="p ro">Hossam Zaki</span>
+                <span class="note">the Finance role &mdash; set on the employee record</span>
               </span>
+              <a class="btn-ghost btn-sm" href="#">Open registry</a>
+            </div>
+            <div class="appt">
+              <span class="role con">Confirms at the bank</span>
+              <span class="people"><span class="p">Islam Saadany <span class="x" title="Remove">✕</span></span></span>
               <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
             </div>
           </div>
@@ -228,17 +236,21 @@
               <span class="chip c-grey">nothing waiting</span>
             </div>
             <div class="appt">
-              <span class="role rel">Releases</span>
-              <span class="people">
-                <span class="p">Alaa Hegazy <span class="x" title="Remove">✕</span></span>
-              </span>
+              <span class="role rel">Releases payments</span>
+              <span class="people"><span class="p">Alaa Hegazy <span class="x" title="Remove">✕</span></span></span>
               <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
             </div>
             <div class="appt">
-              <span class="role con">Confirms</span>
+              <span class="role fin">Creates the transaction</span>
               <span class="people">
-                <span class="p">Mariam Adly <span class="x" title="Remove">✕</span></span>
+                <span class="p ro">Nadia Roushdy</span><span class="p ro">Hossam Zaki</span>
+                <span class="note">the Finance role &mdash; company-wide, not per unit</span>
               </span>
+              <a class="btn-ghost btn-sm" href="#">Open registry</a>
+            </div>
+            <div class="appt">
+              <span class="role con">Confirms at the bank</span>
+              <span class="people"><span class="p">Mariam Adly <span class="x" title="Remove">✕</span></span></span>
               <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
             </div>
           </div>
@@ -250,17 +262,32 @@
               <span class="chip c-grey">nothing waiting</span>
             </div>
             <div class="appt">
-              <span class="role rel">Releases</span>
+              <span class="role rel">Releases payments</span>
               <span class="people"><span class="none">Nobody appointed — this unit&rsquo;s payments cannot be released.</span></span>
               <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
             </div>
             <div class="appt">
-              <span class="role con">Confirms</span>
+              <span class="role fin">Creates the transaction</span>
+              <span class="people">
+                <span class="p ro">Nadia Roushdy</span><span class="p ro">Hossam Zaki</span>
+                <span class="note">the Finance role &mdash; company-wide, not per unit</span>
+              </span>
+              <a class="btn-ghost btn-sm" href="#">Open registry</a>
+            </div>
+            <div class="appt">
+              <span class="role con">Confirms at the bank</span>
               <span class="people"><span class="none">Nobody appointed — Finance cannot send this unit&rsquo;s transactions.</span></span>
               <button class="btn-ghost btn-sm" type="button">＋ Appoint</button>
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="banner b-amber" style="margin:12px 0 0">
+        <b>One correction while I was in there.</b> The Finance role&rsquo;s own description in the system
+        reads <em>&ldquo;confirms benefit-claim payments&rdquo;</em> &mdash; &ldquo;confirms&rdquo; being the exact word we
+        settled to mean the person at the bank. Finance <em>creates</em> transactions. I&rsquo;ll correct it,
+        so the definition of the role stops contradicting the vocabulary.
       </div>
     </div>
   </section>
@@ -311,7 +338,7 @@
                 <tr class="zebra">
                   <td>M. Sherif</td><td class="r">38,000.00</td><td class="r">6,200.00</td><td class="r">—</td>
                   <td class="r">6,200.00</td><td class="r">—</td><td class="r"><b>6,200.00</b></td>
-                  <td><span class="chip c-red">⚠ No matching employee</span></td>
+                  <td><span class="chip c-red">⚠ Can&rsquo;t be released</span></td>
                 </tr>
               </tbody>
             </table>
@@ -331,10 +358,10 @@
     </p>
     <div class="frame">
       <div class="banner b-amber">
-        <b>One name has no matching employee.</b> A payment can only be released to somebody in the
-        employee registry &mdash; that is what says which unit&rsquo;s account pays it and who confirms it.
-        Fix the spelling in the cycle&rsquo;s <b>People</b> table and press Recalculate, and the line
-        becomes releasable.
+        <b>Four lines can&rsquo;t go yet.</b> A payment is matched to an employee by <b>Employee ID</b>, not
+        by name &mdash; that is what says which unit&rsquo;s account pays it and who confirms it. The People
+        sheet therefore gains an <b>Employee ID</b> column, and every line that doesn&rsquo;t land on
+        exactly one person is held and told to you by name. See the bottom group.
       </div>
 
       <div class="unit">
@@ -387,22 +414,37 @@
 
       <div class="unit blocked">
         <div class="unithead">
-          <span class="name">No matching employee</span>
-          <span class="conf">these cannot be released by anyone</span>
+          <span class="name">Can&rsquo;t be released yet</span>
+          <span class="conf">each line says which of the four things is wrong</span>
         </div>
         <div class="scroll" style="border:0;border-radius:0">
           <table>
             <thead>
-              <tr><th style="width:34px"></th><th>Name in the sheet</th><th>For</th><th>Cycle</th><th class="r">Amount</th></tr>
+              <tr><th style="width:34px"></th><th>Name in the sheet</th><th>Employee ID</th><th>For</th><th class="r">Amount</th><th>Why not</th></tr>
             </thead>
             <tbody>
-              <tr><td class="tick"></td><td>M. Sherif</td><td><span class="kind k-fees">Scheme fees</span></td>
-                  <td class="muted">H1-2026</td><td class="r">6,200.00</td></tr>
+              <tr><td class="tick"></td><td>M. Sherif</td><td class="muted">—</td>
+                  <td><span class="kind k-fees">Scheme fees</span></td><td class="r">6,200.00</td>
+                  <td class="muted">No Employee ID in the sheet</td></tr>
+              <tr class="zebra"><td class="tick"></td><td>Omar Zaki</td><td>FF-0412</td>
+                  <td><span class="kind k-comm">Commission</span></td><td class="r">3,900.00</td>
+                  <td class="muted">No employee holds FF-0412</td></tr>
+              <tr><td class="tick"></td><td>Hana Wagdy</td><td>FF-0207</td>
+                  <td><span class="kind k-fees">Scheme fees</span></td><td class="r">5,400.00</td>
+                  <td class="muted">Two accounts hold FF-0207 — Forefront Consulting and Visual Shift</td></tr>
+              <tr class="zebra"><td class="tick"><input type="checkbox" disabled aria-label="Held for checking"></td>
+                  <td>Mostafa Ali</td><td>FF-0155</td>
+                  <td><span class="kind k-fees">Scheme fees</span></td><td class="r">7,750.00</td>
+                  <td style="color:var(--amber)">FF-0155 is <b>Mostafa Aly</b> — check the spelling</td></tr>
             </tbody>
           </table>
         </div>
         <div class="unitfoot">
-          <span class="sum">Nobody in the registry is called <b>M. Sherif</b>. Correct the name in the cycle&rsquo;s People table, then Recalculate.</span>
+          <span class="sum">
+            The first three cannot be released at all. The fourth <em>can</em> &mdash; the ID matches
+            one person &mdash; but the name differs from the sheet, so it is held and shown rather than
+            paid quietly.
+          </span>
         </div>
       </div>
     </div>
@@ -558,20 +600,36 @@
           already works. No dropdown to get wrong, and one release can only hold one unit&rsquo;s people.</p>
       </div>
       <div class="rule">
-        <h3>A name that isn&rsquo;t an employee stops there</h3>
-        <p>Grouped, shown and refused &mdash; never guessed at. Guessing who <em>M. Sherif</em> is means
-          guessing whose bank account the money leaves from.</p>
+        <h3>Matched on Employee ID, checked on name</h3>
+        <p>The ID decides who is paid; the name is the cross-check. If the ID lands on nobody, on
+          two people, or on somebody whose name differs from the sheet, the line is held and says
+          which &mdash; never guessed at. Guessing who somebody is means guessing whose bank account
+          the money leaves from.</p>
+        <p>One consequence: the cycle&rsquo;s <b>People</b> sheet, its template and its review table all
+          gain an Employee ID column.</p>
+      </div>
+      <div class="rule">
+        <h3>Finance keeps one queue</h3>
+        <p>Released incentive payments land in the same list Finance already works from, beside
+          paybacks, petty-cash top-ups and benefit reimbursements, grouped by unit exactly as now.
+          There is nothing new for Finance to find or learn.</p>
       </div>
     </div>
 
     <div class="q">
-      <h3>One thing worth your eye</h3>
+      <h3>Two things worth your eye</h3>
       <p>
-        For Forefront you would hold <b>both</b> appointments &mdash; you release the payment and you
-        confirm it at the bank. That is exactly what you asked for and it is not a mistake, but it does
-        mean the platform is not standing between those two acts for that unit; the two signatures at
-        the bank are. For Visual Shift they are properly split &mdash; Alaa releases, Mariam confirms.
-        Say if you would rather Forefront were split the same way.
+        <b>You would hold two of the three for Forefront.</b> You release the payment and you confirm
+        it at the bank. That is what you asked for and it is not a mistake, but it does mean the
+        platform is not standing between those two acts for that unit &mdash; the two signatures at the
+        bank are. Visual Shift is properly split: Alaa releases, Mariam confirms. Say if you would
+        rather Forefront were split the same way.
+      </p>
+      <p>
+        <b>Employee ID is optional today, and some people may not have one.</b> Anyone without one
+        cannot be paid through this until HR fills it in. That is the correct behaviour &mdash; but it
+        is worth knowing before the first release, rather than discovering it with a cycle open. I can
+        tell you exactly who is missing one as soon as you want to run it.
       </p>
     </div>
   </section>
