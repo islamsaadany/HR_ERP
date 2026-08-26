@@ -93,6 +93,57 @@ error-prone; this reproduces the document's figures exactly and server-side.
   `ff-data-table` style, app-wide), and the **sticky first column is repainted** so the
   header corner, zebra rows, and total/emphasis rows all fill their first column instead
   of showing white.
+- **FR-006d** (2026-08-25): The **Review & validation** tables are **editable in
+  place**, so a figure spotted as wrong on screen no longer means rebuilding a CSV
+  and re-uploading. **Edit tables** turns all three sheets into a form — every cell
+  editable, rows addable and removable, contribution columns addable (from the
+  People table) and removable — and a single **Recalculate** saves the three sheets
+  and re-renders the page, so every section below regenerates from the stored rows.
+  Decisions: **Recalculate IS the save** (no second button, so the report can never
+  show figures the database doesn't hold); a gold **Unsaved edits** chip is on
+  screen for exactly as long as the edits are only in the browser, and the button is
+  disabled until something changes; **Discard changes** confirms, then restores
+  every cell from the database. Validation matches the importer (`validateReview`
+  reuses its `parseSheetNumber`), reports **every** fault at once in a `role="alert"`
+  banner that is scrolled to and focused, and writes nothing when any check fails.
+  Two deliberate departures from the importer: **status is chosen from a dropdown,
+  not derived** from the closure-date column (the operator is looking straight at
+  it, and setting a closure date must not silently re-decide it); and a client whose
+  shares don't total 100% **still saves** — that is a payout rule, already enforced
+  by flag-and-block, not a save rule, so half-finished shares are storable. The
+  contributions **Total** column re-adds live while typing, so a client is seen to
+  reach 100% before anything is pressed. Renaming a person in People **follows them**
+  into Lead / BD / Lead source and their contributions column (applied on blur, not
+  per keystroke). The write is **replace-then-recreate** like an upload — the one
+  statement order that can never trip the `(cycle, name)` / `(cycle, client)` unique
+  indexes when two people trade names — with `eligibleToLead` and `utilization`
+  carried across by row id so the two retired columns aren't silently dropped.
+  Uploading is unchanged and still replaces a whole sheet.
+- **FR-006e** (2026-08-25): **Dates in this module read and write as `14-Jul 2026`**
+  (`dd-mmm yyyy`). A **deliberate exception** to the platform-wide dd/mm/yyyy
+  standard, requested so an entry can be *checked at a glance*: this is the one
+  screen where somebody types compensation dates in off a spreadsheet, and a
+  spelled month cannot be read the wrong way round. One module (`lib/incentive/
+  dates.ts`) both formats and parses, so display, typed cell, saved value and CSV
+  cell can never disagree.
+  - **Display**: the read-back tables print the spelled form, built from the date's
+    **UTC** parts — a date-only value is stored at UTC midnight, and reading it
+    locally in a timezone behind UTC prints the day before.
+  - **Entry**: the editor's date cells are **typed text stating `dd-mmm yyyy`**, not
+    `<input type="date">` — a native picker draws itself in the *browser's* UI
+    language and rendered 1 March as `03/01/2021` under en-GB, ar-EG **and** en-US
+    when measured, so it cannot carry a house format. Cells accept the spelled form
+    (short or full month, any case), plus dd/mm/yyyy and ISO unstated, so nothing a
+    person pastes in is needlessly refused. A made-up month, an unreal date like
+    31-Feb, or a bare number is refused by name — a bare number is **not** read as
+    an Excel serial when typed, only when it arrives off a sheet.
+  - **Import**: all-numeric sheet cells are read **day-first**, which fixed a silent
+    misread — `new Date("01/03/2021")` is American, so an operator's 1 March was
+    being stored as 3 January with nothing to show for it. ISO cells and Excel
+    serials are unchanged, and a legacy m/d/y sheet still reads correctly wherever
+    the middle field can only be a day.
+  - **Templates**: static and pre-filled both emit `14-Jul 2026`, so a template
+    downloaded, filled in and uploaded round-trips unchanged.
 - **FR-007**: Per-hour performance metrics (GP/hour, break-even, pricing floor)
   are **out of scope** until an hours column is provided; cost recovery uses
   contribution-weighted GP.
@@ -111,6 +162,23 @@ The engine is proven against **Appendix A** (H1 2026) — `scripts/verify-incent
 gate, the Profit Share table). The full parse→compute path is proven on the real
 sample sheets — `scripts/verify-incentive-cycle.ts` (16/16, incl. El Abd blocked
 at 93%). Migrations 013 applied and verified on a throwaway Postgres.
+
+The in-place editing of the review tables (FR-006d) is proven on a throwaway
+Postgres — `scripts/verify-incentive-review-edit.mts` (44/44): the round trip
+(stored rows → cells → stored rows) returns identical shares and salaries; the
+live Total flags 93% and clears at 100% inside the ±1pp tolerance; a bad payload
+is refused with all seven faults named at once; a 93% client still saves; the
+write stores a typed "95,000", carries `eligibleToLead`/`utilization` across a
+rename, gives a new row the defaults, deletes removed rows with their
+contributions, and survives two people trading names; and the real
+`computeCycle` over the written rows unblocks the corrected client and pays its
+lead. The screen itself was driven in a real browser (sign-in → edit → save →
+rejected save): the live total, the dirty chip, the disabled-until-dirty button,
+the rebuilt report, the announced error banner and zero page-level horizontal
+overflow were all confirmed there, as was the date round trip (a typed
+14-Jul 2026 saved and read back as 14-Jul 2026, and 31-Feb 2026 refused by name) — which is also where the missing
+`startTransition` around the save was caught, without which the button never
+reported "Recalculating…" nor blocked a second click.
 
 ## Notes / later
 - Add an hours column to unlock Appendix B (per-hour metrics).

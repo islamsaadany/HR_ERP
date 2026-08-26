@@ -123,17 +123,12 @@ export default async function CyclePage({
           cycleId={cycle.id}
           review={{
             people: cycle.people.map((p) => ({
-              // The id travels to the browser so an edited row can be matched back
-              // to its stored row — that is what carries the two retired columns
-              // (eligibleToLead, utilization) across a save.
-              id: p.id,
               name: p.name,
               role: p.role,
               netMonthlySalary: p.netMonthlySalary,
               startDate: p.startDate ? p.startDate.toISOString().slice(0, 10) : null,
             })),
             assignments: cycle.assignments.map((a) => ({
-              id: a.id,
               client: a.client,
               type: a.type,
               lead: a.lead,

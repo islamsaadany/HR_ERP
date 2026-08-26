@@ -6,6 +6,7 @@
  * with problems are reported and the affected assignment is excluded from the
  * payout until the data is corrected.
  */
+import { parseSheetDate } from "./dates";
 import type { AssignmentType } from "./rules";
 
 /** Minimal robust CSV parser (handles quotes, embedded commas, CRLF). */
@@ -55,35 +56,36 @@ function headerIndex(header: string[]): Record<string, number> {
   return idx;
 }
 
-function num(v: string | undefined): number | null {
+/**
+ * Read a figure the way an operator writes one. Strips thousands separators,
+ * spaces, currency, and a trailing percent sign so "7%", "1,000", "EGP 500", and
+ * "66 %" all parse (percent values are converted to a fraction by the caller
+ * where relevant); "pending"/"TBD"/"n/a" read as "not known yet" (null).
+ *
+ * Exported because the on-screen review editor (`./review`) must read a typed
+ * figure identically — the same number pasted into a cell and into a CSV cannot
+ * be allowed to mean two different things.
+ */
+export function parseSheetNumber(v: string | undefined): number | null {
   if (v == null) return null;
-  // Strip thousands separators, spaces, currency, and a trailing percent sign so
-  // "7%", "1,000", "EGP 500", and "66 %" all parse (percent values are converted
-  // to a fraction by the caller where relevant).
   const s = v.replace(/[,%\s]/g, "").replace(/egp/i, "").trim();
   if (s === "" || /pending|tbd|n\/a/i.test(s)) return null;
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
 
+const num = parseSheetNumber;
+
+/**
+ * Dates off a sheet are read by the module's one date reader (./dates): a spelled
+ * month first, then ISO, then all-numeric **day-first**, plus Excel serials. Before
+ * that reader existed this fell through to `new Date(s)`, which is American — so an
+ * operator's 01/03/2021 was stored as 3 January, silently.
+ */
+const parseDate = parseSheetDate;
+
 function boolYes(v: string | undefined): boolean {
   return /^(y|yes|true|1)$/i.test((v ?? "").trim());
-}
-
-/** Excel serial date → JS Date (Excel epoch 1899-12-30). */
-function fromExcelSerial(serial: number): Date {
-  return new Date(Math.round((serial - 25569) * 86400 * 1000));
-}
-
-function parseDate(v: string | undefined): Date | null {
-  const s = (v ?? "").trim();
-  if (!s) return null;
-  if (/^\d+(\.\d+)?$/.test(s)) {
-    const n = Number(s);
-    if (n > 20000 && n < 80000) return fromExcelSerial(n); // plausible Excel serial
-  }
-  const d = new Date(s);
-  return isNaN(d.getTime()) ? null : d;
 }
 
 export type ParsedPerson = {

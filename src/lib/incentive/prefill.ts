@@ -16,6 +16,7 @@
  * (reads the DB); the pure static fallback still lives in ./templates.
  */
 import { prisma } from "@/lib/prisma";
+import { formatIncentiveDate } from "./dates";
 
 /** Registry departments whose people seed the Incentive people sheet. */
 const INCENTIVE_DEPARTMENTS = ["Consulting Department", "Data Management Unit"] as const;
@@ -27,7 +28,13 @@ function cell(value: string | number | null | undefined): string {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-const isoDate = (d: Date | null | undefined): string => (d ? d.toISOString().slice(0, 10) : "");
+/**
+ * Dates go into the template as `14-Jul 2026`, the same form the module displays
+ * and the parser reads back, so a template that is downloaded, filled in and
+ * uploaded round-trips unchanged — and an operator scanning the sheet can see the
+ * month spelled out rather than guessing at a number.
+ */
+const sheetDate = formatIncentiveDate;
 
 type Prefilled = { filename: string; csv: string };
 
@@ -57,7 +64,7 @@ async function priorCycle(currentCycleId: string) {
 function peopleCsv(people: Awaited<ReturnType<typeof incentivePeople>>): string {
   const header = "name,role,net_monthly_salary,start_date";
   const rows = people.map((p) =>
-    [cell(p.name), cell(p.title), cell(p.monthlySalary ?? ""), cell(isoDate(p.startDate))].join(",")
+    [cell(p.name), cell(p.title), cell(p.monthlySalary ?? ""), cell(sheetDate(p.startDate))].join(",")
   );
   return [header, ...rows].join("\n") + "\n";
 }

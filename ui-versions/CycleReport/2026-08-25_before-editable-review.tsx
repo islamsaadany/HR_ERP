@@ -3,16 +3,48 @@
 import { Fragment, useState } from "react";
 import type { CycleReport } from "@/lib/incentive/compute";
 import { HoverTip } from "./HoverTip";
-import { Chevron, Section, scrollWrap, td, tdr, th } from "./ReportSection";
-import { ReviewTables, type ReviewData } from "./ReviewTables";
-
-export type { ReviewData };
 
 const m = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const whole = (n: number) => Math.round(n).toLocaleString("en-US");
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 
+/** Raw uploaded sheets, for the Review & validation section. */
+export type ReviewData = {
+  people: { name: string; role: string | null; netMonthlySalary: number; startDate: string | null }[];
+  assignments: {
+    client: string;
+    type: string;
+    lead: string;
+    bd: string;
+    leadSource: string | null;
+    revenue: number | null;
+    directCost: number | null;
+    vendorCost: number;
+    markupPct: number;
+    startDate: string | null;
+    closeDate: string | null;
+    status: string;
+  }[];
+  contributions: { client: string; person: string; share: number }[];
+};
+
+const th = "px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-muted";
+const td = "px-3 py-2 text-sm text-ink whitespace-nowrap";
+const tdr = td + " text-right tabular-nums";
 const tdNote = "px-3 py-2 text-sm italic text-muted whitespace-normal";
+
+/**
+ * Assignment status → display label, sort order, and pill colour. "closed"
+ * reads as "Ended"; rows in the review table sort Ongoing → Ended → In
+ * progress → Pending. Colour tracks payability (green active, blue done,
+ * amber in-flight, grey awaiting).
+ */
+const STATUS_META: Record<string, { label: string; order: number; cls: string }> = {
+  ongoing: { label: "Ongoing", order: 1, cls: "bg-green-100 text-green-700" },
+  closed: { label: "Ended", order: 2, cls: "bg-blue-100 text-blue-700" },
+  in_progress: { label: "In progress", order: 3, cls: "bg-amber-100 text-amber-700" },
+  pending: { label: "Pending", order: 4, cls: "bg-gray-100 text-gray-500" },
+};
 
 /**
  * Cost-recovery Multiple → colour band. >3× best (deeper green), 2–3× good
@@ -26,10 +58,65 @@ const multipleBand = (mx: number) =>
     : mx >= 1
     ? "bg-amber-100 text-amber-700"
     : "bg-red-100 text-red-700";
+const statusMeta = (s: string) => STATUS_META[s] ?? { label: s, order: 99, cls: "bg-gray-100 text-gray-500" };
+
+function StatusPill({ status }: { status: string }) {
+  const meta = statusMeta(status);
+  return <span className={"inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold " + meta.cls}>{meta.label}</span>;
+}
 
 /** Section ids drive the collapse state and Expand/Collapse-all. */
 const SECTION_IDS = ["review", "bpf", "contrib", "commission", "byPerson", "firm", "profitShare", "costRecovery", "watch"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={"h-3.5 w-3.5 shrink-0 text-muted transition-transform " + (open ? "rotate-90" : "")}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+function Section({
+  title,
+  subtitle,
+  titleExtra,
+  action,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  titleExtra?: React.ReactNode;
+  action?: React.ReactNode;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mt-4 overflow-hidden rounded-xl border border-line bg-surface">
+      <div className="flex items-center gap-2.5 px-4 py-3">
+        <button type="button" onClick={onToggle} className="flex min-w-0 flex-1 items-center gap-2.5 text-left" aria-expanded={open}>
+          <Chevron open={open} />
+          <span className="font-serif text-lg text-ink">{title}</span>
+          {titleExtra}
+          {subtitle ? <span className="truncate text-xs text-muted">{subtitle}</span> : null}
+        </button>
+        {action ? <div className="shrink-0">{action}</div> : null}
+      </div>
+      {open ? <div className="px-4 pb-4">{children}</div> : null}
+    </section>
+  );
+}
 
 /**
  * A small ⓘ term-tip (hover), rendered as a non-clipping floating layer. The
@@ -54,6 +141,8 @@ function ZeroCell({ note, value = "0.00" }: { note: string; value?: string }) {
   );
 }
 
+const scrollWrap = "ff-hscroll rounded-lg border border-line";
+
 export function CycleReportView({
   report,
   cycleId,
@@ -65,14 +154,20 @@ export function CycleReportView({
 }) {
   const r = report;
 
-  // Clients whose shares don't total 100% (±1pp, the tolerance the engine blocks
-  // on). Derived here because it decides whether the Review section auto-opens;
-  // the section itself paints the flag.
-  const totals = new Map<string, number>();
-  for (const c of review.contributions) totals.set(c.client, (totals.get(c.client) ?? 0) + c.share);
-  const flaggedClients = new Set(
-    [...totals.entries()].filter(([, t]) => Math.abs(t - 1) > 0.01 + 1e-6).map(([client]) => client)
-  );
+  // Contribution matrix (client × person) + per-client totals for the review view.
+  const contribPersons = new Set(review.contributions.map((c) => c.person));
+  const persons = [
+    ...review.people.map((p) => p.name).filter((n) => contribPersons.has(n)),
+    ...[...contribPersons].filter((n) => !review.people.some((p) => p.name === n)),
+  ];
+  const clients: string[] = [];
+  const seenClient = new Set<string>();
+  for (const c of review.contributions) if (!seenClient.has(c.client)) { seenClient.add(c.client); clients.push(c.client); }
+  const shareAt = new Map<string, number>();
+  for (const c of review.contributions) shareAt.set(`${c.client}||${c.person}`, c.share);
+  const clientTotal = (client: string) => review.contributions.filter((c) => c.client === client).reduce((s, c) => s + c.share, 0);
+  const isOff = (total: number) => Math.abs(total - 1) > 0.01 + 1e-6;
+  const flaggedClients = new Set(clients.filter((c) => isOff(clientTotal(c))));
 
   const hasIssues = r.blocked.length > 0 || r.issues.length > 0 || flaggedClients.size > 0;
 
@@ -119,16 +214,127 @@ export function CycleReportView({
         </button>
       </div>
 
-      {/* 1. Review & validation — read-only, or editable in place (Recalculate
-          saves and every section below rebuilds from the stored rows). */}
-      <ReviewTables
-        cycleId={cycleId}
-        review={review}
-        flaggedClients={flaggedClients}
+      {/* 1. Review & validation */}
+      <Section
+        title="Review & validation"
+        subtitle="the three uploaded sheets, as read"
         open={open.review}
         onToggle={() => toggle("review")}
-      />
+        titleExtra={
+          flaggedClients.size > 0 ? (
+            <span className="ml-2 rounded-full border border-red-400 bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-600">
+              ⚠ {flaggedClients.size} data issue{flaggedClients.size > 1 ? "s" : ""}
+            </span>
+          ) : null
+        }
+      >
+        <p className="mb-2 text-xs text-muted">People</p>
+        <div className={scrollWrap + " max-w-2xl"}>
+          <table className="ff-data-table min-w-full divide-y divide-line">
+            <thead className="bg-navy-50/40">
+              <tr><th className={th}>Name</th><th className={th}>Role</th><th className={th + " text-right"}>Net monthly salary</th><th className={th}>Start date</th></tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {review.people.map((p) => (
+                <tr key={p.name}>
+                  <td className={td}>{p.name}</td>
+                  <td className={td}>{p.role ?? "—"}</td>
+                  <td className={tdr}>{whole(p.netMonthlySalary)}</td>
+                  <td className={td}>{p.startDate ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
+        <p className="mb-2 mt-4 text-xs text-muted">Assignments</p>
+        <div className={scrollWrap}>
+          <table className="ff-data-table min-w-full divide-y divide-line">
+            <thead className="bg-navy-50/40">
+              <tr>
+                <th className={th}>Client</th>
+                <th className={th}>Type</th>
+                <th className={th}>Lead</th>
+                <th className={th}>BD</th>
+                <th className={th}>Lead source</th>
+                <th className={th + " text-right"}>Revenue</th>
+                <th className={th + " text-right"}>Direct cost</th>
+                <th className={th + " text-right"}>Vendor cost</th>
+                <th className={th + " text-right"}>Markup %</th>
+                <th className={th}>Start date</th>
+                <th className={th}>Closure date</th>
+                <th className={th}>Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {review.assignments
+                .slice()
+                .sort((a, b) => statusMeta(a.status).order - statusMeta(b.status).order)
+                .map((a) => (
+                  <tr key={a.client}>
+                    <td className={td}>{a.client}</td>
+                    <td className={td}>{a.type}</td>
+                    <td className={td}>{a.lead}</td>
+                    <td className={td}>{a.bd}</td>
+                    <td className={td}>{a.leadSource ?? "—"}</td>
+                    <td className={tdr}>{a.revenue == null ? "—" : whole(a.revenue)}</td>
+                    <td className={tdr}>{a.directCost == null ? "—" : whole(a.directCost)}</td>
+                    <td className={tdr}>{a.vendorCost ? whole(a.vendorCost) : "—"}</td>
+                    <td className={tdr}>{a.markupPct ? `${a.markupPct}%` : "—"}</td>
+                    <td className={td}>{a.startDate ?? "—"}</td>
+                    <td className={td}>{a.closeDate ?? "—"}</td>
+                    <td className={td}><StatusPill status={a.status} /></td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="mb-2 mt-4 text-xs text-muted">
+          Contributions (client × person) — the <span className="font-semibold text-ink">Total</span> column flags any client that isn&rsquo;t 100%
+        </p>
+        <div className={scrollWrap}>
+          <table className="ff-data-table min-w-full divide-y divide-line">
+            <thead className="bg-navy-50/40">
+              <tr>
+                <th className={th}>Client</th>
+                {persons.map((p) => <th key={p} className={th + " text-right"}>{p}</th>)}
+                <th className={th + " text-right"}>Total</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {clients.map((c) => {
+                const total = clientTotal(c);
+                const off = isOff(total);
+                return (
+                  <tr key={c} className={off ? "bg-amber-50" : undefined}>
+                    <td className={td}>
+                      {c}
+                      {off ? (
+                        <HoverTip text={`Contributions total ${pct(total)} — must be 100%. This assignment is excluded from the payout until the shares are corrected.`} className="ml-1 font-bold text-red-600">
+                          ⚠
+                        </HoverTip>
+                      ) : null}
+                    </td>
+                    {persons.map((p) => {
+                      const s = shareAt.get(`${c}||${p}`);
+                      return <td key={p} className={tdr}>{s == null ? "—" : pct(s)}</td>;
+                    })}
+                    <td className={tdr + (off ? " bg-red-50 font-bold text-red-600" : "")}>
+                      {pct(total)}
+                      {off ? (
+                        <HoverTip text="Must total 100%. This assignment is excluded from the payout until the shares are corrected." className="ml-1 font-bold text-red-600">
+                          ⚠
+                        </HoverTip>
+                      ) : null}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Section>
 
       {/* 2. Business Partner Fee */}
       <Section

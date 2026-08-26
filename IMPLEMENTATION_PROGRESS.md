@@ -23,6 +23,97 @@
 | 12 — Team Communications | 🟢 **Built** (spec 039 — one door with three options: the dashboard noticeboard, email to a chosen audience, and birthday & work-anniversary congratulations drafted by the platform and sent by a human; migrations `067` + `074`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
 
+## Incentive: correcting a cycle on screen instead of re-uploading (built 2026-08-25 — no migration)
+
+**Asked for:** *"the incentive scheme for the 3 tables of review and validation — allow me to
+edit these tables by adding rows or removing or editing cells and then I press recalculate so
+the rest of the tables are generated. rather than going back to the sheets and reupload again."*
+
+**Built.** The three sheets at the top of a cycle report (People, Assignments, Contributions)
+are now editable in place. **Edit tables** in the section header turns all three into a form —
+every cell editable, rows addable and removable, contribution columns addable from the People
+table and removable — and one **Recalculate** saves the three sheets and re-renders the page so
+every section below (Business Partner Fee, contributor detail, commission, by-person, firm P&L,
+profit share, cost recovery, watch list) regenerates from the stored rows. Uploading is
+untouched and still replaces a whole sheet; it remains how a cycle is first loaded.
+
+The decisions, all signed off from the mockup
+(`design-mockups/incentive-review-edit/2026-08-25_editable-review-tables.html`):
+- **Recalculate IS the save** — there is no second button, so the tables below can never show
+  figures the database doesn't hold. Disabled until something changes; a gold **Unsaved edits**
+  chip is on screen for exactly as long as the edits are only in the browser (tracking *dirty*,
+  not *saved* — the rule the announcement editor taught us). **Discard changes** confirms first.
+- **Every fault at once**, in a `role="alert"` banner that is scrolled to and focused, and
+  nothing is written when any check fails.
+- **Status is chosen, not derived.** The importer works status out from the closure-date column
+  because a sheet has only that one column; the editor shows a dropdown and takes what was
+  picked — setting a closure date does not silently re-decide it.
+- **A client short of 100% still saves.** That is a payout rule (flag-and-block already excludes
+  it and the Total column flags it red), not a save rule, so half-finished shares are storable.
+  The Total column re-adds live while typing, so a client is *seen* to reach 100% first.
+- **A rename follows the person** into Lead / BD / Lead source and their contributions column,
+  applied on blur rather than per keystroke.
+
+Code: `src/lib/incentive/review.ts` (the payload model, `toDraft`, and one pure `validateReview`
+reusing the importer's now-exported `parseSheetNumber`, so a figure typed into a cell and one
+pasted into a CSV cannot mean two different things), `src/lib/incentive/persist.ts` (the write —
+deliberately **not** in the `"use server"` actions file, where every export becomes an endpoint),
+`saveReviewTables` in `src/app/(app)/incentive/actions.ts` (access check → validate → write),
+`src/components/incentive/ReviewTables.tsx` (the section, read and edit modes), and
+`src/components/incentive/ReportSection.tsx` (the section shell and table cell classes, extracted
+from `CycleReport` so the editor and the report can't drift apart). Snapshots:
+`ui-versions/CycleReport/2026-08-25_before-editable-review.tsx`,
+`ui-versions/incentive-cycle-page/2026-08-25_before-editable-review.tsx`.
+
+**Verified:** `tsc --noEmit` clean, `npm run build` green;
+`scripts/verify-incentive-review-edit.mts` **44/44** on a throwaway Postgres (round trip returns
+identical shares and salaries; the ±1pp tolerance; all seven faults named at once; a 93% client
+still saves; a typed "95,000" stored as a number; `eligibleToLead`/`utilization` carried across a
+rename; removed rows and their contributions gone; two people trading names survives the unique
+index; and the real `computeCycle` over the written rows unblocks the corrected client and pays
+its lead). The existing engine checks still pass (`verify-incentive` 27/27, `verify-incentive-cycle`
+16/16) — the parser rename didn't disturb the CSV path. The screen itself was driven in a real
+browser end to end, which is where the missing `startTransition` around the save was caught:
+without it React never reported the pending state, so the button neither said "Recalculating…"
+nor blocked a second click landing a second write.
+
+**Dates read as `14-Jul 2026` (same day, two follow-ups).** First asked: *"all should follow
+the dd/mm/yyyy."* Then, on seeing it: *"for the dates across this part it should show in the
+format of dd-mmm yy so 14-Jul 2026 just to make sure that the entries are correct."* That second
+request is the settled one, and its reason is the design: a spelled month **cannot be read the
+wrong way round**, so an operator typing compensation dates in off a spreadsheet can check at a
+glance that what they typed is what landed. It is a **deliberate exception** to the platform-wide
+dd/mm/yyyy standard, which is unchanged everywhere else.
+
+`src/lib/incentive/dates.ts` is the one module that both formats and parses, so the displayed
+value, the typed cell, the saved value and a CSV cell cannot disagree. Three things came out of it:
+- **Display.** The read-back tables printed `2021-03-01`; they now print **01-Mar 2021**, built
+  from the date's **UTC** parts — a date-only value is stored at UTC midnight, and reading it
+  locally in a timezone behind UTC prints the day before. Nobody's start date should move because
+  of where they are sitting.
+- **Entry.** The editor's date cells are **typed text stating `dd-mmm yyyy`, not a native date
+  picker.** The obvious `<input type="date">` was wrong: it draws itself in the **browser's** UI
+  language, and measured in a real browser it rendered 1 March as `03/01/2021` under en-GB, ar-EG
+  *and* en-US. A field whose format nobody can promise is not a field you type a closure date into.
+  Cells accept the spelled month (short or full, any case), and dd/mm/yyyy and ISO unstated so
+  nothing pasted in is needlessly refused; a made-up month, an unreal 31-Feb, or a bare number is
+  refused by name — a bare number is an Excel serial only off a **sheet**, never when typed.
+- **Import.** All-numeric sheet cells are now read **day-first**, which fixed a silent misread
+  nobody had noticed: `new Date("01/03/2021")` is American, so an operator's **1 March was being
+  stored as 3 January** — no warning, no wrong-looking output, just an assignment closing in the
+  wrong quarter. ISO cells and Excel serials are unchanged, and a legacy m/d/y sheet still reads
+  correctly wherever the middle field can only be a day. The templates emit `14-Jul 2026` too, so
+  download → fill → upload round-trips unchanged.
+
+The rest of the app was audited and was already compliant with its own standard — every other date
+display goes through `formatDate` or an explicit `en-GB` format. Verified: the script grew to
+**71/71** (the printed form, the typed-cell round trip in every accepted spelling, each refusal,
+the day-first parse including the m/d/y fallback and the typed-vs-sheet serial split, and the
+template round trip); `verify-incentive` 27/27 and `verify-incentive-cycle` 16/16 still pass on the
+changed parser; and the browser confirmed `14-Jul 2026` typed, saved and read back unchanged, with
+`31-Feb 2026` refused by name. Snapshot:
+`ui-versions/ReviewTables/2026-08-25_before-ddmmyyyy.tsx`.
+
 ## A menu on the phone (built 2026-08-25 — no migration)
 *"Make the application PWA so I can use from the mobile."*
 
