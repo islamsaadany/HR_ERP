@@ -7,6 +7,7 @@ import { confirmableUnitIds } from "@/lib/finance/confirmers";
 import { getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
 import { prisma } from "@/lib/prisma";
+import { pendingCountFor } from "@/lib/comms/drafts";
 import { isLinked, linkKey } from "@/lib/switch-account";
 import { AppShell } from "@/components/AppShell";
 import { QueryToast } from "@/components/QueryToast";
@@ -70,18 +71,10 @@ export default async function AppLayout({
   // being read. Wrapped, because before migration 064 this table does not exist.
   // Congratulations waiting for THIS person to send. Wrapped, because before migration 067 the
   // table does not exist — and a shell that cannot render is worse than a missing count.
-  let messagesWaiting = 0;
-  try {
-    messagesWaiting = await prisma.message.count({
-      where: {
-        assignedToId: user.id,
-        state: "DRAFT",
-        kind: { in: ["BIRTHDAY", "WORK_ANNIVERSARY"] },
-      },
-    });
-  } catch {
-    messagesWaiting = 0;
-  }
+  // Only what is DUE, through the same derivation the screen uses. Counting every draft would
+  // light this permanently once messages can be written months ahead, and a badge that is always
+  // on tells nobody anything.
+  const messagesWaiting = await pendingCountFor(user.id);
 
   let learningBadge = 0;
   if (showManageLearning) {

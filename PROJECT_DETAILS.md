@@ -293,6 +293,27 @@ The v1 modules that could be reused from the Firebase reference (directory, HR d
 - Installable "Add to Home Screen": web manifest (`app/manifest.ts`), navy/gold "F" icons
   (`public/icons/*`), a minimal registration-only service worker (`public/sw.js`, no auth-content
   caching), and head meta (theme-color, apple-touch-icon, mobile-web-app-capable). No push (v1).
+- **Usable on a phone (spec 010 extension, 2026-08-25).** Installability shipped in 2026-08 but the
+  app was not navigable on a phone: the sidebar is `max-md:hidden` and the only mobile chrome was a
+  navy bar carrying the company name and a Sign out link, so off `/dashboard` **two** links were
+  tappable (measured). `AppShell` now renders a **slide-in panel** below `md` — the same sections in
+  the same order with the same badges, the appointment/admin entries under an "Also yours" heading
+  (labelled here only: on a narrow screen gold alone reads as decoration), the data-request notice
+  and the account block. Closes on a section tap, the ✕, the page behind, Escape, and any pathname
+  change; body scroll is locked while open; every target is ≥44px.
+  - The panel's Sign out and Switch-account **submit buttons carry no `onClick`** — closing the panel
+    there would unmount the `<form>` before the browser dispatched `submit` (the 2026-08-16 rule).
+    Both navigate, which unmounts it anyway. The data-request button dispatches its event *first*.
+  - The header button carries **one gold dot, not a number**, summed from the same `badgeFor`/`extras`
+    derivations the menu renders — never a count of its own.
+  - **Safe areas:** `viewportFit: "cover"` in `generateViewport` makes `env(safe-area-inset-*)`
+    non-zero; `.ff-safe-top` (a navy spacer, `height`) and `.ff-safe-bottom` (`margin-bottom`) in
+    `globals.css` keep the header out from under the clock and content off the home indicator. Written
+    as height/margin, never padding, so they cannot fight the Tailwind padding utilities already on
+    those elements — and they measure 0 in a browser tab and on desktop.
+  - **`mobile-web-app-capable` was never missing:** Next 15 renders `appleWebApp.capable` as the
+    *modern* meta, not the Apple-prefixed one. Adding it via `other:` emitted it **twice**; checked
+    against the served HTML and removed.
 
 ### Incentive Scheme (spec 009) — Super User + Finance, hidden
 - A **partner-compensation** engine implementing "Team Benefits System v1.5" (Business Partner Fee, Commission, Profit Share proposed, 70% margin gate, `eligible_to_lead` utilisation gate, contributor tiers/floor/cap, firm P&L, cost recovery, watch list). **Distinct from the employee Benefits module.**
@@ -512,6 +533,14 @@ a live `CourseAssignment` to them, a `CourseAssignment` to a `LearnerGroup` they
 `CourseAudience` rule they match, or by being **mid-course**. Three entry points over one rule:
 `courseAccessFor` (per person), `accessibleCoursesFor` (My learning), `courseRoster` (HR roster).
 Nothing else may decide access.
+
+**Renaming and deleting a course** (added 2026-08-25, mockup-approved): one ⋯ menu on each row of
+`/admin/learning` and in the course header, driving one rename panel (title + summary) and one
+confirmation. Deleting is **refused the moment anybody has started it**, at any status — an
+enrollment is somebody's record of having done the thing — and pausing is offered instead. The
+course's blob files (cover, documents, lesson attachments) are gathered before the row is deleted
+and removed after it, since every child row cascades and nothing would otherwise reference them.
+`updateCourse` leaves a field the form did not carry alone rather than reading absent as cleared.
 
 **Audiences are rules, not lists**: `CourseAudience` stores `{kind, value}` — ALL_ACTIVE, DEPARTMENT,
 BUSINESS_UNIT, EMPLOYMENT_TYPE, TENURE_BAND, REPORTS_TO — compiled by `audience.ts` into ONE
@@ -791,6 +820,31 @@ single form serving all three would need a branch per difference.
 
 `/admin/announcements` **redirects** rather than 404s — the address is in bookmarks and history, and
 a dead link teaches an operator the feature was removed, which is not what happened.
+
+### Congratulations are seen ahead, and still sent by a person
+The CEO asked for a look-ahead with a period filter, and for messages to be scheduled. The
+look-ahead was built; **scheduling was declined by him** once the conflict was put to him, so the
+rule from spec 037 stands unchanged: *no scheduled process may email an employee*. What moved
+earlier is the **writing**, not the sending.
+
+- **The look-ahead is derived, never stored.** `occasionsInWindow` already answers "whose birthday
+  or anniversary falls between these dates" for any window, so a quarter of visibility needs no
+  table, no job filling one in, and no list anyone maintains. `upcomingFor` asks the same question
+  with a wider window and joins whatever drafts exist.
+- **Drafts are not pre-created for the quarter.** A hundred untouched rows would inflate every
+  manager's badge and bury the two that matter today. A draft appears when the platform prepares
+  one near the day, or when somebody presses **Write it now** (`writeCongratulation`, idempotent by
+  the `(userId, kind, occasionYear)` constraint rather than by checking first).
+- **The send window has two ends.** A missed congratulation already closed rather than going out
+  late; `sendWindow` adds the lower bound, because once a draft can exist for months the button
+  sits there waiting to be pressed by mistake. Enforced in `sendCongratulation`, not merely
+  disabled on screen.
+- **"Due now" includes what nobody has written.** Filtering it to drafts hid the one case the
+  screen exists to catch — a birthday today that preparation never reached.
+- **The badge counts only what is due**, through the same derivation. A badge that is always lit
+  says nothing.
+- **Who sees what**: HR everybody, a line manager their own reports, anyone else nothing — the same
+  people whose dates they can already read, so the look-ahead opens nothing new.
 
 ### The group name is its own setting (migration `074`)
 The small-caps line above the business unit read `BrandSettings.companyName` — the name of the

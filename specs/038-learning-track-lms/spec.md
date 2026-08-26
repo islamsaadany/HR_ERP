@@ -334,6 +334,22 @@ roster updates without a manual reload.
   attribute a rating to a person.
 - **FR-061**: Putting the finish panel away MUST persist, so it does not reappear on the next visit.
 
+**Renaming and deleting a course (added 2026-08-25)**
+
+FR-001 has required this since the module was specified; until now it existed only on the server,
+with nothing on screen reaching it. These state the rules the screen work settled.
+
+- **FR-078**: A course's title and description MUST be editable after it is created, from the course
+  list and from the course itself, through one panel — so a course's name is changed in one place.
+- **FR-079**: Deleting a course MUST be refused, at any status, while anybody has started it, and
+  the refusal MUST name pausing as what to do instead. An enrollment is a person's record of having
+  done the thing, and it cannot survive the course.
+- **FR-080**: A delete MUST name the course it is about to remove and say what goes with it, and
+  MUST NOT be reachable in a single click.
+- **FR-081**: Deleting a course MUST remove the files it owns — its cover, its documents, and any
+  file attached to one of its lessons — since nothing would reference them afterwards. A file that
+  cannot be removed MUST NOT fail the delete, which has already happened.
+
 **Course status and access setup (added 2026-08-22)**
 
 - **FR-068**: A published course MUST be pausable — nobody can open it, including anyone partway

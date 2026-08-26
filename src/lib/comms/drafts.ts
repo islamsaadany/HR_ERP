@@ -184,10 +184,25 @@ export async function pendingForAssignee(userId: string) {
   });
 }
 
-export async function pendingCountFor(userId: string): Promise<number> {
+/**
+ * How many of a manager's congratulations need them TODAY.
+ *
+ * Counts only what is inside the send window, not every draft they hold. Once messages can be
+ * written months ahead, counting all of them would put a permanent "9" beside the nav entry and
+ * bury the one that actually has to go out this morning — a badge that is always lit says nothing.
+ */
+export async function pendingCountFor(userId: string, leadDays = 3): Promise<number> {
+  const today = new Date();
+  const from = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const to = new Date(from.getTime() + Math.max(0, leadDays) * 86_400_000);
   try {
     return await prisma.message.count({
-      where: { assignedToId: userId, state: "DRAFT", kind: { in: ["BIRTHDAY", "WORK_ANNIVERSARY"] } },
+      where: {
+        assignedToId: userId,
+        state: "DRAFT",
+        kind: { in: ["BIRTHDAY", "WORK_ANNIVERSARY"] },
+        occasion: { occasionDate: { gte: from, lte: to } },
+      },
     });
   } catch {
     // Before migration 067 the table does not exist. Zero keeps the shell working.

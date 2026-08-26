@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { del } from "@vercel/blob";
 import type { LessonBlockType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireLearningManager } from "@/lib/learning/managers";
@@ -63,20 +64,25 @@ export async function createCourse(formData: FormData): Promise<CourseResult> {
   return { ok: true, id: course.id };
 }
 
+/**
+ * The course's own details — its title and the line under it.
+ *
+ * A FIELD THE FORM DID NOT CARRY IS LEFT ALONE, rather than read as an empty string and written
+ * as null. The rename panel asks for a title and a summary and nothing else, and `category` is
+ * set by the workbook importer and shown on no screen — so treating "absent" as "cleared" meant
+ * renaming a course silently threw its category away. `formData.has` is the difference between
+ * "they emptied this box" and "this form has no such box".
+ */
 export async function updateCourse(courseId: string, formData: FormData): Promise<CourseResult> {
   const admin = await requireLearningManager();
   const title = clean(formData.get("title"));
   if (!title) return { ok: false, error: "Give the course a title." };
 
-  await prisma.course.update({
-    where: { id: courseId },
-    data: {
-      title,
-      summary: clean(formData.get("summary")) || null,
-      category: clean(formData.get("category")) || null,
-      updatedById: admin.id,
-    },
-  });
+  const data: Prisma.CourseUncheckedUpdateInput = { title, updatedById: admin.id };
+  if (formData.has("summary")) data.summary = clean(formData.get("summary")) || null;
+  if (formData.has("category")) data.category = clean(formData.get("category")) || null;
+
+  await prisma.course.update({ where: { id: courseId }, data });
   revalidate(courseId);
   return { ok: true };
 }
@@ -212,16 +218,61 @@ export async function unhideCourse(courseId: string): Promise<CourseResult> {
   return { ok: true };
 }
 
+/**
+ * Throw a course away for good.
+ *
+ * REFUSED the moment anybody has started it, at any status: an enrollment is somebody's record of
+ * having done the thing, and every row of it cascades off the course. Pausing is what "take it
+ * away but keep what people did" means, and the refusal says so — a course nobody ever opened is
+ * the only kind that can simply go.
+ *
+ * The database rows go on their own (every child of a course cascades), but the FILES do not: a
+ * course's cover, its uploaded documents and any file attached to a lesson live in blob storage
+ * and would be left with nothing on earth referencing them. So they are gathered BEFORE the row
+ * is deleted — afterwards there is no way to find them — and removed after it, fire-and-forget,
+ * matching how removing a single document already behaves. A file that fails to delete is litter;
+ * a course that fails to delete because a file would not is a screen that will not work.
+ */
 export async function deleteCourse(courseId: string): Promise<CourseResult> {
   await requireLearningManager();
   const enrolled = await prisma.courseEnrollment.count({ where: { courseId } });
   if (enrolled > 0) {
     return {
       ok: false,
-      error: `${enrolled} ${enrolled === 1 ? "person has" : "people have"} started this course, so deleting it would destroy their record. Unpublish it instead.`,
+      error: `${enrolled} ${enrolled === 1 ? "person has" : "people have"} started this course, so deleting it would destroy their record. Pause it instead — nobody can open it, and everything they have done is kept.`,
     };
   }
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: {
+      coverBlobUrl: true,
+      documents: { select: { blobUrl: true } },
+      // Soft-deleted sections and lessons are included on purpose: their files are just as
+      // orphaned once the course is gone.
+      sections: { select: { lessons: { select: { blocks: { select: { blobUrl: true } } } } } },
+    },
+  });
+  if (!course) return { ok: false, error: "That course no longer exists." };
+
+  const files = [
+    course.coverBlobUrl,
+    ...course.documents.map((d) => d.blobUrl),
+    ...course.sections.flatMap((s) => s.lessons.flatMap((l) => l.blocks.map((b) => b.blobUrl))),
+  ].filter((url): url is string => !!url);
+
   await prisma.course.delete({ where: { id: courseId } });
+  // try/catch, not just `.catch` — a missing blob token can refuse synchronously, and the course
+  // is already gone by here. A file that will not delete is litter; a delete that reports failure
+  // after succeeding is a screen nobody can trust.
+  if (files.length > 0) {
+    try {
+      await del(files);
+    } catch {
+      // Nothing to do: the rows are gone and the files are unreachable either way.
+    }
+  }
+
   revalidate();
   return { ok: true };
 }

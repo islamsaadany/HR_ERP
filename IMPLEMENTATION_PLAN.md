@@ -27,6 +27,25 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ## Decisions log
 
+- **2026-08-25 — The app is usable on a phone, not just installable (built, spec 010 extended, no
+  migration).** *"Make the application PWA so I can use from the mobile."* The PWA half had shipped
+  in August — manifest, icons, worker — so the request read as already done. It wasn't: the sidebar
+  is hidden below `md`, and measured at phone width from Time-Off, exactly **two** links were
+  tappable. **Decisions**, both the recommended option of those offered: (a) a **slide-in panel from
+  a ☰ button** rather than a fixed bar of icons at the bottom — the bar fits four or five sections
+  and this app has eleven plus the appointment doors, so it would have needed an overflow anyway and
+  departed further from the desktop design; (b) the phone menu keeps the **desktop order**, with the
+  option of a phone-specific order left open and explicitly offered back. One departure from desktop
+  was taken deliberately: the appointment/admin entries get an **"Also yours" heading** on the phone
+  and none on desktop, because on a narrow screen the gold alone reads as decoration rather than as
+  "these are yours because of a role". Structural decision: those entries were already hand-written
+  twice and a phone menu would have made three, so they became **one list rendered by all three
+  surfaces** — with the existing badge-size inconsistency carried in the data rather than tidied,
+  since tidying it would have been an unapproved visual change. Desktop was asserted unchanged by
+  byte-comparing screenshots of both sidebar states. **Left open:** the employee registry and the
+  finance screens still scroll sideways on a phone (measured identical with the change stashed, so
+  pre-existing); making wide tables comfortable on a phone is separate, unscheduled work.
+
 - **2026-08-25 — Confirmations are per BUSINESS UNIT (built, spec 041 amended, migration `075`).**
   The CEO: *"for the transaction confirmation we need it by business unit. as every business unit
   might have an account to confirm and accordingly different people. that's in general."* The

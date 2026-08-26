@@ -16,6 +16,7 @@
 | 6 — Benefits (admin config) | 🟢 Complete |
 | 7 — Benefits (employee selector) | 🟢 Complete → 🔵 **redesigned to claim-based allowance (spec 018)** |
 | 8 — Dashboard + polish | 🟢 Complete |
+| — PWA / phone | 🟢 **Usable on a phone** (spec 010 + its 2026-08-25 extension — installable, and now navigable: a slide-in menu below `md`, safe areas) |
 | 10 — Finance: petty cash & payback | 🟢 **Built** (spec 040 — custodian floats, period reconciliation, evidence, payback requests; migration `068`) |
 | 11 — Finance: bank confirmations & salaries | 🟢 **Built** (spec 041 — the confirmer appointment **per business unit**, submissions with a frozen total, the CEO's confirmation screen, monthly salary runs, the daily nudge; migrations `069`, `070` + `075`) |
 | 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
@@ -112,6 +113,59 @@ template round trip); `verify-incentive` 27/27 and `verify-incentive-cycle` 16/1
 changed parser; and the browser confirmed `14-Jul 2026` typed, saved and read back unchanged, with
 `31-Feb 2026` refused by name. Snapshot:
 `ui-versions/ReviewTables/2026-08-25_before-ddmmyyyy.tsx`.
+
+## A menu on the phone (built 2026-08-25 — no migration)
+*"Make the application PWA so I can use from the mobile."*
+
+The PWA half was already done — spec 010 shipped the manifest, the icons and the worker back in
+August, and the app installs from Chrome and from Safari's Share sheet. What was not done was
+**being usable once installed**. The sidebar is hidden below `md`, and the only mobile chrome was a
+navy bar with the company name and a Sign out link. Driving a real phone viewport against a real
+Postgres, from the Time-Off page exactly **two** links were tappable: Home, and one link inside the
+page itself. Benefits, the Directory, the Handbook, Knowledge, Profile, Reviews, Payback and Admin
+had no door at all — the dashboard tiles are contextual and cover at most five sections.
+
+**Built.** A slide-in panel from a ☰ button in that bar, carrying the desktop list verbatim: same
+sections, same order, same badges, the appointment/admin entries grouped under an "Also yours"
+heading, the gold data-request notice, and the account block with Switch account and Sign out. It
+closes on a section tap, the ✕, the page behind it, Escape, and any navigation; the page behind is
+scroll-locked while it is open; every target is at least 44px. The button carries **one gold dot**
+when anything is waiting — summed from the same derivations the menu itself renders, so it cannot
+disagree with the list behind it. Plus `viewport-fit=cover` and two safe-area rules so the navy
+header stops sitting under the phone's clock and content stops running into the home indicator.
+
+**One list, three surfaces.** Adding a phone menu would have made the appointment/admin entries a
+*third* hand-written copy (the collapsed rail and the expanded sidebar were already two). They are
+now one `extras` array rendered by all three, so a module added here cannot appear on a desktop
+screen and be missing from a phone. The one piece of variance the old markup had — Confirmations
+counting in a larger pill than Manage Learning — is **carried in the data (`bigBadge`), not tidied
+away**, because tidying it would have been an unapproved visual change to desktop.
+
+**Proof (a real browser against a real Postgres, not reasoning).**
+- **Desktop did not move.** The sidebar was screenshotted and its 20 nav rows measured (position,
+  size, colour, weight, font-size) before and after. Expanded `240×900` and collapsed `64×900` are
+  **byte-identical PNGs**; **0 of 20** rows differ. Re-run after the last edit, still identical.
+- **22 phone checks green**: two links before, thirteen-plus after; each of `/benefits` `/directory`
+  `/handbook` `/knowledge` `/profile` `/reviews` `/admin` `/confirmations` `/petty-cash` `/finance`
+  reachable; Escape / backdrop / section-tap all close it; scroll lock applied and released;
+  **Sign out from inside the panel actually signs out** (the submit-button trap, tested explicitly).
+- **8 plain-employee checks green**: no "Also yours", no admin or finance doors, no account switcher,
+  no gold dot, and her whole list fits without scrolling.
+- **34 page loads** across 17 routes at 1280px and 390px: all 200, no console or page errors, the
+  menu button present on every phone page and absent on every desktop page.
+- `tsc --noEmit` and `next build` green.
+
+**Two things found by measuring rather than reading.**
+- The tap-target sweep failed first time: the ✕ was 36px and Sign out 16px, both desktop-sized. Fixed
+  to 44px — same glyph, same type, just a target a thumb can land on.
+- **`mobile-web-app-capable` was never missing.** The mockup claimed we emitted Apple's tag but not
+  Chrome's; the served HTML says Next 15 renders `appleWebApp.capable` as the *modern* name and does
+  not emit the Apple one at all. My "fix" therefore emitted the tag **twice**. Removed, and the
+  published mockup carries the correction rather than a quiet deletion.
+
+**Known and deliberately left.** `/admin/employees` and `/finance` still scroll sideways on a phone
+(59px and 20px). Measured **identically with these changes stashed** — pre-existing, those pages'
+wide tables, and out of scope for a navigation change.
 
 ## Confirmations, one business unit at a time (built 2026-08-25 — migration `075`)
 The CEO: *"for the transaction confirmation we need it by business unit. as every business unit
@@ -297,6 +351,48 @@ Both reported from live data; neither needed a schema change, and neither had mi
   smaller ceiling will start showing **over pool** in Reporting. Nothing new was spent — the old
   ceiling was wrong — and a Super User can RAISE the ceiling to accept it.
 
+## Learning: every action on the course page was 500-ing (fixed 2026-08-25 — no migration)
+- **Reported as** "adding people, accessibility and publishing gives an error", with two bare 500s
+  in the browser console and no message — the digest-only Server Components error a production
+  build gives.
+- **One exported array.** `access-actions.ts` is a `"use server"` file and also exported
+  `ACCESS_FIELDS`. Next validates a page's WHOLE server-action entry the first time any action on
+  that page is called, so the array made every action on `/admin/learning/[courseId]` throw before
+  it ran — *A "use server" file can only export async functions, found object.* The Everyone /
+  Only-certain-people switch, adding people, removing a choice and Publish all POST to the page URL,
+  which is why one fault presented as three and why none of them could report anything: the failure
+  is in the action entry, above any code that could catch it.
+- **Nothing catches this class.** It is not a type error and `next build` compiles it happily — the
+  check is generated code that runs when the action module loads. The constant moved to
+  `src/lib/learning/access-fields.ts` with the rule written beside it; a sweep of every other
+  `"use server"` file in `src/` found no second instance.
+- **Verified in a browser against a real Postgres**: before the fix, 500 on the visibility switch
+  and no access fields rendered at all; after, three actions all 200 — visibility set, a person
+  assigned, the course published. `npx tsc --noEmit` and `npm run build` clean.
+
+## Learning: renaming and deleting a course (built 2026-08-25 — no migration)
+- **Mockup-approved first** (`design-mockups/learning/2026-08-25_course-edit-and-delete.html`).
+- **Both actions already existed on the server and nothing on screen reached them** — `updateCourse`
+  and `deleteCourse` had no caller anywhere in `src/`. So a course could never be renamed after it
+  was created, and a draft could never be thrown away, which is how the list filled up with them.
+- **One ⋯ menu, two places**: each row of the Learning list, and the course's own header. Both drive
+  the same rename panel and the same confirmation, so a course's name is changed in one place.
+- **Delete asks in the row itself**, naming the course and saying what goes with it. A course
+  anybody has started is **refused before the confirmation** rather than after it, and pausing is
+  offered instead — the count comes from `_count.enrollments`, exactly what the write counts, and
+  the server refuses again on its own authority.
+- **A course's FILES are deleted with it.** Every child row cascades, but the cover, the uploaded
+  documents and any file attached to a lesson live in blob storage and would have been left with
+  nothing referencing them. They are gathered before the row goes and removed after it,
+  fire-and-forget — a file that will not delete is litter, but a delete that reports failure after
+  succeeding is a screen nobody can trust.
+- **`updateCourse` no longer wipes a field the form did not carry.** It read an absent `category` as
+  an empty string and wrote null, so renaming a course would have silently thrown away the category
+  the workbook importer set.
+- **Verified in a browser against a real Postgres**: renamed from both places, deleted a draft
+  carrying a section, a lesson, a block and an audience rule (all four rows gone with it), and the
+  refusal shown for a course with one person on it. `npx tsc --noEmit` and `npm run build` clean.
+
 ## Learning: course status ladder + access as a setup (built 2026-08-22 — migration `066`)
 - **Mockup-approved first** (`design-mockups/learning/2026-08-22_course-access-setup.html`). The
   Excel template was deliberately left alone — who takes a course is set on the course, not in a
@@ -331,6 +427,26 @@ Both reported from live data; neither needed a schema change, and neither had mi
   puts prose. They now live behind a gear at the top right, each with a line saying what it is.
 - The grey links are **removed**, not kept alongside — two doors to one page would leave the same
   confusion. Menu closes on an outside click and on Escape; nothing else on the page moved.
+
+## Congratulations seen ahead (2026-08-25 — no migration)
+- **Asked for**: a list of upcoming congratulations with a period filter, and messages written
+  early and scheduled to send. Mockup approved first
+  (`design-mockups/communications/2026-08-25_congratulations-ahead.html`).
+- **Scheduling was put to the CEO as a conflict and he declined it.** Automatic sending crosses the
+  rule he set: nothing reaches an employee's inbox unless a person presses send. So the writing
+  moved earlier and the sending did not.
+- **Three periods** — due now, this month, this quarter — on both HR's screen and a manager's own,
+  from ONE loader, so the two cannot drift about who may see what. Nothing is stored: the
+  look-ahead is the existing occasion derivation asked with a wider window.
+- **Write it now** creates a draft on demand for any future occasion. It does not bring the send
+  forward.
+- **Two bugs of mine, both found by driving the browser rather than by reading the code**: the "Due
+  now" window pointed backwards, so a birthday two days away fell outside it; and the tab filtered
+  to written drafts, so a birthday happening TODAY that nobody had written simply vanished — the
+  exact case the screen exists to catch.
+- **Verified**: `scripts/verify-communications.mts` **78/78**, including the send window at both
+  ends and the look-ahead per role; `npm test` 188/188; all 21 scripts green (467 checks); `tsc`
+  and `build` clean; and a real browser run through all three tabs and the write-early flow.
 
 ## Communications, combined (2026-08-25 — migration `074`)
 - **Announcements folded into Communications** at the CEO's request: one door, three options split
