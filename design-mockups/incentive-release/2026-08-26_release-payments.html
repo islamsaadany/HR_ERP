@@ -14,6 +14,7 @@
     color-scheme:light;
   }
   *{box-sizing:border-box}
+  [hidden]{display:none!important}
   body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1120px;margin:0 auto;padding:32px 20px 90px}
   h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
@@ -129,6 +130,21 @@
   .mail .foot{padding:16px 26px 22px;font-size:12px;color:#5f6472;border-top:1px solid #e7e3da;background:#faf9f6}
   .mailmeta{font-size:12px;color:var(--muted);margin:0 0 10px}
   .mailmeta b{color:var(--ink)}
+
+  /* Message editor */
+  .edit2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+  @media (max-width:860px){.edit2{grid-template-columns:1fr}}
+  .fld{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 5px;font-weight:800}
+  .fld:first-child{margin-top:0}
+  .inp,.ta{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--ink);font-family:inherit;line-height:1.55}
+  .ta{resize:vertical;min-height:76px}
+  .inp:focus,.ta:focus{outline:2px solid var(--gold-300);outline-offset:1px;border-color:var(--navy-400)}
+  .tokens{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+  .tok{font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--navy-50);border:1px solid var(--navy-100);color:var(--navy-700);border-radius:6px;padding:2px 7px;cursor:pointer}
+  .tok:hover{background:var(--navy-100)}
+  .fixedbit{border:1px dashed var(--navy-200);background:var(--paper);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--muted);margin-top:6px}
+  .editbar2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .editbar2 .spacer{flex:1}
 
   .notes{margin-top:48px;border-top:2px solid var(--navy-800);padding-top:18px}
   .notes h2{font-family:Georgia,serif;font-size:20px;margin:0 0 14px}
@@ -497,7 +513,8 @@
     <p class="sub">
       Sent to the person <b>only when the confirmer marks the transaction complete</b>, never when it
       is released and never when Finance creates it &mdash; the same rule the benefit and payback emails
-      already follow: nobody is told money arrived until it has.
+      already follow: nobody is told money arrived until it has. This is the <em>default</em> wording;
+      the next screen is where you change it.
     </p>
     <div class="frame">
       <p class="mailmeta">
@@ -547,7 +564,95 @@
 
   <!-- ── 6 ─────────────────────────────────────────────────────────── -->
   <section class="screen">
-    <h2><span class="num">6</span> Correcting a cycle after some of it has been paid</h2>
+    <h2><span class="num">6</span> Editing that message yourself</h2>
+    <p class="sub">
+      In <b>Admin &rarr; Email notifications</b>, beside the settings and the test-send that already
+      live there. The words are yours to change; the figures are not, because they are the payment.
+      The preview is the real thing, redrawn as you type.
+    </p>
+    <div class="frame">
+      <div class="section">
+        <div class="sechead">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          <span class="stitle">Incentive payment message</span>
+          <span id="dirty2" class="chip c-gold" hidden>Unsaved changes</span>
+          <span class="spacer"></span>
+          <button class="btn-ghost" type="button" id="reset2">Restore the original wording</button>
+        </div>
+        <div class="secbody">
+          <div class="edit2">
+            <div>
+              <label class="fld" for="m-sub">Subject</label>
+              <input class="inp" id="m-sub" value="Your incentive payment has been transferred — {total}">
+
+              <label class="fld" for="m-head">Heading</label>
+              <input class="inp" id="m-head" value="Your incentive payment has been transferred">
+
+              <label class="fld" for="m-body">Message</label>
+              <textarea class="ta" id="m-body" rows="4">Hello {first name},
+
+Your incentive for {cycle} has been transferred to your account. It may take a little time to appear, depending on your bank.</textarea>
+
+              <label class="fld" for="m-foot">Closing line</label>
+              <input class="inp" id="m-foot" value="If anything here doesn't look right, reply to this message or speak to Finance.">
+
+              <div class="tokens" id="toks">
+                <span class="tok">{first name}</span><span class="tok">{full name}</span>
+                <span class="tok">{cycle}</span><span class="tok">{total}</span>
+                <span class="tok">{transfer date}</span><span class="tok">{business unit}</span>
+              </div>
+              <div class="fixedbit">
+                <b>Not editable:</b> the amount rows and the brand header. What each person was paid,
+                and for what, is the payment itself &mdash; not wording. A message that could be edited
+                into not saying the amount would be worse than no message.
+              </div>
+
+              <div class="editbar2">
+                <span class="spacer"></span>
+                <button class="btn-ghost" type="button">Send me a test</button>
+                <button class="btn-navy" type="button" id="save2" disabled>Save</button>
+              </div>
+            </div>
+
+            <div>
+              <p class="mailmeta" style="margin-bottom:8px"><b>Preview</b> &mdash; with last cycle&rsquo;s figures</p>
+              <div class="mailwrap" style="padding:14px">
+                <div class="mail" style="width:100%">
+                  <div class="bar">
+                    <div class="grp">Forefront Group</div>
+                    <div class="unitname">Forefront Consulting</div>
+                  </div>
+                  <div class="body">
+                    <h3 id="pv-head">Your incentive payment has been transferred</h3>
+                    <div id="pv-body"></div>
+                    <div class="rows">
+                      <div class="rw"><span class="k">Business Partner Fee</span><span class="v">EGP 38,880.00</span></div>
+                      <div class="rw"><span class="k">Commission</span><span class="v">EGP 46,250.00</span></div>
+                      <div class="rw tot"><span class="k">Total transferred</span><span class="v">EGP 85,130.00</span></div>
+                      <div class="rw"><span class="k">Transferred on</span><span class="v">26-Aug 2026</span></div>
+                    </div>
+                  </div>
+                  <div class="foot" id="pv-foot"></div>
+                </div>
+              </div>
+              <p class="mailmeta" style="margin-top:8px"><b>Subject</b> <span id="pv-sub"></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="banner b-navy" style="margin:12px 0 0">
+        <b>Two guards.</b> A word in braces that isn&rsquo;t one of the six above is refused on save and
+        named &mdash; a stray <code>{Total}</code> with a capital T would otherwise reach somebody&rsquo;s inbox
+        as literal text. And if you save without <code>{total}</code> anywhere, it says so first: the
+        message would announce a payment without saying how much.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 6 ─────────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2><span class="num">7</span> Correcting a cycle after some of it has been paid</h2>
     <p class="sub">
       You can still fix anyone who hasn&rsquo;t been released. What is refused is an edit that would change
       a figure already sent &mdash; that money has gone, and the report has to keep agreeing with what
@@ -617,13 +722,14 @@
     </div>
 
     <div class="q">
-      <h3>Two things worth your eye</h3>
+      <h3>One thing left, and one thing settled</h3>
       <p>
-        <b>You would hold two of the three for Forefront.</b> You release the payment and you confirm
-        it at the bank. That is what you asked for and it is not a mistake, but it does mean the
-        platform is not standing between those two acts for that unit &mdash; the two signatures at the
-        bank are. Visual Shift is properly split: Alaa releases, Mariam confirms. Say if you would
-        rather Forefront were split the same way.
+        <b>One person may hold two of the three &mdash; settled.</b> You release <em>and</em> confirm for
+        Forefront, and the screen will not warn or nag about it: it is a deliberate arrangement, not a
+        mistake to be flagged every time it is looked at. What the platform still guarantees is that
+        each act is a separate, recorded step with its own moment and its own name against it &mdash;
+        and the real control on the money remains the two signatures at the bank. Visual Shift stays
+        split: Alaa releases, Mariam confirms.
       </p>
       <p>
         <b>Employee ID is optional today, and some people may not have one.</b> Anyone without one
@@ -656,6 +762,70 @@
     btn.disabled = picked.length === 0;
   }
   boxes.forEach(function (b) { b.addEventListener("change", refresh); });
+
+  // ── The message editor: preview redraws as you type ───────────────────────
+  var SAMPLE = {
+    "{first name}": "Ahmed", "{full name}": "Ahmed Fathy", "{cycle}": "H1-2026",
+    "{total}": "EGP 85,130.00", "{transfer date}": "26-Aug 2026", "{business unit}": "Forefront Consulting"
+  };
+  var fields = ["m-sub", "m-head", "m-body", "m-foot"];
+  var original = {};
+  fields.forEach(function (id) { original[id] = document.getElementById(id).value; });
+
+  function fill(text) {
+    return Object.keys(SAMPLE).reduce(function (t, k) { return t.split(k).join(SAMPLE[k]); }, text);
+  }
+  function esc(t) { var d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+
+  function draw() {
+    var get = function (id) { return document.getElementById(id).value; };
+    document.getElementById("pv-sub").textContent = fill(get("m-sub"));
+    document.getElementById("pv-head").textContent = fill(get("m-head"));
+    document.getElementById("pv-body").innerHTML = fill(get("m-body"))
+      .split(/\n{2,}/).map(function (p) { return "<p>" + esc(p).split("\n").join("<br>") + "</p>"; }).join("");
+    document.getElementById("pv-foot").textContent = fill(get("m-foot"));
+
+    var changed = fields.some(function (id) { return document.getElementById(id).value !== original[id]; });
+    document.getElementById("dirty2").hidden = !changed;
+    document.getElementById("save2").disabled = !changed;
+  }
+  fields.forEach(function (id) { document.getElementById(id).addEventListener("input", draw); });
+
+  // Clicking a placeholder drops it where the cursor is.
+  //
+  // Two things needed for that to be true. Pressing the mouse on the chip BLURS the
+  // field before any click handler runs, so `document.activeElement` is already gone
+  // by then — the token would land in whichever field the fallback named, not the one
+  // being edited. So: cancel the mousedown to keep focus where it is, and remember the
+  // last edited field anyway as a belt-and-braces fallback.
+  var lastField = document.getElementById("m-body");
+  fields.forEach(function (id) {
+    document.getElementById(id).addEventListener("focus", function () { lastField = document.getElementById(id); });
+  });
+  document.getElementById("toks").addEventListener("mousedown", function (e) { e.preventDefault(); });
+
+  document.getElementById("toks").addEventListener("click", function (e) {
+    var t = e.target;
+    if (!t.classList.contains("tok")) return;
+    var el = document.activeElement;
+    if (!el || (el.tagName !== "INPUT" && el.tagName !== "TEXTAREA")) el = lastField;
+    var at = el.selectionStart == null ? el.value.length : el.selectionStart;
+    el.value = el.value.slice(0, at) + t.textContent + el.value.slice(el.selectionEnd == null ? at : el.selectionEnd);
+    el.focus();
+    el.selectionStart = el.selectionEnd = at + t.textContent.length;
+    draw();
+  });
+
+  document.getElementById("reset2").addEventListener("click", function () {
+    fields.forEach(function (id) { document.getElementById(id).value = original[id]; });
+    draw();
+  });
+  document.getElementById("save2").addEventListener("click", function () {
+    fields.forEach(function (id) { original[id] = document.getElementById(id).value; });
+    draw();
+    window.alert("Saved. Every incentive payment email from now on uses this wording.");
+  });
+  draw();
   btn.addEventListener("click", function () {
     var picked = boxes.filter(function (b) { return b.checked; });
     var sum = picked.reduce(function (s, b) { return s + Number(b.getAttribute("data-amt")); }, 0);
