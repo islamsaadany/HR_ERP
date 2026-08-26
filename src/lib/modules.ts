@@ -9,6 +9,10 @@ import { prisma } from "@/lib/prisma";
 export const MODULES = [
   { key: "onboarding", label: "Onboarding", href: "/onboarding" },
   { key: "benefits", label: "Benefits", href: "/benefits" },
+  // The EMPLOYEE door only (added 2026-08-26): off hides the nav entry, redirects the page and
+  // refuses a new request. Finance's review queue deliberately stays open, so money already
+  // submitted can still be decided and paid rather than waiting, unseen, for the switch.
+  { key: "payback", label: "Payback", href: "/payback" },
   { key: "directory", label: "Team Directory", href: "/directory" },
   { key: "handbook", label: "Handbook & Resources", href: "/handbook" },
   { key: "knowledge", label: "Knowledge Base", href: "/knowledge" },

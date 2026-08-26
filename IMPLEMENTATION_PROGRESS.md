@@ -23,6 +23,23 @@
 | 12 — Team Communications | 🟢 **Built** (spec 039 — one door with three options: the dashboard noticeboard, email to a chosen audience, and birthday & work-anniversary congratulations drafted by the platform and sent by a human; migrations `067` + `074`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
 
+## Payback missing from the Modules switch (fixed 2026-08-26 — no migration)
+
+**Reported:** *"the pay back module is not appearing in the modules admin page to turn on and off."*
+
+**Cause.** Admin → Modules doesn't discover modules; it renders a hand-written list
+(`MODULES` in `src/lib/modules.ts`), and spec 040 added Payback to the nav without adding it
+there. Nothing was broken — there was simply no switch.
+
+**Fixed.** Payback is now on the list, and the switch actually holds: `/payback` redirects home
+when it's off, and the submit/withdraw actions ask again, so a form left open in a tab can't post
+past it. **Finance's payback queue is deliberately unaffected** (the CEO's call): switching it off
+closes the employee door only, so money already submitted can still be decided and paid.
+
+**Verified** against a real Postgres: with no flag row the nav keeps `/payback` and the page opens;
+with the row off the nav drops it and the page redirects; back on and it returns. `npx tsc --noEmit`
+and `npm run build` clean.
+
 ## Incentive: correcting a cycle on screen instead of re-uploading (built 2026-08-25 — no migration)
 
 **Asked for:** *"the incentive scheme for the 3 tables of review and validation — allow me to
