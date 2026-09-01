@@ -8,8 +8,7 @@ import { coveredAmount } from "@/lib/benefits/coverage";
 import { clampCovered } from "@/lib/benefits/rules";
 import { formatDate, formatEGP as egp, formatNumber } from "@/lib/labels";
 import { TOAST_DURATION_MS } from "@/lib/toast";
-import { createClaim, type ClaimResult } from "@/app/(app)/benefits/claim-actions";
-import { shrinkProofImage } from "@/lib/benefits/proof-image";
+import { createClaim } from "@/app/(app)/benefits/claim-actions";
 import { commitMedical } from "@/app/(app)/benefits/actions";
 
 // Lightweight success-toast plumbing: a claim form calls notify(text); toasts
@@ -646,42 +645,6 @@ function FlexRow({ item, poolRemaining }: { item: BoardFlex; poolRemaining: numb
 }
 
 /**
- * The one door every claim leaves through, so no file — whatever its size — can crash the page
- * (found 2026-09-01, when any receipt photo over the server-action body limit died as a raw
- * "Application error" page before the action's own checks could run). In order:
- *
- *  1. A large photo is shrunk in the browser first (`shrinkProofImage`) — the employee never
- *     has to think about file sizes; non-images and undecodable files pass through untouched.
- *  2. What's left is checked against the server's 10MB proof cap (claim-actions.ts) and refused
- *     inline — a body the framework refuses to read never reaches the action's own check.
- *  3. The dispatch itself is caught: if the REQUEST dies (a host's body cap, a dropped
- *     connection) the rejected promise would otherwise throw out of the transition and paint
- *     the error page over the whole app. A claim form must always answer in words.
- */
-async function submitClaim(data: FormData): Promise<ClaimResult> {
-  const f = data.get("proof");
-  if (f instanceof File && f.size > 0) {
-    const shrunk = await shrinkProofImage(f);
-    if (shrunk !== f) data.set("proof", shrunk);
-    if (shrunk.size > 10 * 1024 * 1024) {
-      return {
-        ok: false,
-        error: "That proof file is too large (max 10MB). Try a photo of the receipt, or a smaller PDF.",
-      };
-    }
-  }
-  try {
-    return await createClaim(data);
-  } catch {
-    return {
-      ok: false,
-      error:
-        "Your claim couldn't be sent — the attachment may be too large to upload, or the connection dropped. Try a smaller photo, or try again.",
-    };
-  }
-}
-
-/**
  * Request form for a fixed allowance (spec 028 — travel allowance).
  *
  * There is no price to enter and no proof to upload: the band amount IS the payout, so the whole
@@ -708,7 +671,7 @@ function AllowanceRequestForm({
     const data = new FormData(form);
     setError(null);
     startTransition(async () => {
-      const res = await submitClaim(data);
+      const res = await createClaim(data);
       if (res.ok) {
         notify("Allowance requested — awaiting HR review.");
         form.reset();
@@ -775,7 +738,7 @@ function FlexClaimForm({
     const data = new FormData(form);
     setError(null);
     startTransition(async () => {
-      const res = await submitClaim(data);
+      const res = await createClaim(data);
       if (res.ok) {
         notify("Claim submitted — awaiting HR review."); // floating toast
         setFullCost(0);
@@ -1028,7 +991,7 @@ function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; 
     const data = new FormData(e.currentTarget);
     setError(null);
     startTransition(async () => {
-      const res = await submitClaim(data);
+      const res = await createClaim(data);
       if (res.ok) {
         notify("Claim submitted — awaiting HR review.");
         router.refresh(); // the underlying benefit card updates in place
