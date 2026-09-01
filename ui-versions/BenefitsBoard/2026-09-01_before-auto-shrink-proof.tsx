@@ -9,7 +9,6 @@ import { clampCovered } from "@/lib/benefits/rules";
 import { formatDate, formatEGP as egp, formatNumber } from "@/lib/labels";
 import { TOAST_DURATION_MS } from "@/lib/toast";
 import { createClaim, type ClaimResult } from "@/app/(app)/benefits/claim-actions";
-import { shrinkProofImage } from "@/lib/benefits/proof-image";
 import { commitMedical } from "@/app/(app)/benefits/actions";
 
 // Lightweight success-toast plumbing: a claim form calls notify(text); toasts
@@ -646,30 +645,25 @@ function FlexRow({ item, poolRemaining }: { item: BoardFlex; poolRemaining: numb
 }
 
 /**
- * The one door every claim leaves through, so no file — whatever its size — can crash the page
- * (found 2026-09-01, when any receipt photo over the server-action body limit died as a raw
- * "Application error" page before the action's own checks could run). In order:
- *
- *  1. A large photo is shrunk in the browser first (`shrinkProofImage`) — the employee never
- *     has to think about file sizes; non-images and undecodable files pass through untouched.
- *  2. What's left is checked against the server's 10MB proof cap (claim-actions.ts) and refused
- *     inline — a body the framework refuses to read never reaches the action's own check.
- *  3. The dispatch itself is caught: if the REQUEST dies (a host's body cap, a dropped
- *     connection) the rejected promise would otherwise throw out of the transition and paint
- *     the error page over the whole app. A claim form must always answer in words.
+ * Client mirror of the server's 10MB proof cap (claim-actions.ts). Checked BEFORE dispatching:
+ * a request whose body the server refuses to read never reaches the action's own size check, so
+ * without this the employee got a raw error page instead of a sentence (found 2026-09-01).
+ */
+function oversizedProof(data: FormData): string | null {
+  const f = data.get("proof");
+  if (f instanceof File && f.size > 10 * 1024 * 1024) {
+    return "That proof file is too large (max 10MB). Try a smaller photo or a PDF.";
+  }
+  return null;
+}
+
+/**
+ * Dispatch the claim, answering transport failure in words. If the REQUEST itself dies — the
+ * host rejects the body as too large, the connection drops — the action never runs and the
+ * rejected promise would otherwise throw out of the transition and paint the raw
+ * "Application error" page over the whole app. A claim form must always answer inline.
  */
 async function submitClaim(data: FormData): Promise<ClaimResult> {
-  const f = data.get("proof");
-  if (f instanceof File && f.size > 0) {
-    const shrunk = await shrinkProofImage(f);
-    if (shrunk !== f) data.set("proof", shrunk);
-    if (shrunk.size > 10 * 1024 * 1024) {
-      return {
-        ok: false,
-        error: "That proof file is too large (max 10MB). Try a photo of the receipt, or a smaller PDF.",
-      };
-    }
-  }
   try {
     return await createClaim(data);
   } catch {
@@ -774,6 +768,11 @@ function FlexClaimForm({
     const form = e.currentTarget;
     const data = new FormData(form);
     setError(null);
+    const tooBig = oversizedProof(data);
+    if (tooBig) {
+      setError(tooBig);
+      return;
+    }
     startTransition(async () => {
       const res = await submitClaim(data);
       if (res.ok) {
@@ -1027,6 +1026,11 @@ function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; 
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     setError(null);
+    const tooBig = oversizedProof(data);
+    if (tooBig) {
+      setError(tooBig);
+      return;
+    }
     startTransition(async () => {
       const res = await submitClaim(data);
       if (res.ok) {
