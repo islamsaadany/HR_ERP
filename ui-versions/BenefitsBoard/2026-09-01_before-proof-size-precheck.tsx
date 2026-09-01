@@ -8,7 +8,7 @@ import { coveredAmount } from "@/lib/benefits/coverage";
 import { clampCovered } from "@/lib/benefits/rules";
 import { formatDate, formatEGP as egp, formatNumber } from "@/lib/labels";
 import { TOAST_DURATION_MS } from "@/lib/toast";
-import { createClaim, type ClaimResult } from "@/app/(app)/benefits/claim-actions";
+import { createClaim } from "@/app/(app)/benefits/claim-actions";
 import { commitMedical } from "@/app/(app)/benefits/actions";
 
 // Lightweight success-toast plumbing: a claim form calls notify(text); toasts
@@ -645,37 +645,6 @@ function FlexRow({ item, poolRemaining }: { item: BoardFlex; poolRemaining: numb
 }
 
 /**
- * Client mirror of the server's 10MB proof cap (claim-actions.ts). Checked BEFORE dispatching:
- * a request whose body the server refuses to read never reaches the action's own size check, so
- * without this the employee got a raw error page instead of a sentence (found 2026-09-01).
- */
-function oversizedProof(data: FormData): string | null {
-  const f = data.get("proof");
-  if (f instanceof File && f.size > 10 * 1024 * 1024) {
-    return "That proof file is too large (max 10MB). Try a smaller photo or a PDF.";
-  }
-  return null;
-}
-
-/**
- * Dispatch the claim, answering transport failure in words. If the REQUEST itself dies — the
- * host rejects the body as too large, the connection drops — the action never runs and the
- * rejected promise would otherwise throw out of the transition and paint the raw
- * "Application error" page over the whole app. A claim form must always answer inline.
- */
-async function submitClaim(data: FormData): Promise<ClaimResult> {
-  try {
-    return await createClaim(data);
-  } catch {
-    return {
-      ok: false,
-      error:
-        "Your claim couldn't be sent — the attachment may be too large to upload, or the connection dropped. Try a smaller photo, or try again.",
-    };
-  }
-}
-
-/**
  * Request form for a fixed allowance (spec 028 — travel allowance).
  *
  * There is no price to enter and no proof to upload: the band amount IS the payout, so the whole
@@ -702,7 +671,7 @@ function AllowanceRequestForm({
     const data = new FormData(form);
     setError(null);
     startTransition(async () => {
-      const res = await submitClaim(data);
+      const res = await createClaim(data);
       if (res.ok) {
         notify("Allowance requested — awaiting HR review.");
         form.reset();
@@ -768,13 +737,8 @@ function FlexClaimForm({
     const form = e.currentTarget;
     const data = new FormData(form);
     setError(null);
-    const tooBig = oversizedProof(data);
-    if (tooBig) {
-      setError(tooBig);
-      return;
-    }
     startTransition(async () => {
-      const res = await submitClaim(data);
+      const res = await createClaim(data);
       if (res.ok) {
         notify("Claim submitted — awaiting HR review."); // floating toast
         setFullCost(0);
@@ -1026,13 +990,8 @@ function GuaranteedClaimModal({ benefit, onClose }: { benefit: BoardGuaranteed; 
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     setError(null);
-    const tooBig = oversizedProof(data);
-    if (tooBig) {
-      setError(tooBig);
-      return;
-    }
     startTransition(async () => {
-      const res = await submitClaim(data);
+      const res = await createClaim(data);
       if (res.ok) {
         notify("Claim submitted — awaiting HR review.");
         router.refresh(); // the underlying benefit card updates in place
