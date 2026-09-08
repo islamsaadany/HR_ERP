@@ -66,7 +66,7 @@ export default async function FinancePage({
           tabs={[
             {
               id: "confirmations",
-              label: "Final confirmation",
+              label: "Confirmations",
               badge: await prisma.paymentBatch.count({
                 where: { status: "SUBMITTED", businessUnitId: { in: myUnits } },
               }),
@@ -275,7 +275,7 @@ export default async function FinancePage({
         What the company owes and where each payment has got to. Create the transactions in the bank,
         record them under <b className="font-semibold text-ink">Awaiting confirmation</b>, and the
         person appointed for that business unit confirms them under{" "}
-        <b className="font-semibold text-ink">Final confirmation</b> — which is when the employee is told.
+        <b className="font-semibold text-ink">Confirmations</b> — which is when the employee is told.
       </p>
 
       {paid ? (
@@ -331,14 +331,12 @@ export default async function FinancePage({
             ),
           },
           // The confirmer's screen (spec 041), here since 2026-09-08 and only for the appointed —
-          // placed right after the tab Finance sends from, because it is the next step. "Final"
-          // is the CEO's word: the bank's second signature, after Finance's own "Payments
-          // confirmation" tab two to the left.
+          // placed right after the tab Finance sends from, because it is the next step.
           ...(showConfirmations
             ? [
                 {
                   id: "confirmations",
-                  label: "Final confirmation",
+                  label: "Confirmations",
                   badge: confirmationsWaiting,
                   node: (
                     <ConfirmationsPanel myUnitIds={myUnits} isSuperUser={isSuperUser(user.role)} />

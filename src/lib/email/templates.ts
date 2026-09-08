@@ -579,7 +579,7 @@ export function transactionsAwaitingConfirmation(d: {
         row("Transactions", String(d.count)) +
         row("Total", d.total) +
         row("Value date", d.valueDate),
-      { href: link("/confirmations"), label: "See the transactions" }
+      { href: link("/finance?tab=confirmations"), label: "See the transactions" }
     ),
   };
 }
@@ -604,7 +604,7 @@ export function confirmationReminder(d: {
       ) +
         row("Business unit", units) +
         row("Combined total", d.total),
-      { href: link("/confirmations"), label: "Open confirmations" }
+      { href: link("/finance?tab=confirmations"), label: "Open confirmations" }
     ),
   };
 }

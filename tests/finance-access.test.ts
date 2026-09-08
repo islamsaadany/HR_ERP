@@ -13,6 +13,7 @@ import {
   canManageExpenseLists,
   canSeePettyCashAccount,
   canWritePettyCashLine,
+  canOpenPayments,
 } from "@/lib/finance/access";
 
 const RANEEM = { id: "u_raneem" };
@@ -37,6 +38,18 @@ describe("who holds the module", () => {
   test("the classification lists are governance — Super User only", () => {
     assert.equal(canManageExpenseLists("SUPER_USER"), true);
     assert.equal(canManageExpenseLists("FINANCE"), false);
+  });
+
+  // The Payments page has held the confirmer's tab since 2026-09-08, so the door opens for
+  // Finance OR the appointment — and the appointment alone, with no role behind it, is enough.
+  test("Payments opens for Finance, or for anyone appointed to confirm", () => {
+    assert.equal(canOpenPayments("FINANCE", false), true);
+    assert.equal(canOpenPayments("SUPER_USER", false), true);
+    assert.equal(canOpenPayments("EMPLOYEE", true), true);
+    assert.equal(canOpenPayments("HR_ADMIN", true), true);
+    assert.equal(canOpenPayments("EMPLOYEE", false), false);
+    assert.equal(canOpenPayments("HR_ADMIN", false), false);
+    assert.equal(canOpenPayments(undefined, false), false);
   });
 });
 

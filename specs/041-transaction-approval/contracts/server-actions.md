@@ -59,7 +59,7 @@ request to `APPROVED`, records who withdrew it and why.
 
 ---
 
-## The confirmer (`app/(app)/confirmations/actions.ts`)
+## The confirmer (`app/(app)/finance/confirmations/actions.ts` — under `/finance` since 2026-09-08)
 
 ### `markComplete(formData)`
 **Guard**: `canConfirmSubmissions`, **plus** `canDecide` — the sender may not confirm their own batch
@@ -91,8 +91,8 @@ actions at all.
 
 | Route | Who | What |
 |---|---|---|
-| `/confirmations` | appointed confirmers | What is waiting, newest first, with totals. Nothing else. |
-| `/confirmations/[batchId]` | appointed confirmers | Each item — payee, purpose, amount, evidence — then Confirm or Return to Finance. |
+| `/finance?tab=confirmations` | appointed confirmers (and a Super User with no appointment) | The *Final confirmation* tab: what is waiting, newest first, with totals. Was `/confirmations` until 2026-09-08; the old address redirects. |
+| `/finance/confirmations/[batchId]` | appointed confirmers | Each item — payee, purpose, amount, evidence — then Confirm or Return to Finance. Was `/confirmations/[batchId]`; the old address redirects. |
 | `/finance` → *Awaiting confirmation* tab | Finance | Records by state; tick payables and submit; withdraw. |
 | `/finance/salary` | Finance, confirmers, Super User (**never HR Admin**) | Monthly runs and the form to send one. |
 | `/admin/confirmers` | Super User | Who may confirm. |

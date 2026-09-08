@@ -401,9 +401,12 @@ row; those differences are reported by the generator, never absorbed.
 Finance creates transactions in the bank and submits them here; the appointed confirmer confirms
 them at the bank and marks them **Transaction complete**. Nothing in the app releases money.
 
-**Routes.** `/confirmations` and `/confirmations/[id]` (appointed confirmers only — their own small
-surface, because the confirmer is not a Finance user) · `/finance` → *Awaiting confirmation* tab
-(tick payables, submit, withdraw) · `/finance/salary` (Finance, confirmers, Super User — **never HR
+**Routes.** `/finance` → *Final confirmation* tab (`?tab=confirmations`; appointed confirmers, or a
+Super User holding no appointment) and `/finance/confirmations/[id]` — since 2026-09-08; they were
+`/confirmations` and `/confirmations/[id]`, their own surface, and those addresses now redirect
+because emails already sent link to them. The Payments door is `canOpenPayments` (Finance, or the
+appointment): a confirmer who is not Finance sees that one tab and nothing else is fetched · `/finance`
+→ *Awaiting confirmation* tab (tick payables, submit, withdraw) · `/finance/salary` (Finance, confirmers, Super User — **never HR
 Admin**) · `/admin/confirmers` (Super User) · `GET /api/salary-run/[id]/file` (404, never 403) ·
 `GET /api/cron/confirmations` (daily, `CRON_SECRET`).
 
