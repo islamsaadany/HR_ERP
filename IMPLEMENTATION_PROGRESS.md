@@ -343,6 +343,18 @@ claims reading "Ready to submit for confirmation" and nothing to press.
   being tickable until it is cleared. The selection posts as hidden fields covering every selected
   row, so searching cannot silently drop something already ticked, and a line says how many selected
   rows the filter is hiding.
+- **A top-up now knows whether the money has gone** (migration `077`). Straight after the table
+  shipped, the CEO: *"all the petty cash was released already."* Seventeen top-ups going back to
+  30/11/2024 — the imported marketing history, reimbursed to the custodian at the time — were
+  sitting in the queue as ~EGP 285,000 still to be released, all seventeen selectable with one
+  click of the header tick. A funding row had **no paid state at all**, so the queue could only ask
+  "is this a top-up nobody has queued?", which is true of every top-up ever recorded. Recording a
+  movement now says whether the money has already gone (the default, and what the form has always
+  meant) or is one for Finance to create at the bank; only the second reaches the queue, and the
+  confirmer's *Transaction complete* stamps it. All existing rows were backfilled as already sent.
+  The migration's own re-run test caught a trap in it: "stamp everything still unpaid" would, on a
+  replay, have silently marked genuinely-waiting payments as paid, so the backfill is tied to the
+  moment the column appears rather than to the rows' state.
 - **Appointing updates its own row.** *"A full refresh happens for the whole page — the appointment
   needs to be by cell."* All four appoint/remove actions ended in `redirect()`, which threw the
   screen away and returned the reader to the top to report one row changing. They now return a

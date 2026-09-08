@@ -354,6 +354,14 @@ export async function recordFunding(formData: FormData): Promise<void> {
   const reference = ((formData.get("reference") as string | null) ?? "").trim() || null;
   const note = ((formData.get("note") as string | null) ?? "").trim() || null;
 
+  // Has the money already gone, or is this one to create at the bank? (2026-09-08)
+  //
+  // Recording a movement that has already happened is what this form has always meant, so that
+  // stays the default — a top-up is stamped with its own date and never reaches Finance's queue.
+  // Only "queue it" leaves it unstamped, which is the one thing that makes it payable. A RETURN
+  // is money coming back and is never payable, so it is always stamped whatever the box says.
+  const queueForBank = type === "TOP_UP" && formData.get("settlement") === "QUEUE";
+
   await guarded(back, () =>
     withAccountLock(accountId, async (tx) => {
       if (periodId) {
@@ -377,6 +385,7 @@ export async function recordFunding(formData: FormData): Promise<void> {
           amount: fromPiastres(parsed.piastres),
           reference,
           note,
+          transferredAt: queueForBank ? null : date,
           recordedById: actorId,
         },
       });
@@ -385,7 +394,17 @@ export async function recordFunding(formData: FormData): Promise<void> {
 
   revalidatePath(back);
   revalidatePath("/petty-cash");
-  redirect(`${back}?ok=${q(type === "TOP_UP" ? "Top-up recorded." : "Return recorded.")}`);
+  // Finance's queue only changes when something was actually queued.
+  if (queueForBank) revalidatePath("/finance");
+  redirect(
+    `${back}?ok=${q(
+      type === "RETURN"
+        ? "Return recorded."
+        : queueForBank
+          ? "Top-up recorded and waiting for Finance to create it at the bank."
+          : "Top-up recorded.",
+    )}`,
+  );
 }
 
 /** Remove a funding row recorded in error, while its period is still open. */

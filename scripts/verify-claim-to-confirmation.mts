@@ -44,6 +44,7 @@ async function main() {
   await prisma.businessUnit.deleteMany({ where: { name: { startsWith: UNIT } } });
   await prisma.planYear.deleteMany({ where: { name: YEAR } });
   await prisma.benefitCatalogItem.deleteMany({ where: { key: "ctc-gym" } });
+  await prisma.pettyCashAccount.deleteMany({ where: { name: { startsWith: "CTC " } } });
 
   const staffed = await prisma.businessUnit.create({
     data: { name: `${UNIT}Consulting`, shortName: "CTCC" },
@@ -169,6 +170,59 @@ async function main() {
   check(
     "returning it puts it back",
     back.some((p) => p.kind === "BENEFIT_CLAIM" && p.id === sendable.id),
+  );
+
+  // ── 5. A top-up is payable ONLY while the money has not gone ─────────────
+  // The bug this covers: `PettyCashFunding` had no paid state, so every top-up ever recorded —
+  // including an imported history reimbursed months earlier — queued itself as money still owed.
+  console.log("\nOnly an untransferred top-up is money still owed");
+  const account = await prisma.pettyCashAccount.create({
+    data: { name: "CTC Marketing float", custodianId: inStaffed.id },
+  });
+  const sent = await prisma.pettyCashFunding.create({
+    data: {
+      accountId: account.id,
+      type: "TOP_UP",
+      date: new Date("2025-11-30"),
+      amount: "47769.23",
+      // Recorded after the fact, the way the whole imported history was.
+      transferredAt: new Date("2025-11-30"),
+    },
+  });
+  const owed = await prisma.pettyCashFunding.create({
+    data: {
+      accountId: account.id,
+      type: "TOP_UP",
+      date: new Date("2026-09-08"),
+      amount: "9000.00",
+      transferredAt: null,
+    },
+  });
+  const returned = await prisma.pettyCashFunding.create({
+    data: {
+      accountId: account.id,
+      type: "RETURN",
+      date: new Date("2026-09-08"),
+      amount: "500.00",
+      transferredAt: new Date("2026-09-08"),
+    },
+  });
+
+  const withFunding = await availablePayables();
+  const topUpIds = withFunding.filter((p) => p.kind === "FLOAT_TOPUP").map((p) => p.id);
+  check("a top-up still to be paid is offered", topUpIds.includes(owed.id));
+  check("one already sent is NOT offered", !topUpIds.includes(sent.id));
+  check("a return is never offered", !topUpIds.includes(returned.id));
+
+  // Completing the transaction is what stamps it — the same moment everyone else is told.
+  await prisma.pettyCashFunding.update({
+    where: { id: owed.id },
+    data: { transferredAt: new Date("2026-09-10") },
+  });
+  const afterPaid = await availablePayables();
+  check(
+    "once the confirmer completes it, it leaves the queue for good",
+    !afterPaid.some((p) => p.kind === "FLOAT_TOPUP" && p.id === owed.id),
   );
 
   console.log(`\n${passed} passed, ${failures.length} failed`);
