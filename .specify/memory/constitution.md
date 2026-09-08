@@ -100,18 +100,21 @@ holds. Reach for it then; it is never an obligation.
   the provider stays env-gated so it can return). Admin-issued passwords are temporary — the
   employee is forced to `/set-password` on next sign-in (`mustChangePassword`). No emails in v1 for
   recovery: a forgotten password is reset by HR, with no self-service path.
-- Email: limited to **four** workflows — the benefit-claim workflow (spec 020), the
+- Email: limited to **five** workflows — the benefit-claim workflow (spec 020), the
   holiday/vacation workflow (spec 037: HR verification reminders, team announcements, and the
   "your day was returned" notice), **Team Communications** (spec 039: announcements to a chosen
-  audience, and personal congratulations for birthdays and joining anniversaries), and the
-  **payback workflow** (spec 040: request submitted → Finance, declined and paid → the requester)
+  audience, and personal congratulations for birthdays and joining anniversaries), the
+  **payback workflow** (spec 040: request submitted → Finance, declined and paid → the requester),
+  and the **time-off request cycle** (spec 035 FR-013: new request → the approver(s) whose queue
+  it landed in, decision → the requester)
   — via Resend, env-gated (`RESEND_API_KEY`/`EMAIL_FROM`), master-toggleable.
   (Amends "no email in v1", approved 2026-08-10; widened to the holiday workflow, approved
-  2026-08-19; widened to Communications and to the payback workflow, both approved 2026-08-24.)
+  2026-08-19; widened to Communications and to the payback workflow, both approved 2026-08-24;
+  widened to time-off requests at the CEO's request, 2026-09-08.)
   Still **no** marketing email, no external recipients, no invitations, and no scheduling a send
   for later. Petty cash itself sends none: the custodian and Finance are both looking at a live
   screen, and nobody is waiting on a ledger.
-  - The transactional workflows (benefit claims, holidays, payback) are fire-and-forget: one
+  - The transactional workflows (benefit claims, holidays, payback, time-off requests) are fire-and-forget: one
     person, because of something they did, and a mail failure must never block a state change.
     Communications is **broadcast** and is deliberately the opposite — a send REPORTS, per
     recipient, because somebody pressed send and has to know whether it went. A broadcast cannot
