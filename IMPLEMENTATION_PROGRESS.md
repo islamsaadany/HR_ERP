@@ -23,6 +23,13 @@
 | 12 — Team Communications | 🟢 **Built** (spec 039 — one door with three options: the dashboard noticeboard, email to a chosen audience, and birthday & work-anniversary congratulations drafted by the platform and sent by a human; migrations `067` + `074`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
 
+## Time-off requests now email the approver and the requester (built 2026-09-08 — no migration)
+- Reported by the CEO: *"someone requested a vacation and I didn't get the email request."* There was none to get — spec 035 had deliberately kept email out (badges only). Aligned same day: the approver gets an email on a new request, the employee gets the decision (approved **and** declined). Spec 035 gains **FR-013**; the email rule in `CLAUDE.md` / the constitution widens to a fifth workflow.
+- [x] `leaveApproversFor` (`src/lib/leave-queries.ts`) — who is told, derived as the inverse of `pendingApprovalWhere`: the active direct manager, else every active Super User, never the requester. Also now supplies the `approverId` snapshot, so the create action has one derivation instead of a second copy.
+- [x] Templates `leaveRequestedToApprover` (dates, working days, note → "Decide the request") and `leaveDecidedToEmployee` (one template for both answers: dates, count, who decided, comment/reason). Own "Forefront People · Time off" eyebrow and footer.
+- [x] `createLeaveRequest` sends one message per approver after the write; `applyDecision` emails the requester after the update. Both through `sendEmail` — fire-and-forget, env-gated, master-toggleable — so a mail failure never touches the request. Badges unchanged.
+- [x] Verified: `tsc` clean, production build, and the three renderings (request, approved, declined) screenshotted in headless Chromium — absolute CTA links, house shell, correct singular "1 working day". Not testable from here: real delivery through the production Resend key.
+
 ## Payback missing from the Modules switch (fixed 2026-08-26 — no migration)
 
 **Reported:** *"the pay back module is not appearing in the modules admin page to turn on and off."*

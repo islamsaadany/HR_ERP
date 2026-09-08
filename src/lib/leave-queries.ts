@@ -32,6 +32,34 @@ export function pendingApprovalWhere(me: { id: string; role?: Role }): Prisma.Le
 }
 
 /**
+ * Who should be TOLD about a new request from this person — the inverse of
+ * `pendingApprovalWhere` (2026-09-08): the people in whose queue the request appears the
+ * moment it is written. Their active direct manager; failing that, every active Super User
+ * (the fallback pool — all of them see it, so all of them hear about it), never the requester.
+ *
+ * Kept next to the queue rule on purpose: an email that reaches somebody whose queue is empty,
+ * or misses the person whose queue just grew, is worse than no email. Change one, change both.
+ */
+export async function leaveApproversFor(
+  requesterId: string
+): Promise<{ id: string; name: string | null; email: string | null }[]> {
+  const select = { id: true, name: true, email: true } as const;
+  const requester = await prisma.user.findUnique({
+    where: { id: requesterId },
+    select: { reportsTo: { select: { ...select, status: true } } },
+  });
+  const manager = requester?.reportsTo;
+  if (manager?.status === "ACTIVE") {
+    return [{ id: manager.id, name: manager.name, email: manager.email }];
+  }
+  return prisma.user.findMany({
+    where: { role: "SUPER_USER", status: "ACTIVE", NOT: { id: requesterId } },
+    select,
+    orderBy: { name: "asc" },
+  });
+}
+
+/**
  * May `me` decide this pending request? The CURRENT direct manager of the requester may;
  * HR Admin / Super User may as the fallback (spec 005 FR-013, unchanged). The approver
  * snapshot on the row is history, never authority.

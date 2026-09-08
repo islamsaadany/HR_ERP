@@ -12,7 +12,7 @@
 
 The 2026-08-18 audit found the spec-005 cycle (request → manager approve/decline → history, with HR fallback) working end-to-end, but minimal: day counts include weekends, nobody can see how many days someone has taken, managers get no cue that a request is waiting, an employee can double-book themselves silently, a pending request stays with a manager who changed or left, and an approved trip can't be cancelled when plans change.
 
-Decisions locked at alignment (2026-08-18): **no annual entitlement or limit** — the platform shows a **count** of working days taken, never blocks on it; the count is **per calendar year**; the weekend is **Friday + Saturday**; an **HR-managed public-holidays list** also doesn't count; **no leave types** (one generic "Time off"); the count is visible to the **employee, the manager at approval time, and HR**. Email stays out (in-app cues only, per the standing email rule).
+Decisions locked at alignment (2026-08-18): **no annual entitlement or limit** — the platform shows a **count** of working days taken, never blocks on it; the count is **per calendar year**; the weekend is **Friday + Saturday**; an **HR-managed public-holidays list** also doesn't count; **no leave types** (one generic "Time off"); the count is visible to the **employee, the manager at approval time, and HR**. Email stays out (in-app cues only, per the standing email rule). **Amended 2026-09-08 (CEO request, after a request sat unnoticed): the approver is emailed when a request arrives, and the requester is emailed the decision — see FR-013.**
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -108,6 +108,7 @@ HR maintains a simple list of public holidays (date + name) in admin configurati
 - **FR-010**: HR Admin / Super User MUST manage the public-holidays list (add/remove date + name); changes apply to all future count displays; access is enforced server-side.
 - **FR-012** *(added at build approval, 2026-08-18)*: The holidays screen MUST also support bulk upload: a downloadable Excel template (pre-filled with the current list, with a how-to sheet) and an upload that creates new dates, updates existing ones (never duplicates), and reports skipped bad rows instead of silently dropping them.
 - **FR-011**: All existing spec-005 behaviour not amended here (validation, statuses, HR fallback decisions, decision badge/comments) MUST keep working unchanged.
+- **FR-013** *(added 2026-09-08 — CEO: "someone requested a vacation and I didn't get the email")*: Submitting a request MUST email the people in whose approval queue it appears — the requester's current active manager, or, with no active manager, every active Super User (one separate message each, never a shared address) — with the dates, the working-day count and the note. Approving or declining MUST email the requester the decision, the dates, the count, who decided and any comment. Both are transactional and fire-and-forget after the write (a mail failure never blocks or reverts the request), env-gated and master-toggleable at Admin → Notifications like every other workflow email. The in-app badges (FR-006, FR-014) are unchanged; email is in addition to them, never instead.
 
 ### Key Entities
 
@@ -129,7 +130,7 @@ HR maintains a simple list of public holidays (date + name) in admin configurati
 - Counts are derived live (no stored totals) — acceptable because nothing is deducted from an entitlement, so retroactive holiday-list edits changing a displayed count is correct behaviour, not drift.
 - "Before its start date" for self-cancel means strictly before the start date's day begins.
 - The holidays list is company-wide (no per-business-unit calendars in this version).
-- No email notifications — in-app badges only (standing rule: email is limited to the benefit-claim workflow).
+- ~~No email notifications — in-app badges only (standing rule: email is limited to the benefit-claim workflow).~~ **Superseded 2026-09-08 by FR-013**: new request → approver(s), decision → requester. Cancellations and HR deletions still send nothing.
 - Out of scope: leave types, half-days, entitlements/balances/carry-over, team calendar view.
 - **Deferred by request (2026-08-18, revisit after this ships):** bridge suggestions — when a public holiday lands near a weekend, the system spots the "bridge" day(s) and highlights the long-weekend opportunity to the team as a travel/rest nudge. To be designed as its own round once v2 is live.
 - Depends on the existing registry reporting lines and the spec-005 request cycle.

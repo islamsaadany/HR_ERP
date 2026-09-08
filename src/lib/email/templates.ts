@@ -198,6 +198,78 @@ export function holidayDayReturned(d: {
   };
 }
 
+// ── Time-off requests (spec 035 amendment, 2026-09-08) ─────────────────────
+//
+// The CEO's report was that a request had been sitting in the app with nobody told. These two are
+// the transactional pair: the approver hears that a request is waiting, and the requester hears
+// the decision. They carry their own eyebrow and footer because a manager reading "Benefits"
+// above a leave request would be right to wonder whether it was sent to the wrong person.
+
+const TIME_OFF_SHELL = {
+  eyebrow: "Forefront People · Time off",
+  footer: "Automated notification from the Forefront People time-off workflow.",
+};
+
+const dayWord = (n: number) => `${n} working ${n === 1 ? "day" : "days"}`;
+
+/** L1 — a new request → the person whose queue it landed in. */
+export function leaveRequestedToApprover(d: {
+  employeeName: string;
+  /** Display-formatted (dd/mm/yyyy). */
+  startDate: string;
+  endDate: string;
+  workingDays: number;
+  note?: string | null;
+}) {
+  const when = d.startDate === d.endDate ? d.startDate : `${d.startDate} to ${d.endDate}`;
+  // The name and the note are typed by a person, so they are escaped (escapeHtml is hoisted).
+  return {
+    subject: `Time-off request to decide — ${d.employeeName}`,
+    html: layout(
+      "A time-off request is waiting for you",
+      para(`<strong>${escapeHtml(d.employeeName)}</strong> has asked for time off. It is in your queue to approve or decline.`) +
+        row("Dates", when) +
+        row("Working days", dayWord(d.workingDays)) +
+        (d.note ? row("Their note", escapeHtml(d.note)) : ""),
+      { href: link("/time-off"), label: "Decide the request" },
+      TIME_OFF_SHELL
+    ),
+  };
+}
+
+/** L2 — the decision → the requester. One template for both answers so they cannot drift apart. */
+export function leaveDecidedToEmployee(d: {
+  decision: "APPROVED" | "DECLINED";
+  /** Display-formatted (dd/mm/yyyy). */
+  startDate: string;
+  endDate: string;
+  workingDays: number;
+  deciderName: string;
+  comment?: string | null;
+}) {
+  const when = d.startDate === d.endDate ? d.startDate : `${d.startDate} to ${d.endDate}`;
+  const approved = d.decision === "APPROVED";
+  return {
+    subject: approved
+      ? `Your time off is approved — ${when}`
+      : `Your time-off request was declined — ${when}`,
+    html: layout(
+      approved ? "Your time off is approved" : "Your time-off request was declined",
+      para(
+        approved
+          ? `<strong>${escapeHtml(d.deciderName)}</strong> approved your request. Enjoy the break.`
+          : `<strong>${escapeHtml(d.deciderName)}</strong> reviewed your request and declined it.`
+      ) +
+        row("Dates", when) +
+        row("Working days", dayWord(d.workingDays)) +
+        (d.comment ? row(approved ? "Their note" : "Reason", escapeHtml(d.comment)) : "") +
+        (approved ? "" : para("If you'd like to talk it through, speak to your manager or HR.")),
+      { href: link("/time-off"), label: "View my time off" },
+      TIME_OFF_SHELL
+    ),
+  };
+}
+
 /**
  * H2 — the daily check asks HR to confirm a tentative holiday's date.
  *

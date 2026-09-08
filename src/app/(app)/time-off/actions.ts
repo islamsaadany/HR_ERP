@@ -7,7 +7,10 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, requireAdmin } from "@/lib/roles";
 import { getHolidaySet } from "@/lib/holidays";
 import { countWorkingDays } from "@/lib/workdays";
-import { canDecideLeave } from "@/lib/leave-queries";
+import { canDecideLeave, leaveApproversFor } from "@/lib/leave-queries";
+import { formatDate } from "@/lib/labels";
+import { sendEmail } from "@/lib/email/client";
+import { leaveRequestedToApprover, leaveDecidedToEmployee } from "@/lib/email/templates";
 
 const requestSchema = z
   .object({
@@ -48,7 +51,8 @@ export async function createLeaveRequest(formData: FormData): Promise<void> {
   // Spec 035 FR-004: a range with no working days books nothing — refuse it plainly
   // rather than record a zero-day request.
   const holidays = await getHolidaySet();
-  if (countWorkingDays(data.startDate, data.endDate, holidays) === 0) {
+  const workingDays = countWorkingDays(data.startDate, data.endDate, holidays);
+  if (workingDays === 0) {
     redirect(
       "/time-off?error=" +
         encodeURIComponent(
@@ -57,22 +61,12 @@ export async function createLeaveRequest(formData: FormData): Promise<void> {
     );
   }
 
-  // Approver snapshot: the current manager IF they are active, else a Super User. This is
-  // routing history only — decisions resolve against the CURRENT org chart (spec 035
-  // FR-007, lib/leave-queries), so a later reporting-line change moves the request.
-  const dbUser = await prisma.user.findUnique({
-    where: { id: me.id },
-    select: { reportsTo: { select: { id: true, status: true } } },
-  });
-  let approverId =
-    dbUser?.reportsTo?.status === "ACTIVE" ? dbUser.reportsTo.id : null;
-  if (!approverId) {
-    const su = await prisma.user.findFirst({
-      where: { role: "SUPER_USER", status: "ACTIVE", NOT: { id: me.id } },
-      select: { id: true },
-    });
-    approverId = su?.id ?? null;
-  }
+  // The people whose queue this lands in: the current manager IF they are active, else the
+  // Super Users (lib/leave-queries, the inverse of the queue rule). The first is snapshotted as
+  // routing history only — decisions resolve against the CURRENT org chart (spec 035 FR-007),
+  // so a later reporting-line change moves the request.
+  const approvers = await leaveApproversFor(me.id);
+  const approverId = approvers[0]?.id ?? null;
 
   await prisma.leaveRequest.create({
     data: {
@@ -84,6 +78,21 @@ export async function createLeaveRequest(formData: FormData): Promise<void> {
       status: "PENDING",
     },
   });
+
+  // After the write, never inside it, and a failure is swallowed (sendEmail): the request
+  // exists whether or not the mail goes. One separate message per approver — never a shared
+  // `to` — so nobody sees another's address. (Spec 035 amendment, 2026-09-08.)
+  const message = leaveRequestedToApprover({
+    employeeName: me.name ?? "An employee",
+    startDate: formatDate(data.startDate),
+    endDate: formatDate(data.endDate),
+    workingDays,
+    note: data.note ?? null,
+  });
+  for (const approver of approvers) {
+    await sendEmail({ to: approver.email, ...message });
+  }
+
   revalidatePath("/time-off");
   revalidatePath("/dashboard");
 }
@@ -125,7 +134,10 @@ async function applyDecision(
   comment: string | null
 ): Promise<void> {
   const me = await requireUser();
-  const req = await prisma.leaveRequest.findUnique({ where: { id } });
+  const req = await prisma.leaveRequest.findUnique({
+    where: { id },
+    include: { user: { select: { email: true } } },
+  });
   if (!req || req.status !== "PENDING") return;
   if (!(await canDecideLeave(me, req.userId))) return;
 
@@ -139,6 +151,23 @@ async function applyDecision(
       decisionSeenAt: null, // fresh decision — badge the requester until they view it
     },
   });
+
+  // Tell the requester, after the write (spec 035 amendment, 2026-09-08). A decision is true
+  // the moment it is made, so this fires here — unlike money, which waits for the bank. The
+  // in-app badge stays as it was; the email is in addition, and its failure changes nothing.
+  const holidays = await getHolidaySet();
+  await sendEmail({
+    to: req.user.email,
+    ...leaveDecidedToEmployee({
+      decision,
+      startDate: formatDate(req.startDate),
+      endDate: formatDate(req.endDate),
+      workingDays: countWorkingDays(req.startDate, req.endDate, holidays),
+      deciderName: me.name ?? "Your manager",
+      comment,
+    }),
+  });
+
   revalidatePath("/time-off");
   revalidatePath("/admin/time-off");
   revalidatePath("/dashboard");
