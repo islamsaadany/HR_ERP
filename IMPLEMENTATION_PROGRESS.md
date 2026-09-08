@@ -305,13 +305,43 @@ had shipped with one company-wide queue.
   real units appear and the feature creates none.
 - **An appointment is a (person, unit) pair.** One person may hold several. There is no row meaning
   "every unit": a unit added next month starts with nobody, visibly.
-- **A submission cannot mix two units**, because Finance's screen has no list containing two —
-  `payableGroups()` is the shape it is built from — and `sameBusinessUnit` re-checks it on the
-  server anyway, since a form can be posted by hand.
+- **A submission cannot mix two units.** Until 2026-09-08 this was guaranteed by Finance's screen
+  having no list containing two — one band per unit, `payableGroups()` being the shape it was built
+  from. The screen is now one table (below), so the guarantee is carried by a selection **lock**
+  instead; `sameBusinessUnit` re-checks it on the server either way, since a form can be posted by
+  hand.
 - **Everything narrows together**: the queue, the sidebar count, the emails, the daily nudge and the
   salary file are each limited to the units a person holds, all from one derivation.
 - **Somebody with no business unit** is grouped, shown and unsendable — guessing a unit would mean
   guessing a bank account.
+### One table, and appointing by row (2026-09-08)
+Reported as *"the finance is not able to confirm the transaction"*, with a screenshot of two approved
+claims reading "Ready to submit for confirmation" and nothing to press.
+
+- **The cause was data, not code**, established by rebuilding the schema on a throwaway Postgres and
+  driving the real app: an approved claim reaches Finance's list and can be sent — unless the unit
+  has nobody appointed to confirm it, which is what had happened. Left behind as
+  `scripts/verify-claim-to-confirmation.mts` (12 checks).
+- **But the screen hid the reason.** The tab was called "Payments confirmation" and its instruction
+  still read *"transfer the covered amount, then confirm it here (the employee is emailed)"* —
+  untrue since the money moment moved to the bank confirmation — so the person looking at it
+  concluded the feature was broken. A blocked row now states its reason **on the row**, and the
+  page's intro says where the work actually happens.
+- **The queue became one table.** The CEO: *"the payments page is too much — they need to be a table
+  with search bar and quick filters to filter what they are petty cash or benefit, and the business
+  unit shouldn't be a separate box, it's just a column."* Search over payee/purpose/amount/unit,
+  quick filters by kind each carrying its own count, unit as a column plus a dropdown. Mockup signed
+  off first (`design-mockups/finance-payments/2026-09-08_awaiting-confirmation-table.html`).
+- **The lock replaces the bands.** First tick fixes the selection to that row's unit; the others stop
+  being tickable until it is cleared. The selection posts as hidden fields covering every selected
+  row, so searching cannot silently drop something already ticked, and a line says how many selected
+  rows the filter is hiding.
+- **Appointing updates its own row.** *"A full refresh happens for the whole page — the appointment
+  needs to be by cell."* All four appoint/remove actions ended in `redirect()`, which threw the
+  screen away and returned the reader to the top to report one row changing. They now return a
+  result the row renders, with `router.refresh()` bringing the list up to date in place; the
+  page-level banner is gone. Verified by scroll position: unchanged at 241px either side of a click.
+
 - **A bug the checks caught, not the output.** The upgrade expands each old company-wide appointment
   into one row per unit. On the first run it produced 2 rows where 10 were expected: the old
   one-row-per-person unique index was still in place, so every extra insert violated it and
