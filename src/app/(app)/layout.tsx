@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireUser, getImpersonation } from "@/lib/roles";
 import { hasLearningAppointment } from "@/lib/learning/managers";
-import { isAdmin, isFinance, canAccessIncentive } from "@/lib/roles";
-import { canManagePettyCash } from "@/lib/finance/access";
+import { isAdmin, canAccessIncentive } from "@/lib/roles";
+import { canManagePettyCash, canOpenPayments } from "@/lib/finance/access";
 import { confirmableUnitIds } from "@/lib/finance/confirmers";
 import { getDisabledHrefs } from "@/lib/modules";
 import { getBrand } from "@/lib/brand";
@@ -33,14 +33,16 @@ export default async function AppLayout({
   const hrAdmin = isAdmin(user.role);
   const showManageLearning = !hrAdmin && (await hasLearningAppointment(user.id));
 
-  // The confirmations door (spec 041): the appointment and nothing else — no role fallback, so the
-  // door tells the same truth the page behind it does. Per business unit since 2026-08-25, so the
-  // count is only ever this person's own units — a badge that includes somebody else's money is
-  // a badge that never reaches zero.
+  // The Payments door (spec 041, moved 2026-09-08): Finance, or the confirmer appointment — the
+  // same derivation the page uses (`canOpenPayments`). The appointment carries no role fallback, so
+  // the door tells the same truth the tab behind it does. The count on the entry is what is
+  // waiting on THIS person's units — a badge that includes somebody else's money never reaches
+  // zero — and it used to sit on a separate "Confirmations" entry; that entry is gone and its
+  // number now sits on Payments, which is where the tab is.
   const myConfirmUnits = await confirmableUnitIds(user.id);
-  const showConfirmations = myConfirmUnits.length > 0;
+  const isConfirmer = myConfirmUnits.length > 0;
   let confirmationsWaiting = 0;
-  if (showConfirmations) {
+  if (isConfirmer) {
     try {
       confirmationsWaiting = await prisma.paymentBatch.count({
         where: { status: "SUBMITTED", businessUnitId: { in: myConfirmUnits } },
@@ -177,10 +179,9 @@ export default async function AppLayout({
       showManageLearning={showManageLearning}
       messagesWaiting={messagesWaiting}
       showIncentive={canAccessIncentive(user.role)}
-      showPayments={isFinance(user.role)}
+      showPayments={canOpenPayments(user.role, isConfirmer)}
+      paymentsWaiting={confirmationsWaiting}
       showPettyCash={showPettyCash}
-      showConfirmations={showConfirmations}
-      confirmationsWaiting={confirmationsWaiting}
       hiddenNav={hiddenNav}
       navBadges={{ "/time-off": timeoffBadge, "/admin/learning": learningBadge }}
       dataRequestCount={dataRequests?.pendingCount ?? 0}

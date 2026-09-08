@@ -70,8 +70,9 @@ export function AppShell({
   messagesWaiting = 0,
   showIncentive,
   showPayments = false,
-  paymentsWaiting = 0,
   showPettyCash = false,
+  showConfirmations = false,
+  confirmationsWaiting = 0,
   hiddenNav = [],
   navBadges = {},
   dataRequestCount = 0,
@@ -98,16 +99,12 @@ export function AppShell({
    */
   messagesWaiting?: number;
   showIncentive: boolean;
-  /** Finance, or the transaction-confirmer appointment — `canOpenPayments`, the page's own rule. */
   showPayments?: boolean;
-  /**
-   * Transactions waiting on this person's confirmation (spec 041). Until 2026-09-08 this number
-   * sat on a separate "Confirmations" entry; the confirmer's screen is now a tab on Payments, so
-   * the count sits on the door that leads to it. NOT implied by any role.
-   */
-  paymentsWaiting?: number;
   /** Finance/Super User, or the custodian of an active float — the same derivation the page uses. */
   showPettyCash?: boolean;
+  /** Holds the transaction-confirmer appointment. NOT implied by any role (spec 041). */
+  showConfirmations?: boolean;
+  confirmationsWaiting?: number;
   hiddenNav?: string[];
   navBadges?: Record<string, number>;
   /** Pending data-request fields (spec 033) — >0 renders the gold sidebar notice. */
@@ -149,14 +146,14 @@ export function AppShell({
    * and rendered by all three surfaces (the collapsed rail, the expanded sidebar, the phone
    * menu), so a module added here cannot end up on a desktop screen and be missing from a
    * phone. `bigBadge` carries the one piece of variance the hand-written sidebar already had
-   * (the confirmations count sat in a larger pill than Manage Learning does) — kept, not tidied,
-   * so unifying this markup moved nothing on desktop. That count moved from its own
-   * "Confirmations" entry onto Payments on 2026-09-08, and kept its pill.
+   * (Confirmations counts in a larger pill than Manage Learning does) — kept, not tidied, so
+   * unifying this markup moved nothing on desktop.
    */
   const extras = [
     { href: "/incentive", label: "Incentive Scheme", icon: "incentive", show: showIncentive, badge: 0, bigBadge: false },
-    { href: "/finance", label: "Payments", icon: "payments", show: showPayments, badge: paymentsWaiting, bigBadge: true },
+    { href: "/finance", label: "Payments", icon: "payments", show: showPayments, badge: 0, bigBadge: false },
     { href: "/petty-cash", label: "Petty cash", icon: "pettycash", show: showPettyCash, badge: 0, bigBadge: false },
+    { href: "/confirmations", label: "Confirmations", icon: "confirmations", show: showConfirmations, badge: confirmationsWaiting, bigBadge: true },
     { href: "/admin", label: "Admin", icon: "admin", show: showAdmin, badge: 0, bigBadge: false },
     { href: "/admin/learning", label: "Manage Learning", icon: "manage-learning", show: showManageLearning, badge: badgeFor("/admin/learning"), bigBadge: false },
     { href: "/messages", label: "Messages to send", icon: "messages", show: messagesWaiting > 0, badge: messagesWaiting, bigBadge: false },
@@ -844,6 +841,11 @@ function NavIcon({ name }: { name: string }) {
       // A receipt with a return arrow — money going back to the person who paid.
       return (
         <svg {...common}><path d="M7 3h10v16l-2.5-1.6L12 19l-2.5-1.6L7 19z" /><path d="M13.5 8.5h-3a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3h-3" /></svg>
+      );
+    case "confirmations":
+      // A bank stamp: something checked and marked done.
+      return (
+        <svg {...common}><path d="M4 20h16" /><path d="M6 20V10h12v10" /><path d="M9 10V6.5A3 3 0 0 1 12 4a3 3 0 0 1 3 2.5V10" /><path d="M9.5 15.5l1.8 1.8 3.2-3.6" /></svg>
       );
     case "pettycash":
       // A cash box with a slot: a float somebody physically holds.

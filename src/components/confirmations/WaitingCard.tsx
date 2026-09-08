@@ -55,7 +55,7 @@ export function WaitingCard({ row }: { row: WaitingRow }) {
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-line bg-[#fbfaf7] px-5 py-3">
         <Link
-          href={`/confirmations/${row.id}`}
+          href={`/finance/confirmations/${row.id}`}
           className="rounded-lg bg-navy-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-900"
         >
           Open

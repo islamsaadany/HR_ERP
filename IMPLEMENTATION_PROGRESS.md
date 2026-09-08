@@ -23,6 +23,39 @@
 | 12 — Team Communications | 🟢 **Built** (spec 039 — one door with three options: the dashboard noticeboard, email to a chosen audience, and birthday & work-anniversary congratulations drafted by the platform and sent by a human; migrations `067` + `074`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
 
+## Confirmations move inside Payments (built 2026-09-08 — no migration)
+- The CEO: *"the confirmations of transactions is appearing in the external panel which is not
+  correct, it can be part of the payments panel as a subtab for me to go and confirm through."*
+  Spec 041's R4 had given the confirmer his own route and sidebar entry on the reasoning that he is
+  not a Finance user; he is the CEO, and he goes to Payments. Mockup signed off first
+  (`design-mockups/finance-payments/2026-09-08_confirmations-as-subtab.html`), then built.
+- [x] **The screen is now the Confirmations tab of Finance → Payments**, right after *Awaiting
+  confirmation* (Finance sends on one tab, he confirms on the next). `ConfirmationsPanel` is the old
+  page's body unchanged — the same cards, Open, Transaction complete, Return to Finance, the same
+  emails — loading its own rows under the same scope rule (his units; everything for a Super User
+  holding no appointment).
+- [x] **The sidebar entry is gone; its count sits on Payments**, in the same larger pill it had
+  (`bigBadge` carried across, not tidied). The door is `canOpenPayments` (`src/lib/finance/access.ts`):
+  Finance, or the appointment — asked by the layout and the page alike. A confirmer who is not
+  Finance opens Payments and sees that one tab; none of Finance's queries run for them.
+- [x] **Addresses.** `/finance?tab=confirmations` opens on the tab (`AdminBenefitsTabs` gained
+  `initialTab`, falling back to the first tab on an unknown id); a transaction is
+  `/finance/confirmations/[id]`, whose way back is *← Payments · Confirmations*. The two emails link
+  to the tab. `/confirmations` and `/confirmations/[id]` **redirect** — emails already sent cannot be
+  edited, so the old doors forward rather than 404.
+- [x] Actions moved with the page (`finance/confirmations/actions.ts`); outcomes append `&ok=`/`&error=`
+  since the way back already carries a query. Docs: spec 041 (FR-036, R4 reversed, plan structure
+  decision, contracts), PROJECT_DETAILS, IMPLEMENTATION_PLAN decisions log.
+- Verified: `tsc` and `next build` clean; `canOpenPayments` asserted in `tests/finance-access.test.ts`;
+  and **27 browser checks green** against a throwaway Postgres (schema pushed + SQL history replayed,
+  the built app driven with Chromium): the CEO — no Confirmations entry in the sidebar, the count on
+  Payments, five tabs in the right order, `?tab=confirmations` opening on his tab, only his unit's
+  transaction listed, Open leading under Payments, *Transaction complete* returning to the tab with the
+  outcome and the row Complete / the payback PAID in the database, both old addresses forwarding; a
+  non-Finance appointee — allowed in, one tab only, their unit only, *Return to Finance* with a note
+  landing back on the tab and the payback back to APPROVED; Finance with no appointment — four tabs,
+  no count, an unknown tab id falling back to the first, and the transaction page sending them home.
+
 ## Time-off requests now email the approver and the requester (built 2026-09-08 — no migration)
 - Reported by the CEO: *"someone requested a vacation and I didn't get the email request."* There was none to get — spec 035 had deliberately kept email out (badges only). Aligned same day: the approver gets an email on a new request, the employee gets the decision (approved **and** declined). Spec 035 gains **FR-013**; the email rule in `CLAUDE.md` / the constitution widens to a fifth workflow.
 - [x] `leaveApproversFor` (`src/lib/leave-queries.ts`) — who is told, derived as the inverse of `pendingApprovalWhere`: the active direct manager, else every active Super User, never the requester. Also now supplies the `approverId` snapshot, so the create action has one derivation instead of a second copy.
@@ -279,8 +312,8 @@ away**, because tidying it would have been an unapproved visual change to deskto
   size, colour, weight, font-size) before and after. Expanded `240×900` and collapsed `64×900` are
   **byte-identical PNGs**; **0 of 20** rows differ. Re-run after the last edit, still identical.
 - **22 phone checks green**: two links before, thirteen-plus after; each of `/benefits` `/directory`
-  `/handbook` `/knowledge` `/profile` `/reviews` `/admin` `/confirmations` `/petty-cash` `/finance`
-  reachable; Escape / backdrop / section-tap all close it; scroll lock applied and released;
+  `/handbook` `/knowledge` `/profile` `/reviews` `/admin` `/confirmations` (a tab on `/finance`
+  since 2026-09-08) `/petty-cash` `/finance` reachable; Escape / backdrop / section-tap all close it; scroll lock applied and released;
   **Sign out from inside the panel actually signs out** (the submit-button trap, tested explicitly).
 - **8 plain-employee checks green**: no "Also yours", no admin or finance doors, no account switcher,
   no gold dot, and her whole list fits without scrolling.

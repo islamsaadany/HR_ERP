@@ -27,6 +27,16 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ## Decisions log
 
+- **2026-09-08 — The confirmer's screen is a tab on Payments, not its own surface (built, spec 041
+  FR-036, no migration).** *"The confirmations of transactions is appearing in the external panel
+  which is not correct, it can be part of the payments panel as a subtab for me to go and confirm
+  through."* Reverses spec 041's R4, which had reasoned from the confirmer's *role* (not Finance) to
+  a separate route; the confirmer is the CEO and goes to Payments. **Decisions**: the tab sits right
+  after *Awaiting confirmation*; the sidebar entry goes and its count moves onto Payments; the old
+  addresses redirect because sent emails link to them; a non-Finance appointee still gets in and
+  sees only that tab (offered back as the alternative "Finance and Super User only" — not taken up,
+  so the appointment keeps working for anyone it is given to). Flagged, not changed: the first tab
+  is still called *Payments confirmation*, two tabs from the new *Confirmations*.
 - **2026-08-25 — The app is usable on a phone, not just installable (built, spec 010 extended, no
   migration).** *"Make the application PWA so I can use from the mobile."* The PWA half had shipped
   in August — manifest, icons, worker — so the request read as already done. It wasn't: the sidebar

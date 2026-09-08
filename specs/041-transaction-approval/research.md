@@ -92,6 +92,13 @@ see what is waiting, mark it complete.
 Finance sees the same batches from their own side, as a tab on the Payments page they already use,
 because for them it is one more state of work they already track.
 
+**Reversed 2026-09-08.** The confirmer is the CEO, and he called the separate entry *"the external
+panel which is not correct"*: he goes to Payments to see money moving, and wanted to confirm from
+there. The screen is now a tab on Payments, shown only to the appointed (and a Super User holding no
+appointment, as the page was). The rationale above was right about the *rule* — the appointment still
+opens the door, no role does — and wrong about the *place*: where a screen lives should follow where
+its user already goes, not what role they hold.
+
 **Alternatives considered**:
 - *A tab inside `/finance`*: rejected above.
 - *Email-only, no screen*: the CEO chose to record completion himself, which needs somewhere to do it.

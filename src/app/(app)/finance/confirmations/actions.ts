@@ -23,10 +23,12 @@ import { resolveIncentiveMessage } from "@/lib/email/incentive-message";
  */
 
 const q = (s: string) => encodeURIComponent(s);
-const BACK = "/confirmations";
+// The confirmer's screen is a tab on Payments since 2026-09-08, so "back" names the tab — and the
+// outcome is appended with `&`, because the address already carries a query.
+const BACK = "/finance?tab=confirmations";
 
 function fail(msg: string): never {
-  redirect(`${BACK}?error=${q(msg)}`);
+  redirect(`${BACK}&error=${q(msg)}`);
 }
 
 async function requireConfirmer() {
@@ -35,6 +37,8 @@ async function requireConfirmer() {
   // No role fallback: holding top-level access lets you APPOINT a confirmer, not be one.
   // Which UNITS they hold is carried through to `canDecide`, which asks about this transaction's
   // unit — reaching the page is not the same as being allowed to decide what is on it.
+  // (A Finance user who holds no appointment can open the Payments page these actions live
+  // under, but is refused HERE — the door and the decision are different questions.)
   if (units.length === 0 && !isSuperUser(user.role)) redirect("/dashboard");
   return { id: user.id, confirmableUnitIds: units, isSuperUser: isSuperUser(user.role) };
 }
@@ -157,11 +161,10 @@ export async function markComplete(formData: FormData): Promise<void> {
   // Only now, and outside the transaction: the money has moved, so the people in it are told.
   await tellEveryonePaid(told);
 
-  revalidatePath(BACK);
   revalidatePath("/finance");
   revalidatePath("/benefits");
   revalidatePath("/payback");
-  redirect(`${BACK}?ok=${q("Recorded as complete. Everyone in it has been told.")}`);
+  redirect(`${BACK}&ok=${q("Recorded as complete. Everyone in it has been told.")}`);
 }
 
 /** The three "your money has arrived" emails in the whole application. Fire-and-forget. */
@@ -333,7 +336,6 @@ export async function returnToFinance(formData: FormData): Promise<void> {
     throw e;
   }
 
-  revalidatePath(BACK);
   revalidatePath("/finance");
-  redirect(`${BACK}?ok=${q("Sent back to Finance. Nobody has been told they were paid.")}`);
+  redirect(`${BACK}&ok=${q("Sent back to Finance. Nobody has been told they were paid.")}`);
 }

@@ -75,3 +75,18 @@ export const canSubmitTransactions = (role?: Role): boolean => isFinance(role) |
 
 export const canSeeSalaryRuns = (role: Role | undefined, isConfirmer: boolean): boolean =>
   isFinance(role) || isSuperUser(role) || isConfirmer;
+
+/**
+ * Open the Payments page at all (2026-09-08).
+ *
+ * The bank-confirmation screen used to be its own route with its own sidebar entry; the CEO asked
+ * for it as a tab on Payments instead. That makes Payments a page two kinds of people open:
+ * Finance (and Super User), who see every tab, and somebody APPOINTED to confirm a business unit,
+ * who may not be Finance at all and sees only the Confirmations tab. The appointment is passed in
+ * rather than looked up, for the same reason as `canSeeSalaryRuns` above: the caller has already
+ * asked, and asking twice is how two answers start to differ.
+ *
+ * Asked by the page, the sidebar door and the moved detail page alike.
+ */
+export const canOpenPayments = (role: Role | undefined, isConfirmer: boolean): boolean =>
+  isFinance(role) || isConfirmer;

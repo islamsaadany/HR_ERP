@@ -7,22 +7,14 @@ import { useState, type ReactNode } from "react";
  * Claim requirements. Panels are server-rendered and passed in as props; the inactive
  * ones are hidden (not unmounted) so nothing resets on switch. Styling mirrors the
  * employee BenefitsTabs (gold underline on the active tab).
- *
- * `initialTab` (2026-09-08) lets an address open on a tab other than the first — the email that
- * says "see the transactions" has to land on the Confirmations tab of Payments, not on the claims
- * queue. An id that names no tab falls back to the first, so a stale link never opens on nothing.
  */
 export function AdminBenefitsTabs({
   tabs,
-  initialTab,
 }: {
   // `tone` follows the two panels: gold means someone is waiting, red means money is wrong.
   tabs: { id: string; label: string; badge?: number; badgeTone?: "warn" | "bad"; node: ReactNode }[];
-  initialTab?: string;
 }) {
-  const [active, setActive] = useState(
-    tabs.some((t) => t.id === initialTab) ? initialTab : tabs[0]?.id,
-  );
+  const [active, setActive] = useState(tabs[0]?.id);
 
   const cls = (on: boolean) =>
     "relative px-1 pb-3 text-sm font-semibold transition " +

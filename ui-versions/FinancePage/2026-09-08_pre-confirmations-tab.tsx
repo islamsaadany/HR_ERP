@@ -1,8 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { requireUser, isFinance, isSuperUser } from "@/lib/roles";
-import { confirmableUnitIds } from "@/lib/finance/confirmers";
-import { canOpenPayments } from "@/lib/finance/access";
+import { requireFinance } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { formatDate, toDateInput } from "@/lib/labels";
 import { PaymentsQueue, type PaymentRow } from "@/components/finance/PaymentsQueue";
@@ -16,67 +13,16 @@ import { payableGroups } from "@/lib/finance/payables";
 import { describeBatch } from "@/lib/finance/batches";
 import { formatEGP2 } from "@/lib/labels";
 import { SubmitPanel, type SubmissionRow } from "@/components/confirmations/SubmitPanel";
-import { ConfirmationsPanel } from "@/components/confirmations/ConfirmationsPanel";
 
 export const dynamic = "force-dynamic";
 
 export default async function FinancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ paid?: string; edited?: string; error?: string; ok?: string; tab?: string }>;
+  searchParams: Promise<{ paid?: string; edited?: string; error?: string; ok?: string }>;
 }) {
-  // Two kinds of people open this page since 2026-09-08 (`canOpenPayments`): Finance, who see
-  // every tab, and somebody appointed to confirm a business unit, who may not be Finance and gets
-  // only the Confirmations tab. The confirmer's screen used to be its own route; the CEO asked
-  // for it here.
-  const user = await requireUser();
-  const myUnits = await confirmableUnitIds(user.id);
-  const isConfirmer = myUnits.length > 0;
-  if (!canOpenPayments(user.role, isConfirmer)) redirect("/dashboard");
-  const finance = isFinance(user.role);
-  // The tab shows for whoever could reach the old /confirmations page: the appointed, and a Super
-  // User holding no appointment (how they see there is something to appoint somebody for).
-  const showConfirmations = isConfirmer || isSuperUser(user.role);
-  const { paid, edited, error, ok, tab } = await searchParams;
-
-  // Somebody who only confirms gets the one tab and none of Finance's queries — the rest of this
-  // page is not theirs to see, so it is not fetched at all.
-  if (!finance) {
-    return (
-      <div>
-        <AutoRefresh />
-        <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">Finance · Payments</p>
-        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="font-serif text-3xl text-ink">Payments</h1>
-          {/* The one Finance link a confirmer may open: salary runs admit the appointed (spec 041). */}
-          <Link
-            href="/finance/salary"
-            className="rounded-lg border border-navy-200 bg-surface px-3 py-1.5 text-sm font-semibold text-navy-700 hover:bg-navy-50"
-          >
-            Salaries
-          </Link>
-        </div>
-        {ok ? <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">✓ {ok}</p> : null}
-        {error ? (
-          <p role="alert" className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </p>
-        ) : null}
-        <AdminBenefitsTabs
-          tabs={[
-            {
-              id: "confirmations",
-              label: "Confirmations",
-              badge: await prisma.paymentBatch.count({
-                where: { status: "SUBMITTED", businessUnitId: { in: myUnits } },
-              }),
-              node: <ConfirmationsPanel myUnitIds={myUnits} isSuperUser={false} />,
-            },
-          ]}
-        />
-      </div>
-    );
-  }
+  await requireFinance();
+  const { paid, edited, error, ok } = await searchParams;
 
   const claims = await prisma.benefitClaim.findMany({
     where: { status: { in: ["APPROVED", "PAYMENT_SUBMITTED", "REIMBURSED"] } },
@@ -194,7 +140,7 @@ export default async function FinancePage({
 
   // Spec 041: what Finance can put into a submission — grouped by business unit, because each
   // unit banks separately — and what is already with a confirmer.
-  const [groups, batches, confirmationsWaiting] = await Promise.all([
+  const [groups, batches] = await Promise.all([
     payableGroups(),
     prisma.paymentBatch.findMany({
       where: { type: "EXPENSES" },
@@ -202,16 +148,6 @@ export default async function FinancePage({
       orderBy: { submittedAt: "desc" },
       take: 20,
     }),
-    // The Confirmations tab's count: what is waiting on THIS person, through the same scope the
-    // panel lists — a Super User with no appointment sees everything, and is counted everything.
-    showConfirmations
-      ? prisma.paymentBatch.count({
-          where: {
-            status: "SUBMITTED",
-            ...(isSuperUser(user.role) && !isConfirmer ? {} : { businessUnitId: { in: myUnits } }),
-          },
-        })
-      : Promise.resolve(0),
   ]);
 
   const submissionRows: SubmissionRow[] = batches.map((b) => ({
@@ -274,8 +210,7 @@ export default async function FinancePage({
       <p className="mt-1 text-muted">
         What the company owes and where each payment has got to. Create the transactions in the bank,
         record them under <b className="font-semibold text-ink">Awaiting confirmation</b>, and the
-        person appointed for that business unit confirms them under{" "}
-        <b className="font-semibold text-ink">Confirmations</b> — which is when the employee is told.
+        person appointed for that business unit confirms them — which is when the employee is told.
       </p>
 
       {paid ? (
@@ -296,10 +231,8 @@ export default async function FinancePage({
       ) : null}
 
       {/* Sub-tabs (2026-08-18): the confirmation queue and medical recoveries each get their
-          own tab, badged with what still needs action. Reuses the house tab component.
-          `?tab=` picks the one to open on (2026-09-08) — the confirmer's email lands on his tab. */}
+          own tab, badged with what still needs action. Reuses the house tab component. */}
       <AdminBenefitsTabs
-        initialTab={tab}
         tabs={[
           {
             id: "payments",
@@ -330,20 +263,6 @@ export default async function FinancePage({
               <SubmitPanel groups={groups} submissions={submissionRows} />
             ),
           },
-          // The confirmer's screen (spec 041), here since 2026-09-08 and only for the appointed —
-          // placed right after the tab Finance sends from, because it is the next step.
-          ...(showConfirmations
-            ? [
-                {
-                  id: "confirmations",
-                  label: "Confirmations",
-                  badge: confirmationsWaiting,
-                  node: (
-                    <ConfirmationsPanel myUnitIds={myUnits} isSuperUser={isSuperUser(user.role)} />
-                  ),
-                },
-              ]
-            : []),
           {
             id: "payback",
             label: "Payback requests",

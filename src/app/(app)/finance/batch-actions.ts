@@ -240,7 +240,6 @@ export async function submitTransactions(formData: FormData): Promise<void> {
   });
 
   revalidatePath(BACK);
-  revalidatePath("/confirmations");
   revalidatePath("/benefits");
   revalidatePath("/payback");
   redirect(`${BACK}?ok=${q(`${created.reference} submitted for confirmation.`)}`);
@@ -358,7 +357,7 @@ export async function submitSalaryRun(formData: FormData): Promise<void> {
   });
 
   revalidatePath(back);
-  revalidatePath("/confirmations");
+  revalidatePath("/finance");
   redirect(`${back}?ok=${q(`${reference} submitted for confirmation.`)}`);
 }
 
@@ -404,6 +403,5 @@ export async function withdrawSubmission(formData: FormData): Promise<void> {
   }
 
   revalidatePath(BACK);
-  revalidatePath("/confirmations");
   redirect(`${BACK}?ok=${q("Withdrawn. Those payments are waiting again.")}`);
 }

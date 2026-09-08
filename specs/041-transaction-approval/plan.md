@@ -99,10 +99,16 @@ src/
 └── components/confirmations/           # WaitingList, SubmissionDetail, SalaryRunForm
 ```
 
-**Structure Decision**: The confirmer gets **their own small surface** at `/confirmations` rather
-than a tab inside Finance. He is not a Finance user and should not have to walk through Finance's
-workspace to do a ten-second job; the email links straight to it. Finance sees the same records from their
-side, under the Payments page they already use.
+**Structure Decision** *(reversed 2026-09-08)*: The confirmer originally got **their own small
+surface** at `/confirmations` rather than a tab inside Finance, on the reasoning that he is not a
+Finance user. The CEO — who is the confirmer — asked for the opposite: *"the confirmations of
+transactions is appearing in the external panel which is not correct, it can be part of the payments
+panel as a subtab for me to go and confirm through."* So the screen is now the **Confirmations tab of
+Finance → Payments** (`/finance?tab=confirmations`), placed right after *Awaiting confirmation*, and a
+transaction opens at `/finance/confirmations/[id]`. The separate sidebar entry is gone; its count sits
+on **Payments**. The old addresses redirect, because emails already sent still link to them. Somebody
+appointed who is not Finance may open Payments (`canOpenPayments`) and sees only that tab — the
+appointment keeps working for anyone it is given to. Nothing on the screen or in the decision changed.
 
 ## Key design decisions
 
