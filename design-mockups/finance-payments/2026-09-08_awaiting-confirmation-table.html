@@ -1,0 +1,448 @@
+<title>Awaiting Confirmation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-500:#2f4d78;
+    --navy-600:#1f3a63;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-50:#fdfaf0;--gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;
+    --red:#b91c1c;--red-bg:#fdf3f3;--red-line:#f3c6c6;
+    --sans:"Hanken Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Fraunces","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    color-scheme:light;
+  }
+  /* Renders in the product's own light navy/gold world — it exists to show what the app will
+     look like, so it deliberately does not follow the viewer's theme. */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 20px 90px}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  h1{font-family:var(--serif);font-weight:600;font-size:30px;margin:4px 0 0;text-wrap:balance}
+  .lede{color:var(--muted);font-size:14.5px;margin:8px 0 0;max-width:68ch}
+  .meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+
+  section.screen{margin-top:44px}
+  section.screen>h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0 0 3px}
+  section.screen>.sub{color:var(--muted);font-size:13.5px;margin:0 0 15px;max-width:82ch}
+
+  .frame{border:1px solid var(--line);border-radius:14px;background:#e9ebf0;padding:16px;box-shadow:0 1px 3px rgba(16,36,68,.06)}
+  .app{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--navy-800);color:#fff}
+  .bar .dot{width:9px;height:9px;border-radius:99px;background:rgba(255,255,255,.28)}
+  .bar .path{margin-left:8px;font-size:11.5px;color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums}
+  .page{padding:22px 22px 26px}
+  .page-eyebrow{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .page h3{font-family:var(--serif);font-weight:600;font-size:23px;margin:3px 0 0}
+  .page .hint{color:var(--muted);font-size:13px;margin:6px 0 0;max-width:80ch}
+
+  /* the page's own sub-tabs, unchanged from today */
+  .tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-top:18px;padding-top:4px}
+  .tabs span{font-size:13px;font-weight:600;color:var(--muted);padding-bottom:10px;position:relative;white-space:nowrap}
+  .tabs span.on{color:var(--navy-800)}
+  .tabs span.on::after{content:"";position:absolute;inset-inline:0;bottom:-1px;height:2px;border-radius:99px;background:var(--gold-500)}
+  .tabs .n{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--gold-100);color:var(--gold-800)}
+
+  /* ── the toolbar: search + quick filters, the new part ── */
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+  .search{position:relative;flex:1 1 260px;min-width:220px}
+  .search input{width:100%;font:inherit;font-size:13px;padding:9px 12px 9px 32px;border:1px solid var(--navy-200);border-radius:9px;background:var(--surface);color:var(--ink)}
+  .search input::placeholder{color:#9aa0ac}
+  .search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .filters{display:flex;gap:6px;flex-wrap:wrap}
+  .f{font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);white-space:nowrap;cursor:default}
+  .f .n{font-variant-numeric:tabular-nums;opacity:.75;margin-left:5px}
+  .f.on{background:var(--navy-800);border-color:var(--navy-800);color:#fff}
+  .f.on .n{opacity:.8}
+  select.unit{font:inherit;font-size:12.5px;padding:8px 11px;border:1px solid var(--navy-200);border-radius:9px;background:var(--surface);color:var(--ink)}
+
+  /* ── one table ── */
+  .scroll{overflow-x:auto;margin-top:14px;border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:880px}
+  thead th{background:var(--navy-800);color:#fff;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px;white-space:nowrap}
+  thead th.num{text-align:right}
+  thead th.tick{width:38px}
+  tbody td{padding:11px 12px;border-top:1px solid var(--line);vertical-align:middle}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+  td.who{font-weight:600;white-space:nowrap}
+  td.for{color:var(--muted)}
+  td.when{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  tbody tr.sel{background:var(--gold-50)}
+  tbody tr.off td{opacity:.45}
+  tbody tr.blocked{background:#fdfcf7}
+
+  .box{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--navy-500);display:inline-block;vertical-align:middle;background:var(--surface)}
+  .box.ticked{background:var(--navy-800);border-color:var(--navy-800);position:relative}
+  .box.ticked::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(42deg)}
+  .box.dis{border-color:#c4c9d2;background:#f1f0ec}
+
+  .kind{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;white-space:nowrap;letter-spacing:.02em}
+  .k-benefit{background:var(--navy-50);color:var(--navy-700);border:1px solid var(--navy-100)}
+  .k-petty{background:#f2f6f1;color:#3d6b3f;border:1px solid #cfe0cd}
+  .k-payback{background:var(--gold-100);color:var(--gold-800);border:1px solid var(--gold-200)}
+  .k-incentive{background:#f4f1f7;color:#5b4275;border:1px solid #ded4e6}
+  .unit-cell{white-space:nowrap;font-size:12px;color:var(--navy-700);font-weight:600}
+  .why{display:block;font-size:11px;font-weight:500;color:var(--gold-800);margin-top:3px}
+
+  /* ── the send bar: appears only when something is ticked ── */
+  .sendbar{margin-top:0;border:1px solid var(--navy-200);border-top:none;border-radius:0 0 11px 11px;background:#fbfaf7;padding:14px 16px}
+  .sendbar .line1{display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .sendbar .what{font-size:13px}
+  .sendbar .what b{color:var(--navy-800)}
+  .sendbar .total{font-family:var(--serif);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+  .fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+  .fields label{display:flex;flex-direction:column;gap:5px}
+  .fields span{font-size:11px;font-weight:700;color:var(--navy-700)}
+  .fields input{font:inherit;font-size:12.5px;padding:8px 10px;border:1px solid var(--navy-200);border-radius:8px;background:var(--surface);color:var(--ink)}
+  .sendrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:13px}
+  .goes{font-size:11.5px;color:var(--muted)}
+  .btn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:8px;padding:9px 14px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);cursor:default}
+  .btn.primary{background:var(--navy-800);border-color:var(--navy-800);color:#fff;font-size:13.5px;padding:11px 20px}
+  .btn.ghost{border-color:var(--line);color:var(--muted)}
+
+  .h4{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:28px 0 8px}
+  .waitlist{display:flex;flex-direction:column;gap:8px}
+  .wrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:11px 14px}
+  .wrow b{font-size:12.5px}
+  .wrow .s{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+  .pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--muted);margin-left:8px}
+
+  .note{margin-top:16px;border-left:3px solid var(--gold-500);background:var(--gold-50);border-radius:0 9px 9px 0;padding:12px 15px;font-size:13px;color:var(--gold-800);max-width:86ch}
+  .note b{color:var(--navy-800)}
+  .rules{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+  .rule{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:14px 16px}
+  .rule h4{font-family:var(--serif);font-size:15px;font-weight:600;margin:0 0 5px}
+  .rule p{margin:0;font-size:12.5px;color:var(--muted)}
+  @media (max-width:640px){.fields{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Finance · Payments · Mockup for sign-off</p>
+  <h1>Awaiting confirmation, as one table</h1>
+  <p class="lede">
+    The tab where Finance says “I created these at the bank”. Today it is one box per business unit;
+    this replaces those with a single searchable table, business unit as a column, and quick filters
+    for what kind of payment each row is.
+  </p>
+  <div class="meta">
+    <span class="tag">08/09/2026</span>
+    <span class="tag">Proposal — nothing built yet</span>
+    <span class="tag">Navy / gold</span>
+  </div>
+
+  <!-- ── STATE 1 ───────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2>Nothing ticked yet</h2>
+    <p class="sub">
+      Everything waiting, in one list, newest question first: what is here, and what is it for.
+      Search matches a name, a description or an amount; the chips narrow by kind; the dropdown
+      narrows by unit.
+    </p>
+
+    <div class="frame">
+      <div class="app">
+        <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="path">forefront.consulting/finance</span></div>
+        <div class="page">
+          <p class="page-eyebrow">Finance · Payments</p>
+          <h3>Payments</h3>
+          <p class="hint">Tick what you have created in the bank, then send it to that unit’s confirmer. The people being paid are told only once it is confirmed.</p>
+
+          <div class="tabs">
+            <span>Payments confirmation<i class="n">2</i></span>
+            <span>Medical recoveries</span>
+            <span class="on">Awaiting confirmation<i class="n">7</i></span>
+            <span>Payback requests</span>
+          </div>
+
+          <div class="toolbar">
+            <div class="search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+              <input type="text" placeholder="Search a name, a description or an amount" aria-label="Search what is waiting">
+            </div>
+            <div class="filters">
+              <span class="f on">All<i class="n">7</i></span>
+              <span class="f">Benefits<i class="n">2</i></span>
+              <span class="f">Petty cash<i class="n">2</i></span>
+              <span class="f">Paybacks<i class="n">2</i></span>
+              <span class="f">Incentive<i class="n">1</i></span>
+            </div>
+            <select class="unit" aria-label="Business unit">
+              <option>All business units</option>
+              <option>Forefront Consulting</option>
+              <option>Visual Shift Consulting</option>
+              <option>The Strategy Community</option>
+            </select>
+          </div>
+
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th class="tick"><span class="box" aria-label="Select all"></span></th>
+                  <th>Paying</th>
+                  <th>For</th>
+                  <th>Type</th>
+                  <th>Business unit</th>
+                  <th>Waiting since</th>
+                  <th class="num">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="box"></span></td>
+                  <td class="who">Hussein Abdullah</td>
+                  <td class="for">Benefit claim — Gym membership</td>
+                  <td><span class="kind k-benefit">Benefit</span></td>
+                  <td class="unit-cell">Visual Shift Consulting</td>
+                  <td class="when">24/08/2026</td>
+                  <td class="num">EGP 5,280.00</td>
+                </tr>
+                <tr>
+                  <td><span class="box"></span></td>
+                  <td class="who">Momen Mohamed Zaki</td>
+                  <td class="for">Benefit claim — Loans</td>
+                  <td><span class="kind k-benefit">Benefit</span></td>
+                  <td class="unit-cell">Forefront Consulting</td>
+                  <td class="when">25/08/2026</td>
+                  <td class="num">EGP 90,000.00</td>
+                </tr>
+                <tr>
+                  <td><span class="box"></span></td>
+                  <td class="who">Nermine Hazem</td>
+                  <td class="for">Client lunch, Zamalek · Meals &amp; entertainment</td>
+                  <td><span class="kind k-payback">Payback</span></td>
+                  <td class="unit-cell">The Strategy Community</td>
+                  <td class="when">28/08/2026</td>
+                  <td class="num">EGP 1,840.00</td>
+                </tr>
+                <tr>
+                  <td><span class="box"></span></td>
+                  <td class="who">Noran Essam</td>
+                  <td class="for">Marketing float — top-up</td>
+                  <td><span class="kind k-petty">Petty cash</span></td>
+                  <td class="unit-cell">Forefront Consulting</td>
+                  <td class="when">01/09/2026</td>
+                  <td class="num">EGP 15,000.00</td>
+                </tr>
+                <tr>
+                  <td><span class="box"></span></td>
+                  <td class="who">Michael Magdy</td>
+                  <td class="for">Printing, September campaign · Marketing</td>
+                  <td><span class="kind k-payback">Payback</span></td>
+                  <td class="unit-cell">Forefront Consulting</td>
+                  <td class="when">02/09/2026</td>
+                  <td class="num">EGP 3,450.00</td>
+                </tr>
+                <tr>
+                  <td><span class="box"></span></td>
+                  <td class="who">Michel Safwat</td>
+                  <td class="for">Incentive Q2 2026 · Business Partner Fee</td>
+                  <td><span class="kind k-incentive">Incentive</span></td>
+                  <td class="unit-cell">Visual Shift Consulting</td>
+                  <td class="when">03/09/2026</td>
+                  <td class="num">EGP 42,000.00</td>
+                </tr>
+                <tr class="blocked">
+                  <td><span class="box dis"></span></td>
+                  <td class="who">Kareem Medhat</td>
+                  <td class="for">Office supplies float — top-up
+                    <span class="why">Nobody is appointed to confirm this unit — appoint somebody under Who moves money.</span>
+                  </td>
+                  <td><span class="kind k-petty">Petty cash</span></td>
+                  <td class="unit-cell">The Strategy Community</td>
+                  <td class="when">04/09/2026</td>
+                  <td class="num">EGP 6,200.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="h4">Awaiting confirmation <span style="font-weight:700;color:var(--ink)">1</span></p>
+          <div class="waitlist">
+            <div class="wrow">
+              <span>
+                <b>SEP-26-02</b><span class="pill">Forefront Consulting</span>
+                <span class="s">3 transactions totalling EGP 22,300.00 · submitted 05/09/2026</span>
+              </span>
+              <span class="btn ghost">Withdraw…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STATE 2 ───────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2>Two ticked — the send bar appears</h2>
+    <p class="sub">
+      One transfer leaves one bank account, so the moment a row is ticked the table locks to that
+      unit: the other units’ rows go quiet and cannot be ticked until the selection is cleared.
+      That is what the separate boxes were doing; it now happens inside the table, and the reason
+      is stated rather than implied by a missing button.
+    </p>
+
+    <div class="frame">
+      <div class="app">
+        <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="path">forefront.consulting/finance</span></div>
+        <div class="page">
+          <p class="page-eyebrow">Finance · Payments</p>
+          <h3>Payments</h3>
+
+          <div class="tabs">
+            <span>Payments confirmation<i class="n">2</i></span>
+            <span>Medical recoveries</span>
+            <span class="on">Awaiting confirmation<i class="n">7</i></span>
+            <span>Payback requests</span>
+          </div>
+
+          <div class="toolbar">
+            <div class="search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+              <input type="text" placeholder="Search a name, a description or an amount" aria-label="Search what is waiting">
+            </div>
+            <div class="filters">
+              <span class="f on">All<i class="n">7</i></span>
+              <span class="f">Benefits<i class="n">2</i></span>
+              <span class="f">Petty cash<i class="n">2</i></span>
+              <span class="f">Paybacks<i class="n">2</i></span>
+              <span class="f">Incentive<i class="n">1</i></span>
+            </div>
+            <select class="unit" aria-label="Business unit">
+              <option>Forefront Consulting — locked by your selection</option>
+            </select>
+          </div>
+
+          <div class="scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th class="tick"><span class="box"></span></th>
+                  <th>Paying</th>
+                  <th>For</th>
+                  <th>Type</th>
+                  <th>Business unit</th>
+                  <th>Waiting since</th>
+                  <th class="num">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="off">
+                  <td><span class="box dis"></span></td>
+                  <td class="who">Hussein Abdullah</td>
+                  <td class="for">Benefit claim — Gym membership</td>
+                  <td><span class="kind k-benefit">Benefit</span></td>
+                  <td class="unit-cell">Visual Shift Consulting</td>
+                  <td class="when">24/08/2026</td>
+                  <td class="num">EGP 5,280.00</td>
+                </tr>
+                <tr class="sel">
+                  <td><span class="box ticked"></span></td>
+                  <td class="who">Momen Mohamed Zaki</td>
+                  <td class="for">Benefit claim — Loans</td>
+                  <td><span class="kind k-benefit">Benefit</span></td>
+                  <td class="unit-cell">Forefront Consulting</td>
+                  <td class="when">25/08/2026</td>
+                  <td class="num">EGP 90,000.00</td>
+                </tr>
+                <tr class="off">
+                  <td><span class="box dis"></span></td>
+                  <td class="who">Nermine Hazem</td>
+                  <td class="for">Client lunch, Zamalek · Meals &amp; entertainment</td>
+                  <td><span class="kind k-payback">Payback</span></td>
+                  <td class="unit-cell">The Strategy Community</td>
+                  <td class="when">28/08/2026</td>
+                  <td class="num">EGP 1,840.00</td>
+                </tr>
+                <tr class="sel">
+                  <td><span class="box ticked"></span></td>
+                  <td class="who">Noran Essam</td>
+                  <td class="for">Marketing float — top-up</td>
+                  <td><span class="kind k-petty">Petty cash</span></td>
+                  <td class="unit-cell">Forefront Consulting</td>
+                  <td class="when">01/09/2026</td>
+                  <td class="num">EGP 15,000.00</td>
+                </tr>
+                <tr>
+                  <td><span class="box"></span></td>
+                  <td class="who">Michael Magdy</td>
+                  <td class="for">Printing, September campaign · Marketing</td>
+                  <td><span class="kind k-payback">Payback</span></td>
+                  <td class="unit-cell">Forefront Consulting</td>
+                  <td class="when">02/09/2026</td>
+                  <td class="num">EGP 3,450.00</td>
+                </tr>
+                <tr class="off">
+                  <td><span class="box dis"></span></td>
+                  <td class="who">Michel Safwat</td>
+                  <td class="for">Incentive Q2 2026 · Business Partner Fee</td>
+                  <td><span class="kind k-incentive">Incentive</span></td>
+                  <td class="unit-cell">Visual Shift Consulting</td>
+                  <td class="when">03/09/2026</td>
+                  <td class="num">EGP 42,000.00</td>
+                </tr>
+                <tr class="off">
+                  <td><span class="box dis"></span></td>
+                  <td class="who">Kareem Medhat</td>
+                  <td class="for">Office supplies float — top-up</td>
+                  <td><span class="kind k-petty">Petty cash</span></td>
+                  <td class="unit-cell">The Strategy Community</td>
+                  <td class="when">04/09/2026</td>
+                  <td class="num">EGP 6,200.00</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="sendbar">
+              <div class="line1">
+                <span class="what">
+                  <b>2 transactions</b> selected — all <b>Forefront Consulting</b>.
+                  <span class="btn ghost" style="margin-left:8px;padding:4px 10px;font-size:11.5px">Clear</span>
+                </span>
+                <span class="total">EGP 105,000.00</span>
+              </div>
+              <div class="fields">
+                <label><span>Value date at the bank</span><input type="text" value="08/09/2026"></label>
+                <label><span>Bank reference</span><input type="text" placeholder="NBE-88213"></label>
+                <label><span>Note (optional)</span><input type="text" placeholder="Anything they should know"></label>
+              </div>
+              <div class="sendrow">
+                <span class="goes">Goes to <b style="color:var(--navy-800)">Islam Saadany</b> the moment you send it.</span>
+                <span class="btn primary">Send for confirmation</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="note">
+    <b>The one rule the table has to keep.</b> A submission is a single transfer from a single unit’s
+    bank account, so two units can never go into one send. Today that is guaranteed by there being no
+    list containing two units. In the table it is guaranteed by the lock above — and the server still
+    refuses a mixed submission on its own, exactly as it does now, because the screen not offering
+    something has never been a control.
+  </div>
+
+  <div class="rules">
+    <div class="rule">
+      <h4>Search</h4>
+      <p>Matches the person’s name, what the payment is for, and the amount. Nothing else changes — it narrows the table, it does not clear a selection.</p>
+    </div>
+    <div class="rule">
+      <h4>Quick filters</h4>
+      <p>Benefits, Petty cash, Paybacks, Incentive. Each carries its own count, and the counts are of what is actually in the table.</p>
+    </div>
+    <div class="rule">
+      <h4>Business unit</h4>
+      <p>A column, and a dropdown to narrow by. Once something is ticked it shows the locked unit instead.</p>
+    </div>
+    <div class="rule">
+      <h4>Blocked rows stay visible</h4>
+      <p>A row that cannot be sent — nobody appointed, or the person has no business unit — is still listed, greyed, with the reason on the row rather than a missing button.</p>
+    </div>
+  </div>
+</div>
