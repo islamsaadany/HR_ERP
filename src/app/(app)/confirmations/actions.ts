@@ -60,7 +60,15 @@ export async function markComplete(formData: FormData): Promise<void> {
           businessUnitId: true,
           totalAmount: true,
           valueDate: true,
-          items: { select: { paybackRequestId: true, benefitClaimId: true, incentivePayoutId: true, amountAtSubmission: true } },
+          items: {
+            select: {
+              paybackRequestId: true,
+              benefitClaimId: true,
+              incentivePayoutId: true,
+              pettyCashFundingId: true,
+              amountAtSubmission: true,
+            },
+          },
         },
       });
       if (!batch) refuse("That no longer exists.");
@@ -124,6 +132,19 @@ export async function markComplete(formData: FormData): Promise<void> {
             },
           });
         }
+      }
+
+      // A float top-up's money has now reached the custodian, so it is stamped with the value date
+      // (2026-09-08). Nobody is emailed — a custodian is not waiting on a message, they are looking
+      // at the ledger — but the stamp is what keeps it out of Finance's queue for good. Before this
+      // column existed a top-up had no paid state at all, which is how the imported history queued
+      // itself as money still owed.
+      const fundingIds = batch.items.map((i) => i.pettyCashFundingId).filter((v): v is string => !!v);
+      if (fundingIds.length) {
+        await tx.pettyCashFunding.updateMany({
+          where: { id: { in: fundingIds } },
+          data: { transferredAt: batch.valueDate },
+        });
       }
 
       return { paybacks: paybackIds, claims: claimIds, payouts: payoutIds, valueDate: batch.valueDate };

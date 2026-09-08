@@ -1942,6 +1942,26 @@ model PettyCashFunding {
   reference String? /// bank / InstaPay reference
   note      String?
 
+  /// When the money actually reached the custodian. NULL means it has NOT been transferred yet —
+  /// which is the ONLY thing that makes a top-up payable (2026-09-08).
+  ///
+  /// Added because the funding row had no paid/unpaid state at all, so Finance's queue treated
+  /// EVERY top-up ever recorded as money still owed: the 17 imported MARCOM rows going back to
+  /// November 2024 — whose own notes say they were reimbursed at the time — sat in the queue as
+  /// ~EGP 285,000 waiting to be released at the bank, all seventeen selectable with one click of
+  /// the header tick. Nothing would have corrupted, but the confirmer would have been asked to
+  /// send money that had already gone.
+  ///
+  /// Recording a movement that has already happened (the normal case, and what this form has
+  /// always meant) sets it to the movement's own date. Queueing one for the bank leaves it null
+  /// until the appointed confirmer marks the transaction complete, which stamps it with the value
+  /// date — the same moment everybody else in that transaction is told they have been paid.
+  ///
+  /// A RETURN is money coming back from the custodian and is never payable, so it is always
+  /// stamped. Every row that existed before this column was backfilled with its own date, since
+  /// none of that history was owed.
+  transferredAt DateTime?
+
   recordedById String?
   recordedBy   User?   @relation("PettyCashFundingRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
 
@@ -1951,6 +1971,8 @@ model PettyCashFunding {
 
   @@index([accountId, date])
   @@index([periodId])
+  /// The payables query asks for exactly this: top-ups not yet transferred.
+  @@index([type, transferredAt])
 }
 
 /// One purchase. Belongs to a period explicitly (never by date window): the workbook's lines

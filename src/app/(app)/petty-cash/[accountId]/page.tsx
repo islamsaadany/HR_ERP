@@ -108,6 +108,7 @@ export default async function PettyCashAccountPage({
     note: f.note,
     recordedBy: f.recordedBy?.name ?? null,
     locked: selected?.status === "CLOSED",
+    transferred: f.transferredAt !== null,
   }));
 
   const [sections, categories] = await Promise.all([

@@ -17,8 +17,6 @@ export type FundingRow = {
   note: string | null;
   recordedBy: string | null;
   locked: boolean;
-  /** False when a top-up is still waiting for Finance to create it at the bank (2026-09-08). */
-  transferred: boolean;
 };
 
 export type MissingLine = {
@@ -105,13 +103,6 @@ function FundingBlock({
                 <b className="font-semibold text-ink">
                   {f.type === "TOP_UP" ? "Top-up" : "Returned"} {formatEGP2(f.amount)}
                 </b>
-                {/* A top-up that has not gone yet says so here, because it is the difference
-                    between a ledger entry and money Finance still has to send. */}
-                {f.transferred ? null : (
-                  <span className="ml-2 rounded-full border border-gold-300 bg-gold-100 px-2 py-0.5 text-[10px] font-bold text-gold-800">
-                    Waiting to be paid
-                  </span>
-                )}
                 <span className="block text-[11px] text-muted">
                   {formatDate(f.date)}
                   {f.reference ? ` · ${f.reference}` : ""}
@@ -173,17 +164,6 @@ function FundingBlock({
           <label className="flex flex-col gap-1">
             <span className={LABEL}>Reference</span>
             <input type="text" name="reference" placeholder="Bank / InstaPay ref" className={INPUT} />
-          </label>
-          {/* Has the money gone, or does Finance still have to send it? (2026-09-08)
-              Recording something that already happened is what this form has always meant, so it
-              stays the default; only the second choice puts the top-up in Finance's queue. Ignored
-              for a return, which is money coming back. */}
-          <label className="flex flex-col gap-1 sm:col-span-2">
-            <span className={LABEL}>Has the money gone?</span>
-            <select name="settlement" className={INPUT} defaultValue="DONE">
-              <option value="DONE">Already sent — I&apos;m recording it</option>
-              <option value="QUEUE">Not yet — put it in Finance&apos;s queue to create at the bank</option>
-            </select>
           </label>
           <div className="sm:col-span-2">
             <PendingSubmitButton

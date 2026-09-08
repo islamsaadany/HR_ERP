@@ -77,7 +77,11 @@ export async function availablePayables(): Promise<Payable[]> {
       orderBy: { decidedAt: "asc" },
     }),
     prisma.pettyCashFunding.findMany({
-      where: { type: "TOP_UP", batchItems: { none: {} } },
+      // `transferredAt: null` is what makes a top-up payable, and it is not optional (2026-09-08).
+      // Without it this asked only "is it a TOP_UP nobody has queued?", which is true of every
+      // top-up ever recorded — so the imported MARCOM history, reimbursed to the custodian months
+      // ago, queued itself as ~EGP 285,000 still to be released at the bank.
+      where: { type: "TOP_UP", transferredAt: null, batchItems: { none: {} } },
       include: {
         account: {
           select: {
