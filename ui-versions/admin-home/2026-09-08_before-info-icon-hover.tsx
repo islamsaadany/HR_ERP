@@ -163,19 +163,14 @@ const GLYPH: Record<string, string> = {
  * the description in the hover: it was added in August so a card says what you are walking into,
  * and losing it entirely would undo that, but it does not have to be on screen at rest.
  *
- * The hover opens from a small ⓘ mark at the row's right edge, not from the row (mockup-approved
- * 2026-09-08). Opening on whole-row hover meant the box popped up while the pointer was merely
- * crossing the list on its way to a link, and flickered from row to row — "confusing", in the
- * CEO's word. The row itself only tints; the mark is the one place the description comes from.
- *
- * The hover is CSS-only and also opens on keyboard focus of the mark, so it is not mouse-only.
+ * The hover is CSS-only and also opens on keyboard focus, so it is not mouse-only.
  */
 function AdminRow({ card, flag }: { card: Card; flag: Flag | null }) {
   return (
     <Link
       href={card.href}
       className={
-        "relative flex items-center gap-2.5 border-b border-line px-3 py-2 text-[13px] first:rounded-t-xl last:rounded-b-xl last:border-b-0 hover:bg-navy-50/40 " +
+        "group relative flex items-center gap-2.5 border-b border-line px-3 py-2 text-[13px] first:rounded-t-xl last:rounded-b-xl last:border-b-0 hover:bg-navy-50/40 " +
         (card.ready ? "" : "pointer-events-none opacity-60")
       }
     >
@@ -197,29 +192,17 @@ function AdminRow({ card, flag }: { card: Card; flag: Flag | null }) {
         </span>
       ) : null}
 
-      {/* The ⓘ mark. Its own named group, so only hovering or focusing the MARK opens the box —
-          the row's hover tint is a different device and stays on the row. `tabIndex` because a
-          span is not focusable on its own; the outer link is still one Tab stop before it. */}
+      {/* The hover card. `pointer-events-none` so it can never sit between the cursor and the row. */}
       <span
-        tabIndex={0}
-        aria-label={`About ${card.title}`}
-        className="group/info relative ml-0.5 grid h-4 w-4 flex-none cursor-help place-items-center rounded-full border-[1.5px] border-navy-200 font-serif text-[10.5px] font-bold italic leading-none text-navy-300 transition-colors hover:border-navy-700 hover:bg-navy-700 hover:text-white focus-visible:border-navy-700 focus-visible:bg-navy-700 focus-visible:text-white focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-navy-100"
+        role="tooltip"
+        className="pointer-events-none absolute bottom-[calc(100%+6px)] left-3 z-20 w-[250px] rounded-lg bg-navy-900 px-2.5 py-2 text-[11.5px] font-normal leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
       >
-        i
-        {/* The hover card, hung from the mark and right-aligned to it so it never runs past the
-            column's edge. `pointer-events-none` so it can never sit between the cursor and the row.
-            `after:` draws the small arrow pointing back at the mark. */}
-        <span
-          role="tooltip"
-          className="pointer-events-none absolute bottom-[calc(100%+9px)] right-[-4px] z-20 w-[250px] rounded-lg bg-navy-900 px-2.5 py-2 text-left font-sans text-[11.5px] font-normal not-italic leading-snug text-white opacity-0 shadow-lg transition-opacity after:absolute after:right-2 after:top-full after:border-[5px] after:border-transparent after:border-t-navy-900 after:content-[''] group-hover/info:opacity-100 group-focus-visible/info:opacity-100"
-        >
-          {card.ready ? card.body : "Coming soon"}
-          {flag ? (
-            <span className="mt-1 block font-semibold text-gold-300">
-              {flag.tags.map((t) => t.label).join(" · ")}
-            </span>
-          ) : null}
-        </span>
+        {card.ready ? card.body : "Coming soon"}
+        {flag ? (
+          <span className="mt-1 block font-semibold text-gold-300">
+            {flag.tags.map((t) => t.label).join(" · ")}
+          </span>
+        ) : null}
       </span>
     </Link>
   );

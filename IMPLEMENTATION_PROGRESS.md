@@ -1810,6 +1810,20 @@ Autonomous build to the approved specs. Done: ALL 7 v1 modules (Foundation · Di
     answer wins; tracker shows Corrected; Cancel restores the chip). 14/14 production checks
     including the exact reported scenario.
 
+- **2026-09-08 — Admin home: description opens from an ⓘ mark, not the row (UI polish, mockup-approved):**
+  - Since the compact two-column layout (2026-08-21) each row's description sat in a dark box that
+    opened on whole-row hover, so it popped up while the pointer was merely crossing the list and
+    flickered row to row — "confusing", per the CEO. Each row now carries a 16px *i*-in-a-circle at
+    its right edge, just outside the count pill; only hovering or keyboard-focusing the mark opens
+    the box (hung from the mark, right-aligned, with a small arrow), and the mark fills navy while
+    it does. The row itself only tints and still opens the page. Layout, sections, icons, counts
+    and the box's content (description + gold attention breakdown) are unchanged.
+  - Mockup `design-mockups/admin-home/2026-09-08_info-icon-hover.html`; snapshot
+    `ui-versions/admin-home/2026-09-08_before-info-icon-hover.tsx`. Verified by rendering the real
+    row markup against the built stylesheet in Chromium: hidden on row hover (opacity 0), shown on
+    mark hover and on Tab focus (opacity 1), box's right edge 10px inside the list's edge.
+    Typecheck + build green.
+
 ## 2026-08-20 — Pool-ceiling invariant + employee-form save fix (shipped, no migration)
 
 **Pool ceiling — nine write paths closed.** An employee finished a cycle 2,093 over a 10,000 pool
