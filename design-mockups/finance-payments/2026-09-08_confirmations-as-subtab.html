@@ -1,0 +1,284 @@
+<title>Confirmations inside Payments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-500:#2f4d78;
+    --navy-600:#1f3a63;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-50:#fbf7ea;--gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-400:#d4ac39;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;
+    --red:#b91c1c;--red-bg:#fdf3f3;--red-line:#f3c6c6;
+    --sans:"Hanken Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Fraunces","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    color-scheme:light;
+  }
+  /* Renders in the product's own light navy/gold world — it exists to show what the app will
+     look like, so it deliberately does not follow the viewer's theme. */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:34px 20px 90px}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  h1{font-family:var(--serif);font-weight:600;font-size:30px;margin:4px 0 0;text-wrap:balance}
+  .lede{color:var(--muted);font-size:14.5px;margin:8px 0 0;max-width:68ch}
+  .meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+
+  section.screen{margin-top:44px}
+  section.screen>h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0 0 3px}
+  section.screen>.sub{color:var(--muted);font-size:13.5px;margin:0 0 15px;max-width:82ch}
+
+  .frame{border:1px solid var(--line);border-radius:14px;background:#e9ebf0;padding:16px;box-shadow:0 1px 3px rgba(16,36,68,.06)}
+  .app{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--navy-800);color:#fff}
+  .bar .dot{width:9px;height:9px;border-radius:99px;background:rgba(255,255,255,.28)}
+  .bar .path{margin-left:8px;font-size:11.5px;color:rgba(255,255,255,.72);font-variant-numeric:tabular-nums}
+  .split{display:grid;grid-template-columns:200px minmax(0,1fr)}
+  .page{padding:22px 22px 26px;min-width:0}
+  .page-eyebrow{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .page h3{font-family:var(--serif);font-weight:600;font-size:23px;margin:3px 0 0}
+  .page .hint{color:var(--muted);font-size:13px;margin:6px 0 0;max-width:80ch}
+  .page .hint b{color:var(--ink);font-weight:600}
+
+  /* ── the sidebar, drawn as the app draws it ── */
+  .side{background:var(--navy-900);padding:14px 10px;display:flex;flex-direction:column;gap:2px;font-size:12.5px}
+  .side .brand{color:#fff;font-family:var(--serif);font-size:14px;padding:4px 10px 12px}
+  .side a{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--gold-300);padding:7px 10px;border-radius:8px;font-weight:500;text-decoration:none}
+  .side a.on{background:var(--navy-800);color:var(--gold-200);position:relative}
+  .side a.on::before{content:"";position:absolute;left:0;top:50%;height:16px;width:2px;transform:translateY(-50%);border-radius:99px;background:var(--gold-400)}
+  .side .sep{height:1px;background:rgba(255,255,255,.08);margin:8px 6px}
+  .side .pill{display:grid;place-items:center;min-width:20px;height:20px;border-radius:999px;background:var(--gold-500);color:var(--navy-900);font-size:11px;font-weight:700;padding:0 5px}
+  .side a.gone{color:rgba(224,192,90,.38);text-decoration:line-through;text-decoration-color:rgba(224,192,90,.5)}
+  .side a.gone .pill{opacity:.35}
+
+  /* the page's own sub-tabs */
+  .tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-top:18px;padding-top:4px;overflow-x:auto}
+  .tabs span{font-size:13px;font-weight:600;color:var(--muted);padding-bottom:10px;position:relative;white-space:nowrap}
+  .tabs span.on{color:var(--navy-800)}
+  .tabs span.on::after{content:"";position:absolute;inset-inline:0;bottom:-1px;height:2px;border-radius:99px;background:var(--gold-500)}
+  .tabs span.new{outline:2px dashed var(--gold-400);outline-offset:4px;border-radius:3px}
+  .tabs .n{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--gold-100);color:var(--gold-800)}
+
+  /* ── the tab's content: today's confirmations screen, unchanged ── */
+  .tabhead{margin-top:22px}
+  .tabhead .lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .tabhead p.t{color:var(--muted);font-size:13px;margin:4px 0 0;max-width:72ch}
+  .cards{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+  .card{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+  .card .top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;padding:16px 20px;background:linear-gradient(#fbfaf7,var(--surface))}
+  .chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .age{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .unit{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--navy-700)}
+  .card .sum{font-size:13.5px;font-weight:600;margin:8px 0 0}
+  .card .who{font-size:12px;color:var(--muted);margin:4px 0 0}
+  .card .amt{font-family:var(--serif);font-size:30px;font-variant-numeric:tabular-nums;margin:0}
+  .card .foot{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);background:#fbfaf7;padding:12px 20px}
+  .card .foot .count{margin-left:auto;font-size:12px;color:var(--muted)}
+  .btn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;border-radius:8px;padding:9px 14px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);cursor:default}
+  .btn.primary{background:var(--navy-800);border-color:var(--navy-800);color:#fff;font-size:13.5px;padding:10px 20px}
+  .btn.ghost{border-color:var(--line);color:var(--muted)}
+  .h4{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:30px 0 8px}
+  .recent{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted)}
+  .recent div{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .recent b{color:var(--navy-700)}
+  .st{font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid}
+  .st.ok{background:var(--green-bg);border-color:var(--green-line);color:var(--green)}
+  .st.back{background:var(--red-bg);border-color:var(--red-line);color:var(--red)}
+
+  /* ── the detail page ── */
+  .back{font-size:12.5px;font-weight:600;color:var(--navy-700)}
+  .scroll{overflow-x:auto;margin-top:20px;border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:560px}
+  thead th{background:var(--navy-800);color:#fff;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px;white-space:nowrap}
+  th.num,td.num{text-align:right}
+  tbody td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:middle}
+  td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.for{color:var(--muted)}
+  td a{color:var(--navy-700);font-weight:500;font-size:11.5px;text-decoration:underline;text-underline-offset:2px}
+  tfoot td{padding:12px;background:var(--navy-50);font-weight:600;border-top:1px solid var(--line)}
+  .decide{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:22px}
+  .decide .fixed{font-size:12px;color:var(--muted);max-width:46ch}
+  .decide .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+  .note{margin-top:16px;border-left:3px solid var(--gold-500);background:var(--gold-50);border-radius:0 9px 9px 0;padding:12px 15px;font-size:13px;color:var(--gold-800);max-width:86ch}
+  .note b{color:var(--navy-800)}
+  .rules{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+  .rule{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:14px 16px}
+  .rule h4{font-family:var(--serif);font-size:15px;font-weight:600;margin:0 0 5px}
+  .rule p{margin:0;font-size:12.5px;color:var(--muted)}
+  @media (max-width:720px){.split{grid-template-columns:1fr}.side{flex-direction:row;flex-wrap:wrap}.side .brand{width:100%}.side .sep{display:none}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Finance · Payments · Mockup for sign-off</p>
+  <h1>Confirmations move inside Payments</h1>
+  <p class="lede">
+    Today “Confirmations” is its own entry in the sidebar, beside Payments. This puts it where you
+    asked for it: a sub-tab on the Payments page, next to the tab where Finance sends things for
+    confirmation. The screen itself — the waiting cards, opening one, marking it complete — does not
+    change; only where it lives.
+  </p>
+  <div class="meta">
+    <span class="tag">08/09/2026</span>
+    <span class="tag">Proposal — nothing built yet</span>
+    <span class="tag">Navy / gold</span>
+  </div>
+
+  <!-- ── STATE 1 ───────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2>The Payments page, with the new tab open</h2>
+    <p class="sub">
+      The sidebar loses its separate “Confirmations” entry (struck through here so you can see what
+      goes). Its count moves onto “Payments”, so the number still meets you before you open anything.
+      The tab sits right after “Awaiting confirmation” — Finance sends on one tab, you confirm on the next.
+    </p>
+
+    <div class="frame">
+      <div class="app">
+        <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="path">forefront.consulting/finance?tab=confirmations</span></div>
+        <div class="split">
+          <nav class="side" aria-label="Sidebar as proposed">
+            <div class="brand">Forefront People</div>
+            <a>Home</a>
+            <a>Directory</a>
+            <a>Benefits</a>
+            <a>Time-Off</a>
+            <a>Handbook</a>
+            <div class="sep"></div>
+            <a>Incentive Scheme</a>
+            <a class="on">Payments <span class="pill">2</span></a>
+            <a>Petty cash</a>
+            <a class="gone">Confirmations <span class="pill">2</span></a>
+            <a>Admin</a>
+          </nav>
+          <div class="page">
+            <p class="page-eyebrow">Finance · Payments</p>
+            <h3>Payments</h3>
+            <p class="hint">What the company owes and where each payment has got to. Create the transactions in the bank, record them under <b>Awaiting confirmation</b>, and the person appointed for that business unit confirms them under <b>Confirmations</b> — which is when the employee is told.</p>
+
+            <div class="tabs">
+              <span>Payments confirmation<i class="n">2</i></span>
+              <span>Medical recoveries</span>
+              <span>Awaiting confirmation<i class="n">7</i></span>
+              <span class="on new">Confirmations<i class="n">2</i></span>
+              <span>Payback requests<i class="n">1</i></span>
+            </div>
+
+            <div class="tabhead">
+              <p class="lbl">Waiting on you</p>
+              <p class="t">Finance created these in the bank. Confirm them there, then mark them complete here — that is what tells the person they have been paid. You only ever see the business units you were appointed for.</p>
+            </div>
+
+            <div class="cards">
+              <article class="card">
+                <div class="top">
+                  <div>
+                    <div class="chips"><span class="age">Waiting since yesterday</span><span class="unit">Forefront Consulting</span></div>
+                    <p class="sum">3 transactions · EGP 41,250.00</p>
+                    <p class="who">Created by Mona Adel on 07/09/2026 · value date 08/09/2026 · ref TX-2026-0142</p>
+                  </div>
+                  <p class="amt">EGP 41,250.00</p>
+                </div>
+                <div class="foot"><span class="btn primary">Open</span><span class="count">3 transactions</span></div>
+              </article>
+              <article class="card">
+                <div class="top">
+                  <div>
+                    <div class="chips"><span class="age">Waiting today</span><span class="unit">Visual Shift Consulting</span></div>
+                    <p class="sum">September 2026 salaries · 14 people · EGP 612,400.00</p>
+                    <p class="who">Created by Mona Adel on 08/09/2026 · value date 10/09/2026 · ref TX-2026-0143</p>
+                  </div>
+                  <p class="amt">EGP 612,400.00</p>
+                </div>
+                <div class="foot"><span class="btn primary">Open</span><span class="count">14 people</span></div>
+              </article>
+            </div>
+
+            <p class="h4">Recently decided</p>
+            <div class="recent">
+              <div><b>TX-2026-0139</b><span>Forefront Consulting · 2 transactions · EGP 18,000.00 · 04/09/2026 · Islam Saadany</span><span class="st ok">Complete</span></div>
+              <div><b>TX-2026-0137</b><span>The Strategy Community · 1 transaction · EGP 6,500.00 · 02/09/2026 · Islam Saadany</span><span class="st back">Returned</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STATE 2 ───────────────────────────────────────────────────────── -->
+  <section class="screen">
+    <h2>Opening one</h2>
+    <p class="sub">
+      Pressing Open shows exactly what it shows today — each person, what for, the receipt, the total
+      fixed at submission — and the two decisions. The only change is the way back: it returns you to
+      the Confirmations tab on Payments, not to a page of its own.
+    </p>
+
+    <div class="frame">
+      <div class="app">
+        <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="path">forefront.consulting/finance/confirmations/tx-2026-0142</span></div>
+        <div class="split">
+          <nav class="side" aria-label="Sidebar">
+            <div class="brand">Forefront People</div>
+            <a>Home</a>
+            <a>Directory</a>
+            <a>Benefits</a>
+            <a>Time-Off</a>
+            <a>Handbook</a>
+            <div class="sep"></div>
+            <a>Incentive Scheme</a>
+            <a class="on">Payments <span class="pill">2</span></a>
+            <a>Petty cash</a>
+            <a>Admin</a>
+          </nav>
+          <div class="page">
+            <span class="back">← Payments · Confirmations</span>
+            <p class="page-eyebrow" style="margin-top:10px">TX-2026-0142 · created by Mona Adel</p>
+            <h3>3 transactions · EGP 41,250.00</h3>
+            <p class="hint">Value date 08/09/2026 · bank reference NBE-88213 · submitted 07/09/2026</p>
+
+            <div class="scroll">
+              <table>
+                <thead><tr><th>Paying</th><th>For</th><th>Receipt</th><th class="num">Amount</th></tr></thead>
+                <tbody>
+                  <tr><td><b>Sara Hassan</b></td><td class="for">Gym membership — annual</td><td><a>Proof of payment</a></td><td class="num">EGP 9,250.00</td></tr>
+                  <tr><td><b>Omar Farouk</b></td><td class="for">Client lunch, 28 Aug</td><td><a>receipt-0828.jpg</a></td><td class="num">EGP 2,000.00</td></tr>
+                  <tr><td><b>Nour El-Din</b></td><td class="for">Petty cash float — September</td><td><span class="st" style="border-color:var(--line);background:var(--paper);color:var(--muted)">Float</span></td><td class="num">EGP 30,000.00</td></tr>
+                </tbody>
+                <tfoot><tr><td colspan="3">Total created in the bank</td><td class="num">EGP 41,250.00</td></tr></tfoot>
+              </table>
+            </div>
+
+            <div class="decide">
+              <span class="fixed">This total was fixed when Finance submitted it — it cannot change while it is with you.</span>
+              <span class="acts"><span class="btn ghost">Return to Finance…</span><span class="btn primary">Transaction complete</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="note">
+    <b>Who sees the tab.</b> Only somebody appointed to confirm for a business unit — the same rule
+    as the sidebar entry today. Finance staff who are not appointed see Payments exactly as they do
+    now, without this tab. Somebody appointed who is not Finance still gets in: Payments appears for
+    them with this one tab, so the appointment keeps working for anyone you give it to.
+  </div>
+
+  <div class="rules">
+    <div class="rule">
+      <h4>The email link still lands here</h4>
+      <p>“See the transactions” in the email opens Payments with the Confirmations tab already selected. Old emails with the old link are sent on to the same place.</p>
+    </div>
+    <div class="rule">
+      <h4>The count stays visible</h4>
+      <p>The number that used to sit on “Confirmations” in the sidebar sits on “Payments” instead, and on the tab itself.</p>
+    </div>
+    <div class="rule">
+      <h4>Nothing about the decision changes</h4>
+      <p>Same cards, same Open, same Transaction complete and Return to Finance, same emails to the people paid. Only the address moves.</p>
+    </div>
+  </div>
+</div>
