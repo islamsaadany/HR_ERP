@@ -401,7 +401,7 @@ row; those differences are reported by the generator, never absorbed.
 Finance creates transactions in the bank and submits them here; the appointed confirmer confirms
 them at the bank and marks them **Transaction complete**. Nothing in the app releases money.
 
-**Routes.** `/finance` → *Confirmations* tab (`?tab=confirmations`; appointed confirmers, or a
+**Routes.** `/finance` → *Final confirmation* tab (`?tab=confirmations`; appointed confirmers, or a
 Super User holding no appointment) and `/finance/confirmations/[id]` — since 2026-09-08; they were
 `/confirmations` and `/confirmations/[id]`, their own surface, and those addresses now redirect
 because emails already sent link to them. The Payments door is `canOpenPayments` (Finance, or the

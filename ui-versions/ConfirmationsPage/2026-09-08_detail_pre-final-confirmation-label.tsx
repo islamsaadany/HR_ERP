@@ -68,7 +68,7 @@ export default async function ConfirmationDetailPage({
     <div>
       <AutoRefresh />
       <Link href="/finance?tab=confirmations" className="text-[12.5px] font-semibold text-navy-700 hover:underline">
-        ← Payments · Final confirmation
+        ← Payments · Confirmations
       </Link>
 
       <p className="mt-2 text-xs font-semibold uppercase tracking-[0.15em] text-gold-600">

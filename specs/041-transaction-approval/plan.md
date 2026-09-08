@@ -103,7 +103,7 @@ src/
 surface** at `/confirmations` rather than a tab inside Finance, on the reasoning that he is not a
 Finance user. The CEO — who is the confirmer — asked for the opposite: *"the confirmations of
 transactions is appearing in the external panel which is not correct, it can be part of the payments
-panel as a subtab for me to go and confirm through."* So the screen is now the **Confirmations tab of
+panel as a subtab for me to go and confirm through."* So the screen is now the **Final confirmation tab of
 Finance → Payments** (`/finance?tab=confirmations`), placed right after *Awaiting confirmation*, and a
 transaction opens at `/finance/confirmations/[id]`. The separate sidebar entry is gone; its count sits
 on **Payments**. The old addresses redirect, because emails already sent still link to them. Somebody

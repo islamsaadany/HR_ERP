@@ -29,7 +29,7 @@
   Spec 041's R4 had given the confirmer his own route and sidebar entry on the reasoning that he is
   not a Finance user; he is the CEO, and he goes to Payments. Mockup signed off first
   (`design-mockups/finance-payments/2026-09-08_confirmations-as-subtab.html`), then built.
-- [x] **The screen is now the Confirmations tab of Finance → Payments**, right after *Awaiting
+- [x] **The screen is now the Final confirmation tab of Finance → Payments**, right after *Awaiting
   confirmation* (Finance sends on one tab, he confirms on the next). `ConfirmationsPanel` is the old
   page's body unchanged — the same cards, Open, Transaction complete, Return to Finance, the same
   emails — loading its own rows under the same scope rule (his units; everything for a Super User
@@ -44,7 +44,8 @@
   to the tab. `/confirmations` and `/confirmations/[id]` **redirect** — emails already sent cannot be
   edited, so the old doors forward rather than 404.
 - [x] Actions moved with the page (`finance/confirmations/actions.ts`); outcomes append `&ok=`/`&error=`
-  since the way back already carries a query. Docs: spec 041 (FR-036, R4 reversed, plan structure
+  since the way back already carries a query. Named **Final confirmation** at the CEO's
+  request the same day — the flagged clash with *Payments confirmation* answered. Docs: spec 041 (FR-036, R4 reversed, plan structure
   decision, contracts), PROJECT_DETAILS, IMPLEMENTATION_PLAN decisions log.
 - Verified: `tsc` and `next build` clean; `canOpenPayments` asserted in `tests/finance-access.test.ts`;
   and **27 browser checks green** against a throwaway Postgres (schema pushed + SQL history replayed,

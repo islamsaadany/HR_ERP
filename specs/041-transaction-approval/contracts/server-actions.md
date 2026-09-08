@@ -91,7 +91,7 @@ actions at all.
 
 | Route | Who | What |
 |---|---|---|
-| `/finance?tab=confirmations` | appointed confirmers (and a Super User with no appointment) | The *Confirmations* tab: what is waiting, newest first, with totals. Was `/confirmations` until 2026-09-08; the old address redirects. |
+| `/finance?tab=confirmations` | appointed confirmers (and a Super User with no appointment) | The *Final confirmation* tab: what is waiting, newest first, with totals. Was `/confirmations` until 2026-09-08; the old address redirects. |
 | `/finance/confirmations/[batchId]` | appointed confirmers | Each item — payee, purpose, amount, evidence — then Confirm or Return to Finance. Was `/confirmations/[batchId]`; the old address redirects. |
 | `/finance` → *Awaiting confirmation* tab | Finance | Records by state; tick payables and submit; withdraw. |
 | `/finance/salary` | Finance, confirmers, Super User (**never HR Admin**) | Monthly runs and the form to send one. |

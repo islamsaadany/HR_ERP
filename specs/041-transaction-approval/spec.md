@@ -368,8 +368,9 @@ confirm exactly one summary email reaches the confirmer and none reaches anyone 
   that has nobody appointed. Nothing MUST fall back to another unit's confirmer.
 - **FR-034**: A confirmer's queue, sidebar count, emails, daily reminder and salary-file access MUST
   each be limited to the units they hold.
-- **FR-036** *(2026-09-08)*: The confirmer's queue MUST be a tab on Finance → Payments, not a
-  separate surface — the CEO: *"it can be part of the payments panel as a subtab for me to go and
+- **FR-036** *(2026-09-08)*: The confirmer's queue MUST be a tab on Finance → Payments — named
+  **Final confirmation** (the CEO's word, chosen so it cannot be confused with Finance's own
+  *Payments confirmation* tab) — not a separate surface — the CEO: *"it can be part of the payments panel as a subtab for me to go and
   confirm through."* The tab appears only for the appointed (the door is still the appointment, never
   a role); the sidebar count sits on **Payments**; the email link opens that tab directly; the former
   addresses redirect so emails already sent still land. Somebody appointed who is not Finance MUST

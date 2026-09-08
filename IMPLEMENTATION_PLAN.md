@@ -35,8 +35,9 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   after *Awaiting confirmation*; the sidebar entry goes and its count moves onto Payments; the old
   addresses redirect because sent emails link to them; a non-Finance appointee still gets in and
   sees only that tab (offered back as the alternative "Finance and Super User only" — not taken up,
-  so the appointment keeps working for anyone it is given to). Flagged, not changed: the first tab
-  is still called *Payments confirmation*, two tabs from the new *Confirmations*.
+  so the appointment keeps working for anyone it is given to). The clash flagged with the first tab, *Payments
+  confirmation*, was answered the same day: the new tab is **Final confirmation** — *"we can rename
+  confirmation to final confirmation."*
 - **2026-08-25 — The app is usable on a phone, not just installable (built, spec 010 extended, no
   migration).** *"Make the application PWA so I can use from the mobile."* The PWA half had shipped
   in August — manifest, icons, worker — so the request read as already done. It wasn't: the sidebar
