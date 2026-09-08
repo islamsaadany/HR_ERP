@@ -2,11 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireSuperUser } from "@/lib/roles";
 import { formatDate } from "@/lib/labels";
-import {
-  Appointment,
-  type AppointmentRow,
-  type Candidate,
-} from "@/components/confirmers/Appointment";
+import { PendingSubmitButton } from "@/components/PendingSubmitButton";
 import { appointConfirmer, removeConfirmer, appointUnitHead, removeUnitHead } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -26,8 +22,13 @@ export const dynamic = "force-dynamic";
  * transaction → confirms at the bank. Deliberately not called "roles", which already means
  * an account's role — the very collision being removed.
  */
-export default async function WhoMovesMoneyPage() {
+export default async function WhoMovesMoneyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ok?: string; error?: string }>;
+}) {
   await requireSuperUser();
+  const { ok, error } = await searchParams;
 
   const [units, candidates, financeStaff] = await Promise.all([
     prisma.businessUnit.findMany({
@@ -70,35 +71,6 @@ export default async function WhoMovesMoneyPage() {
 
   const nobodyConfirmsAnywhere = units.every((u) => u.transactionConfirmers.length === 0);
 
-  // The one line each appointed person gets, built here so the date is formatted once, on the
-  // server, by the house formatter — the client half never sees a Date to disagree about.
-  const toRows = (
-    rows: {
-      id: string;
-      createdAt: Date;
-      user: { id: string; name: string | null; email: string; status: string; title: string | null };
-      appointedBy: { name: string | null } | null;
-    }[],
-    verb: string,
-  ): AppointmentRow[] =>
-    rows.map((r) => ({
-      id: r.id,
-      userId: r.user.id,
-      name: r.user.name ?? "—",
-      detail:
-        (r.user.title ? `${r.user.title} · ` : "") +
-        r.user.email +
-        (r.appointedBy?.name ? ` · appointed by ${r.appointedBy.name}` : "") +
-        ` · ${formatDate(r.createdAt)}` +
-        (r.user.status !== "ACTIVE" ? ` · no longer active, so cannot ${verb}` : ""),
-    }));
-
-  const people: Candidate[] = candidates.map((p) => ({
-    id: p.id,
-    name: p.name ?? "—",
-    title: p.title,
-  }));
-
   return (
     <div>
       <Link href="/admin" className="text-[12.5px] font-semibold text-navy-700 hover:underline">
@@ -113,9 +85,12 @@ export default async function WhoMovesMoneyPage() {
         below, but set there.
       </p>
 
-      {/* No banner here any more: an appointment answers next to the control that made it
-          (2026-09-08), so nothing at the top of the page claims something about a row six
-          units further down. */}
+      {ok ? <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">✓ {ok}</p> : null}
+      {error ? (
+        <p role="alert" className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </p>
+      ) : null}
 
       {units.length === 0 ? (
         <p className="mt-6 rounded-lg border border-gold-300 bg-gold-50 px-4 py-3 text-sm text-gold-800">
@@ -147,11 +122,12 @@ export default async function WhoMovesMoneyPage() {
               step="Releases payments"
               unitId={unit.id}
               unitName={unit.name}
-              rows={toRows(unit.heads, "release")}
-              candidates={people}
+              rows={unit.heads}
+              candidates={candidates}
               appoint={appointUnitHead}
               remove={removeUnitHead}
               emptyNote={`Nobody appointed — ${unit.name}'s payments cannot be released.`}
+              verb="release"
             />
 
             {/* The account role, shown so this screen answers the whole question — but set
@@ -193,11 +169,12 @@ export default async function WhoMovesMoneyPage() {
               step="Confirms at the bank"
               unitId={unit.id}
               unitName={unit.name}
-              rows={toRows(unit.transactionConfirmers, "confirm")}
-              candidates={people}
+              rows={unit.transactionConfirmers}
+              candidates={candidates}
               appoint={appointConfirmer}
               remove={removeConfirmer}
               emptyNote={`Nobody appointed — Finance cannot send ${unit.name}'s transactions.`}
+              verb="confirm"
             />
           </section>
         ))}
@@ -213,6 +190,116 @@ export default async function WhoMovesMoneyPage() {
         the three steps for a unit; that is an arrangement, not a mistake, and nothing here warns
         about it.
       </p>
+    </div>
+  );
+}
+
+type Row = {
+  id: string;
+  createdAt: Date;
+  user: { id: string; name: string | null; email: string; status: string; title: string | null };
+  appointedBy: { name: string | null } | null;
+};
+
+/**
+ * One appointment step for one unit. Extracted because releasing and confirming are the
+ * same list, the same form and the same rules — two copies would drift the first time one
+ * of them was improved.
+ */
+function Appointment({
+  step,
+  unitId,
+  unitName,
+  rows,
+  candidates,
+  appoint,
+  remove,
+  emptyNote,
+  verb,
+}: {
+  step: string;
+  unitId: string;
+  unitName: string;
+  rows: Row[];
+  candidates: { id: string; name: string | null; title: string | null }[];
+  appoint: (formData: FormData) => Promise<void>;
+  remove: (formData: FormData) => Promise<void>;
+  emptyNote: string;
+  verb: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-start gap-3 border-t border-line px-4 py-3">
+      <span className="w-[9.5rem] shrink-0 pt-1 text-[10px] font-extrabold uppercase tracking-[0.07em] text-navy-600">
+        {step}
+      </span>
+
+      <div className="min-w-[12rem] flex-1">
+        {rows.length === 0 ? (
+          <p className="text-[12.5px] font-semibold text-red-700">{emptyNote}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {rows.map((r) => (
+              <li
+                key={r.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line px-3 py-2"
+              >
+                <span className="text-sm">
+                  <b className="font-semibold text-ink">{r.user.name}</b>
+                  <span className="block text-[11.5px] text-muted">
+                    {r.user.title ? `${r.user.title} · ` : ""}
+                    {r.user.email}
+                    {r.appointedBy?.name ? ` · appointed by ${r.appointedBy.name}` : ""} ·{" "}
+                    {formatDate(r.createdAt)}
+                    {r.user.status !== "ACTIVE" ? ` · no longer active, so cannot ${verb}` : ""}
+                  </span>
+                </span>
+                <form action={remove}>
+                  <input type="hidden" name="userId" value={r.user.id} />
+                  <input type="hidden" name="businessUnitId" value={unitId} />
+                  <PendingSubmitButton
+                    pendingLabel="Removing…"
+                    className="rounded-lg border border-line px-3 py-1.5 text-[12px] font-semibold text-muted hover:border-red-200 hover:text-red-700"
+                  >
+                    Remove
+                  </PendingSubmitButton>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <form action={appoint} className="mt-2.5 flex flex-wrap items-end gap-2.5">
+          <input type="hidden" name="businessUnitId" value={unitId} />
+          <label className="flex min-w-[14rem] flex-1 flex-col gap-1">
+            <span className="sr-only">{`${step} for ${unitName}`}</span>
+            <select
+              name="userId"
+              required
+              defaultValue=""
+              aria-label={`${step} for ${unitName}`}
+              className="w-full rounded-lg border border-navy-200 bg-surface px-3 py-2 text-sm"
+            >
+              <option value="" disabled>
+                Appoint somebody…
+              </option>
+              {candidates
+                .filter((p) => !rows.some((r) => r.user.id === p.id))
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                    {p.title ? ` — ${p.title}` : ""}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <PendingSubmitButton
+            pendingLabel="Appointing…"
+            className="rounded-lg bg-navy-800 px-4 py-2 text-sm font-semibold text-white hover:bg-navy-900"
+          >
+            Appoint
+          </PendingSubmitButton>
+        </form>
+      </div>
     </div>
   );
 }

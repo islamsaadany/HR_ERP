@@ -203,9 +203,14 @@ export default async function FinancePage({
           </Link>
         </div>
       </div>
+      {/* Corrected 2026-09-08. This said "transfer the covered amount, then confirm it here (the
+          employee is emailed)", which stopped being true when spec 041 moved the money moment to
+          the bank confirmation — leaving Finance on a tab called "Payments confirmation" with
+          nothing to press and no idea the work had moved one tab across. */}
       <p className="mt-1 text-muted">
-        Approved claims to pay — transfer the covered amount, then confirm it here (the employee is emailed). Reimbursed
-        claims stay listed below for reference.
+        What the company owes and where each payment has got to. Create the transactions in the bank,
+        record them under <b className="font-semibold text-ink">Awaiting confirmation</b>, and the
+        person appointed for that business unit confirms them — which is when the employee is told.
       </p>
 
       {paid ? (

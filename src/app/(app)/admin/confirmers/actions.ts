@@ -1,12 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSuperUser } from "@/lib/roles";
+import type { AppointmentResult } from "@/lib/finance/appointment-result";
 
 /**
- * Appointing who confirms transactions at the bank (spec 041).
+ * Appointing who confirms transactions at the bank, and who releases payments (spec 041).
  *
  * Super User only, and — unusually for this codebase — holding Super User does NOT itself let you
  * confirm. The CEO's instruction was that transactions wait for the appointed person and nobody
@@ -18,29 +18,38 @@ import { requireSuperUser } from "@/lib/roles";
  * the person and the unit. One person may hold several units; there is no row meaning "all of
  * them", so a unit created next month starts with nobody, visibly, rather than inheriting whoever
  * happened to be appointed before it existed.
+ *
+ * THEY RETURN, THEY NO LONGER REDIRECT (2026-09-08). The CEO, on appointing somebody: "a full
+ * refresh happens for the whole page — the appointment needs to be by cell not for the whole page
+ * like that." Every one of these ended in `redirect()`, which is a navigation: the browser threw
+ * away the screen, rebuilt six units' worth of it and dropped the reader at the top, to report one
+ * row changing. Each now answers with a result the row itself renders, and `revalidatePath` still
+ * refreshes the server data — so the list under the form is current without the page going away.
  */
 
-const q = (s: string) => encodeURIComponent(s);
-const BACK = "/admin/confirmers";
-
-function fail(msg: string): never {
-  redirect(`${BACK}?error=${q(msg)}`);
+function failure(message: string): AppointmentResult {
+  return { ok: false, message };
 }
 
-export async function appointConfirmer(formData: FormData): Promise<void> {
+const BACK = "/admin/confirmers";
+
+export async function appointConfirmer(
+  _prev: AppointmentResult | null,
+  formData: FormData,
+): Promise<AppointmentResult> {
   const actor = await requireSuperUser();
   const userId = ((formData.get("userId") as string | null) ?? "").trim();
   const businessUnitId = ((formData.get("businessUnitId") as string | null) ?? "").trim();
-  if (!userId) fail("Choose somebody.");
-  if (!businessUnitId) fail("Choose which business unit they confirm for.");
+  if (!userId) return failure("Choose somebody.");
+  if (!businessUnitId) return failure("Choose which business unit they confirm for.");
 
   const [person, unit] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { status: true, name: true } }),
     prisma.businessUnit.findUnique({ where: { id: businessUnitId }, select: { name: true } }),
   ]);
-  if (!person) fail("That person isn't in the employee registry.");
-  if (person.status !== "ACTIVE") fail("That person is no longer active.");
-  if (!unit) fail("That business unit no longer exists.");
+  if (!person) return failure("That person isn't in the employee registry.");
+  if (person.status !== "ACTIVE") return failure("That person is no longer active.");
+  if (!unit) return failure("That business unit no longer exists.");
 
   await prisma.transactionConfirmer.upsert({
     where: { userId_businessUnitId: { userId, businessUnitId } },
@@ -49,23 +58,26 @@ export async function appointConfirmer(formData: FormData): Promise<void> {
   });
 
   revalidatePath(BACK);
-  redirect(
-    `${BACK}?ok=${q(`${person.name ?? "They"} can now confirm ${unit.name}'s transactions.`)}`,
-  );
+  revalidatePath("/finance");
+  return { ok: true, message: `${person.name ?? "They"} can now confirm ${unit.name}'s transactions.` };
 }
 
-export async function removeConfirmer(formData: FormData): Promise<void> {
+export async function removeConfirmer(
+  _prev: AppointmentResult | null,
+  formData: FormData,
+): Promise<AppointmentResult> {
   await requireSuperUser();
   const userId = ((formData.get("userId") as string | null) ?? "").trim();
   const businessUnitId = ((formData.get("businessUnitId") as string | null) ?? "").trim();
-  if (!userId || !businessUnitId) fail("Nothing to remove.");
+  if (!userId || !businessUnitId) return failure("Nothing to remove.");
 
   // One unit at a time. Removing somebody everywhere at once would be a second, wider action
   // wearing the same button, and the wider one is the one that gets clicked by accident.
   await prisma.transactionConfirmer.deleteMany({ where: { userId, businessUnitId } });
 
   revalidatePath(BACK);
-  redirect(`${BACK}?ok=${q("Removed. They will no longer be emailed about that unit.")}`);
+  revalidatePath("/finance");
+  return { ok: true, message: "Removed. They will no longer be emailed about that unit." };
 }
 
 /**
@@ -76,19 +88,22 @@ export async function removeConfirmer(formData: FormData): Promise<void> {
  * head appointing another head would let the appointment hand itself out, and being able
  * to appoint yourself is what keeps an empty list from being a lock-out.
  */
-export async function appointUnitHead(formData: FormData): Promise<void> {
+export async function appointUnitHead(
+  _prev: AppointmentResult | null,
+  formData: FormData,
+): Promise<AppointmentResult> {
   const actor = await requireSuperUser();
   const userId = String(formData.get("userId") ?? "").trim();
   const businessUnitId = String(formData.get("businessUnitId") ?? "").trim();
-  if (!userId || !businessUnitId) redirect(`${BACK}?error=${q("Pick somebody to appoint.")}`);
+  if (!userId || !businessUnitId) return failure("Pick somebody to appoint.");
 
   const [person, unit] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { name: true, status: true } }),
     prisma.businessUnit.findUnique({ where: { id: businessUnitId }, select: { name: true } }),
   ]);
-  if (!person || !unit) redirect(`${BACK}?error=${q("That person or unit no longer exists.")}`);
+  if (!person || !unit) return failure("That person or unit no longer exists.");
   if (person.status !== "ACTIVE") {
-    redirect(`${BACK}?error=${q("That person is no longer active, so they could not release anything.")}`);
+    return failure("That person is no longer active, so they could not release anything.");
   }
 
   await prisma.businessUnitHead.upsert({
@@ -98,14 +113,17 @@ export async function appointUnitHead(formData: FormData): Promise<void> {
   });
 
   revalidatePath(BACK);
-  redirect(`${BACK}?ok=${q(`${person.name} now releases payments for ${unit.name}.`)}`);
+  return { ok: true, message: `${person.name} now releases payments for ${unit.name}.` };
 }
 
-export async function removeUnitHead(formData: FormData): Promise<void> {
+export async function removeUnitHead(
+  _prev: AppointmentResult | null,
+  formData: FormData,
+): Promise<AppointmentResult> {
   await requireSuperUser();
   const userId = String(formData.get("userId") ?? "").trim();
   const businessUnitId = String(formData.get("businessUnitId") ?? "").trim();
-  if (!userId || !businessUnitId) redirect(BACK);
+  if (!userId || !businessUnitId) return failure("Nothing to remove.");
 
   const [person, unit] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
@@ -114,7 +132,8 @@ export async function removeUnitHead(formData: FormData): Promise<void> {
 
   await prisma.businessUnitHead.deleteMany({ where: { userId, businessUnitId } });
   revalidatePath(BACK);
-  redirect(
-    `${BACK}?ok=${q(`${person?.name ?? "They"} no longer releases payments for ${unit?.name ?? "that unit"}.`)}`
-  );
+  return {
+    ok: true,
+    message: `${person?.name ?? "They"} no longer releases payments for ${unit?.name ?? "that unit"}.`,
+  };
 }
