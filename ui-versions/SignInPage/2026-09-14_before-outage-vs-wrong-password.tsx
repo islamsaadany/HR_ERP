@@ -31,37 +31,7 @@ export default async function SignInPage({
     } catch (err) {
       // A failed sign-in throws AuthError; anything else (e.g. the redirect on
       // success) must be re-thrown so Next.js can handle it.
-      //
-      // WHICH AuthError matters, and every one of them used to print "incorrect
-      // password" (fixed 2026-09-14, after the whole team reported wrong-password
-      // messages at once):
-      //
-      //   CredentialsSignin  — authorize() returned null. The real thing: no such
-      //                        email, not ACTIVE, or the password doesn't verify.
-      //   anything else      — authorize() THREW, or auth is misconfigured. In
-      //                        practice CallbackRouteError wrapping a Prisma
-      //                        P1001 "can't reach database server". Nothing to do
-      //                        with the password, and it hits EVERYONE at the same
-      //                        moment, which is exactly what a company-wide
-      //                        database outage looks like from the sign-in screen.
-      //
-      // Measured both ways in a real browser: with a correct password and the
-      // database stopped, the old code printed the identical wrong-password
-      // sentence. So a shared outage arrived as "all team is getting wrong
-      // password messages" and there was nothing on screen or in the logs to say
-      // otherwise. Telling someone their password is wrong when it isn't sends
-      // them to HR for a reset that cannot help.
-      if (err instanceof AuthError) {
-        if (err.type === "CredentialsSignin") redirect("/signin?error=Credentials");
-        // Name the real cause where an operator can find it — the screen stays
-        // vague on purpose (it must never hint at whether an account exists).
-        console.error(
-          "[signin] refused for a reason that is NOT a wrong password:",
-          err.type,
-          err.cause ?? err
-        );
-        redirect("/signin?error=Unavailable");
-      }
+      if (err instanceof AuthError) redirect("/signin?error=Credentials");
       throw err;
     }
   }
@@ -91,8 +61,6 @@ export default async function SignInPage({
                 ? "Incorrect email or password. Please try again."
                 : error === "AccessDenied"
                 ? "That account isn't allowed. Use your @forefront.consulting email, or ask HR to add you."
-                : error === "Unavailable"
-                ? "We can't reach the system right now — this isn't your password, so resetting it won't help. Please try again in a few minutes, and tell HR if it keeps happening."
                 : "Something went wrong signing in. Please try again."}
             </p>
           ) : null}
