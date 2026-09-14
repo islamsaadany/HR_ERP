@@ -23,6 +23,29 @@
 | 12 — Team Communications | 🟢 **Built** (spec 039 — one door with three options: the dashboard noticeboard, email to a chosen audience, and birthday & work-anniversary congratulations drafted by the platform and sent by a human; migrations `067` + `074`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
 
+## Sign-in stops blaming the password for an outage (built 2026-09-14 — no migration)
+- Reported as *"all team is getting wrong password messages"* — which reads as a password problem
+  and is not one. The sign-in screen printed *"Incorrect email or password"* for **every** kind of
+  auth failure, including the one raised when the app cannot reach the database.
+- **Proven, not reasoned:** rebuilt the schema on a throwaway Postgres, created an employee with a
+  known password, and drove the real sign-in in a real browser. With the **correct** password and
+  Postgres stopped, the old code printed the identical wrong-password sentence and landed on the
+  same `?error=Credentials`. A company-wide outage and a typo were indistinguishable.
+- Underneath they always differed: a real mismatch is `CredentialsSignin`; an unreachable database
+  is a `CallbackRouteError` wrapping Prisma `P1001`. The page now branches on that.
+  - A genuine wrong password keeps its **exact** existing wording.
+  - Anything else says the system can't be reached **and that resetting the password won't help**,
+    so nobody is sent to HR for a fix that cannot work.
+  - The real cause (`err.type` + `err.cause`) is logged server-side, so the Vercel log names it
+    instead of leaving it to be guessed. The screen itself stays vague — it must never hint at
+    whether an account exists.
+- Verified after the change, all three in a real browser: correct password + database up → reaches
+  the dashboard; wrong password → unchanged message; correct password + database down → the new
+  message, with the Prisma error in the log. `npx tsc --noEmit` and `npm run build` both clean.
+- **Not a fix for the live incident itself** — if the team is locked out right now, the cause is in
+  the infrastructure or the data (check Neon's compute/limits first; then whether anyone ran
+  "Reset ALL passwords"). This change makes the next one say so out loud.
+
 ## Confirmations move inside Payments (built 2026-09-08 — no migration)
 - The CEO: *"the confirmations of transactions is appearing in the external panel which is not
   correct, it can be part of the payments panel as a subtab for me to go and confirm through."*
