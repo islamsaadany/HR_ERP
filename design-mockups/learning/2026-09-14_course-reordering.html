@@ -118,7 +118,7 @@
 </svg>
 
 <div class="wrap">
-  <p class="eyebrow">Learning · Admin list · v2</p>
+  <p class="eyebrow">Learning · Admin list · v3</p>
   <h1>Putting the courses in order</h1>
   <p class="lede">
     Two changes to Admin&nbsp;→&nbsp;Learning, and nothing else on the screen moves. The list gains a
@@ -126,10 +126,10 @@
     published courses is the order employees meet them in.
   </p>
   <p class="note" style="margin-top:14px">
-    <b>Changed since v1:</b> reordering is now a <b>drag handle</b>, as asked. Move&nbsp;up /
-    move&nbsp;down survive inside the ⋯ menu each row already has — dragging needs a mouse, and this
-    is an app people open on their phones, so it can be the good way without being the only way.
-    It is how the employee and catalogue tables already behave.
+    <b>Changed since v2:</b> the handle is now the <b>only</b> way to move a course — the move&nbsp;up
+    / move&nbsp;down entries are gone from the ⋯ menu, as asked. Nothing replaces them on the row.
+    Instead the handle answers to all three ways of holding the machine: drag it with a mouse,
+    press and hold to lift it on a phone, or give it keyboard focus and use the up and down keys.
   </p>
 
   <!-- ───────────────────────────── 1 ───────────────────────────── -->
@@ -339,10 +339,10 @@
 
   <!-- ───────────────────────────── 3 ───────────────────────────── -->
   <section class="proposal">
-    <h2><span class="num">3</span> The same move without a mouse</h2>
+    <h2><span class="num">3</span> One handle, however you are holding the machine</h2>
     <p class="sub">
-      Two new entries at the top of the ⋯ menu every row already has. This is the whole of the
-      phone and keyboard story — no second control on the row, nothing new to look at.
+      The ⋯ menu is back to what it is today — rename and delete, nothing added. The handle carries
+      the whole job instead, which means it has to answer to more than a mouse.
     </p>
 
     <div class="frame" style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">
@@ -357,21 +357,20 @@
           <span class="kebab on">⋯</span><span class="arrow">→</span>
         </div>
         <div class="menu">
-          <span class="sep">Order</span>
-          <span class="item"><span class="ico">▲</span> Move up</span>
-          <span class="item"><span class="ico">▼</span> Move down</span>
-          <span class="sep">Course</span>
           <span class="item"><span class="ico">✎</span> Rename</span>
           <span class="item danger"><span class="ico">🗑</span> Delete</span>
         </div>
+        <p class="cap">The menu, unchanged from today.</p>
       </div>
-      <div class="panel" style="flex:1;min-width:260px">
-        <h5>Why it stays</h5>
-        <p style="margin-bottom:8px">Dragging is a mouse gesture. On a phone a drag is how you scroll
-          the page, so a handle either fights the scroll or does nothing — and the app is installed on
-          phones.</p>
-        <p>The two entries grey out at the ends of a group, so the menu always tells you the truth
-          about where a course can go.</p>
+      <div class="panel" style="flex:1;min-width:270px">
+        <h5>What the handle answers to</h5>
+        <p style="margin-bottom:9px"><b style="color:var(--navy-800)">Mouse</b> — drag it, as drawn above.</p>
+        <p style="margin-bottom:9px"><b style="color:var(--navy-800)">Phone</b> — press and hold, then
+          move. The hold is what separates lifting a course from scrolling the page, so the two never
+          fight; it is the gesture phones already use for rearranging.</p>
+        <p><b style="color:var(--navy-800)">Keyboard</b> — tab to the handle and press up or down.
+          Without this a course cannot be moved at all without a mouse, and the rest of the admin
+          screens are reachable by keyboard.</p>
       </div>
     </div>
   </section>
@@ -409,5 +408,5 @@
     </p>
   </div>
 
-  <footer>Mockup v2 · Admin → Learning · 15/09/2026 · design-mockups/learning/2026-09-14_course-reordering.html</footer>
+  <footer>Mockup v3 · Admin → Learning · 15/09/2026 · design-mockups/learning/2026-09-14_course-reordering.html</footer>
 </div>
