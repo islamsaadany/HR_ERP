@@ -6,8 +6,6 @@ import { formatDate } from "@/lib/labels";
 import { BackLink } from "@/components/admin/BackLink";
 import { NewCourseForm } from "@/components/learning/NewCourseForm";
 import { CourseRow } from "@/components/learning/CourseActions";
-import { CourseBoard, CourseDragHandle } from "@/components/learning/CourseBoard";
-import { statusRank } from "@/lib/learning/order";
 import { CHIP } from "@/components/learning/ui";
 import { SuggestionQueue, type Suggestion } from "@/components/learning/SuggestionQueue";
 import { LearningSettingsMenu } from "@/components/learning/LearningSettingsMenu";
@@ -23,10 +21,7 @@ export default async function AdminLearningPage() {
   const hrAdmin = isAdmin(actor.role);
 
   const courses = await prisma.course.findMany({
-    // Ordered within a state here; the states themselves are sequenced below through the one
-    // derivation the reorder write also uses. `status: "asc"` used to do it, which sorted by
-    // however the enum happened to be declared — drafts above the live catalogue.
-    orderBy: [{ order: "asc" }, { title: "asc" }],
+    orderBy: [{ status: "asc" }, { order: "asc" }],
     select: {
       id: true,
       title: true,
@@ -38,7 +33,6 @@ export default async function AdminLearningPage() {
       ratings: { select: { stars: true } },
     },
   });
-  courses.sort((a, b) => statusRank(a.status) - statusRank(b.status));
 
   // Employees suggest resources; nothing reaches the library until HR approves it here. ONE queue
   // for the whole module — reviewing four suggestions should not mean opening four courses.
@@ -95,25 +89,18 @@ export default async function AdminLearningPage() {
           No courses yet. Create one above to get started.
         </p>
       ) : (
-        /* The rows are still built here, on the server — CourseBoard only decides which of them
-           are on screen and in what order, so arranging the list changed no row markup. */
-        <CourseBoard
-          items={courses.map((course) => ({
-            id: course.id,
-            status: course.status,
-            title: course.title,
-            node: (
-              /* The card frame, the ⋯ menu and the rename / delete panels belong to CourseRow;
-                 the link and everything in it is still rendered here, on the server. The kebab
-                 cannot live INSIDE the link — a button inside an anchor is invalid, and clicking
-                 it would follow the link — so the frame moved out to sit around both. The handle
-                 is passed the same way and for the same reason. */
+        <ul className="mt-6 space-y-2">
+          {courses.map((course) => (
+            <li key={course.id}>
+              {/* The card frame, the ⋯ menu and the rename / delete panels belong to CourseRow;
+                  the link and everything in it is still rendered here, on the server. The kebab
+                  cannot live INSIDE the link — a button inside an anchor is invalid, and clicking
+                  it would follow the link — so the frame moved out to sit around both. */}
               <CourseRow
                 courseId={course.id}
                 title={course.title}
                 summary={course.summary}
                 startedCount={course._count.enrollments}
-                handle={<CourseDragHandle courseId={course.id} />}
               >
               <Link
                 href={`/admin/learning/${course.id}`}
@@ -158,9 +145,9 @@ export default async function AdminLearningPage() {
                 </span>
               </Link>
               </CourseRow>
-            ),
-          }))}
-        />
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

@@ -246,18 +246,12 @@ export function CourseRow({
   title,
   summary,
   startedCount,
-  handle,
   children,
 }: {
   courseId: string;
   title: string;
   summary: string | null;
   startedCount: number;
-  /** The drag handle, when the row is in a list that can be arranged (2026-09-15). It is passed in
-   *  rather than rendered here because it belongs to the list's ordering state, not to the row —
-   *  and it is deliberately absent from the rename / delete / refusal panels below, where the
-   *  operator is doing something other than arranging. */
-  handle?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -307,7 +301,6 @@ export function CourseRow({
         mode === "menu" ? "z-30" : ""
       }`}
     >
-      {handle}
       {children}
       <button
         type="button"

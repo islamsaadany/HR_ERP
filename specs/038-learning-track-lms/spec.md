@@ -402,6 +402,29 @@ with nothing on screen reaching it. These state the rules the screen work settle
   retained only because they are mid-course, and MUST show a superseded completion's original date
   alongside the date it was reopened.
 
+**Arranging the courses** *(added 2026-09-15)*
+
+- **FR-078**: A learning manager MUST be able to decide the order the courses appear in, and that
+  order MUST be the order employees meet them in. Ordering is authority over the module, not over
+  people, so it MUST sit with whoever runs Learning rather than requiring HR Admin.
+- **FR-079**: A course MUST only be movable among courses of its own state. The admin list MUST
+  group by state in a fixed sequence — **published, drafts, paused** — read from one derivation
+  shared by the screen and the write, never from the order the state values happen to be declared
+  in.
+- **FR-080**: The states MUST be selectable as filters, each stating how many courses it holds
+  before it is chosen.
+- **FR-081**: Reordering MUST be a single control on the row — a drag handle. Because it is the
+  only one, it MUST also work by press-and-hold on a touchscreen and by the up/down keys under
+  keyboard focus, and a keyboard move MUST be announced. A course alone in its state MUST show its
+  handle as unavailable rather than as a control that does nothing.
+- **FR-082**: A move MUST save on its own, and a save that fails MUST return the course to where it
+  was and say why — the list MUST never show an order that is not stored.
+- **FR-083**: The write MUST refuse any list that does not account for every course currently in
+  that state, so a course created or published elsewhere since the page loaded cannot be left
+  holding a stale position. Numbering MUST be rewritten canonically across all courses on every
+  accepted move, leaving no ties and no gaps.
+- **FR-084**: Reordering MUST NOT touch anybody's progress, completion or access.
+
 **Boundaries**
 
 - **FR-036**: The module MUST use the existing employee registry as its only source of people and

@@ -23,6 +23,57 @@
 | 12 — Team Communications | 🟢 **Built** (spec 039 — one door with three options: the dashboard noticeboard, email to a chosen audience, and birthday & work-anniversary congratulations drafted by the platform and sent by a human; migrations `067` + `074`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
 
+## Learning: the admin arranges the courses (built 2026-09-15 — no migration)
+- **Asked for as** *"an option in the learning module to reorder the courses by the learning admin"*,
+  then narrowed: *"ordering in the groups but I believe the groups should be quick filtered
+  published and paused and drafts. the main requirement is to order the published."*
+- **Mockup-approved first** (`design-mockups/learning/2026-09-14_course-reordering.html`, v3). v1
+  proposed ↑/↓ arrows; the CEO wanted a handle, and then *"remove the option with order move up and
+  down the handling is enough"* — so the ⋯ menu is back to rename and delete, and the handle carries
+  the whole job.
+- **Half of it already existed.** `Course.order` has been written on both creation paths (max + 1)
+  and read by the admin list **and** by `accessibleCoursesFor` since the module shipped — so the
+  published order was already the order employees meet their courses in. Nothing had ever been able
+  to change it. No schema change, no migration.
+- **The states became quick filters.** The list used to be sorted `status: "asc"` with nothing on
+  screen saying so, which put drafts above the live catalogue because that is the order the enum
+  happens to declare. `STATUS_ORDER` (`src/lib/learning/order.ts`) is now the one derivation the
+  page and the write both read: **Published, Drafts, Paused**, with a heading over each group and a
+  pressable chip carrying its count. A course alone in its state has a faded, disabled handle —
+  there is nowhere for it to go, and a live-looking control that does nothing is worse.
+- **One control, three inputs.** Mouse drag; press-and-hold on a touchscreen (the hold is what keeps
+  a lift from being read as a scroll); and the up/down keys while the handle has keyboard focus,
+  announced through an `aria-live` region. Without the last, reordering would be the module's only
+  action unreachable without a mouse.
+- **The write refuses rather than guesses.** `reorderCoursesWithin` starts from the courses the
+  DATABASE says are in that state and demands the submitted list account for all of them — a course
+  published in another tab is absent from the submitted list, produces nothing to check, and a guard
+  written the other way round would wave it through and leave it holding a stale number. Renumbering
+  is canonical across every course (1..n in state order), which also repairs the legacy rows that
+  all carried 0. A refused save puts the row back where it was and says why.
+- **Three faults found only by driving a real browser**, none visible to `tsc` or `next build`:
+  - The context provider was never rendered, so **every handle drew as nothing**. The page looked
+    finished.
+  - `setPointerCapture` on the handle **loses capture the moment the list reorders** — React moves
+    the `<li>` nodes to re-sequence them, and an element that leaves the document drops its capture.
+    The drag froze half way, every time, with the row still lifted and following nothing. The
+    listeners moved to the window, which cannot be reordered out from under them.
+  - Placement read **live** bounding rectangles, which lag a pointer moving faster than the browser
+    repaints: the same drag landed correctly at 60ms between moves and three rows short at 25ms,
+    and a real mouse reports every ~8ms. Every measurement is now frozen at the start of the drag
+    and the rest is arithmetic.
+- **Plus one the browser made obvious**: a drag could only reach as far as the screen, because a
+  pointer cannot leave the viewport and a row below the fold has no midpoint to get past. Edge
+  auto-scroll was added — and then clamped to the page's height *before* the row was lifted, since a
+  translated row lengthens the document and an unclamped scroll finds fresh "bottom" every frame and
+  runs away into blank space under a still finger.
+- **Verified**: `scripts/verify-course-order.mts` (22 checks) against a throwaway Postgres — with
+  and without other scripts' courses in the table, since reordering is a whole-state operation and a
+  script submitting only its own fixtures would pass alone and fail beside anything else. Then the
+  real app driven in a real browser: the filters, a drag that saves and survives a reload, a course
+  refusing to leave its state, the keyboard path, the employee page, and 390px with no sideways
+  scroll and nothing in the console. `npx tsc --noEmit` and `npm run build` clean.
+
 ## Sign-in stops blaming the password for an outage (built 2026-09-14 — no migration)
 - Reported as *"all team is getting wrong password messages"* — which reads as a password problem
   and is not one. The sign-in screen printed *"Incorrect email or password"* for **every** kind of
