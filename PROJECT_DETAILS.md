@@ -542,6 +542,25 @@ a live `CourseAssignment` to them, a `CourseAssignment` to a `LearnerGroup` they
 `courseAccessFor` (per person), `accessibleCoursesFor` (My learning), `courseRoster` (HR roster).
 Nothing else may decide access.
 
+**The order of the courses** (added 2026-09-15, mockup-approved, no migration). `Course.order` has
+always been written (max + 1 on both creation paths) and always been read — by the admin list and by
+`accessibleCoursesFor`, so it already decided the order employees meet their courses in; nothing had
+ever been able to change it. Admin → Learning now groups the list by state under pressable quick
+filters carrying their counts, and each row has a **drag handle**: the whole reordering control, by
+deliberate instruction, so the ⋯ menu keeps only rename and delete. Because it is the only control it
+answers to a mouse drag, a press-and-hold on touch, and the up/down keys under keyboard focus (with
+an `aria-live` announcement); the page auto-scrolls while a drag rests near a window edge, clamped to
+the page height captured before the row was lifted. `src/lib/learning/order.ts` holds the two things
+that must not fork: `STATUS_ORDER` (**Published, Drafts, Paused** — read by the page *and* the write,
+replacing a `status: "asc"` that silently sorted by the enum's declaration order) and
+`reorderCoursesWithin`, which iterates the courses the database says are in that state and refuses
+unless the submitted list accounts for all of them, then renumbers **every** course canonically
+1..n — repairing the legacy rows that all carried 0. A course can only move among courses of its own
+state. The write is a plain module because every export from a `"use server"` file is an endpoint;
+`reorderCourses` in `admin/learning/actions.ts` is the door (`requireLearningManager`, then a check
+that the state is a real enum member). Progress is untouched — nothing here goes near an enrollment.
+Proven by `scripts/verify-course-order.mts` and by driving the real app in a browser.
+
 **Renaming and deleting a course** (added 2026-08-25, mockup-approved): one ⋯ menu on each row of
 `/admin/learning` and in the course header, driving one rename panel (title + summary) and one
 confirmation. Deleting is **refused the moment anybody has started it**, at any status — an

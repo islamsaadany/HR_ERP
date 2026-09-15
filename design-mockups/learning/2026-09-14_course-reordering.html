@@ -1,0 +1,412 @@
+<title>Ordering Learning Courses</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#8ea6c8;--navy-400:#4f6d97;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;--red-bg:#fdf3f3;--red-line:#f3c6c6;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding-block:32px 80px;padding-inline:20px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:74ch}
+  .proposal{margin-top:38px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:78ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+  .cap{font-size:11.5px;color:var(--muted);margin:9px 0 0;font-style:italic}
+
+  /* chips */
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-navy{border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700)}
+
+  /* quick filters */
+  .filters{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:14px}
+  .f{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);color:var(--muted);
+     font-size:12.5px;font-weight:600;padding:6px 13px;border-radius:999px;white-space:nowrap}
+  .f .n{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);
+        background:var(--paper);border-radius:999px;padding:1px 7px;border:1px solid var(--line)}
+  .f.on{border-color:var(--navy-800);background:var(--navy-800);color:#fff}
+  .f.on .n{background:rgba(255,255,255,.16);border-color:transparent;color:#fff}
+
+  /* group heading */
+  .ghead{display:flex;align-items:baseline;gap:9px;margin:20px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .ghead:first-of-type{margin-top:4px}
+  .ghead h4{margin:0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+  .ghead .hint{font-size:11.5px;color:var(--muted)}
+
+  /* course row */
+  .row{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);
+       padding:11px 13px 11px 8px;margin-bottom:8px;position:relative}
+  .row .grow{min-width:0;flex:1}
+  .row .t{font-size:14.5px;font-weight:700;color:var(--navy-800)}
+  .row .titleline{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .row .meta{display:block;margin-top:3px;font-size:11.5px;color:var(--muted)}
+  .kebab{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;border:1px solid var(--line);
+         background:var(--surface);color:var(--muted);font-size:14px;font-weight:800;letter-spacing:1px;flex:none}
+  .kebab.on{border-color:var(--navy-300);background:var(--navy-50);color:var(--navy-800)}
+  .arrow{color:var(--muted);font-size:13px;flex:none}
+
+  /* THE HANDLE */
+  .grip{flex:none;display:grid;place-items:center;width:22px;height:30px;border-radius:7px;color:var(--navy-300);
+        cursor:grab;background:transparent;border:0;padding:0}
+  .grip svg{display:block}
+  .row:hover .grip{color:var(--navy-400);background:var(--navy-50)}
+  .grip:focus-visible{outline:2px solid var(--gold-500);outline-offset:1px}
+  .pos{flex:none;width:16px;text-align:right;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--navy-300)}
+
+  /* drag states */
+  .row.lifted{box-shadow:0 10px 26px rgba(15,36,68,.16);border-color:var(--navy-300);transform:rotate(-.35deg);z-index:2}
+  .row.lifted .grip{cursor:grabbing;color:var(--navy-700);background:var(--navy-50)}
+  .row.ghost{opacity:.42;border-style:dashed;background:var(--paper);box-shadow:none}
+  .droplineline{height:0;position:relative;margin:-5px 0 3px}
+  .dropline{display:block;height:3px;border-radius:999px;background:var(--navy-800);margin:2px 0 9px}
+  .dropline::after{content:"";position:absolute;left:0;width:9px;height:9px;border-radius:999px;background:var(--navy-800);margin-top:-3px}
+
+  /* kebab menu */
+  .menu{position:relative;margin:-4px 0 10px auto;width:200px;border:1px solid var(--line);border-radius:11px;background:var(--surface);
+        box-shadow:0 6px 20px rgba(15,36,68,.10);overflow:hidden}
+  .menu .item{display:flex;width:100%;align-items:center;gap:9px;padding:8px 11px;font-size:12.5px;font-weight:600;color:var(--ink);
+              border-bottom:1px solid var(--line)}
+  .menu .item:last-child{border-bottom:0}
+  .menu .item .ico{width:14px;text-align:center;color:var(--navy-400);font-size:11px}
+  .menu .item.off{color:var(--muted);opacity:.45}
+  .menu .item.danger{color:var(--red)}
+  .menu .item.danger .ico{color:var(--red)}
+  .menu .sep{padding:5px 11px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+             background:var(--paper);border-bottom:1px solid var(--line)}
+
+  .note{border-left:3px solid var(--gold-500);background:#fbf9f2;padding:12px 16px;border-radius:0 10px 10px 0;font-size:12.5px;max-width:78ch}
+  .note b{color:var(--navy-800)}
+  .two{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .panel h5{margin:0 0 3px;font-size:12px;font-weight:700;color:var(--navy-800)}
+  .panel p{margin:0;font-size:12px;color:var(--muted)}
+
+  /* employee-side sketch */
+  .emp{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:11px 13px;margin-bottom:7px;
+       display:flex;align-items:center;gap:11px}
+  .emp .t{font-size:13.5px;font-weight:700;color:var(--navy-800)}
+  .emp .grow{min-width:0;flex:1}
+  .track{flex:none;width:110px;height:7px;border-radius:999px;background:var(--navy-50);overflow:hidden}
+  .track span{display:block;height:100%;border-radius:999px;background:var(--navy-800)}
+  .track.done span{background:var(--green)}
+  .emplabel{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 7px}
+
+  .decision{margin-top:40px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:15px 18px;border-radius:0 10px 10px 0;font-size:13px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ol{margin:8px 0 0;padding-left:20px}.decision li{margin:8px 0}
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+  @media (max-width:520px){ .row{gap:7px} .pos{display:none} }
+</style>
+
+<!-- the grip glyph, defined once -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="grip" viewBox="0 0 10 16">
+    <g fill="currentColor">
+      <circle cx="2.5" cy="3" r="1.35"/><circle cx="7.5" cy="3" r="1.35"/>
+      <circle cx="2.5" cy="8" r="1.35"/><circle cx="7.5" cy="8" r="1.35"/>
+      <circle cx="2.5" cy="13" r="1.35"/><circle cx="7.5" cy="13" r="1.35"/>
+    </g>
+  </symbol>
+</svg>
+
+<div class="wrap">
+  <p class="eyebrow">Learning · Admin list · v3</p>
+  <h1>Putting the courses in order</h1>
+  <p class="lede">
+    Two changes to Admin&nbsp;→&nbsp;Learning, and nothing else on the screen moves. The list gains a
+    row of quick filters, and each course gains a handle you drag. The order you set for the
+    published courses is the order employees meet them in.
+  </p>
+  <p class="note" style="margin-top:14px">
+    <b>Changed since v2:</b> the handle is now the <b>only</b> way to move a course — the move&nbsp;up
+    / move&nbsp;down entries are gone from the ⋯ menu, as asked. Nothing replaces them on the row.
+    Instead the handle answers to all three ways of holding the machine: drag it with a mouse,
+    press and hold to lift it on a phone, or give it keyboard focus and use the up and down keys.
+  </p>
+
+  <!-- ───────────────────────────── 1 ───────────────────────────── -->
+  <section class="proposal">
+    <h2><span class="num">1</span> Quick filters instead of silent grouping</h2>
+    <p class="sub">
+      Today the list is sorted by state with nothing saying so — drafts first, then published, then
+      paused, with no heading between them. The three states become filters you can press, and the
+      count on each tells you how many there are before you press it.
+    </p>
+
+    <div class="frame">
+      <div class="filters">
+        <span class="f on">All <span class="n">11</span></span>
+        <span class="f">Published <span class="n">8</span></span>
+        <span class="f">Drafts <span class="n">2</span></span>
+        <span class="f">Paused <span class="n">1</span></span>
+      </div>
+
+      <div class="ghead">
+        <h4>Published</h4>
+        <span class="hint">8 courses · this is the order employees see them in</span>
+      </div>
+
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">1</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Intro To consulting</span>
+            <span class="chip c-ok">Published</span><span class="chip c-navy">Everyone</span></span>
+          <span class="meta">1 section · 6 started · published 25/08/2026 · ★ 4 from 1 rating</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">2</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Values &amp; Ethics</span>
+            <span class="chip c-ok">Published</span><span class="chip c-navy">Everyone</span></span>
+          <span class="meta">1 section · 1 started · published 03/09/2026</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">3</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Consulting Market</span>
+            <span class="chip c-ok">Published</span><span class="chip c-navy">Everyone</span></span>
+          <span class="meta">1 section · 1 started · published 08/09/2026</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <p class="cap">…five more published courses…</p>
+
+      <div class="ghead">
+        <h4>Drafts</h4>
+        <span class="hint">2 courses · nobody can see these yet, so their order is just housekeeping</span>
+      </div>
+
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">1</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Client Communication</span>
+            <span class="chip c-gold">Draft</span></span>
+          <span class="meta">2 sections · 0 started</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">2</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Data Protection Essentials</span>
+            <span class="chip c-gold">Draft</span></span>
+          <span class="meta">1 section · 0 started</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <div class="ghead">
+        <h4>Paused</h4>
+        <span class="hint">1 course · was live, and is meant to be again</span>
+      </div>
+
+      <div class="row">
+        <span class="grip" style="color:var(--line)"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">1</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Legacy Onboarding Pack</span>
+            <span class="chip c-gold">Paused</span></span>
+          <span class="meta">3 sections · 14 started · published 11/02/2026</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <p class="cap">“All”, with a heading over each state. The one course alone in its group has a faded handle — there is nowhere for it to go.</p>
+    </div>
+
+    <p class="note" style="margin-top:14px">
+      <b>One thing changes that you did not ask for, so I am flagging it.</b> Today drafts sit at the
+      top of the list. Published would now come first, because that is the working set and the one
+      whose order matters to anybody but you. Say the word and I will leave drafts on top instead.
+    </p>
+  </section>
+
+  <!-- ───────────────────────────── 2 ───────────────────────────── -->
+  <section class="proposal">
+    <h2><span class="num">2</span> Drag the handle — mid-move</h2>
+    <p class="sub">
+      Pressing “Published” gives you the list you will actually arrange in. Take a course by the
+      handle and the row lifts; a navy line shows where it will land; everything below shuffles
+      down to make room. Let go and it stays — no Save button, the drop is the save.
+    </p>
+
+    <div class="frame">
+      <div class="filters">
+        <span class="f">All <span class="n">11</span></span>
+        <span class="f on">Published <span class="n">8</span></span>
+        <span class="f">Drafts <span class="n">2</span></span>
+        <span class="f">Paused <span class="n">1</span></span>
+      </div>
+
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">1</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Intro To consulting</span>
+            <span class="chip c-ok">Published</span><span class="chip c-navy">Everyone</span></span>
+          <span class="meta">1 section · 6 started · published 25/08/2026 · ★ 4 from 1 rating</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <span class="dropline"></span>
+
+      <div class="row lifted">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">2</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Consulting Market</span>
+            <span class="chip c-ok">Published</span><span class="chip c-navy">Everyone</span></span>
+          <span class="meta">1 section · 1 started · published 08/09/2026</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">3</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Values &amp; Ethics</span>
+            <span class="chip c-ok">Published</span><span class="chip c-navy">Everyone</span></span>
+          <span class="meta">1 section · 1 started · published 03/09/2026</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">4</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Consulting Assignments Flow</span>
+            <span class="chip c-ok">Published</span><span class="chip c-navy">Everyone</span></span>
+          <span class="meta">1 section · 0 started · published 08/09/2026</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <div class="row ghost">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">—</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Consulting Market</span></span>
+          <span class="meta">where it came from</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">6</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Proposal &amp; Report Writing</span>
+            <span class="chip c-ok">Published</span><span class="chip c-navy">Everyone</span></span>
+          <span class="meta">1 section · 1 started · published 03/09/2026</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+
+      <p class="cap">“Consulting Market” being carried from fifth to second. The faded row is the gap it left; it closes up when you let go.</p>
+    </div>
+
+    <div class="two" style="margin-top:14px">
+      <div class="panel">
+        <h5>It cannot leave its group</h5>
+        <p>A published course only ever drops among published courses — the line will not appear over
+           the drafts. Publishing a draft puts it at the bottom of the published list, where you drag
+           it up.</p>
+      </div>
+      <div class="panel">
+        <h5>Nobody’s progress moves</h5>
+        <p>Ordering touches the list and nothing else. Every tick, every watched second and every
+           completion stays exactly where it is.</p>
+      </div>
+      <div class="panel">
+        <h5>If the drop doesn’t save</h5>
+        <p>The row snaps back to where it was and says so, rather than sitting in a new place that
+           only you can see.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── 3 ───────────────────────────── -->
+  <section class="proposal">
+    <h2><span class="num">3</span> One handle, however you are holding the machine</h2>
+    <p class="sub">
+      The ⋯ menu is back to what it is today — rename and delete, nothing added. The handle carries
+      the whole job instead, which means it has to answer to more than a mouse.
+    </p>
+
+    <div class="frame" style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">
+      <div style="flex:1;min-width:290px">
+        <div class="row">
+          <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">3</span>
+          <span class="grow">
+            <span class="titleline"><span class="t">Consulting Market</span>
+              <span class="chip c-ok">Published</span></span>
+            <span class="meta">1 section · 1 started · published 08/09/2026</span>
+          </span>
+          <span class="kebab on">⋯</span><span class="arrow">→</span>
+        </div>
+        <div class="menu">
+          <span class="item"><span class="ico">✎</span> Rename</span>
+          <span class="item danger"><span class="ico">🗑</span> Delete</span>
+        </div>
+        <p class="cap">The menu, unchanged from today.</p>
+      </div>
+      <div class="panel" style="flex:1;min-width:270px">
+        <h5>What the handle answers to</h5>
+        <p style="margin-bottom:9px"><b style="color:var(--navy-800)">Mouse</b> — drag it, as drawn above.</p>
+        <p style="margin-bottom:9px"><b style="color:var(--navy-800)">Phone</b> — press and hold, then
+          move. The hold is what separates lifting a course from scrolling the page, so the two never
+          fight; it is the gesture phones already use for rearranging.</p>
+        <p><b style="color:var(--navy-800)">Keyboard</b> — tab to the handle and press up or down.
+          Without this a course cannot be moved at all without a mouse, and the rest of the admin
+          screens are reachable by keyboard.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────────── 4 ───────────────────────────── -->
+  <section class="proposal">
+    <h2><span class="num">4</span> Where the order actually shows up</h2>
+    <p class="sub">
+      This is the reason the feature is worth having, and also its one honest limit: an employee’s
+      page splits into what they still owe and what they have finished. Your order runs inside each
+      half, not across the split.
+    </p>
+
+    <div class="frame">
+      <p class="emplabel">My learning — what an employee sees</p>
+      <div class="emp"><span class="grow"><span class="t">Intro To consulting</span></span><span class="track"><span style="width:40%"></span></span></div>
+      <div class="emp"><span class="grow"><span class="t">Consulting Market</span></span><span class="track"><span style="width:0%"></span></span></div>
+      <div class="emp"><span class="grow"><span class="t">Values &amp; Ethics</span></span><span class="track"><span style="width:0%"></span></span></div>
+      <p class="emplabel" style="margin-top:16px">Completed</p>
+      <div class="emp"><span class="grow"><span class="t">Consulting Assignments Flow</span></span><span class="track done"><span style="width:100%"></span></span></div>
+      <p class="cap">Within “to finish”, the courses arrive in the order you set. A finished course drops to the bottom section — which is what you want, but it does mean your order is a running order, not a fixed syllabus.</p>
+    </div>
+  </section>
+
+  <div class="decision">
+    <h3>What I need from you</h3>
+    <ol>
+      <li><b>The handle and the filters as drawn</b> — yes, or tell me what to change.</li>
+      <li><b>Published first in the “All” view</b>, ahead of drafts and paused — or leave drafts on top as they are today.</li>
+      <li><b>The little position number</b> beside each handle — keep it, or drop it.</li>
+    </ol>
+    <p style="margin:12px 0 0;font-size:12.5px;color:var(--muted)">
+      Nothing has been built. On your approval this is a small change: the course’s place in the
+      list is already stored, it has simply never been editable.
+    </p>
+  </div>
+
+  <footer>Mockup v3 · Admin → Learning · 15/09/2026 · design-mockups/learning/2026-09-14_course-reordering.html</footer>
+</div>

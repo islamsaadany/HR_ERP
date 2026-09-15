@@ -6,6 +6,7 @@ import type { LessonBlockType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireLearningManager } from "@/lib/learning/managers";
 import { courseRoster } from "@/lib/learning/access";
+import { isCourseStatus, LIST_CHANGED, reorderCoursesWithin } from "@/lib/learning/order";
 import { isTrackableSource, normalizeVideoUrl, untrackableReason, videoSourceFor } from "@/lib/learning/video";
 
 /**
@@ -455,6 +456,24 @@ export async function deleteLesson(courseId: string, lessonId: string): Promise<
 // ─── Reordering ─────────────────────────────────────────────────────────
 // These touch ONLY the `order` column. Progress is keyed by lesson id (FR-023), so reordering can
 // never move anyone's percentage — and nothing here goes near LessonProgress.
+
+/**
+ * Arrange the courses of one state (2026-09-15).
+ *
+ * The `status` arrives from the browser, so it is checked against the real enum rather than passed
+ * through — an unrecognised value would otherwise reach the write as a state matching no course,
+ * where "the submitted list is not the whole state" is satisfied only by an empty list.
+ *
+ * The write itself lives in `lib/learning/order.ts`; this is the door.
+ */
+export async function reorderCourses(status: string, ids: string[]): Promise<CourseResult> {
+  await requireLearningManager();
+  if (!isCourseStatus(status)) return { ok: false, error: LIST_CHANGED };
+  const result = await reorderCoursesWithin(status, ids);
+  if (!result.ok) return result;
+  revalidate();
+  return { ok: true };
+}
 
 async function applyOrder(
   ids: string[],
