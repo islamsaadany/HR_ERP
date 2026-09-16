@@ -1,5 +1,55 @@
 <!--
-SYNC IMPACT REPORT — 2026-08-24 (merge of two same-day amendments)
+SYNC IMPACT REPORT — 2026-09-16
+Version change: 1.4.0 → (1.5.0, recorded retroactively) → 2.0.0
+
+MAJOR, and the first one. Every previous email amendment WIDENED the rule while leaving its
+load-bearing half alone: "no scheduled process may email an EMPLOYEE", marked NON-NEGOTIABLE and
+restated verbatim through four successive widenings. Spec 043 REDEFINES it. A learning deadline
+that passes with the course unfinished now causes a scheduled job to email the employee, with no
+human choosing to send. That is a redefinition of a constraint this document declares
+non-negotiable, which is a MAJOR change however narrow its scope — recorded as such rather than
+dressed as a fifth widening.
+
+The CEO approved it on 2026-09-16, with the rule and three alternatives on the table (no dates at
+all; dates only a manager sees; dates that chase by email). His reason, recorded because the
+reversal is only defensible with it: A DEADLINE NOBODY IS REMINDED OF IS NOT A DEADLINE.
+
+DRIFT CORRECTED, NOT SILENTLY REALIGNED (Principle IV): the footer read "1.4.0 | Last Amended
+2026-08-24" while the body already described the time-off request widening of 2026-09-08 — the
+fifth email workflow was written into the text without a version bump. The version history also
+stopped at 1.2.1 and never recorded 1.3.0 or 1.4.0, both of which appear in the previous sync
+report. Both are corrected in the footer below; the missing bump is recorded honestly as 1.5.0
+(2026-09-08) rather than folded into this one.
+
+Modified sections:
+  - Technology & Data Constraints, email — SIX permitted workflows now, adding Learning track
+    deadline reminders (spec 043). The NON-NEGOTIABLE clause is replaced by a narrow, conditional
+    permission, and the conditions are stated as requirements rather than intentions: bounded at
+    five messages per overdue course, the bound fixed in the feature rather than configurable,
+    never sent twice, fire-and-forget, stopping the moment the obligation is met, and gated by a
+    module switch that can only ever narrow what the platform switch allows. What is NOT given up
+    is restated in the same breath, so the clause cannot be read as open season.
+  - Technology & Data Constraints, scheduled work — FOUR daily cron jobs now, adding
+    `/api/cron/learning` (spec 043). The audience a scheduled job may reach widens from "HR, or an
+    appointed confirmer" to include an EMPLOYEE, about an obligation that is their own, under the
+    conditions above. "Never employees at large" survives intact: a broadcast still requires a
+    human who read it.
+
+Added sections: none
+Removed sections: none
+
+Preserved verbatim (deliberately): all five principles; the migration clause; sessions never hold
+the production DATABASE_URL; PII stays out of git; the appointment pattern and its one documented
+exception (spec 041); the money rules.
+
+Templates checked:
+  ✅ .specify/templates/{plan,spec,tasks}-template.md — no email, cron or constitution references.
+  ✅ .claude/skills/speckit-*/SKILL.md — no outdated references.
+  ✅ CLAUDE.md — carries the same change in the same commit.
+
+Follow-up TODOs: none.
+
+PREVIOUS REPORT — 2026-08-24 (merge of two same-day amendments)
 Version change: 1.2.1 → 1.3.0 → 1.4.0 (MINOR ×2, merged here — the email limit widens twice
 in one day, from two workflows to four: Team Communications (spec 039) and the payback
 workflow (spec 040). The load-bearing half of the rule is unchanged: no scheduled process may
@@ -100,17 +150,19 @@ holds. Reach for it then; it is never an obligation.
   the provider stays env-gated so it can return). Admin-issued passwords are temporary — the
   employee is forced to `/set-password` on next sign-in (`mustChangePassword`). No emails in v1 for
   recovery: a forgotten password is reset by HR, with no self-service path.
-- Email: limited to **five** workflows — the benefit-claim workflow (spec 020), the
+- Email: limited to **six** workflows — the benefit-claim workflow (spec 020), the
   holiday/vacation workflow (spec 037: HR verification reminders, team announcements, and the
   "your day was returned" notice), **Team Communications** (spec 039: announcements to a chosen
   audience, and personal congratulations for birthdays and joining anniversaries), the
   **payback workflow** (spec 040: request submitted → Finance, declined and paid → the requester),
-  and the **time-off request cycle** (spec 035 FR-013: new request → the approver(s) whose queue
-  it landed in, decision → the requester)
+  the **time-off request cycle** (spec 035 FR-013: new request → the approver(s) whose queue
+  it landed in, decision → the requester), and **Learning track deadline reminders**
+  (spec 043: a course whose deadline has passed unfinished → the employee, and their manager)
   — via Resend, env-gated (`RESEND_API_KEY`/`EMAIL_FROM`), master-toggleable.
   (Amends "no email in v1", approved 2026-08-10; widened to the holiday workflow, approved
   2026-08-19; widened to Communications and to the payback workflow, both approved 2026-08-24;
-  widened to time-off requests at the CEO's request, 2026-09-08.)
+  widened to time-off requests at the CEO's request, 2026-09-08; widened to Learning deadline
+  reminders — and the scheduled-send prohibition reversed with it — 2026-09-16.)
   Still **no** marketing email, no external recipients, no invitations, and no scheduling a send
   for later. Petty cash itself sends none: the custodian and Finance are both looking at a live
   screen, and nobody is waiting on a ledger.
@@ -123,16 +175,48 @@ holds. Reach for it then; it is never an obligation.
     reimbursed benefit claim and a paid payback — fire **only** when the appointed confirmer marks
     the bank transaction complete, never when Finance records a transfer (the CEO's correction,
     2026-08-24: before that moment the money has not moved).
-  - **NON-NEGOTIABLE, and untouched by the widening: no scheduled process may email an EMPLOYEE.**
-    Scheduled work prepares drafts and nudges operators. Every message that reaches an employee is
-    the result of a person reading it and choosing to send.
-- Scheduled work: **three** daily Vercel Cron jobs, all authenticated with `CRON_SECRET` —
-  `/api/cron/holidays` (spec 037), `/api/cron/communications` (spec 039) and
+  - **A scheduled process MAY email an employee — but only about an obligation that is their own,
+    and only under every condition below.** This REVERSES the clause that stood here from 2026-08-19
+    to 2026-09-16, which read: *"NON-NEGOTIABLE, and untouched by the widening: no scheduled process
+    may email an EMPLOYEE. Scheduled work prepares drafts and nudges operators. Every message that
+    reaches an employee is the result of a person reading it and choosing to send."* It is quoted
+    rather than deleted because the reversal is the more dangerous of the two positions and whoever
+    reads this next is owed the rule it replaced.
+
+    The CEO's reason, 2026-09-16: **a deadline nobody is reminded of is not a deadline.** The old
+    rule's whole value was that it had no exceptions, so the new one carries its limits with it —
+    these are requirements, not intentions, and a message that cannot satisfy all of them may not
+    be sent by a schedule:
+    - **BOUNDED, with the bound stated**: at most five messages about one overdue obligation — one
+      on the day it falls due, then one a week for four weeks, then silence. After that it stays
+      visible on the screens; it stops arriving.
+    - **The bound is fixed in the feature, never a configurable number.** A bound that lives in a
+      settings box is a decision nobody made, and the first person frustrated by unfinished work
+      will widen it.
+    - **Never twice.** Sends are recorded, so a job that runs twice, or is retried, cannot email
+      twice.
+    - **Fire-and-forget**, and a failed send is never recorded as a successful one.
+    - **It stops the moment the obligation is met.**
+    - **The sending module carries its own off switch**, in addition to the platform master toggle.
+      That switch may only ever NARROW: it can silence mail the platform allows, never enable mail
+      the platform has disabled.
+    - **Silencing the chasing must not hide the fact.** The overdue state still shows on every
+      screen that showed it, to the person, their manager and whoever runs the module, whether the
+      chasing is on or off.
+
+    **What is NOT given up**, restated here so this clause cannot be read as open season: still no
+    marketing email, no external recipients, no invitations, and no scheduling a send for later. A
+    company-wide ANNOUNCEMENT is still drafted by the platform and sent only by a human who read it.
+    A schedule may now remind ONE person about ONE obligation THEY hold; it still may not send
+    anything to employees at large.
+- Scheduled work: **four** daily Vercel Cron jobs, all authenticated with `CRON_SECRET` —
+  `/api/cron/holidays` (spec 037), `/api/cron/communications` (spec 039),
   `/api/cron/confirmations` (spec 041, added 2026-08-24), which nudges the appointed transaction
-  confirmers about anything still waiting. A scheduled job may nudge **HR, or an appointed
-  confirmer**; it may never send anything to employees at large — company-wide messages are
-  reviewed and sent by a human. The confirmation nudge logs each send, so a job that runs twice
-  cannot email twice.
+  confirmers about anything still waiting, and the **Learning deadline reminders** (spec 043, added
+  2026-09-16). A scheduled job may nudge **HR, an appointed confirmer, or an EMPLOYEE about an
+  obligation that is their own** under the conditions in the email clause above. It may still never
+  send anything to employees **at large** — a company-wide message is reviewed and sent by a human.
+  Every job that emails logs each send, so a job that runs twice cannot email twice.
 - Roles: `EMPLOYEE`, `HR_ADMIN`, `FINANCE`, `SUPER_USER` (superset of both). A `manager`
   capability derives from the org chart (an employee with direct reports). `FINANCE` has existed
   since spec 020 and was missing from this line until 2026-08-24 — a spec/code drift found while
@@ -169,7 +253,7 @@ This constitution supersedes conflicting practices. Amendments require explicit 
 approval and must be reflected in `CLAUDE.md` and any dependent spec-kit templates in the
 same change. All spec-kit commands and reviews check work against these principles.
 
-**Version**: 1.4.0 | **Ratified**: 2026-07-27 | **Last Amended**: 2026-08-24
+**Version**: 2.0.0 | **Ratified**: 2026-07-27 | **Last Amended**: 2026-09-16
 (1.1.0 — email allowed for the spec 020 benefit-claim workflow.
 1.2.0 — email widened to the spec 037 holiday/vacation workflow, and the first
 scheduled job admitted, with the rule that a cron may nudge HR but never email
@@ -178,4 +262,19 @@ employees; see Technology & Data Constraints.
 deploy-time runner rather than pasted into Neon by hand; the stack line corrected
 to Next.js 15 and the sign-in method stated as email + password with Google
 disabled; Principle V records the settled position that there is no testing
-regime and protection is structural.)
+regime and protection is structural.
+1.3.0 — email widened to Team Communications (spec 039), the first broadcast
+workflow, which reports per recipient unlike the transactional ones.
+1.4.0 — email widened to the payback workflow (spec 040); a third daily cron
+admitted (spec 041) and the audience a job may nudge widened to an appointed
+confirmer; `FINANCE` recorded in the roles line; spec 041's deliberate exception
+to the appointment pattern documented.
+1.5.0 — email widened to the time-off request cycle (spec 035 FR-013) at the
+CEO's request, 2026-09-08. RECORDED RETROACTIVELY on 2026-09-16: the change was
+written into the body at the time without a version bump, and the drift is
+corrected here rather than folded silently into 2.0.0.
+2.0.0 — MAJOR. Email widened to Learning track deadline reminders (spec 043),
+and with it the NON-NEGOTIABLE prohibition on a scheduled process emailing an
+employee is REVERSED — narrowly, conditionally, and with the superseded clause
+quoted in place. A fourth daily cron is admitted. The CEO's reason, 2026-09-16:
+a deadline nobody is reminded of is not a deadline.)

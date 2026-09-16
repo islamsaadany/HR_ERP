@@ -441,6 +441,35 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
   and a browser pass (the impersonation refusal needs a live session to exercise end-to-end).
 - **2026-08-22 — Backlog: regular reviews + 1:1s with the team (raised; now spec `040`).** Requested so it is on record for future alignment: the platform should host the **recurring performance/check-in reviews and manager↔report 1:1s** — a place to schedule them, log what was discussed, and keep the history alongside the employee record. Scope, cadence, who can read what, and how it relates to the org chart are **all still open** — the requester will come back with the detail. **No spec, no schema, no UI until that alignment happens.** The source review template and the proposed shape (running journal → two-sided review sheet → agreed outcome carried into the next cycle) are parked in `specs/_parked/performance-reviews-and-1-1s.md`.
 
+- **2026-09-16 — Learning tracks (spec `043`), and the constitution's first MAJOR.** Requested after
+  the admin course-ordering work landed: *"we will need to think next on the learning track of
+  everyone .. so we can set the learning priorities of each employee."* Four decisions taken with the
+  CEO before a line was written. (a) A **track is a named, ordered path** assigned to a person or a
+  group — a reusable template, not a list hand-built per person. (b) **Being on a track GRANTS its
+  courses** (his explicit choice over a track that merely orders courses the person already
+  receives), which makes it the **fifth access route** and therefore obliges it to be decided in the
+  one derivation that already decides the other four — written into the spec as a requirement, not
+  left to whoever builds it. (c) Company tracks are set by whoever runs Learning; a **manager may add
+  and order for their own reports but never remove what the company requires**, enforced by the
+  server rather than by the screen not offering it. (d) **Deadlines chase the employee by email**,
+  which reverses a clause the constitution marked NON-NEGOTIABLE and had restated verbatim through
+  four widenings. His reason, recorded because the reversal is only defensible with it: *a deadline
+  nobody is reminded of is not a deadline.*
+  **Constitution amended to `2.0.0` on the same day, before planning rather than after** — the
+  superseded clause quoted in place rather than deleted, and the reversal fenced by conditions that
+  are requirements, not intentions: bounded at five messages (one on the day, then weekly for four
+  weeks, then silence), the bound fixed in the feature rather than configurable, never sent twice,
+  stopping the moment the obligation is met, and gated by a Learning-level off switch — the CEO's own
+  suggestion — that may only ever NARROW what the platform toggle allows, and that silences the
+  chasing without hiding the overdue state on any screen. Three further questions were put to him and
+  answered: deadlines are **per step and of either kind** (a period from joining the track, or a
+  fixed date — both resolving to one date through one derivation, so nobody is told one date and
+  chased on another), the cadence above, and a track's order is **an order, not a lock** (gating step
+  two behind step one would let one stuck course wall off everything behind it). Drift corrected in
+  the same pass rather than silently: the constitution's footer read `1.4.0` while its body already
+  carried the 2026-09-08 time-off widening, so that missing bump is recorded honestly as `1.5.0`.
+  **Spec only — no schema, no migration, no UI.** Next gate is `/speckit-plan`.
+
 ### Resolved earlier / Open
 - **A · Design language** — *resolved 2026-07-27:* **navy/gold** (Forefront reference tool) product-wide. The benefits selector's layout/interaction is preserved but recolored to navy/gold (not paper/pine).
 - **E · Real benefit figures** — *resolved:* ceilings, guaranteed amounts, and medical rate card all confirmed (spec `007`).
@@ -448,4 +477,4 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ---
 
-*Last Updated: 2026-08-25 (Confirmations split per business unit — spec 041 amended, migration 075, mockup signed off first; and the marketing float loaded with its whole workbook history — migrations 072 + 073. Previously: 2026-08-24 (Reviews & 1:1s merged in, renumbered to spec 042 / migration 071 — it had claimed 040/068 while those were free, and Finance took them first. Earlier the same day: Finance merged with Communications — petty cash & payback at spec 040 / migration 068, bank confirmations & salary runs at spec 041 / migrations 069 + 070; Communications keeps spec 039 / migration 067; constitution v1.4.0.))*
+*Last Updated: 2026-09-16 (Learning tracks specced as `043` and the constitution amended to **2.0.0** — its first MAJOR — reversing the non-negotiable that no scheduled process may email an employee, narrowly and behind stated conditions, because a deadline nobody is reminded of is not a deadline. No code. Previously: 2026-08-25 (Confirmations split per business unit — spec 041 amended, migration 075, mockup signed off first; and the marketing float loaded with its whole workbook history — migrations 072 + 073. Previously: 2026-08-24 (Reviews & 1:1s merged in, renumbered to spec 042 / migration 071 — it had claimed 040/068 while those were free, and Finance took them first. Earlier the same day: Finance merged with Communications — petty cash & payback at spec 040 / migration 068, bank confirmations & salary runs at spec 041 / migrations 069 + 070; Communications keeps spec 039 / migration 067; constitution v1.4.0.))*

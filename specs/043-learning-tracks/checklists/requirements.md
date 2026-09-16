@@ -37,10 +37,12 @@
 - [x] Server enforces every refusal, not the screen (FR-015)
 - [x] Dates display dd/mm/yyyy (FR-025)
 - [x] Email is env-gated, master-toggleable and fire-and-forget (FR-024)
-- [ ] **No scheduled process emails an employee — DELIBERATELY BROKEN.** Chosen by the CEO on
-      2026-09-16 with the alternatives on the table; recorded in the spec's *Deliberate deviations*
-      section with the reason. **The constitution must be amended via `/speckit-constitution` before
-      this ships** — that step has not been done.
+- [x] **No scheduled process emails an employee — DELIBERATELY REVERSED, and the constitution now
+      says so.** Chosen by the CEO on 2026-09-16 with the alternatives on the table; recorded in the
+      spec's *Deliberate deviations* section with the reason, and amended into the constitution as
+      **2.0.0** (its first MAJOR) on the same day, before planning. The conditions that make the
+      reversal defensible — bounded, never twice, stops when met, module switch that can only
+      narrow — are requirements in both documents, not intentions.
 
 ## Notes
 
@@ -57,4 +59,4 @@ Two things the plan must not lose:
 2. **The reminder bound is a decision, not a default** (FR-021). It sends to the whole company on a
    schedule with no human choosing to send, so widening it is a conversation, not a tweak.
 
-The constitution amendment remains outstanding and blocks shipping, not planning.
+The constitution amendment is **done** — 2.0.0, 2026-09-16, before planning rather than after.

@@ -434,9 +434,10 @@ What this costs, stated rather than buried:
   at once. This is why FR-021 (bounded) and FR-022 (never twice) are requirements and not niceties,
   and why the cadence is fixed in FR-021 rather than configurable.
 
-**Follow-up required**: the constitution must be amended to record this, through
-`/speckit-constitution`, rather than being left in contradiction with a shipped feature. That is a
-separate step and has not been done.
+**Done, 2026-09-16**: the constitution was amended to **2.0.0** — its first MAJOR — before any of
+this was planned, rather than being left in contradiction with a feature. The superseded clause is
+quoted in place there rather than deleted, and the conditions above are restated as requirements a
+scheduled message must satisfy before it may be sent at all.
 
 ### A fifth access route
 
