@@ -7,10 +7,9 @@ import type { TeamMemberLearning } from "@/lib/learning/queries";
 /**
  * A manager's view of their team's training.
  *
- * Deliberately narrow: names, courses, progress, and what is late. No routes and no withdrawing —
- * a manager needs to know who still owes something. Since spec 043 a name is a door to that
- * person's plan, where a manager may add a course of their own; a company track's steps are HR's
- * and stay refused there, on the server, not merely absent from the screen.
+ * Deliberately read-only and deliberately narrow: names, courses, progress. No routes, no
+ * withdraw, no assignment. A manager needs to know who still owes something; who to chase is
+ * theirs, and everything else is HR's.
  */
 export function TeamLearning({ team }: { team: TeamMemberLearning[] }) {
   const owing = team.filter((m) => m.outstanding > 0).length;
@@ -29,26 +28,11 @@ export function TeamLearning({ team }: { team: TeamMemberLearning[] }) {
         {team.map((member) => (
           <div key={member.userId} className="rounded-xl border border-line bg-surface p-4">
             <div className="flex flex-wrap items-center gap-2">
-              {/* The door to shaping this person's learning (spec 043). The name is the link
-                  because the name is what a manager is looking for — a separate "Manage" button
-                  would be a second thing to find on every row. */}
-              <Link
-                href={`/learning/team/${member.userId}`}
-                className="text-[14.5px] font-bold text-navy-800 underline-offset-2 hover:underline"
-              >
-                {member.name}
-              </Link>
+              <span className="text-[14.5px] font-bold text-navy-800">{member.name}</span>
               {member.title ? (
                 <span className="text-xs text-muted">{member.title}</span>
               ) : null}
               <span className="flex-1" />
-              {/* Overdue takes precedence over "to finish": a late course is the thing a manager
-                  opened this page to find, and burying it inside a larger count hides it. */}
-              {member.overdue > 0 ? (
-                <span className={CHIP.danger}>
-                  {member.overdue} overdue
-                </span>
-              ) : null}
               {member.courses.length === 0 ? (
                 <span className={CHIP.muted}>No courses assigned</span>
               ) : member.outstanding === 0 ? (
@@ -65,13 +49,6 @@ export function TeamLearning({ team }: { team: TeamMemberLearning[] }) {
                 {member.courses.map((course) => (
                   <li key={course.courseId} className="flex flex-wrap items-center gap-3">
                     <span className="min-w-0 flex-1 truncate text-[13px]">{course.title}</span>
-                    {/* The path it came from, named on the row. The rows are in the order this
-                        person meets them — `teamLearning` keeps the sequence `myLearning`
-                        produced — so a track's courses read down in the track's own order. */}
-                    {course.trackName ? (
-                      <span className={CHIP.navy}>{course.trackName}</span>
-                    ) : null}
-                    {course.overdue ? <span className={CHIP.danger}>Overdue</span> : null}
                     {course.grandfatheredOnly && !course.completedAt ? (
                       <span className={CHIP.attention}>No longer assigned</span>
                     ) : null}
@@ -88,8 +65,7 @@ export function TeamLearning({ team }: { team: TeamMemberLearning[] }) {
       </div>
 
       <p className="mt-6 text-xs text-muted">
-        Your current direct reports. Company tracks are set by HR; open a name to add a course of
-        your own for that person. If the list of people looks wrong,{" "}
+        Your current direct reports. Training is assigned by HR — if something looks wrong here,{" "}
         <Link href="/directory" className="text-navy-700 underline">
           check the reporting line
         </Link>{" "}

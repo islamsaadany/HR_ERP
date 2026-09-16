@@ -240,8 +240,13 @@ export type TeamMemberLearning = {
     percent: number;
     completedAt: Date | null;
     grandfatheredOnly: boolean;
+    /** Spec 043 — the path it belongs to, and whether it is late. */
+    trackName: string | null;
+    overdue: boolean;
   }>;
   outstanding: number;
+  /** How many of their outstanding courses are past their date. */
+  overdue: number;
 };
 
 /**
@@ -282,8 +287,13 @@ export async function teamLearning(managerId: string): Promise<TeamMemberLearnin
           percent: c.percent,
           completedAt: c.completedAt,
           grandfatheredOnly: c.grandfatheredOnly,
+          trackName: c.trackName,
+          overdue: c.overdue,
         })),
         outstanding: courses.filter((c) => c.completedAt === null).length,
+        // Counted from the SAME rows the person's own page renders — `myLearning` is called per
+        // report precisely so a manager cannot be shown a figure their report would disagree with.
+        overdue: courses.filter((c) => c.overdue).length,
       };
     })
   );

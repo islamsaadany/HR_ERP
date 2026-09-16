@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { isOverdue, joinedTrackAt, resolveDeadline } from "@/lib/learning/deadlines";
 import {
   BAD_DUE_DAYS,
   NOT_PUBLISHED,
@@ -135,6 +136,125 @@ export async function trackAssignments(trackId: string) {
       group: { select: { id: true, name: true, _count: { select: { members: true } } } },
     },
   });
+}
+
+/**
+ * Everybody this track actually reaches, and how far each of them has got (spec 043, US4).
+ *
+ * `trackAssignments` above answers a different question — what was ASSIGNED, groups left as groups,
+ * because assigning a group is a statement about the group and flattening it on that panel would
+ * hide the very thing that makes it useful. The roster answers "who is on it": groups expanded,
+ * somebody reached twice counted once, in the order they joined.
+ *
+ * Every figure here is computed through the SAME derivations the real check uses — `joinedTrackAt`
+ * for the day their clock started, `resolveDeadline` for the date, `isOverdue` for whether it has
+ * passed. A count written separately to look right will eventually disagree with who is actually
+ * chased, and then it is worse than no count (the 2026-08-22 rule).
+ *
+ * Bounded: five queries whatever the size of the track.
+ */
+export type RosterMember = {
+  userId: string;
+  name: string;
+  email: string;
+  /** How they got here — a group is named so the operator knows the membership is a consequence. */
+  viaGroupName: string | null;
+  joinedAt: Date;
+  done: number;
+  total: number;
+  overdue: number;
+};
+
+export async function trackRoster(trackId: string, now: Date = new Date()): Promise<RosterMember[]> {
+  const [steps, assignments] = await Promise.all([
+    prisma.learningTrackStep.findMany({
+      where: { trackId },
+      orderBy: { order: "asc" },
+      select: { courseId: true, dueDays: true, dueOn: true, course: { select: { status: true } } },
+    }),
+    prisma.learningTrackAssignment.findMany({
+      where: { trackId, revokedAt: null },
+      orderBy: { assignedAt: "asc" },
+      select: {
+        assignedAt: true,
+        userId: true,
+        groupId: true,
+        group: { select: { name: true } },
+      },
+    }),
+  ]);
+
+  // A draft or paused course on a track reaches nobody, so it is not part of anybody's total
+  // either — the same filter `stepsByUser` applies before resolving a deadline.
+  const live = steps.filter((s) => s.course.status === "PUBLISHED");
+
+  const groupIds = [...new Set(assignments.map((a) => a.groupId).filter((id): id is string => !!id))];
+  const members =
+    groupIds.length > 0
+      ? await prisma.learnerGroupMember.findMany({
+          where: { groupId: { in: groupIds } },
+          select: { groupId: true, userId: true, addedAt: true },
+        })
+      : [];
+  const byGroup = new Map<string, { userId: string; addedAt: Date }[]>();
+  for (const m of members) {
+    byGroup.set(m.groupId, [...(byGroup.get(m.groupId) ?? []), { userId: m.userId, addedAt: m.addedAt }]);
+  }
+
+  // Reached twice — named AND in an assigned group — keeps the EARLIER join date, because that is
+  // when the track became theirs and it is the date the deadline is already counted from.
+  const reached = new Map<string, { joinedAt: Date; viaGroupName: string | null }>();
+  const reach = (userId: string, joinedAt: Date, viaGroupName: string | null) => {
+    const existing = reached.get(userId);
+    if (!existing || joinedAt < existing.joinedAt) reached.set(userId, { joinedAt, viaGroupName });
+  };
+  for (const a of assignments) {
+    if (a.userId) reach(a.userId, a.assignedAt, null);
+    if (a.groupId) {
+      for (const m of byGroup.get(a.groupId) ?? []) {
+        reach(m.userId, joinedTrackAt(a.assignedAt, m.addedAt), a.group?.name ?? null);
+      }
+    }
+  }
+  if (reached.size === 0) return [];
+
+  const userIds = [...reached.keys()];
+  const [users, enrollments] = await Promise.all([
+    prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true },
+    }),
+    prisma.courseEnrollment.findMany({
+      where: { userId: { in: userIds }, courseId: { in: live.map((s) => s.courseId) } },
+      select: { userId: true, courseId: true, completedAt: true },
+    }),
+  ]);
+  const completedAt = new Map(
+    enrollments.map((e) => [`${e.userId}:${e.courseId}`, e.completedAt] as const)
+  );
+
+  return users
+    .map((user) => {
+      const { joinedAt, viaGroupName } = reached.get(user.id)!;
+      let done = 0;
+      let overdue = 0;
+      for (const step of live) {
+        const finished = completedAt.get(`${user.id}:${step.courseId}`) ?? null;
+        if (finished) done += 1;
+        if (isOverdue(resolveDeadline(step, joinedAt), finished, now)) overdue += 1;
+      }
+      return {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        viaGroupName,
+        joinedAt,
+        done,
+        total: live.length,
+        overdue,
+      };
+    })
+    .sort((a, b) => a.joinedAt.getTime() - b.joinedAt.getTime() || a.name.localeCompare(b.name));
 }
 
 // ─── Writes ─────────────────────────────────────────────────────────────

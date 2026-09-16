@@ -17,6 +17,10 @@ export const MODULES = [
   { key: "handbook", label: "Handbook & Resources", href: "/handbook" },
   { key: "knowledge", label: "Knowledge Base", href: "/knowledge" },
   { key: "timeoff", label: "Time-Off", href: "/time-off" },
+  // Tracks (spec 043) need no entry of their own: a track is a way of handing out courses, so it
+  // lives INSIDE Learning and is closed by this one switch — the employee's list, the manager's
+  // team pages and the deadline chasing all sit behind it. As with Payback, the admin's own
+  // build-and-assign screens stay open, so a switched-off module can still be got ready.
   { key: "learning", label: "Learning", href: "/learning" },
   { key: "reviews", label: "Reviews & 1:1s", href: "/reviews" },
 ] as const;

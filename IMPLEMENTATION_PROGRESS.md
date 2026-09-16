@@ -19,11 +19,11 @@
 | — PWA / phone | 🟢 **Usable on a phone** (spec 010 + its 2026-08-25 extension — installable, and now navigable: a slide-in menu below `md`, safe areas) |
 | 10 — Finance: petty cash & payback | 🟢 **Built** (spec 040 — custodian floats, period reconciliation, evidence, payback requests; migration `068`) |
 | 11 — Finance: bank confirmations & salaries | 🟢 **Built** (spec 041 — the confirmer appointment **per business unit**, submissions with a frozen total, the CEO's confirmation screen, monthly salary runs, the daily nudge; migrations `069`, `070` + `075`) |
-| 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`) |
+| 9 — Learning Track (LMS) | 🟢 **Built** (spec 038 — courses, live audiences, tracked progress, video gating, renewal, Excel import, course materials + resource library, a Learning manager appointment, a three-state status ladder + access-as-setup; migrations `060`–`066`. Spec 043 — **learning tracks**: a named path that grants its courses, deadlines of either kind per step, a bounded daily chase, and a manager's own additions; migration `078`) |
 | 12 — Team Communications | 🟢 **Built** (spec 039 — one door with three options: the dashboard noticeboard, email to a chosen audience, and birthday & work-anniversary congratulations drafted by the platform and sent by a human; migrations `067` + `074`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
 
-## Learning tracks — foundation built, screens awaiting a mockup (2026-09-16 — migration `078`)
+## Learning tracks — built (2026-09-16 — migration `078`)
 - **Spec 043**, clarified with the CEO: a track is a named ordered path assigned to a person or
   group; being on it GRANTS its courses; company tracks belong to whoever runs Learning while a
   manager may add and order for their own reports but never remove a requirement; deadlines chase by
@@ -55,12 +55,36 @@
   employee's page still showed the COMPANY order rather than the track's — because the sequencing
   derivation had been written and nothing ever applied it. A type check cannot see a function that
   is simply not called; the only evidence was an employee's list in the wrong order on screen.
-- **Verified**: `scripts/verify-course-tracks.mts` — 71 checks, passing twice in a row and alongside
-  another script's fixtures; 206 unit tests; `verify-course-access` (18) and `verify-learning-manager`
-  (26) still green; and the real app driven in a real browser — a track built, courses added and
-  reordered, both kinds of deadline set and read back as dd/mm/yyyy, a draft course refused, the
-  track assigned, the employee's own page in the right order, the switch turned on by an HR admin,
-  390px with no sideways scroll, and a clean console. `npx tsc --noEmit` and `npm run build` clean.
+- **The three readers, made to agree** (the last story): the employee's own page, the manager's team
+  page and per-person plan, and the admin's roster on the track. The team page now names the track on
+  each row, carries an overdue count taken from the very rows the employee's own page renders, and
+  makes the name a door to that person's plan. The track page gained a **roster** — the assignee panel
+  deliberately leaves a group as a group, so it could not also be where progress is read; the roster is
+  the same people with groups **expanded** and duplicates removed, which also fixed a header count that
+  had been double-counting anybody named directly who was also in an assigned group.
+- **Two more found in the polish pass**, neither visible to `tsc` or the build:
+  - The join-date rule ("a period counts from the LATER of the track reaching the group and the person
+    joining it") existed in the sweep and would have been copied into the roster. It is now one pure
+    function three readers share, so a roster cannot come to a different view of when somebody's clock
+    started than the email does.
+  - The daily job was behind **two** switches and not the **module** switch, so a switched-off Learning
+    would still have chased people about courses whose page redirects to the dashboard. Three gates now,
+    each able only to narrow; proven by curl against a running app with the module flag flipped.
+- **Verified**: `scripts/verify-course-tracks.mts` — **85 checks**, passing twice in a row and
+  alongside another script's fixtures (and that script re-run afterwards, still green); 206 unit
+  tests; `verify-course-access` (18) and `verify-learning-manager` (26) still green; and the real app
+  driven in a real browser against a real Postgres — a track built, courses added and reordered, both
+  kinds of deadline set and read back as dd/mm/yyyy, a draft course refused, the track assigned, the
+  employee's own page in the right order, the switch turned on by an HR admin and refused to a
+  non-admin who runs Learning, a manager adding a course for their report and refused somebody else's,
+  and finally all three views driven for the SAME employee and made to agree on the order, the track's
+  name and the single overdue course — at desktop and at 390px, with a clean console throughout.
+  `npx tsc --noEmit` and `npm run build` clean.
+- **Not checkable from here, stated rather than hidden**: the live Neon database (migration `078` runs
+  at deploy through `scripts/apply-sql.mjs` — check the build log's `[apply-sql]` lines) and real
+  Resend delivery. Everything above was proven against a throwaway local Postgres with mail stubbed,
+  so what is verified is that the right person is chosen, the right words are composed, the bound
+  holds, a failed send is never recorded as a success, and the same reminder cannot be sent twice.
 
 ## Learning: the admin arranges the courses (built 2026-09-15 — no migration)
 - **Asked for as** *"an option in the learning module to reorder the courses by the learning admin"*,

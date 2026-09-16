@@ -58,6 +58,23 @@ export function resolveDeadline(step: StepDeadline, joinedAt: Date): Date | null
 }
 
 /**
+ * When a track became THIS person's — the day a period counts from.
+ *
+ * For an assignment naming the person it is simply when it was made. For a group it is the LATER of
+ * the track reaching the group and the person joining the group: both are "when this became theirs",
+ * and taking the earlier would make somebody who joined the group last week instantly overdue on a
+ * path assigned to it last year.
+ *
+ * A one-line rule with its own function because THREE readers need it — the daily sweep, the
+ * employee's own page and the track roster — and a second copy is how a roster comes to disagree
+ * with the email about whether somebody is late.
+ */
+export function joinedTrackAt(assignedAt: Date, joinedGroupAt: Date | null): Date {
+  if (joinedGroupAt === null) return assignedAt;
+  return joinedGroupAt > assignedAt ? joinedGroupAt : assignedAt;
+}
+
+/**
  * The earliest of several deadlines — for a course that sits in more than one track.
  *
  * Every candidate must ALREADY be resolved: comparing a period against a fixed date is meaningless

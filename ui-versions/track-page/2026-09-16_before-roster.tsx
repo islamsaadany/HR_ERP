@@ -1,15 +1,12 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireLearningManager } from "@/lib/learning/managers";
-import { isAdmin } from "@/lib/roles";
-import { learnersFor } from "@/lib/learning/manager-access";
-import { trackAssignments, trackRoster, trackWithSteps } from "@/lib/learning/tracks";
+import { trackAssignments, trackWithSteps } from "@/lib/learning/tracks";
 import { BackLink } from "@/components/admin/BackLink";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { TrackBuilder, type BuilderStep } from "@/components/learning/TrackBuilder";
 import { TrackAssignees } from "@/components/learning/TrackAssignees";
 import { TrackHeaderActions } from "@/components/learning/TrackHeaderActions";
-import { TrackRoster } from "@/components/learning/TrackRoster";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +18,12 @@ export const dynamic = "force-dynamic";
  * answering one and hiding the other.
  */
 export default async function TrackPage({ params }: { params: Promise<{ trackId: string }> }) {
-  const actor = await requireLearningManager();
+  await requireLearningManager();
   const { trackId } = await params;
 
-  const [track, assignees, roster, published, people, groups] = await Promise.all([
+  const [track, assignees, published, people, groups] = await Promise.all([
     trackWithSteps(trackId),
     trackAssignments(trackId),
-    trackRoster(trackId),
     prisma.course.findMany({
       where: { status: "PUBLISHED" },
       orderBy: [{ order: "asc" }, { title: "asc" }],
@@ -58,19 +54,10 @@ export default async function TrackPage({ params }: { params: Promise<{ trackId:
     dueOn: s.dueOn,
   }));
 
-  // The roster is the honest count: groups expanded and somebody reached twice counted ONCE.
-  // Summing the assignment rows, which is what this used to do, double-counted anybody named
-  // directly who was also in an assigned group — a figure beside a decision must be that
-  // decision's own (the 2026-08-22 rule).
-  const peopleOnIt = roster.length;
-
-  // Whoever runs Learning is not automatically anybody's manager, and the plan page refuses
-  // everyone else, so the link is offered only where it would actually open.
-  const openablePlanIds = isAdmin(actor.role)
-    ? new Set(roster.map((m) => m.userId))
-    : new Set((await learnersFor(actor.id)).map((l) => l.id));
-
-  const liveSteps = track.steps.filter((s) => s.course.status === "PUBLISHED").length;
+  const peopleOnIt = assignees.reduce(
+    (total, a) => total + (a.user ? 1 : (a.group?._count.members ?? 0)),
+    0
+  );
 
   return (
     <div>
@@ -123,23 +110,6 @@ export default async function TrackPage({ params }: { params: Promise<{ trackId:
           groups={groups.map((g) => ({ id: g.id, name: g.name, members: g._count.members }))}
         />
       </section>
-
-      {/* Who is on it answers "what did we assign"; this answers "and how is it going". Two
-          questions, two panels — the first deliberately leaves a group as a group, so it cannot
-          also be the place a person's progress is read. */}
-      {roster.length > 0 ? (
-        <section className="mt-8">
-          <div className="mb-3 flex flex-wrap items-baseline gap-x-2.5 border-b border-line pb-1.5">
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
-              How they are getting on
-            </h2>
-            <span className="text-[11.5px] text-muted">
-              everybody the track reaches, groups expanded
-            </span>
-          </div>
-          <TrackRoster members={roster} stepCount={liveSteps} openablePlanIds={openablePlanIds} />
-        </section>
-      ) : null}
     </div>
   );
 }

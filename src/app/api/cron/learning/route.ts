@@ -8,6 +8,7 @@ import { sendEmail, sendReportedEmail } from "@/lib/email/client";
 import { learningOverdue, learningOverdueManager } from "@/lib/email/templates";
 import { formatDate } from "@/lib/labels";
 import { canManageLearning } from "@/lib/learning/managers";
+import { getDisabledModules } from "@/lib/modules";
 
 /**
  * The daily learning nudge (spec 043) — the FOURTH cron, and the first scheduled job in this
@@ -24,8 +25,10 @@ import { canManageLearning } from "@/lib/learning/managers";
  *   NEVER A FALSE    the log row is written only AFTER a successful send, so a failed send is
  *   SUCCESS          retried tomorrow rather than silently marked delivered.
  *   STOPS WHEN MET   completion removes the person from `overdueNow`. No event to miss.
- *   TWO SWITCHES     the platform master toggle AND Learning's own. Both must be on; Learning's
- *                    can only ever narrow.
+ *   THREE SWITCHES   the module switch, the platform master toggle AND Learning's own. All must
+ *                    be on; each can only ever narrow. Chasing somebody about a course whose door
+ *                    is shut — the page redirects to the dashboard while the module is off — would
+ *                    be asking for work the product will not let them do.
  *
  * What it must NEVER become is a broadcast. It reminds ONE person about ONE obligation that is
  * THEIRS. A company-wide message is still written and sent by a human.
@@ -39,18 +42,23 @@ export async function GET(req: Request) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  // BOTH switches. Learning's own may silence what the platform allows; it may never enable what
-  // the platform has disabled, which is why this is an AND and not an OR.
-  const [platform, learning] = await Promise.all([
+  // ALL THREE switches. Each may silence what the one above it allows; none may enable what one
+  // above has disabled, which is why these are ANDs and not ORs. The module switch comes first:
+  // while Learning is off nobody can open a course at all, so a reminder would be a demand the
+  // product refuses to let them meet.
+  const [disabledModules, platform, learning] = await Promise.all([
+    getDisabledModules(),
     getNotificationSettings(),
     getLearningSettings(),
   ]);
-  if (!platform.emailEnabled || !learning.deadlineRemindersEnabled) {
-    return NextResponse.json({
-      ok: true,
-      skipped: !platform.emailEnabled ? "platform-email-off" : "learning-reminders-off",
-    });
-  }
+  const skipped = disabledModules.has("learning")
+    ? "learning-module-off"
+    : !platform.emailEnabled
+      ? "platform-email-off"
+      : !learning.deadlineRemindersEnabled
+        ? "learning-reminders-off"
+        : null;
+  if (skipped) return NextResponse.json({ ok: true, skipped });
 
   const now = new Date();
   const overdue = await overdueNow(now);

@@ -542,7 +542,7 @@ a live `CourseAssignment` to them, a `CourseAssignment` to a `LearnerGroup` they
 `courseAccessFor` (per person), `accessibleCoursesFor` (My learning), `courseRoster` (HR roster).
 Nothing else may decide access.
 
-**Learning tracks** (spec 043, in progress from 2026-09-16, migration `078`). A **track** is a named,
+**Learning tracks** (spec 043, built 2026-09-16, migration `078`). A **track** is a named,
 ordered path of published courses handed to a person or a group, and **being on one GRANTS its
 courses** — the CEO's explicit choice over a track that merely re-orders what somebody already
 receives. That makes a track the **FIFTH access route**, and it is resolved inside `resolveRoutes`
@@ -563,9 +563,43 @@ platform email toggle and Learning's own switch, which can only ever narrow; swi
 silences the mail and never hides the overdue state. A **manager** may add courses for their own
 direct reports and order that person's list, resolved against the **current** org chart; they can
 never remove a company requirement, which is structural — every manager write touches only
-`LearningPersonalStep`, and a requirement lives in `LearningTrackStep`. Proven by
-`scripts/verify-course-tracks.mts` (71 checks). **Screens are not built yet** — they are gated on a
-mockup awaiting sign-off.
+`LearningPersonalStep`, and a requirement lives in `LearningTrackStep`.
+
+The cron is gated by **three** switches, not two: the **module** switch first, then the platform
+email toggle, then Learning's own. Each can only narrow. Chasing somebody while Learning is switched
+off would be demanding work the product refuses to let them do — the course page redirects to the
+dashboard. **Tracks get no entry of their own in `src/lib/modules.ts`** (recorded there in a comment
+so nobody adds a redundant one): a track is a way of handing out courses, so Learning's one switch
+closes the employee list, the manager's team pages and the chasing alike, while the admin's
+build-and-assign screens stay open so a switched-off module can be got ready.
+
+**The screens** (mockup approved by the CEO 16/09/2026; `design-mockups/learning/2026-09-16_learning-tracks.html`).
+Admin → Learning carries a **Tracks** door beside the courses. A track page holds three panels: the
+**courses** in their order (add, remove, arrange, and a deadline of either kind per step, entered as
+typed text stating its format and previewing the resolved date); **who is on it**, where a group
+stays a group because assigning a group is a statement about the group; and **how they are getting
+on**, which is the same people with the groups **expanded**, de-duplicated, each with their join
+date, their progress and how many of the track's courses are late. The two panels answer different
+questions, which is why there are two — and the header's people count comes from the expanded set,
+so somebody named directly who is also in an assigned group is counted once rather than twice.
+The employee's own page groups their outstanding courses under the track's name **in the track's
+order**; the manager's team page names the track on each row and carries the overdue count, and a
+name opens that person's plan, where a manager may add a course of their own and where the company's
+requirements are shown locked **with the reason on the row**. Whoever runs Learning is not
+automatically anybody's manager, so the roster offers the door to a plan only to a viewer who could
+actually open it.
+
+**One sequence, decided once.** `sequenceForLearner` in `src/lib/learning/order.ts` — the module that
+already owns ordering — puts a person's track courses first, grouped by track and in each track's step
+order, then everything else in the company-wide order. It was written and, for a day, never called:
+every stored figure was correct, the type check and build were clean and 71 database checks passed,
+while the employee's page quietly showed the company order. The verify script now asserts the ORDER
+somebody sees, over a fixture deliberately built so the track's order differs from the company's.
+
+Proven by `scripts/verify-course-tracks.mts` (**85 checks**, run twice in a row and alongside another
+script's fixtures), and by driving the real app in a real browser against a real Postgres — the
+employee's page, the manager's team page and per-person plan, and the admin roster, all reading the
+same single overdue course, the same track name and the same order, at desktop and at 390px.
 
 **The order of the courses** (added 2026-09-15, mockup-approved, no migration). `Course.order` has
 always been written (max + 1 on both creation paths) and always been read — by the admin list and by

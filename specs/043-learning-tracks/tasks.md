@@ -90,7 +90,7 @@ here rather than at the end.
 - [x] T024 [US1] Extend `scripts/verify-course-tracks.mts` with the reorder guard: a list missing a step is refused and writes nothing; a step added in another tab refuses the stale list; renumbering is gap-free
 - [x] T025 [US1] Drive it in a real browser against a real Postgres — build a track, assign it, sign in as the employee and confirm the three courses in order; confirm a draft course on the track is invisible; confirm the console is clean
 - [x] T026 [US1] Drive the same at 390px — the track builder and the employee list, no sideways scroll, nothing unreachable by thumb
-- [ ] T027 [US1] Run `npx tsc --noEmit` and `npm run build`; update `PROJECT_DETAILS.md`, `IMPLEMENTATION_PROGRESS.md` and `specs/043-learning-tracks/spec.md` in the same commit as the code
+- [x] T027 [US1] Run `npx tsc --noEmit` and `npm run build`; update `PROJECT_DETAILS.md`, `IMPLEMENTATION_PROGRESS.md` and `specs/043-learning-tracks/spec.md` in the same commit as the code
 
 **Checkpoint**: shippable. A new joiner gets an ordered start. No deadlines yet.
 
@@ -130,8 +130,8 @@ email to them and one to their manager; run it again the same day and confirm no
 - [x] T040 [US2] Extend `scripts/verify-course-tracks.mts`: `resolveDeadline` is stable for the same input; both kinds on one step refused by the action AND by a direct insert; a course in two tracks takes the earlier date AFTER both resolve, including one-of-each-kind; completing makes it not-overdue with nothing written
 - [x] T041 [US2] Extend `scripts/verify-course-tracks.mts` with the bound: five sends across the schedule then silence on day 35; the same day twice produces one row and one send; a failed send writes no row; either switch off sends nothing; and assert `LearningSettings` has NO cadence column, so nobody adds one later
 - [x] T042 [US2] Drive it in a browser: set one deadline of each kind, confirm both print dd/mm/yyyy and that the date shown is the date chased on; hit the cron route and read the mail; hit it again the same day and confirm silence; complete the course and confirm silence
-- [ ] T043 [US2] Drive the switch in a browser: a learning manager turns it off (nothing sends, overdue still visible everywhere); the same person is refused turning it on; an HR Admin succeeds
-- [ ] T044 [US2] Run `npx tsc --noEmit` and `npm run build`; update the three docs in the same commit
+- [x] T043 [US2] Drive the switch in a browser: a learning manager turns it off (nothing sends, overdue still visible everywhere); the same person is refused turning it on; an HR Admin succeeds
+- [x] T044 [US2] Run `npx tsc --noEmit` and `npm run build`; update the three docs in the same commit
 
 **Checkpoint**: shippable. Deadlines chase, bounded, with a brake.
 
@@ -149,10 +149,10 @@ be refused, both through the screen and around it.
 - [x] T046 [US3] Create `src/lib/learning/manager-access.ts` — "is this person a direct report of that one, right now", resolved against the CURRENT org chart like time-off approvals, never a stored snapshot
 - [x] T047 [US3] Add `addPersonalStep`, `reorderPersonalSteps` and `removePersonalStep` to a new `src/app/(app)/admin/learning/tracks/manager-actions.ts`, each guarded by T046, each refusing on the server whatever the screen offers
 - [x] T048 [US3] Include personal steps in the access route (`src/lib/learning/track-access.ts`) and in the order derivation (`src/lib/learning/order.ts`) — the same two places, not new ones
-- [ ] T049 [US3] Build the manager's per-person list UI, showing company requirements as locked WITH the reason on the row rather than as a silently absent control
+- [x] T049 [US3] Build the manager's per-person list UI, showing company requirements as locked WITH the reason on the row rather than as a silently absent control
 - [x] T050 [US3] Extend `scripts/verify-course-tracks.mts`: a manager may act only for their own reports; moving a report mid-test transfers the ability and removes it from the old manager; no action reaches a company step; a personal addition grants the course through the same single derivation
-- [ ] T051 [US3] Drive it in a browser, including submitting a refused change around the screen to confirm the server refuses it on its own authority
-- [ ] T052 [US3] Run `npx tsc --noEmit` and `npm run build`; update the three docs in the same commit
+- [x] T051 [US3] Drive it in a browser, including submitting a refused change around the screen to confirm the server refuses it on its own authority
+- [x] T052 [US3] Run `npx tsc --noEmit` and `npm run build`; update the three docs in the same commit
 
 **Checkpoint**: shippable.
 
@@ -165,21 +165,21 @@ state.
 
 **Independent test**: With one person part-way through a track, confirm all three views agree.
 
-- [ ] T053 [US4] Snapshot `src/app/(app)/learning/team/page.tsx` to `ui-versions/team-learning-page/2026-09-16_before-tracks.tsx`, then make it speak in tracks, positions and overdue
-- [ ] T054 [P] [US4] Add the track roster to `src/app/(app)/admin/learning/tracks/[trackId]/page.tsx` — who is on it and how far each has got, every count computed through the same derivation the real check uses
-- [ ] T055 [US4] Extend `scripts/verify-course-tracks.mts` to assert the three readers return the same position and the same overdue state for one person — a disagreement between screens is the failure this story exists to prevent
-- [ ] T056 [US4] Drive all three views in a browser for the same employee and confirm they agree, at desktop and 390px
-- [ ] T057 [US4] Run `npx tsc --noEmit` and `npm run build`; update the three docs in the same commit
+- [x] T053 [US4] Snapshot `src/app/(app)/learning/team/page.tsx` to `ui-versions/team-learning-page/2026-09-16_before-tracks.tsx`, then make it speak in tracks, positions and overdue
+- [x] T054 [P] [US4] Add the track roster to `src/app/(app)/admin/learning/tracks/[trackId]/page.tsx` — who is on it and how far each has got, every count computed through the same derivation the real check uses
+- [x] T055 [US4] Extend `scripts/verify-course-tracks.mts` to assert the three readers return the same position and the same overdue state for one person — a disagreement between screens is the failure this story exists to prevent
+- [x] T056 [US4] Drive all three views in a browser for the same employee and confirm they agree, at desktop and 390px
+- [x] T057 [US4] Run `npx tsc --noEmit` and `npm run build`; update the three docs in the same commit
 
 ---
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] T058 Run the whole of `scripts/verify-course-tracks.mts` twice in a row against a database that already holds another script's fixtures, confirming it is order-independent and asserts nothing about the shared whole
-- [ ] T059 [P] Re-read the diff adversarially for the two rules that carry no type error: every export in each `"use server"` file is an async function, and no `useActionState` dispatch is fired from a plain button without `startTransition`
-- [ ] T060 [P] Confirm `src/lib/modules.ts` needs no new entry (tracks live inside Learning, already under its switch) and record that decision in `PROJECT_DETAILS.md` so nobody adds a redundant one
-- [ ] T061 Add a CLAUDE.md engineering-preferences entry for anything this build taught that would otherwise be re-learned
-- [ ] T062 Final `npx tsc --noEmit` and `npm run build`; state plainly what was verified, how, and what could NOT be checked from here (the live Neon database, real Resend delivery)
+- [x] T058 Run the whole of `scripts/verify-course-tracks.mts` twice in a row against a database that already holds another script's fixtures, confirming it is order-independent and asserts nothing about the shared whole
+- [x] T059 [P] Re-read the diff adversarially for the two rules that carry no type error: every export in each `"use server"` file is an async function, and no `useActionState` dispatch is fired from a plain button without `startTransition`
+- [x] T060 [P] Confirm `src/lib/modules.ts` needs no new entry (tracks live inside Learning, already under its switch) and record that decision in `PROJECT_DETAILS.md` so nobody adds a redundant one
+- [x] T061 Add a CLAUDE.md engineering-preferences entry for anything this build taught that would otherwise be re-learned
+- [x] T062 Final `npx tsc --noEmit` and `npm run build`; state plainly what was verified, how, and what could NOT be checked from here (the live Neon database, real Resend delivery)
 
 ---
 

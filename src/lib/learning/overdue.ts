@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import {
   earliestDeadline,
   isOverdue,
+  joinedTrackAt,
   resolveDeadline,
   type StepDeadline,
 } from "@/lib/learning/deadlines";
@@ -52,9 +53,8 @@ type StepRow = StepDeadline & {
 /**
  * Every deadline-bearing step each named person holds, with the join date a period counts from.
  *
- * For a GROUP assignment the period counts from the LATER of the track reaching the group and the
- * person joining it. Both are "when this became theirs", and taking the earlier would make somebody
- * who joined the group last week instantly overdue on a path assigned to it last year.
+ * The join date itself is `joinedTrackAt` in `deadlines.ts` — shared with the track roster, so the
+ * screen and the email cannot come to different views of when somebody's clock started.
  */
 async function stepsByUser(userIds: string[] | null): Promise<Map<string, StepRow[]>> {
   const userFilter = userIds ? { in: userIds } : undefined;
@@ -137,7 +137,7 @@ async function stepsByUser(userIds: string[] | null): Promise<Map<string, StepRo
       ? [{ userId: assignment.userId, joinedAt: assignment.assignedAt }]
       : (byGroup.get(assignment.groupId!) ?? []).map((m) => ({
           userId: m.userId,
-          joinedAt: m.addedAt > assignment.assignedAt ? m.addedAt : assignment.assignedAt,
+          joinedAt: joinedTrackAt(assignment.assignedAt, m.addedAt),
         }));
 
     for (const subject of subjects) {

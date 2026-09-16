@@ -28,7 +28,8 @@ import { deadlinesFor, overdueNow } from "../src/lib/learning/overdue";
 import { REMINDER_SCHEDULE, isReminderDay } from "../src/lib/learning/deadlines";
 import { getLearningSettings, setRemindersEnabled } from "../src/lib/learning/settings";
 import { managesLearnerNow, refuseUnlessManages } from "../src/lib/learning/manager-access";
-import { addPersonalStep, learnerPlan, removePersonalStep } from "../src/lib/learning/tracks";
+import { addPersonalStep, learnerPlan, removePersonalStep, trackRoster } from "../src/lib/learning/tracks";
+import { myLearning, teamLearning } from "../src/lib/learning/queries";
 
 const prisma = new PrismaClient();
 
@@ -444,6 +445,113 @@ async function main() {
   await removePersonalStep(plan.personal.find((p) => p.courseId === solo.id)!.id);
   check("removing their addition takes the course away", !(await heldBy(U.onTrack)).includes(solo.id));
   await prisma.course.deleteMany({ where: { id: solo.id } });
+
+  // ── The three readers ────────────────────────────────────────────────
+  // The failure this story exists to prevent: an employee reads one thing on their own page, their
+  // manager reads another on theirs, and the admin roster reads a third. So all three are driven
+  // over ONE person on ONE track and made to agree, field by field.
+  console.log("\nThe employee, their manager and the roster agree");
+  await prisma.learningTrack.deleteMany({ where: { name: { startsWith: "VCT " } } });
+  await prisma.courseEnrollment.deleteMany({ where: { userId: { in: Object.values(U) } } });
+  await prisma.learningPersonalStep.deleteMany({ where: { userId: { in: Object.values(U) } } });
+
+  const agree = await createTrack("VCT Agreement", null, U.actor);
+  const agreeId = (agree as { id: string }).id;
+  // Added second-then-first so the track's order is deliberately NOT the company order — if any
+  // reader quietly sorted for itself, these checks would disagree.
+  await addStep(agreeId, C.second);
+  await addStep(agreeId, C.first);
+  const agreeSteps = await prisma.learningTrackStep.findMany({
+    where: { trackId: agreeId },
+    orderBy: { order: "asc" },
+    select: { id: true, courseId: true },
+  });
+  await setStepDeadline(agreeSteps[0].id, { dueDays: 10, dueOn: null });
+  await assignTrack(agreeId, { userId: U.onTrack }, U.actor);
+  await prisma.learningTrackAssignment.updateMany({
+    where: { trackId: agreeId, userId: U.onTrack },
+    data: { assignedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000) },
+  });
+
+  const own = await myLearning(U.onTrack);
+  const team = await teamLearning(U.actor);
+  const mineOnTeam = team.find((m) => m.userId === U.onTrack);
+  const rosterRows = await trackRoster(agreeId);
+  const meOnRoster = rosterRows.find((r) => r.userId === U.onTrack);
+
+  check("the roster lists them", meOnRoster !== undefined);
+  check("their manager's page lists them", mineOnTeam !== undefined);
+
+  check(
+    "the employee meets the courses in the TRACK's order, not the company's",
+    own.map((c) => c.courseId).slice(0, 2).join(",") === agreeSteps.map((s) => s.courseId).join(","),
+    own.map((c) => c.courseId).join(",")
+  );
+  check(
+    "their manager's page shows the same order",
+    (mineOnTeam?.courses ?? []).map((c) => c.courseId).slice(0, 2).join(",") ===
+      agreeSteps.map((s) => s.courseId).join(","),
+    (mineOnTeam?.courses ?? []).map((c) => c.courseId).join(",")
+  );
+  check(
+    "and the roster lists the steps in that order too",
+    agreeSteps.map((s) => s.courseId).join(",") ===
+      (await prisma.learningTrackStep.findMany({
+        where: { trackId: agreeId },
+        orderBy: { order: "asc" },
+        select: { courseId: true },
+      })).map((s) => s.courseId).join(",")
+  );
+
+  const lateCourseId = agreeSteps[0].courseId;
+  const ownLate = own.find((c) => c.courseId === lateCourseId);
+  const teamLate = mineOnTeam?.courses.find((c) => c.courseId === lateCourseId);
+  check("the employee's own page says it is overdue", ownLate?.overdue === true);
+  check("their manager's page says the same", teamLate?.overdue === true);
+  check("the roster counts exactly one overdue", meOnRoster?.overdue === 1, String(meOnRoster?.overdue));
+  check(
+    "the manager's headline count is the employee's own count",
+    mineOnTeam?.overdue === own.filter((c) => c.overdue).length,
+    `${mineOnTeam?.overdue} vs ${own.filter((c) => c.overdue).length}`
+  );
+  check(
+    "the daily job would chase exactly what the screens show",
+    (await overdueNow()).filter((o) => o.userId === U.onTrack).length ===
+      own.filter((c) => c.overdue).length
+  );
+  check(
+    "all three name the same track",
+    ownLate?.trackName === "VCT Agreement" && teamLate?.trackName === "VCT Agreement"
+  );
+
+  // Completing it must move every reader at once — nothing stores overdue-ness.
+  await prisma.courseEnrollment.create({
+    data: { courseId: lateCourseId, userId: U.onTrack, completedAt: new Date() },
+  });
+  const ownAfter = await myLearning(U.onTrack);
+  const teamAfter = (await teamLearning(U.actor)).find((m) => m.userId === U.onTrack);
+  const rosterAfter = (await trackRoster(agreeId)).find((r) => r.userId === U.onTrack);
+  check(
+    "finishing it clears overdue on all three at once",
+    ownAfter.find((c) => c.courseId === lateCourseId)?.overdue === false &&
+      teamAfter?.overdue === 0 &&
+      rosterAfter?.overdue === 0,
+    `${teamAfter?.overdue} / ${rosterAfter?.overdue}`
+  );
+  check(
+    "and the roster's progress is the completion the employee's page reports",
+    rosterAfter?.done === 1 && rosterAfter?.total === 2
+  );
+
+  // A person reached BOTH ways is one row on the roster, not two.
+  await prisma.learnerGroupMember.deleteMany({ where: { groupId: G, userId: U.onTrack } });
+  await prisma.learnerGroupMember.create({ data: { groupId: G, userId: U.onTrack } });
+  await assignTrack(agreeId, { groupId: G }, U.actor);
+  const doubled = await trackRoster(agreeId);
+  check(
+    "somebody named AND in an assigned group is one person on the roster, not two",
+    doubled.filter((r) => r.userId === U.onTrack).length === 1
+  );
 
   // ── Cleanup ──────────────────────────────────────────────────────────
   await prisma.learningTrack.deleteMany({ where: { name: { startsWith: "VCT " } } });

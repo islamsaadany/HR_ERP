@@ -4,7 +4,21 @@
 
 **Created**: 2026-09-16
 
-**Status**: Draft — clarified 2026-09-16, ready for `/speckit-plan`
+**Status**: **Built** 2026-09-16 (migration `078`). Clarified with the CEO, planned, tasked and
+implemented in one day; the constitution was amended to **2.0.0** before any code was written,
+because the "dates that chase people by email" decision reversed a clause it marked NON-NEGOTIABLE.
+All four user stories are done, with two amendments to what was specified, both deliberate and both
+recorded here rather than left to be rediscovered:
+
+- **The daily job is behind three switches, not two.** The spec named the platform email toggle and
+  Learning's own. The **module** switch was missing, so a switched-off Learning would still have
+  chased people about courses whose page redirects to the dashboard.
+- **The track page carries a roster as well as an assignee list.** US4 asked for "who is on it and
+  how far each has got"; those turn out to be two questions. The assignee panel keeps a group a
+  group, because assigning a group is a statement about the group and flattening it would hide the
+  fact that anyone joining later gets the track too. The roster is the same people with groups
+  expanded and duplicates removed — which also corrected a header count that double-counted anybody
+  named directly who was also in an assigned group.
 
 **Input**: The CEO, after the admin course-ordering work landed: *"we will need to think next on the learning track of everyone .. so we can set the learning priorities of each employee and set it by the admin maybe and the person's manager so he can show progress"*
 
