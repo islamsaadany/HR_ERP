@@ -542,6 +542,31 @@ a live `CourseAssignment` to them, a `CourseAssignment` to a `LearnerGroup` they
 `courseAccessFor` (per person), `accessibleCoursesFor` (My learning), `courseRoster` (HR roster).
 Nothing else may decide access.
 
+**Learning tracks** (spec 043, in progress from 2026-09-16, migration `078`). A **track** is a named,
+ordered path of published courses handed to a person or a group, and **being on one GRANTS its
+courses** — the CEO's explicit choice over a track that merely re-orders what somebody already
+receives. That makes a track the **FIFTH access route**, and it is resolved inside `resolveRoutes`
+with the other four: a `"TRACK"` member on the union, a `hasTrackAssignment` fact, one line in the
+rule, and the fact gathered by all three entry points (`src/lib/learning/track-access.ts`). Nothing
+else may read track membership to decide access. Two consequences worth knowing: somebody mid-course
+who loses their track **keeps the course**, which falls out of the existing grandfathering rather
+than needing code; and `courseRoster` had to add the route's people to its **candidate union** as
+well as set the fact, or a track-only holder would have been silently missing from the roster.
+A step may carry a deadline of **either kind** — a period in days from the day that person joined the
+track, or a fixed calendar date — and `src/lib/learning/deadlines.ts` is the only place either
+becomes a date, so nothing downstream knows there were ever two. A course in two tracks takes the
+**earlier** date, resolved first. Overdue is derived, never stored. The daily job
+(`/api/cron/learning`, the **fourth** cron) emails the employee and their manager, bounded at **five
+messages** (day 0 then weekly for four weeks) with the schedule as a `const` — there is deliberately
+no cadence column, and the verify script asserts there never is one. It is gated by **both** the
+platform email toggle and Learning's own switch, which can only ever narrow; switching it off
+silences the mail and never hides the overdue state. A **manager** may add courses for their own
+direct reports and order that person's list, resolved against the **current** org chart; they can
+never remove a company requirement, which is structural — every manager write touches only
+`LearningPersonalStep`, and a requirement lives in `LearningTrackStep`. Proven by
+`scripts/verify-course-tracks.mts` (71 checks). **Screens are not built yet** — they are gated on a
+mockup awaiting sign-off.
+
 **The order of the courses** (added 2026-09-15, mockup-approved, no migration). `Course.order` has
 always been written (max + 1 on both creation paths) and always been read — by the admin list and by
 `accessibleCoursesFor`, so it already decided the order employees meet their courses in; nothing had

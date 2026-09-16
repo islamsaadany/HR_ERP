@@ -23,6 +23,39 @@
 | 12 — Team Communications | 🟢 **Built** (spec 039 — one door with three options: the dashboard noticeboard, email to a chosen audience, and birthday & work-anniversary congratulations drafted by the platform and sent by a human; migrations `067` + `074`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
 
+## Learning tracks — foundation built, screens awaiting a mockup (2026-09-16 — migration `078`)
+- **Spec 043**, clarified with the CEO: a track is a named ordered path assigned to a person or
+  group; being on it GRANTS its courses; company tracks belong to whoever runs Learning while a
+  manager may add and order for their own reports but never remove a requirement; deadlines chase by
+  email. That last one reversed a NON-NEGOTIABLE, so the **constitution was amended to 2.0.0 before
+  any code was written** rather than after.
+- **Built and proven**: the five tables + migration `078` (idempotent, proven by a *watched* second
+  run against a database already holding a track, an assignment, a sent reminder and a switch
+  somebody had turned on — all survived); the fifth access route; the track reads and writes; the
+  deadline derivation; the overdue sweep; the reminder log; the Learning switch; both email
+  templates; the fourth cron; and the manager's half.
+- **Not built**: every screen. They are gated on `design-mockups/learning/2026-09-16_learning-tracks.html`,
+  which is published and awaiting sign-off. `myLearning` has not yet been extended to carry track
+  position, because its shape follows the approved design.
+- **Three faults the checks caught, none visible to `tsc` or the build**:
+  - `courseRoster` builds a **candidate list** by unioning the people each route reaches and only
+    then asks the rule. Setting the new fact alone would have left a track-only holder out of that
+    list entirely — absent from the screen whose whole job is to say who has the course.
+  - A new unit-test file **silently did not run**: `npm test` is a hand-written list of paths, not a
+    glob. Same shape as the Modules-list lesson. 192 → 206 tests once added.
+  - The verify script asserted the reminder switch was "off by default" by reading its current
+    value — shared singleton state any other actor can change. It now reads the **column default**
+    out of `information_schema`, which is the fact it actually meant.
+- **A deliberate departure recorded here so it is not "fixed"**: the reminder job sends through
+  `sendReportedEmail`, not the usual fire-and-forget `sendEmail`. The ordinary sender swallows
+  failures by design, which is right where a state change must not be blocked by mail and wrong
+  here: the log row means "this person was told today", so a failed send must release the claim and
+  be retried rather than be recorded as a success.
+- **Verified**: `scripts/verify-course-tracks.mts` — 71 checks, passing twice in a row and alongside
+  another script's fixtures; 206 unit tests; `verify-course-access` (18) and `verify-learning-manager`
+  (26) still green; `npx tsc --noEmit` and `npm run build` clean. **Not** yet driven in a browser —
+  there is nothing to drive until the screens exist.
+
 ## Learning: the admin arranges the courses (built 2026-09-15 — no migration)
 - **Asked for as** *"an option in the learning module to reorder the courses by the learning admin"*,
   then narrowed: *"ordering in the groups but I believe the groups should be quick filtered
