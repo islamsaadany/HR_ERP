@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-16
 
-**Status**: Draft — three questions open (see *Open Questions*)
+**Status**: Draft — clarified 2026-09-16, ready for `/speckit-plan`
 
 **Input**: The CEO, after the admin course-ordering work landed: *"we will need to think next on the learning track of everyone .. so we can set the learning priorities of each employee and set it by the admin maybe and the person's manager so he can show progress"*
 
@@ -148,8 +148,9 @@ manager and an HR admin each see the same position and the same overdue state, f
   anyone who has started it keeps access to finish — the module's existing rule that being mid-course
   is itself a route to the course is not overridden by tracks.
 - **A person is put on two tracks that both contain the same course.** It appears once. It is
-  complete when it is complete. Where the two tracks give it different target dates, the earlier
-  date governs — a deadline must never be made later by adding work.
+  complete when it is complete. Where the two give it different deadlines, BOTH are resolved to real
+  dates first (one may be a period and the other a fixed date) and the earlier governs — a deadline
+  must never be made later by adding work.
 - **A track is taken away from someone.** The obligation ends; anything they have already completed
   stays completed; anything they have started, they keep until they finish it.
 - **The same course sits in a track and is also reached by an audience rule.** It appears once, and
@@ -224,16 +225,35 @@ manager and an HR admin each see the same position and the same overdue state, f
 
 ### Deadlines
 
-- **FR-018**: A course within a track MUST be able to carry an optional target date. A course with no
-  target date has no deadline, and its absence MUST NEVER be treated as overdue.
-- **FR-019**: A course is overdue when its target date has passed and the person has not completed
-  it. Overdue MUST be derived from the date and the completion, never stored as a flag and never set
+- **FR-018**: A course within a track MUST be able to carry an optional deadline, of EITHER of two
+  kinds (clarified 2026-09-16), chosen per step:
+  - **a period** — a number of days, counted from the day that person was put on the track, so an
+    onboarding path works for a January joiner and a September joiner alike; or
+  - **a fixed date** — the same calendar date for everybody on the track, for a company deadline
+    that genuinely falls on a day ("everyone completes Ethics by 31/12").
+
+  A step MUST carry at most one of the two, never both. A course with no deadline has none, and its
+  absence MUST NEVER be read as overdue.
+- **FR-019**: A course is overdue when its deadline has passed and the person has not completed it.
+  Overdue MUST be derived from the deadline and the completion, never stored as a flag and never set
   by a scheduled job — consistent with how course renewal lapsing already works.
+- **FR-019a**: Both kinds of deadline MUST resolve to an actual date for one person through ONE
+  derivation, and every screen, comparison and reminder MUST read that. Two kinds of deadline is the
+  one place this feature buys real complexity, and the way it goes wrong is a second, slightly
+  different resolution written for a screen — after which a person is told one date and chased on
+  another.
+- **FR-019b**: A screen showing a deadline MUST show the resolved date, not the rule that produced
+  it. "By 14/12/2026" is what a person can act on; "30 days after you started" makes them do
+  arithmetic to find out whether they are late. Where the operator is SETTING it, the rule is what
+  they see and edit.
 - **FR-020**: When a course is overdue, the EMPLOYEE MUST be emailed about it, and their manager MUST
   be told. Where the person has no manager, the notice intended for a manager goes to whoever runs
   Learning instead.
-- **FR-021**: Reminders MUST be bounded — see *Open Question 2*. An unbounded reminder is a nuisance
-  and will get every message the platform sends ignored.
+- **FR-021**: Reminders MUST be bounded, and the bound is (clarified 2026-09-16): **one email on the
+  day the course goes overdue, then one a week for four weeks, then silence** — at most five about
+  any one course. After that the course stays visibly overdue to the person, their manager and
+  whoever runs Learning; it simply stops arriving by email. The bound is a decision, not a default:
+  it MUST NOT be widened without the same person who set it saying so.
 - **FR-022**: The same reminder MUST NOT be sent twice. A scheduled job that runs twice in a day, or
   is retried, MUST NOT produce a second email; what has been sent MUST be recorded.
 - **FR-023**: Completing a course MUST stop every reminder for it immediately.
@@ -258,6 +278,11 @@ manager and an HR admin each see the same position and the same overdue state, f
 
 ### Ordering — which order wins
 
+- **FR-030a**: A track's order is an ORDER, NOT A LOCK (clarified 2026-09-16). The courses appear in
+  the track's sequence and the next one is obvious, but no course is ever blocked by an unfinished
+  one before it. Rejected deliberately: gating step two behind step one would make one stuck course
+  wall off everything behind it, and pausing a course mid-path would silently strand everybody on
+  that track until somebody noticed.
 - **FR-031**: Within a track, the track's own order governs.
 - **FR-032**: A course a person holds that is NOT part of any track MUST continue to be ordered by the
   company-wide course order set by whoever runs Learning.
@@ -291,8 +316,10 @@ manager and an HR admin each see the same position and the same overdue state, f
   which single course to do next and whether anything is late.
 - **SC-004**: A manager can see, for their whole team at once, who is behind — in one place, without
   opening each person.
-- **SC-005**: No employee receives more than the agreed number of reminders about the same course,
-  however many times the scheduled job runs.
+- **SC-005**: No employee receives more than five emails about the same overdue course — one on the
+  day, four weekly — however many times the scheduled job runs, and none at all once they finish it.
+- **SC-005a**: A person is told the same deadline date that they are chased on, whichever kind of
+  deadline produced it.
 - **SC-006**: A course that a company track requires cannot be removed from an employee by anyone
   other than whoever runs Learning — demonstrated by attempting it both through the screen and
   around it.
@@ -328,31 +355,29 @@ exists in how the module behaves today. Each is listed so it can be overturned c
 
 ---
 
-## Open Questions
+## Clarifications
 
-Three questions are left open deliberately, because each has more than one defensible answer and the
-wrong one is expensive to unpick. They are the subject of `/speckit-clarify`.
+### Session 2026-09-16
 
-### Open Question 1 — What shape is a target date?
+Three questions were left open when the spec was drafted, because each had more than one defensible
+answer and no safe default. All three were put to the CEO with the trade-offs stated, and answered.
 
-The canonical example is "New consultant — first 90 days", which is assigned all year round and
-whose deadlines can only mean *90 days from when this person started the track*. But "everyone
-completes Ethics by 31 December" is an equally real case, and it can only mean a fixed calendar date.
-Supporting both doubles the deadline logic and every screen that shows a date; supporting one makes
-the other case impossible or a manual chore.
+- **Q: What shape is a deadline — a period from joining the track, a fixed calendar date, or both?**
+  → **A: Both, chosen per step.** (FR-018.) The most expensive of the three answers and taken with
+  that on the table: it is two kinds of date to set, show, explain and chase. It is also the only
+  answer that serves both real cases — an onboarding path assigned all year round, and a company
+  deadline that falls on an actual day. The cost is contained by FR-019a: both kinds resolve to one
+  date through one derivation, so nothing downstream knows there were ever two kinds.
 
-### Open Question 2 — How often is somebody chased, and for how long?
+- **Q: How often is somebody chased once a course is overdue, and for how long?**
+  → **A: On the day, then weekly, stopping after a month** — at most five emails about one course.
+  (FR-021.) The question that carries the blast radius, since these go to the whole company on a
+  schedule with no human choosing to send them.
 
-FR-021 requires reminders to be bounded but does not say where the bound is. The difference between
-"once, then weekly for a month" and "every day until done" is the difference between a reminder and
-the reason people filter the platform's mail.
-
-### Open Question 3 — Is a track an order, or a sequence that locks?
-
-Whether step two can be started before step one is finished. "Priorities" implies an order, not
-necessarily a gate. Locking makes a path a genuine curriculum and makes "what do I do next"
-unambiguous; it also means one unfinished course can block somebody entirely, and one paused course
-can strand a whole team.
+- **Q: Is a track's order enforced — step two locked until step one is done — or is it a recommended
+  sequence?**
+  → **A: An order, not a lock.** (FR-030a.) Nobody can be stranded, and a paused course cannot wall
+  off a team's path.
 
 ---
 

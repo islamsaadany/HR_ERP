@@ -13,9 +13,8 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — **three open questions stand deliberately** (date
-      shape, reminder cadence, whether the sequence locks). Each has more than one defensible answer
-      and no safe default; they are the subject of `/speckit-clarify`.
+- [x] No [NEEDS CLARIFICATION] markers remain — the three open questions were put to the CEO and
+      answered on 2026-09-16; see the spec's *Clarifications* section.
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic
@@ -45,15 +44,17 @@
 
 ## Notes
 
-The three open questions do not block `/speckit-clarify`; they are its input. They DO block
-`/speckit-plan`, because each changes what gets built:
+**Ready for `/speckit-plan`.** All three open questions are answered (spec *Clarifications*,
+2026-09-16): deadlines are per-step and of either kind, reminders are one plus four weekly, and a
+track's order is an order rather than a lock.
 
-1. **Date shape** — relative to joining the track, fixed calendar date, or both. Changes every screen
-   that shows or sets a date, and the daily job's arithmetic.
-2. **Reminder cadence** — how often and for how long. The difference between a reminder and the
-   reason people mute the platform.
-3. **Locking** — whether step two waits for step one. Changes what an employee can open, so it
-   reaches back into the access rule itself.
+Two things the plan must not lose:
 
-Open Question 2 is the one with a blast radius: FR-020 sends mail to the whole company on a schedule,
-so the bound must be a decision, never a default that a later reading quietly widens.
+1. **Two kinds of deadline is the one place this feature buys real complexity** (FR-018). It is
+   contained by FR-019a — both kinds resolve to one date through one derivation, so nothing beyond
+   that point knows there were ever two. A second resolution written for a screen is how a person
+   ends up told one date and chased on another.
+2. **The reminder bound is a decision, not a default** (FR-021). It sends to the whole company on a
+   schedule with no human choosing to send, so widening it is a conversation, not a tweak.
+
+The constitution amendment remains outstanding and blocks shipping, not planning.
