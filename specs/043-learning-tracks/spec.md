@@ -260,6 +260,27 @@ manager and an HR admin each see the same position and the same overdue state, f
 - **FR-024**: Reminders MUST honour the platform's existing notification settings, including the
   master switch, and MUST be fire-and-forget — a mail failure must never block or corrupt a state
   change, and must never be recorded as a successful send.
+- **FR-024a**: Learning MUST carry its OWN switch for chasing, in the module's settings alongside
+  who runs Learning (the CEO, 2026-09-16: *"the email thing can be under the settings of the
+  learning track"*). It is a SECOND gate, never a replacement: a reminder sends only when the
+  platform's master switch AND this one are both on. This switch MUST NOT be able to enable mail the
+  platform switch has disabled.
+- **FR-024b**: That switch governs the whole overdue-reminder job — what reaches the employee and
+  what reaches their manager. It MUST NOT change what any SCREEN shows: an overdue course still
+  reads as overdue to the employee, the manager and whoever runs Learning whether the switch is on
+  or off. Silencing the chasing is not hiding the fact.
+- **FR-024c**: The switch is on or off and nothing more. The cadence in FR-021 MUST NOT become an
+  editable setting — a bound that lives in a settings box is a decision nobody made, and the first
+  person frustrated by unfinished courses will widen it.
+- **FR-024d**: The switch MUST be per MODULE, not per track. Per-track chasing is already available
+  without it, by simply not setting deadlines on that track's steps; a per-track switch would also
+  make the same overdue course chased through one track and silent through another for a person on
+  both, which has no right answer.
+- **FR-024e**: Anyone who runs Learning MUST be able to turn the chasing OFF; turning it back ON MUST
+  require an HR Admin. Stopping mail to the whole company is always safe and must be possible
+  immediately by whoever is watching the module; starting it is the act that deserves the higher
+  authority. This is a deliberate departure from the module settings page's existing read/write
+  split, where a learning manager reads and only HR writes.
 - **FR-025**: All dates MUST display as dd/mm/yyyy.
 
 ### Seeing it
@@ -398,6 +419,11 @@ FR-020 breaks this. The CEO chose it explicitly on 2026-09-16, having been shown
 three alternatives (no dates at all; dates only a manager sees; dates that chase people by email).
 The reason: **a deadline nobody is reminded of is not a deadline.**
 
+**Part of why this is acceptable** (added 2026-09-16, the CEO's own suggestion): Learning carries
+its own off switch for the chasing, in the module's settings — FR-024a to FR-024e. The risk below is
+not theoretical, and a control that can only be exercised by shipping a code change is not a control
+at the speed this would need one.
+
 What this costs, stated rather than buried:
 
 - Learning becomes the **sixth** email workflow, after benefit claims, the holiday/vacation
@@ -406,7 +432,7 @@ What this costs, stated rather than buried:
   appointed operator, and therefore the first message anybody receives that no human chose to send.
 - The blast radius is everyone, not one person: a mistake in the date logic reaches the whole company
   at once. This is why FR-021 (bounded) and FR-022 (never twice) are requirements and not niceties,
-  and why Open Question 2 must be answered before this is planned.
+  and why the cadence is fixed in FR-021 rather than configurable.
 
 **Follow-up required**: the constitution must be amended to record this, through
 `/speckit-constitution`, rather than being left in contradiction with a shipped feature. That is a
