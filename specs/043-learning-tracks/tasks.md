@@ -145,12 +145,12 @@ requirement.
 **Independent test**: Add a course for a report and reorder; try to remove a company requirement and
 be refused, both through the screen and around it.
 
-- [ ] T045 [US3] Add the personal-step reads and writes to `src/lib/learning/tracks.ts` — add, reorder, remove, all against `LearningPersonalStep` and never `LearningTrackStep`
-- [ ] T046 [US3] Create `src/lib/learning/manager-access.ts` — "is this person a direct report of that one, right now", resolved against the CURRENT org chart like time-off approvals, never a stored snapshot
-- [ ] T047 [US3] Add `addPersonalStep`, `reorderPersonalSteps` and `removePersonalStep` to a new `src/app/(app)/admin/learning/tracks/manager-actions.ts`, each guarded by T046, each refusing on the server whatever the screen offers
-- [ ] T048 [US3] Include personal steps in the access route (`src/lib/learning/track-access.ts`) and in the order derivation (`src/lib/learning/order.ts`) — the same two places, not new ones
+- [x] T045 [US3] Add the personal-step reads and writes to `src/lib/learning/tracks.ts` — add, reorder, remove, all against `LearningPersonalStep` and never `LearningTrackStep`
+- [x] T046 [US3] Create `src/lib/learning/manager-access.ts` — "is this person a direct report of that one, right now", resolved against the CURRENT org chart like time-off approvals, never a stored snapshot
+- [x] T047 [US3] Add `addPersonalStep`, `reorderPersonalSteps` and `removePersonalStep` to a new `src/app/(app)/admin/learning/tracks/manager-actions.ts`, each guarded by T046, each refusing on the server whatever the screen offers
+- [x] T048 [US3] Include personal steps in the access route (`src/lib/learning/track-access.ts`) and in the order derivation (`src/lib/learning/order.ts`) — the same two places, not new ones
 - [ ] T049 [US3] Build the manager's per-person list UI, showing company requirements as locked WITH the reason on the row rather than as a silently absent control
-- [ ] T050 [US3] Extend `scripts/verify-course-tracks.mts`: a manager may act only for their own reports; moving a report mid-test transfers the ability and removes it from the old manager; no action reaches a company step; a personal addition grants the course through the same single derivation
+- [x] T050 [US3] Extend `scripts/verify-course-tracks.mts`: a manager may act only for their own reports; moving a report mid-test transfers the ability and removes it from the old manager; no action reaches a company step; a personal addition grants the course through the same single derivation
 - [ ] T051 [US3] Drive it in a browser, including submitting a refused change around the screen to confirm the server refuses it on its own authority
 - [ ] T052 [US3] Run `npx tsc --noEmit` and `npm run build`; update the three docs in the same commit
 

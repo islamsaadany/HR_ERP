@@ -318,3 +318,138 @@ export async function revokeTrackAssignment(assignmentId: string): Promise<Track
   });
   return { ok: true };
 }
+
+// ─── A manager's own additions (spec 043, US3) ──────────────────────────
+//
+// Everything below writes ONLY to `LearningPersonalStep`. That is what makes "a manager can never
+// remove a company requirement" structural rather than merely checked: a company requirement lives
+// in `LearningTrackStep`, and no function here touches it. The action checks as well, because a
+// rule with one enforcement point is a rule the next code path breaks.
+
+export async function addPersonalStep(
+  userId: string,
+  courseId: string,
+  actorId: string
+): Promise<TrackResult> {
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { status: true },
+  });
+  if (!course) return { ok: false, error: "That course no longer exists." };
+  if (course.status !== "PUBLISHED") return { ok: false, error: NOT_PUBLISHED };
+
+  const existing = await prisma.learningPersonalStep.findUnique({
+    where: { userId_courseId: { userId, courseId } },
+    select: { id: true, removedAt: true },
+  });
+
+  const max = await prisma.learningPersonalStep.aggregate({
+    where: { userId, removedAt: null },
+    _max: { order: true },
+  });
+  const order = (max._max.order ?? 0) + 1;
+
+  if (existing) {
+    if (existing.removedAt === null) return { ok: false, error: "They already have that course." };
+    // Re-adding revives the row rather than making a second one — the unique constraint means a
+    // second could not exist anyway, and reviving keeps who added it and when in one place.
+    await prisma.learningPersonalStep.update({
+      where: { id: existing.id },
+      data: { removedAt: null, addedAt: new Date(), addedById: actorId, order },
+    });
+    return { ok: true, id: existing.id };
+  }
+
+  const created = await prisma.learningPersonalStep.create({
+    data: { userId, courseId, order, addedById: actorId },
+    select: { id: true },
+  });
+  return { ok: true, id: created.id };
+}
+
+export async function removePersonalStep(stepId: string): Promise<TrackResult> {
+  await prisma.learningPersonalStep.update({
+    where: { id: stepId },
+    data: { removedAt: new Date() },
+  });
+  return { ok: true };
+}
+
+/**
+ * Order one person's own additions.
+ *
+ * The same guard shape as everywhere else: start from what the DATABASE says this person has and
+ * refuse a list that does not account for all of it. A company requirement has no id that could
+ * appear in this list — the query only ever returns personal steps — so the manager's ordering
+ * cannot reach one even by naming it.
+ */
+export async function reorderPersonalSteps(
+  userId: string,
+  stepIds: string[]
+): Promise<TrackResult> {
+  if (new Set(stepIds).size !== stepIds.length) return { ok: false, error: TRACK_CHANGED };
+
+  return prisma.$transaction(async (tx) => {
+    const stored = await tx.learningPersonalStep.findMany({
+      where: { userId, removedAt: null },
+      select: { id: true, order: true },
+    });
+    const submitted = new Set(stepIds);
+    if (stored.length !== stepIds.length || stored.some((s) => !submitted.has(s.id))) {
+      return { ok: false, error: TRACK_CHANGED };
+    }
+    const current = new Map(stored.map((s) => [s.id, s.order]));
+    for (const [index, id] of stepIds.entries()) {
+      if (current.get(id) === index + 1) continue;
+      await tx.learningPersonalStep.update({ where: { id }, data: { order: index + 1 } });
+    }
+    return { ok: true };
+  });
+}
+
+/** What one person holds, split by where it came from — for the manager's view of them. */
+export async function learnerPlan(userId: string) {
+  const [trackSteps, personal] = await Promise.all([
+    prisma.learningTrackStep.findMany({
+      where: {
+        track: {
+          assignments: {
+            some: {
+              revokedAt: null,
+              OR: [
+                { userId },
+                { group: { members: { some: { userId } } } },
+              ],
+            },
+          },
+        },
+        course: { status: "PUBLISHED" },
+      },
+      orderBy: { order: "asc" },
+      select: {
+        id: true,
+        order: true,
+        dueDays: true,
+        dueOn: true,
+        courseId: true,
+        course: { select: { title: true } },
+        track: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.learningPersonalStep.findMany({
+      where: { userId, removedAt: null, course: { status: "PUBLISHED" } },
+      orderBy: { order: "asc" },
+      select: {
+        id: true,
+        order: true,
+        dueDays: true,
+        dueOn: true,
+        courseId: true,
+        addedAt: true,
+        course: { select: { title: true } },
+        addedBy: { select: { name: true } },
+      },
+    }),
+  ]);
+  return { trackSteps, personal };
+}

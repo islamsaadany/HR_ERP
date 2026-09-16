@@ -27,6 +27,8 @@ import { TRACK_CHANGED } from "../src/lib/learning/track-results";
 import { deadlinesFor, overdueNow } from "../src/lib/learning/overdue";
 import { REMINDER_SCHEDULE, isReminderDay } from "../src/lib/learning/deadlines";
 import { getLearningSettings, setRemindersEnabled } from "../src/lib/learning/settings";
+import { managesLearnerNow, refuseUnlessManages } from "../src/lib/learning/manager-access";
+import { addPersonalStep, learnerPlan, removePersonalStep } from "../src/lib/learning/tracks";
 
 const prisma = new PrismaClient();
 
@@ -384,6 +386,64 @@ async function main() {
 
   await prisma.learningReminderLog.deleteMany({ where: { userId: { in: Object.values(U) } } });
   await setRemindersEnabled(false, U.actor);
+
+  // ── The manager's half ───────────────────────────────────────────────
+  console.log("\nA manager shapes their own people only");
+
+  // U.actor manages U.onTrack; U.outside reports to nobody.
+  await prisma.user.update({ where: { id: U.onTrack }, data: { reportsToId: U.actor } });
+  await prisma.user.update({ where: { id: U.inGroup }, data: { reportsToId: null } });
+
+  check("a manager manages their own report", await managesLearnerNow(U.actor, U.onTrack));
+  check("and nobody else", !(await managesLearnerNow(U.actor, U.inGroup)));
+  check("nobody manages themselves", !(await managesLearnerNow(U.actor, U.actor)));
+
+  const employee = { id: U.actor, role: "EMPLOYEE" as const };
+  check("an ordinary manager is allowed for their report", (await refuseUnlessManages(employee, U.onTrack)) === null);
+  const refusal = await refuseUnlessManages(employee, U.inGroup);
+  check("and refused for somebody else — in words, not silence", refusal !== null && refusal.length > 10, String(refusal));
+
+  // The chart is read NOW, not snapshotted: moving the report moves the authority.
+  await prisma.user.update({ where: { id: U.onTrack }, data: { reportsToId: U.outside } });
+  check(
+    "moving somebody to a new manager moves the authority immediately",
+    !(await managesLearnerNow(U.actor, U.onTrack)) && (await managesLearnerNow(U.outside, U.onTrack))
+  );
+  await prisma.user.update({ where: { id: U.onTrack }, data: { reportsToId: U.actor } });
+
+  console.log("\nA personal addition is a course, through the same one rule");
+  const solo = await prisma.course.create({
+    data: { id: "vct-c-solo", title: "VCT Solo", status: "PUBLISHED", visibility: "RESTRICTED", order: 0 },
+  });
+  check("before the manager adds it, they do not hold it", !(await heldBy(U.onTrack)).includes(solo.id));
+
+  const added = await addPersonalStep(U.onTrack, solo.id, U.actor);
+  check("the manager adds it", added.ok, added.ok ? "" : added.error);
+  check("and it is held — through the SAME derivation, not a second one", (await heldBy(U.onTrack)).includes(solo.id));
+  check("reported as the TRACK route", (await routesFor(U.onTrack, solo.id)).includes("TRACK"));
+
+  const plan = await learnerPlan(U.onTrack);
+  check(
+    "the manager's view separates what the company requires from what they added",
+    plan.personal.some((p) => p.courseId === solo.id) &&
+      !plan.trackSteps.some((t) => t.courseId === solo.id)
+  );
+  check(
+    "and the company's requirements carry the track that demands them",
+    plan.trackSteps.every((t) => t.track.name.startsWith("VCT "))
+  );
+
+  // A company requirement has no id a manager's reorder could even name.
+  const companyIds = new Set(plan.trackSteps.map((t) => t.id));
+  const personalIds = new Set(plan.personal.map((p) => p.id));
+  check(
+    "no company step id appears among the personal ones a manager can reorder",
+    [...companyIds].every((id) => !personalIds.has(id)) && personalIds.size > 0
+  );
+
+  await removePersonalStep(plan.personal.find((p) => p.courseId === solo.id)!.id);
+  check("removing their addition takes the course away", !(await heldBy(U.onTrack)).includes(solo.id));
+  await prisma.course.deleteMany({ where: { id: solo.id } });
 
   // ── Cleanup ──────────────────────────────────────────────────────────
   await prisma.learningTrack.deleteMany({ where: { name: { startsWith: "VCT " } } });
