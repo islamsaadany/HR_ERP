@@ -103,3 +103,69 @@ export async function reorderCoursesWithin(
     return { ok: true };
   });
 }
+
+// ─── Where a track's order fits (spec 043, 2026-09-16) ──────────────────
+
+/**
+ * What a person's track membership contributes to the sequence they meet their courses in.
+ *
+ * `trackOrder` is the track's own position for that course; `trackName` is what the employee's page
+ * groups under. A course reached any other way carries neither.
+ */
+export type TrackPlacement = {
+  courseId: string;
+  trackId: string;
+  trackName: string;
+  trackOrder: number;
+};
+
+/** A course as the sequencer sees it: its company position, and its track placement if it has one. */
+export type Sequenceable = {
+  courseId: string;
+  /** The company-wide order, already settled by `reorderCoursesWithin`. */
+  order: number;
+  title: string;
+};
+
+/**
+ * THE sequence a person meets their courses in — the one place that decides it.
+ *
+ * Track courses first, grouped by track (tracks in the order the person joined them, stable by
+ * name), each track's courses in ITS step order. Then everything else, in the company-wide order
+ * that `STATUS_ORDER` and `reorderCoursesWithin` already produce.
+ *
+ * This lives in THIS file rather than in a new module on purpose: `order.ts` exists precisely so the
+ * page and the write cannot disagree about a sequence, and a second ordering function would fork
+ * exactly what that is for. A course in two tracks is placed by the FIRST track it appears in, so
+ * it is listed once.
+ */
+export function sequenceForLearner<T extends Sequenceable>(
+  courses: T[],
+  placements: TrackPlacement[],
+  trackOrder: string[]
+): Array<T & { track: TrackPlacement | null }> {
+  const placementByCourse = new Map<string, TrackPlacement>();
+  for (const placement of placements) {
+    // First track wins — a course held through two paths appears once, where it is met first.
+    if (!placementByCourse.has(placement.courseId)) placementByCourse.set(placement.courseId, placement);
+  }
+  const trackRank = new Map(trackOrder.map((id, i) => [id, i]));
+
+  return courses
+    .map((course) => ({ ...course, track: placementByCourse.get(course.courseId) ?? null }))
+    .sort((a, b) => {
+      if (a.track && b.track) {
+        const rank =
+          (trackRank.get(a.track.trackId) ?? Number.MAX_SAFE_INTEGER) -
+          (trackRank.get(b.track.trackId) ?? Number.MAX_SAFE_INTEGER);
+        if (rank !== 0) return rank;
+        if (a.track.trackId === b.track.trackId) return a.track.trackOrder - b.track.trackOrder;
+        return a.track.trackName.localeCompare(b.track.trackName);
+      }
+      // A course on a path comes before one that is merely assigned: the path is the statement
+      // about what matters first, which is the whole reason tracks exist.
+      if (a.track) return -1;
+      if (b.track) return 1;
+      return a.order - b.order || a.title.localeCompare(b.title);
+    });
+}

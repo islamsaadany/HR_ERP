@@ -26,7 +26,7 @@ get skipped.
 **Purpose**: Nothing visual is written until the CEO has signed off a static mockup. This is
 Principle II and it is a hard blocker on every component task below, not a preference.
 
-- [ ] T001 Build the mockup at `design-mockups/learning/2026-09-16_learning-tracks.html` — self-contained HTML, navy/gold, covering all five surfaces: the track list, the track builder (courses in order, the deadline control showing BOTH kinds, the assignee panel), an employee's view of a track on their learning page, the manager's per-person list showing what is locked, and the reminder switch on Learning settings
+- [x] T001 Build the mockup at `design-mockups/learning/2026-09-16_learning-tracks.html` — self-contained HTML, navy/gold, covering all five surfaces: the track list, the track builder (courses in order, the deadline control showing BOTH kinds, the assignee panel), an employee's view of a track on their learning page, the manager's per-person list showing what is locked, and the reminder switch on Learning settings
 - [ ] T002 Publish T001 as an Artifact and get explicit CEO sign-off; record the approval date in the mockup's footer
 
 **Checkpoint**: No task marked `[UI]` below may start until T002 is approved.
@@ -39,11 +39,11 @@ Principle II and it is a hard blocker on every component task below, not a prefe
 
 **⚠️ No user story work begins until this phase is complete.**
 
-- [ ] T003 Add the five models to `prisma/schema.prisma` — `LearningTrack`, `LearningTrackStep`, `LearningTrackAssignment`, `LearningPersonalStep`, `LearningReminderLog`, `LearningSettings` — exactly as specified in data-model.md, including every `@@unique` listed there
-- [ ] T004 Write `prisma/sql/078_learning_tracks.sql` in the SAME commit as T003 — idempotent (`IF NOT EXISTS` throughout), including the CHECK constraint that a step and a personal step carry at most one of `dueDays` / `dueOn`
-- [ ] T005 Prove `078` idempotent by a WATCHED second run: apply it to a throwaway database, insert a track, a step, an assignment and a reminder-log row, then apply it again and confirm no row is lost and no constraint is violated — a migration is idempotent when a second run has been watched, not when it says so at the top
-- [ ] T006 [P] Create `src/lib/learning/track-results.ts` — the plain module holding every result type the actions return, because a `"use server"` file may export nothing but async functions
-- [ ] T007 [P] Scaffold `scripts/verify-course-tracks.mts` with its namespacing in place from the start: `vct-` ids, its own email domain, its own track names, and no assertion about any count in the whole database
+- [x] T003 Add the five models to `prisma/schema.prisma` — `LearningTrack`, `LearningTrackStep`, `LearningTrackAssignment`, `LearningPersonalStep`, `LearningReminderLog`, `LearningSettings` — exactly as specified in data-model.md, including every `@@unique` listed there
+- [x] T004 Write `prisma/sql/078_learning_tracks.sql` in the SAME commit as T003 — idempotent (`IF NOT EXISTS` throughout), including the CHECK constraint that a step and a personal step carry at most one of `dueDays` / `dueOn`
+- [x] T005 Prove `078` idempotent by a WATCHED second run: apply it to a throwaway database, insert a track, a step, an assignment and a reminder-log row, then apply it again and confirm no row is lost and no constraint is violated — a migration is idempotent when a second run has been watched, not when it says so at the top
+- [x] T006 [P] Create `src/lib/learning/track-results.ts` — the plain module holding every result type the actions return, because a `"use server"` file may export nothing but async functions
+- [x] T007 [P] Scaffold `scripts/verify-course-tracks.mts` with its namespacing in place from the start: `vct-` ids, its own email domain, its own track names, and no assertion about any count in the whole database
 
 **Checkpoint**: schema on disk, migration proven, no behaviour yet.
 
@@ -62,17 +62,17 @@ here rather than at the end.
 
 ### The access route
 
-- [ ] T008 [US1] Add `"TRACK"` to the `AccessRoute` union and `hasTrackAssignment: boolean` to `AccessFacts` in `src/lib/learning/access.ts`
-- [ ] T009 [US1] Add the single rule line inside the `published && viewerIsActive` block of `resolveRoutes` in `src/lib/learning/access.ts` — nothing else in that function changes
-- [ ] T010 [US1] Create `src/lib/learning/track-access.ts` — the one query answering "which courses does this person hold via a live track assignment", covering both direct and group assignments, shaped so `accessibleCoursesFor` stays a bounded number of queries
-- [ ] T011 [US1] Populate `hasTrackAssignment` in all THREE fact-gatherers in `src/lib/learning/access.ts` — `courseAccessFor`, `accessibleCoursesFor`, `courseRoster` — so no entry point can disagree with another
+- [x] T008 [US1] Add `"TRACK"` to the `AccessRoute` union and `hasTrackAssignment: boolean` to `AccessFacts` in `src/lib/learning/access.ts`
+- [x] T009 [US1] Add the single rule line inside the `published && viewerIsActive` block of `resolveRoutes` in `src/lib/learning/access.ts` — nothing else in that function changes
+- [x] T010 [US1] Create `src/lib/learning/track-access.ts` — the one query answering "which courses does this person hold via a live track assignment", covering both direct and group assignments, shaped so `accessibleCoursesFor` stays a bounded number of queries
+- [x] T011 [US1] Populate `hasTrackAssignment` in all THREE fact-gatherers in `src/lib/learning/access.ts` — `courseAccessFor`, `accessibleCoursesFor`, `courseRoster` — so no entry point can disagree with another
 
 ### Reads and writes
 
-- [ ] T012 [P] [US1] Create `src/lib/learning/tracks.ts` — the raw reads (list tracks, one track with steps, who is on it) and raw writes (create, update, delete, add/remove step, reorder steps, assign, revoke). No Prisma call for tracks lives anywhere else
-- [ ] T013 [US1] Implement `reorderSteps` in `src/lib/learning/tracks.ts` using the guard shape proven in `src/lib/learning/order.ts` — iterate what the DATABASE says is in the track and refuse a list that does not account for all of it, then renumber canonically
-- [ ] T014 [US1] Extend `src/lib/learning/order.ts` so a person's sequence is track courses (grouped by track, in step order) then everything else in the company order — extended in that file, never a second ordering module
-- [ ] T015 [US1] Create `src/app/(app)/admin/learning/tracks/actions.ts` — `"use server"`, every export an async function, each one `requireLearningManager()` then validation then a call into `tracks.ts`
+- [x] T012 [P] [US1] Create `src/lib/learning/tracks.ts` — the raw reads (list tracks, one track with steps, who is on it) and raw writes (create, update, delete, add/remove step, reorder steps, assign, revoke). No Prisma call for tracks lives anywhere else
+- [x] T013 [US1] Implement `reorderSteps` in `src/lib/learning/tracks.ts` using the guard shape proven in `src/lib/learning/order.ts` — iterate what the DATABASE says is in the track and refuse a list that does not account for all of it, then renumber canonically
+- [x] T014 [US1] Extend `src/lib/learning/order.ts` so a person's sequence is track courses (grouped by track, in step order) then everything else in the company order — extended in that file, never a second ordering module
+- [x] T015 [US1] Create `src/app/(app)/admin/learning/tracks/actions.ts` — `"use server"`, every export an async function, each one `requireLearningManager()` then validation then a call into `tracks.ts`
 - [ ] T016 [US1] Extend `myLearning` in `src/lib/learning/queries.ts` to carry each course's track and position, without adding a query per course or per track
 
 ### Screens (blocked on T002)
@@ -86,8 +86,8 @@ here rather than at the end.
 
 ### Proving it
 
-- [ ] T023 [US1] Extend `scripts/verify-course-tracks.mts` with the access matrix: the route is reported; all three entry points agree for the same person and course; a DRAFT or HIDDEN course on a track reaches nobody; revoking removes the course UNLESS started, where `IN_PROGRESS` keeps it and `grandfatheredOnly` is true; a course held by both a track and an audience rule survives losing either
-- [ ] T024 [US1] Extend `scripts/verify-course-tracks.mts` with the reorder guard: a list missing a step is refused and writes nothing; a step added in another tab refuses the stale list; renumbering is gap-free
+- [x] T023 [US1] Extend `scripts/verify-course-tracks.mts` with the access matrix: the route is reported; all three entry points agree for the same person and course; a DRAFT or HIDDEN course on a track reaches nobody; revoking removes the course UNLESS started, where `IN_PROGRESS` keeps it and `grandfatheredOnly` is true; a course held by both a track and an audience rule survives losing either
+- [x] T024 [US1] Extend `scripts/verify-course-tracks.mts` with the reorder guard: a list missing a step is refused and writes nothing; a step added in another tab refuses the stale list; renumbering is gap-free
 - [ ] T025 [US1] Drive it in a real browser against a real Postgres — build a track, assign it, sign in as the employee and confirm the three courses in order; confirm a draft course on the track is invisible; confirm the console is clean
 - [ ] T026 [US1] Drive the same at 390px — the track builder and the employee list, no sideways scroll, nothing unreachable by thumb
 - [ ] T027 [US1] Run `npx tsc --noEmit` and `npm run build`; update `PROJECT_DETAILS.md`, `IMPLEMENTATION_PROGRESS.md` and `specs/043-learning-tracks/spec.md` in the same commit as the code

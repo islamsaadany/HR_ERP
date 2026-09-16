@@ -1,0 +1,337 @@
+<title>Learning Tracks</title>
+<style>
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#8ea6c8;--navy-400:#4f6d97;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-100:#f6ecca;--gold-300:#e0c05a;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;--red:#b91c1c;--red-bg:#fdf3f3;--red-line:#f3c6c6;
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1020px;margin:0 auto;padding-block:32px 80px;padding-inline:20px}
+  h1{font-family:Georgia,serif;font-size:28px;margin:0 0 4px;text-wrap:balance}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  .lede{color:var(--muted);font-size:14px;margin:6px 0 0;max-width:76ch}
+  .proposal{margin-top:40px}
+  .proposal>h2{font-family:Georgia,serif;font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--navy-800);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 12px 36px;max-width:80ch}
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px}
+  .cap{font-size:11.5px;color:var(--muted);margin:9px 0 0;font-style:italic}
+
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .c-ok{border:1px solid var(--green-line);background:var(--green-bg);color:var(--green)}
+  .c-gold{border:1px solid var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+  .c-navy{border:1px solid var(--navy-200);background:var(--navy-50);color:var(--navy-700)}
+  .c-red{border:1px solid var(--red-line);background:var(--red-bg);color:var(--red)}
+  .c-off{border:1px solid var(--line);background:var(--paper);color:var(--muted)}
+
+  .btn-navy{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--navy-800);color:#fff;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:9px}
+  .btn-ghost{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--navy-700);font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px}
+
+  .row{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:11px 13px 11px 8px;margin-bottom:8px}
+  .row .grow{min-width:0;flex:1}
+  .row .t{font-size:14.5px;font-weight:700;color:var(--navy-800)}
+  .row .titleline{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .row .meta{display:block;margin-top:3px;font-size:11.5px;color:var(--muted)}
+  .kebab{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:14px;font-weight:800;flex:none}
+  .arrow{color:var(--muted);font-size:13px;flex:none}
+  .grip{flex:none;display:grid;place-items:center;width:22px;height:30px;border-radius:7px;color:var(--navy-300)}
+  .pos{flex:none;width:16px;text-align:right;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--navy-300)}
+
+  .hdr{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:14px}
+  .hdr h3{font-family:Georgia,serif;font-size:21px;margin:0;color:var(--ink)}
+  .back{font-size:12.5px;color:var(--muted)}
+  .tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+  .tab{font-size:12.5px;font-weight:600;color:var(--muted);padding:8px 13px;border-bottom:2px solid transparent}
+  .tab.on{color:var(--navy-800);border-bottom-color:var(--navy-800)}
+
+  .due{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:4px 9px;font-size:11.5px;color:var(--navy-700);font-weight:600;white-space:nowrap}
+  .due.none{color:var(--muted);font-weight:500;border-style:dashed}
+  .due.late{border-color:var(--red-line);background:var(--red-bg);color:var(--red)}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .panel h5{margin:0 0 4px;font-size:12px;font-weight:700;color:var(--navy-800)}
+  .panel p{margin:0;font-size:12px;color:var(--muted)}
+  .two{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+  .fld{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;font-weight:700}
+  .inp{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 9px;font-size:13px;color:var(--ink)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+  .seg span{font-size:11.5px;font-weight:600;color:var(--muted);padding:6px 12px}
+  .seg span.on{background:var(--navy-800);color:#fff}
+  .resolved{font-size:11.5px;color:var(--navy-700);font-weight:600;margin-top:6px}
+
+  .who{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:9px 12px;margin-bottom:7px}
+  .who .n{font-size:13px;font-weight:700;color:var(--navy-800)}
+  .who .d{font-size:11.5px;color:var(--muted)}
+  .track{flex:none;width:96px;height:7px;border-radius:999px;background:var(--navy-50);overflow:hidden}
+  .track span{display:block;height:100%;border-radius:999px;background:var(--navy-800)}
+  .track.done span{background:var(--green)}
+
+  .sw{display:flex;align-items:flex-start;gap:13px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:14px}
+  .toggle{flex:none;width:42px;height:24px;border-radius:999px;background:var(--navy-800);position:relative;margin-top:2px}
+  .toggle::after{content:"";position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:999px;background:#fff}
+  .toggle.off{background:var(--line)}
+  .toggle.off::after{right:auto;left:3px}
+
+  .note{border-left:3px solid var(--gold-500);background:#fbf9f2;padding:12px 16px;border-radius:0 10px 10px 0;font-size:12.5px;max-width:80ch}
+  .note b{color:var(--navy-800)}
+  .emplabel{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px}
+  .decision{margin-top:42px;border-left:3px solid var(--gold-500);background:#fbf9f2;padding:15px 18px;border-radius:0 10px 10px 0;font-size:13px}
+  .decision h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .decision ol{margin:8px 0 0;padding-left:20px}.decision li{margin:8px 0}
+  footer{margin-top:46px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:12px}
+  @media (max-width:520px){ .pos{display:none} }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="grip" viewBox="0 0 10 16"><g fill="currentColor">
+    <circle cx="2.5" cy="3" r="1.35"/><circle cx="7.5" cy="3" r="1.35"/>
+    <circle cx="2.5" cy="8" r="1.35"/><circle cx="7.5" cy="8" r="1.35"/>
+    <circle cx="2.5" cy="13" r="1.35"/><circle cx="7.5" cy="13" r="1.35"/>
+  </g></symbol>
+</svg>
+
+<div class="wrap">
+  <p class="eyebrow">Learning · Tracks</p>
+  <h1>Learning tracks</h1>
+  <p class="lede">
+    Five screens. A track is a named path of courses in a deliberate order — you build it once and
+    hand it to a person or a whole group, and being on it is what gives them the courses. Everything
+    below is drawn from the agreed spec; nothing is built yet.
+  </p>
+
+  <!-- 1 -->
+  <section class="proposal">
+    <h2><span class="num">1</span> The tracks you have</h2>
+    <p class="sub">A new entry inside Learning, beside the courses. Each row says what the path is
+      for and how many people are on it — that count is the whole point of the row, so it is
+      counted the same way the real check counts.</p>
+    <div class="frame">
+      <div class="hdr">
+        <div><p class="eyebrow">Admin · Learning</p><h3>Tracks</h3></div>
+        <span class="btn-navy">+ New track</span>
+      </div>
+      <div class="row">
+        <span class="grow">
+          <span class="titleline"><span class="t">New consultant — first 90 days</span>
+            <span class="chip c-navy">5 courses</span><span class="chip c-ok">12 on it</span></span>
+          <span class="meta">Introduction · Ethics · Proposal writing · Assessments · Market — 3 with a deadline</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+      <div class="row">
+        <span class="grow">
+          <span class="titleline"><span class="t">Annual compliance 2026</span>
+            <span class="chip c-navy">2 courses</span><span class="chip c-ok">41 on it</span></span>
+          <span class="meta">Ethics · Data protection — both due 31/12/2026</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+      <div class="row">
+        <span class="grow">
+          <span class="titleline"><span class="t">Finance joiner</span>
+            <span class="chip c-navy">3 courses</span><span class="chip c-off">nobody yet</span></span>
+          <span class="meta">Built last week · not assigned to anyone</span>
+        </span>
+        <span class="kebab">⋯</span><span class="arrow">→</span>
+      </div>
+      <p class="cap">A track nobody is on says so plainly rather than showing a zero that reads like a fault.</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="proposal">
+    <h2><span class="num">2</span> Building one</h2>
+    <p class="sub">Courses in the order you want them met, dragged by the same handle the course list
+      already uses. Each step can carry a deadline — or not; most won't.</p>
+    <div class="frame">
+      <p class="back">← Tracks</p>
+      <div class="hdr"><div><h3>New consultant — first 90 days</h3></div><span class="btn-ghost">⋯ Rename or delete</span></div>
+      <div class="tabs"><span class="tab on">Courses</span><span class="tab">Who is on it (12)</span></div>
+
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">1</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Intro To consulting</span></span>
+          <span class="meta">1 section · everyone on this track holds it</span>
+        </span>
+        <span class="due">⏱ within 14 days</span><span class="kebab">⋯</span>
+      </div>
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">2</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Values &amp; Ethics</span></span>
+          <span class="meta">1 section</span>
+        </span>
+        <span class="due">⏱ within 30 days</span><span class="kebab">⋯</span>
+      </div>
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">3</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Proposal &amp; Report Writing</span></span>
+          <span class="meta">1 section</span>
+        </span>
+        <span class="due none">no deadline</span><span class="kebab">⋯</span>
+      </div>
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">4</span>
+        <span class="grow">
+          <span class="titleline"><span class="t">Assessments</span></span>
+          <span class="meta">1 section</span>
+        </span>
+        <span class="due none">no deadline</span><span class="kebab">⋯</span>
+      </div>
+      <div style="margin-top:12px"><span class="btn-ghost">+ Add a course</span></div>
+      <p class="cap">Only published courses can be added — a path built from drafts would reach nobody.</p>
+    </div>
+
+    <div class="two" style="margin-top:16px">
+      <div class="panel">
+        <h5>Setting a deadline — the two kinds, one control</h5>
+        <div style="margin-top:10px">
+          <span class="fld">Deadline</span>
+          <span class="seg"><span class="on">Within N days of joining</span><span>On a fixed date</span></span>
+        </div>
+        <div style="margin-top:10px;max-width:180px">
+          <span class="fld">Days</span>
+          <input class="inp" value="30" readonly />
+        </div>
+        <p class="resolved">For Ahmed, who joined this track on 01/09/2026 → due <b>01/10/2026</b></p>
+        <p style="margin-top:9px">“Within N days” suits a path given to joiners all year round. “On a
+          fixed date” suits a company deadline. One step carries one or the other, never both.</p>
+      </div>
+      <div class="panel">
+        <h5>Who is on it</h5>
+        <div style="margin-top:10px">
+          <div class="who"><span class="grow"><span class="n">Ahmed Fathy</span><span class="d">joined this track 01/09/2026</span></span><span class="track"><span style="width:40%"></span></span></div>
+          <div class="who"><span class="grow"><span class="n">Consulting — everyone</span><span class="d">a group · 11 people</span></span><span class="chip c-navy">group</span></div>
+        </div>
+        <div style="margin-top:10px"><span class="btn-ghost">+ Add a person or group</span></div>
+        <p style="margin-top:9px">Assigning a group means anyone who joins it later gets the track
+          too, with no further action.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="proposal">
+    <h2><span class="num">3</span> What the employee sees</h2>
+    <p class="sub">Their own page, unchanged in character — still a list of what they owe, not a
+      catalogue. It now says which path a course belongs to, and what is late.</p>
+    <div class="frame">
+      <p class="emplabel">My learning</p>
+      <p style="font-size:12.5px;color:var(--muted);margin:0 0 12px">You have 4 courses to finish. 1 is overdue.</p>
+
+      <p class="emplabel" style="margin-top:4px">New consultant — first 90 days</p>
+      <div class="row">
+        <span class="pos">1</span>
+        <span class="grow"><span class="titleline"><span class="t">Intro To consulting</span>
+          <span class="chip c-red">Overdue</span></span>
+          <span class="meta">Was due 15/09/2026 · 40% done</span></span>
+        <span class="due late">⏱ 15/09/2026</span><span class="arrow">→</span>
+      </div>
+      <div class="row">
+        <span class="pos">2</span>
+        <span class="grow"><span class="titleline"><span class="t">Values &amp; Ethics</span></span>
+          <span class="meta">Not started</span></span>
+        <span class="due">⏱ due 01/10/2026</span><span class="arrow">→</span>
+      </div>
+      <div class="row">
+        <span class="pos">3</span>
+        <span class="grow"><span class="titleline"><span class="t">Proposal &amp; Report Writing</span></span>
+          <span class="meta">Not started</span></span>
+        <span class="due none">no deadline</span><span class="arrow">→</span>
+      </div>
+
+      <p class="emplabel" style="margin-top:16px">Everything else</p>
+      <div class="row">
+        <span class="grow"><span class="titleline"><span class="t">Productivity - GTD</span></span>
+          <span class="meta">Not started</span></span>
+        <span class="due none">no deadline</span><span class="arrow">→</span>
+      </div>
+      <p class="cap">The order inside a path is yours; anything not on a path keeps the company order. Nothing is locked — an unfinished course never blocks the next one.</p>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="proposal">
+    <h2><span class="num">4</span> The manager's view of one of their people</h2>
+    <p class="sub">They can add courses and order this person's list. What the company requires is
+      shown as locked, <b>with the reason on the row</b> — never as a missing button, because an
+      absent control is indistinguishable from a bug.</p>
+    <div class="frame">
+      <div class="hdr"><div><p class="eyebrow">My team · Learning</p><h3>Ahmed Fathy</h3></div><span class="btn-ghost">+ Add a course</span></div>
+      <div class="row">
+        <span class="grip" style="color:var(--line)"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">1</span>
+        <span class="grow"><span class="titleline"><span class="t">Intro To consulting</span>
+          <span class="chip c-navy">New consultant — first 90 days</span></span>
+          <span class="meta">Required by the company track — you can't remove or move this one</span></span>
+        <span class="due late">⏱ 15/09/2026</span>
+      </div>
+      <div class="row">
+        <span class="grip" style="color:var(--line)"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">2</span>
+        <span class="grow"><span class="titleline"><span class="t">Values &amp; Ethics</span>
+          <span class="chip c-navy">New consultant — first 90 days</span></span>
+          <span class="meta">Required by the company track — you can't remove or move this one</span></span>
+        <span class="due">⏱ 01/10/2026</span>
+      </div>
+      <div class="row">
+        <span class="grip"><svg width="10" height="16"><use href="#grip"/></svg></span><span class="pos">3</span>
+        <span class="grow"><span class="titleline"><span class="t">Consulting Market</span>
+          <span class="chip c-gold">Added by you</span></span>
+          <span class="meta">You added this on 12/09/2026</span></span>
+        <span class="due none">no deadline</span><span class="kebab">⋯</span>
+      </div>
+      <p class="cap">Two locked handles and one live one. The lock is enforced on the server too — the screen not offering something has never been a control.</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="proposal">
+    <h2><span class="num">5</span> The reminder switch</h2>
+    <p class="sub">On Learning's own settings page, beside who runs Learning. This is the brake you
+      asked for.</p>
+    <div class="frame">
+      <p class="back">← Learning</p>
+      <div class="hdr"><div><p class="eyebrow">Learning · Setup</p><h3>Settings</h3></div></div>
+      <div class="sw">
+        <span class="toggle"></span>
+        <span>
+          <span style="display:block;font-size:13px;font-weight:700;color:var(--navy-800)">Chase overdue courses by email</span>
+          <span style="display:block;font-size:12px;color:var(--muted);margin-top:3px">
+            When a deadline passes with a course unfinished, the person is emailed and their manager
+            is told. At most five messages about one course — one on the day, then weekly for four
+            weeks — then it stops arriving, though it stays marked overdue on every screen.
+          </span>
+          <span style="display:block;font-size:11.5px;color:var(--muted);margin-top:7px">
+            Anyone who runs Learning can switch this <b>off</b>. Switching it back <b>on</b> needs an HR Admin.
+          </span>
+        </span>
+      </div>
+      <p class="cap">Drawn on. Off by default until somebody turns it on deliberately.</p>
+    </div>
+    <p class="note" style="margin-top:14px">
+      <b>Two things this switch deliberately does not do.</b> It cannot turn email on when the
+      platform's own master switch is off — it can only ever silence, never enable. And switching it
+      off hides the emails, not the problem: an overdue course still reads overdue to the employee,
+      their manager and you.
+    </p>
+  </section>
+
+  <div class="decision">
+    <h3>What I need from you</h3>
+    <ol>
+      <li><b>All five screens as drawn</b> — or tell me what to change.</li>
+      <li><b>Tracks as a separate entry inside Learning</b>, beside the course list — rather than a tab on the course page.</li>
+      <li><b>The deadline control</b> showing the resolved date as you type ("→ due 01/10/2026"), so nobody has to do the arithmetic.</li>
+    </ol>
+    <p style="margin:12px 0 0;font-size:12.5px;color:var(--muted)">
+      Nothing is built. On approval this is 62 tasks, of which the first shippable slice is a track
+      that exists, gets assigned, and delivers its courses in order.
+    </p>
+  </div>
+
+  <footer>Mockup · Learning tracks (spec 043) · 16/09/2026 · design-mockups/learning/2026-09-16_learning-tracks.html</footer>
+</div>

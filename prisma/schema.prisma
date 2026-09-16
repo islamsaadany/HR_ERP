@@ -173,6 +173,15 @@ model User {
   learningManager           LearningManager?     @relation("LearningManagerSubject")
   learningManagersAppointed LearningManager[]    @relation("LearningManagerAppointer")
 
+  // Learning tracks (spec 043)
+  learningTracksCreated     LearningTrack[]           @relation("LearningTrackCreator")
+  learningTracksUpdated     LearningTrack[]           @relation("LearningTrackUpdater")
+  learningTracksOn          LearningTrackAssignment[] @relation("LearningTrackSubject")
+  learningTracksAssigned    LearningTrackAssignment[] @relation("LearningTrackAssigner")
+  learningPersonalSteps     LearningPersonalStep[]    @relation("LearningPersonalSubject")
+  learningStepsAdded        LearningPersonalStep[]    @relation("LearningPersonalAdder")
+  learningRemindersDisabled LearningSettings[]        @relation("LearningRemindersDisabler")
+
   // Team Communications (spec 039) — back-relations only; this feature adds NO column to User.
   messagesAbout    Message[]          @relation("MessageSubject")
   messagesAssigned Message[]          @relation("MessageAssignee")
@@ -1416,13 +1425,16 @@ model Course {
   updatedById String?
   updatedBy   User?   @relation("CourseUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
 
-  sections    CourseSection[]
-  audiences   CourseAudience[]
-  assignments CourseAssignment[]
-  enrollments CourseEnrollment[]
-  documents   CourseDocument[]
-  resources   CourseResource[]
-  ratings     CourseRating[]
+  sections      CourseSection[]
+  audiences     CourseAudience[]
+  assignments   CourseAssignment[]
+  enrollments   CourseEnrollment[]
+  documents     CourseDocument[]
+  resources     CourseResource[]
+  ratings       CourseRating[]
+  /// Spec 043 — the tracks this course appears in, and the managers' personal additions of it.
+  trackSteps    LearningTrackStep[]
+  personalSteps LearningPersonalStep[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1541,8 +1553,10 @@ model LearnerGroup {
   createdById String?
   createdBy   User?   @relation("LearnerGroupCreator", fields: [createdById], references: [id], onDelete: SetNull)
 
-  members     LearnerGroupMember[]
-  assignments CourseAssignment[]
+  members          LearnerGroupMember[]
+  assignments      CourseAssignment[]
+  /// Spec 043 — a track handed to the whole group.
+  trackAssignments LearningTrackAssignment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1790,6 +1804,165 @@ model LearningManager {
   appointedBy   User?   @relation("LearningManagerAppointer", fields: [appointedById], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
+}
+
+// ─── Learning tracks (spec 043, 2026-09-16) ─────────────────────────────
+//
+// A TRACK is a named, ordered path of published courses handed to a person or a group. Being on
+// one GRANTS its courses — the CEO's explicit choice — which makes it the FIFTH access route, and
+// the reason the rule stays trustworthy is that the route is resolved inside `resolveRoutes`
+// (`src/lib/learning/access.ts`) with the other four. Nothing else may read these rows to decide
+// whether somebody can open a course.
+//
+// There is deliberately NO stored position, NO stored overdue flag and NO track-scoped enrollment:
+// a person's place and their lateness are derived on read, exactly as course progress and renewal
+// lapsing already are, so no summary can disagree with the rows underneath it.
+
+model LearningTrack {
+  id          String  @id @default(cuid())
+  /// Unique: two tracks called "New consultant" is a mistake, not a use case.
+  name        String  @unique
+  description String?
+
+  createdById String?
+  createdBy   User?   @relation("LearningTrackCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?   @relation("LearningTrackUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  steps       LearningTrackStep[]
+  assignments LearningTrackAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// One course's place in a track, and its optional deadline.
+///
+/// `dueDays` and `dueOn` are the two kinds of deadline (spec 043 FR-018) and EXACTLY ONE may be
+/// set — a check constraint in migration 078 enforces it, because two deadlines on one step have
+/// no meaning and `resolveDeadline` would have to pick between them arbitrarily. Same shape as
+/// `ExpenseEvidence.blobUrl` / `externalUrl`.
+model LearningTrackStep {
+  id       String        @id @default(cuid())
+  trackId  String
+  track    LearningTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  courseId String
+  course   Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  order    Int
+
+  /// A period, counted from the day THIS person joined the track.
+  dueDays Int?
+  /// A fixed calendar date, the same for everybody on the track. Date, not timestamp: it has no
+  /// time and no timezone, and printing it means reordering the string, never `new Date(iso)`.
+  dueOn   DateTime? @db.Date
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([trackId, courseId])
+  @@index([trackId])
+  @@index([courseId])
+}
+
+/// A person, or a group, is on a track.
+///
+/// `assignedAt` is load-bearing: it is what `dueDays` counts from. For a GROUP assignment the
+/// period must count from when that person effectively joined, which is the later of this row and
+/// their joining the group — `resolveDeadline` takes the date as a parameter rather than reading
+/// it, so that stays one decision in one place.
+model LearningTrackAssignment {
+  id      String        @id @default(cuid())
+  trackId String
+  track   LearningTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  userId  String?
+  user    User?         @relation("LearningTrackSubject", fields: [userId], references: [id], onDelete: Cascade)
+  groupId String?
+  group   LearnerGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  assignedById String?
+  assignedBy   User?     @relation("LearningTrackAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  assignedAt   DateTime  @default(now())
+  /// Removal is a revocation, never a delete — matching `CourseAssignment`, so history survives.
+  revokedAt    DateTime?
+
+  @@unique([trackId, userId])
+  @@unique([trackId, groupId])
+  @@index([trackId, revokedAt])
+  @@index([userId])
+  @@index([groupId])
+}
+
+/// A course a MANAGER added for one of their own people, outside any company track.
+///
+/// This table is what makes FR-013 enforceable structurally rather than only by a check: a manager
+/// may only ever write here, and a company requirement lives in `LearningTrackStep`, which they
+/// have no write path to at all. The server checks anyway — "the UI doesn't offer it" has never
+/// been a control.
+model LearningPersonalStep {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation("LearningPersonalSubject", fields: [userId], references: [id], onDelete: Cascade)
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  order    Int
+
+  /// The same two kinds, the same check constraint. A period counts from `addedAt`.
+  dueDays Int?
+  dueOn   DateTime? @db.Date
+
+  addedById String?
+  addedBy   User?     @relation("LearningPersonalAdder", fields: [addedById], references: [id], onDelete: SetNull)
+  addedAt   DateTime  @default(now())
+  removedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, courseId])
+  @@index([userId, removedAt])
+}
+
+/// What makes "the same reminder is never sent twice" true (constitution v2.0.0).
+///
+/// One row per person per course per DAY, written ONLY after a successful send — a failed send
+/// recorded as a success would silently cost that person the reminder forever. The unique
+/// constraint is the guarantee; checking before sending is the courtesy.
+///
+/// Deliberately NOT keyed on the track: the reminder is about a person and a course, so somebody
+/// whose course is overdue through two tracks is still chased once.
+model LearningReminderLog {
+  id       String   @id @default(cuid())
+  userId   String
+  courseId String
+  sentOn   DateTime @db.Date
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, courseId, sentOn])
+  @@index([userId])
+}
+
+/// The Learning module's own settings. Singleton, mirroring `NotificationSettings`.
+///
+/// Its own table rather than a column on `NotificationSettings` on purpose: that record is
+/// surfaced at Admin → Notifications, a screen a learning manager cannot open, so the person meant
+/// to be able to pull this brake could not reach it. Same shape, different fact.
+///
+/// There is deliberately NO cadence column. The reminder bound lives as a `const` in
+/// `src/lib/learning/deadlines.ts`, because a bound in a settings box is a decision nobody made —
+/// the constitution states this as a requirement and the verify script asserts it.
+model LearningSettings {
+  id String @id @default("singleton")
+
+  /// OFF by default, so the scheduled-email reversal does not switch itself on at deploy.
+  /// Turning it off is open to anyone who runs Learning; turning it ON requires an HR Admin.
+  deadlineRemindersEnabled Boolean @default(false)
+
+  remindersDisabledById String?
+  remindersDisabledBy   User?     @relation("LearningRemindersDisabler", fields: [remindersDisabledById], references: [id], onDelete: SetNull)
+  remindersDisabledAt   DateTime?
+
+  updatedAt DateTime @updatedAt
 }
 
 // ─── Finance: petty cash & payback requests (spec 040) ──────────────────

@@ -116,7 +116,8 @@ check(
   "a RESTRICTED course + an Everyone rule reaches somebody who matches nothing else",
   resolveRoutes({
     course: { status: "PUBLISHED", visibility: "RESTRICTED" },
-    matchesAudience: true, // what an ALL_ACTIVE rule evaluates to for everybody
+    matchesAudience: true,
+    hasTrackAssignment: false, // what an ALL_ACTIVE rule evaluates to for everybody
     ...facts,
   }).allowed,
   true
@@ -126,6 +127,7 @@ check(
   resolveRoutes({
     course: { status: "PUBLISHED", visibility: "RESTRICTED" },
     matchesAudience: false,
+    hasTrackAssignment: false,
     ...facts,
   }).allowed,
   false
@@ -137,7 +139,8 @@ check(
   "someone halfway through a PUBLISHED course keeps it",
   resolveRoutes({
     course: { status: "PUBLISHED", visibility: "RESTRICTED" },
-    matchesAudience: false, ...facts, enrollment: started,
+    matchesAudience: false,
+    hasTrackAssignment: false, ...facts, enrollment: started,
   }).allowed,
   true
 );
@@ -145,7 +148,8 @@ check(
   "pausing stops them too — that is what a pause means",
   resolveRoutes({
     course: { status: "HIDDEN", visibility: "RESTRICTED" },
-    matchesAudience: true, ...facts, enrollment: started,
+    matchesAudience: true,
+    hasTrackAssignment: false, ...facts, enrollment: started,
   }).allowed,
   false
 );
@@ -153,7 +157,8 @@ check(
   "and it stops everyone else",
   resolveRoutes({
     course: { status: "HIDDEN", visibility: "OPEN" },
-    matchesAudience: true, ...facts,
+    matchesAudience: true,
+    hasTrackAssignment: false, ...facts,
   }).allowed,
   false
 );
@@ -176,7 +181,8 @@ check(
   "and it all comes back when it is put back",
   resolveRoutes({
     course: { status: "PUBLISHED", visibility: "RESTRICTED" },
-    matchesAudience: false, ...facts, enrollment: started,
+    matchesAudience: false,
+    hasTrackAssignment: false, ...facts, enrollment: started,
   }).allowed,
   true
 );

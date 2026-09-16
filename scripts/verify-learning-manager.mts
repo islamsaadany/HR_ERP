@@ -66,7 +66,8 @@ console.log("\n── drafts ──");
 const draft = { status: "DRAFT" as const, visibility: "RESTRICTED" as const };
 const base = {
   viewerIsActive: true, hasDirectAssignment: false, hasGroupAssignment: false,
-  matchesAudience: false, enrollment: null,
+  matchesAudience: false,
+  hasTrackAssignment: false, enrollment: null,
 };
 check(
   "someone who may author sees a draft",

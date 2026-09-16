@@ -1,5 +1,5 @@
 /**
- * Course access — the four routes, pure, no database.
+ * Course access — the five routes, pure, no database.
  *
  * `resolveRoutes` is the ONLY statement of who may open a course, so this file is the matrix that
  * says what that means. The cases worth reading are the grandfathering ones: being mid-course is
@@ -17,6 +17,7 @@ const facts = (over: Partial<AccessFacts> = {}): AccessFacts => ({
   hasDirectAssignment: false,
   hasGroupAssignment: false,
   matchesAudience: false,
+  hasTrackAssignment: false,
   enrollment: null,
   ...over,
 });
@@ -36,6 +37,31 @@ describe("each route grants on its own", () => {
 
   test("AUDIENCE", () => {
     assert.deepEqual(resolveRoutes(facts({ matchesAudience: true })).routes, ["AUDIENCE"]);
+  });
+
+  test("TRACK — being on a track that holds the course is a route in its own right (spec 043)", () => {
+    const r = resolveRoutes(facts({ hasTrackAssignment: true }));
+    assert.equal(r.allowed, true);
+    assert.deepEqual(r.routes, ["TRACK"]);
+  });
+
+  test("TRACK grants nothing on a draft or paused course", () => {
+    for (const status of ["DRAFT", "HIDDEN"] as const) {
+      const r = resolveRoutes(
+        facts({ hasTrackAssignment: true, course: { status, visibility: "RESTRICTED" } })
+      );
+      assert.equal(r.allowed, false, status);
+    }
+  });
+
+  test("losing the track leaves somebody mid-course grandfathered, not locked out", () => {
+    const onTrack = resolveRoutes(facts({ hasTrackAssignment: true, enrollment: started }));
+    assert.deepEqual(onTrack.routes, ["TRACK", "IN_PROGRESS"]);
+    assert.equal(onTrack.grandfatheredOnly, false);
+
+    const revoked = resolveRoutes(facts({ hasTrackAssignment: false, enrollment: started }));
+    assert.deepEqual(revoked.routes, ["IN_PROGRESS"]);
+    assert.equal(revoked.grandfatheredOnly, true);
   });
 
   test("OPEN — a published open course reaches every active employee", () => {

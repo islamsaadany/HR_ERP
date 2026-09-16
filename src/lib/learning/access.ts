@@ -8,6 +8,11 @@ import {
   type AudienceSubject,
 } from "@/lib/learning/audience";
 import { hasLapsed } from "@/lib/learning/renewal";
+import {
+  holdsCourseViaTrack,
+  trackCourseIdsFor,
+  trackHolderIdsForCourse,
+} from "@/lib/learning/track-access";
 
 /**
  * THE course-access derivation — one definition, used by every path that reads or writes anything
@@ -44,6 +49,7 @@ export type AccessRoute =
   | "DIRECT" // a live CourseAssignment naming this person
   | "GROUP" // a live CourseAssignment to a LearnerGroup they belong to
   | "AUDIENCE" // they match one of the course's live audience rules
+  | "TRACK" // a live track assignment holding this course, or a manager's addition (spec 043)
   | "IN_PROGRESS"; // started and not finished — grandfathered (FR-042)
 
 export type AccessFacts = {
@@ -62,6 +68,13 @@ export type AccessFacts = {
   hasDirectAssignment: boolean;
   hasGroupAssignment: boolean;
   matchesAudience: boolean;
+  /**
+   * On a track that holds this course, or a manager added it for them (spec 043).
+   *
+   * A FACT, gathered like the others — being on a track GRANTS the course, so it is a route, and
+   * a route is decided here with the other four rather than anywhere it would be convenient.
+   */
+  hasTrackAssignment: boolean;
   /** Null when they have never opened the course. */
   enrollment: { completedAt: Date | null; accessWithdrawnAt: Date | null } | null;
 };
@@ -119,6 +132,7 @@ export function resolveRoutes(facts: AccessFacts): AccessResult {
     if (facts.hasDirectAssignment) routes.push("DIRECT");
     if (facts.hasGroupAssignment) routes.push("GROUP");
     if (facts.matchesAudience) routes.push("AUDIENCE");
+    if (facts.hasTrackAssignment) routes.push("TRACK");
 
     // Grandfathering: started, not finished, not withdrawn. Deliberately NOT conditional on any
     // other route — its whole purpose is to outlive them.
@@ -222,6 +236,7 @@ export async function courseAccessFor(
       course.audiences as AudienceRule[],
       now
     ),
+    hasTrackAssignment: await holdsCourseViaTrack(userId, courseId),
     enrollment: effectiveEnrollment(
       course.enrollments[0] ?? null,
       course.renewAfterMonths,
@@ -266,7 +281,7 @@ export async function accessibleCoursesFor(
   });
   if (!user) return [];
 
-  const [courses, memberships] = await Promise.all([
+  const [courses, memberships, trackCourseIds] = await Promise.all([
     prisma.course.findMany({
       where: { status: "PUBLISHED" },
       orderBy: [{ order: "asc" }, { title: "asc" }],
@@ -297,6 +312,10 @@ export async function accessibleCoursesFor(
       },
     }),
     prisma.learnerGroupMember.findMany({ where: { userId }, select: { groupId: true } }),
+    // ONE query for every course this person holds via a track, applied in memory below — the same
+    // shape as the audience rules, and for the same reason: this reader is bounded whatever the
+    // headcount or course count, and a query per course would quietly undo that.
+    trackCourseIdsFor(userId),
   ]);
 
   const myGroups = new Set(memberships.map((m) => m.groupId));
@@ -317,6 +336,7 @@ export async function accessibleCoursesFor(
         (a) => a.groupId !== null && myGroups.has(a.groupId)
       ),
       matchesAudience: subjectMatchesAudience(subject, course.audiences as AudienceRule[], now),
+      hasTrackAssignment: trackCourseIds.has(course.id),
       enrollment: effectiveEnrollment(enrollment, course.renewAfterMonths, now),
     });
     if (!access.allowed) continue;
@@ -408,7 +428,7 @@ export async function courseRoster(
   // would let an OPEN course report every employee as route AUDIENCE, which is not what is
   // granting them access — the roster's whole job is to answer "why can this person see this?"
   // truthfully.
-  const [groupMembers, audienceMatches, openMatches] = await Promise.all([
+  const [groupMembers, audienceMatches, openMatches, trackHolderIds] = await Promise.all([
     groupIds.length > 0
       ? prisma.learnerGroupMember.findMany({
           where: { groupId: { in: groupIds } },
@@ -419,6 +439,7 @@ export async function courseRoster(
     course.visibility === "OPEN"
       ? prisma.user.findMany({ where: { status: "ACTIVE" }, select: { id: true } })
       : Promise.resolve([]),
+    trackHolderIdsForCourse(courseId),
   ]);
 
   const groupMemberIds = new Set(groupMembers.map((m) => m.userId));
@@ -431,6 +452,10 @@ export async function courseRoster(
     ...audienceIds,
     ...openMatches.map((u) => u.id),
     ...course.enrollments.map((e) => e.userId),
+    // The fifth route's people belong in the union too, not only in the facts. Without this line
+    // somebody who holds the course ONLY through a track is never a candidate, and the roster
+    // silently omits them — in the screen whose whole job is to say who has this course.
+    ...trackHolderIds,
   ]);
   if (candidateIds.size === 0) return [];
 
@@ -451,6 +476,7 @@ export async function courseRoster(
       hasDirectAssignment: directIds.includes(person.id),
       hasGroupAssignment: groupMemberIds.has(person.id),
       matchesAudience: audienceIds.has(person.id),
+      hasTrackAssignment: trackHolderIds.has(person.id),
       enrollment: effectiveEnrollment(enrollment, course.renewAfterMonths, now),
     });
     if (!access.allowed) continue;
