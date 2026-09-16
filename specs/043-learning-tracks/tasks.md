@@ -106,29 +106,29 @@ email to them and one to their manager; run it again the same day and confirm no
 
 ### The one derivation
 
-- [ ] T028 [US2] Create `src/lib/learning/deadlines.ts` with `resolveDeadline(step, joinedAt)` — both kinds in, one real date out, `null` for no deadline — plus `isOverdue`, `earliestDeadline`, and `REMINDER_SCHEDULE` as a `const` of `[0, 7, 14, 21, 28]`
-- [ ] T029 [US2] Make the group-assignment case explicit in `src/lib/learning/deadlines.ts`: a period counts from the later of the group assignment and that person joining the group, passed IN as `joinedAt` rather than read inside, so the decision stays in one place
+- [x] T028 [US2] Create `src/lib/learning/deadlines.ts` with `resolveDeadline(step, joinedAt)` — both kinds in, one real date out, `null` for no deadline — plus `isOverdue`, `earliestDeadline`, and `REMINDER_SCHEDULE` as a `const` of `[0, 7, 14, 21, 28]`
+- [x] T029 [US2] Make the group-assignment case explicit in `src/lib/learning/deadlines.ts`: a period counts from the later of the group assignment and that person joining the group, passed IN as `joinedAt` rather than read inside, so the decision stays in one place
 - [ ] T030 [US2] Wire `resolveDeadline` into `myLearning` (`src/lib/learning/queries.ts`) and the admin track reads (`src/lib/learning/tracks.ts`) — every reader goes through it, none resolves a date of its own
 
 ### The switch
 
-- [ ] T031 [P] [US2] Create `src/lib/learning/settings.ts` — read and write the `LearningSettings` singleton, defaulting `deadlineRemindersEnabled` to false so the reversal does not switch itself on at deploy
-- [ ] T032 [US2] Add `setRemindersEnabled` to `src/app/(app)/admin/learning/tracks/actions.ts` with the asymmetric guard — `false` needs `requireLearningManager()`, `true` needs `requireAdmin()` — as two guards on ONE write path, recording who disabled it and when
+- [x] T031 [P] [US2] Create `src/lib/learning/settings.ts` — read and write the `LearningSettings` singleton, defaulting `deadlineRemindersEnabled` to false so the reversal does not switch itself on at deploy
+- [x] T032 [US2] Add `setRemindersEnabled` to `src/app/(app)/admin/learning/tracks/actions.ts` with the asymmetric guard — `false` needs `requireLearningManager()`, `true` needs `requireAdmin()` — as two guards on ONE write path, recording who disabled it and when
 - [ ] T033 [US2] Create `src/components/learning/ReminderSwitch.tsx` and add it to `src/app/(app)/admin/learning/settings/page.tsx`, snapshotting that page to `ui-versions/learning-settings-page/2026-09-16_before-reminders.tsx` first
 
 ### The deadline control and the chase
 
 - [ ] T034 [US2] Create `src/components/learning/DeadlineField.tsx` — one control offering both kinds, refusing both at once, showing the resolved date while the operator edits the rule
-- [ ] T035 [US2] Add `setStepDeadline` to `src/app/(app)/admin/learning/tracks/actions.ts`, refusing both kinds at once on the server with the CHECK constraint as the backstop
-- [ ] T036 [P] [US2] Add `learningOverdue` (to the employee) and `learningOverdueManager` templates to `src/lib/email/templates.ts`, dates as dd/mm/yyyy, through the existing branded sender
-- [ ] T037 [US2] Create `src/app/api/cron/learning/route.ts` — `CRON_SECRET` bearer auth or 401; both switches checked; one bounded sweep of incomplete enrollments past their resolved deadline; days-since-due must be in `REMINDER_SCHEDULE`; insert `LearningReminderLog` and treat a unique violation as "already done today"; send; fire-and-forget so one failure does not stop the sweep; log row written ONLY on a successful send
-- [ ] T038 [US2] Register the cron in `vercel.json` alongside the three existing daily jobs
+- [x] T035 [US2] Add `setStepDeadline` to `src/app/(app)/admin/learning/tracks/actions.ts`, refusing both kinds at once on the server with the CHECK constraint as the backstop
+- [x] T036 [P] [US2] Add `learningOverdue` (to the employee) and `learningOverdueManager` templates to `src/lib/email/templates.ts`, dates as dd/mm/yyyy, through the existing branded sender
+- [x] T037 [US2] Create `src/app/api/cron/learning/route.ts` — `CRON_SECRET` bearer auth or 401; both switches checked; one bounded sweep of incomplete enrollments past their resolved deadline; days-since-due must be in `REMINDER_SCHEDULE`; insert `LearningReminderLog` and treat a unique violation as "already done today"; send; fire-and-forget so one failure does not stop the sweep; log row written ONLY on a successful send
+- [x] T038 [US2] Register the cron in `vercel.json` alongside the three existing daily jobs
 - [ ] T039 [US2] Show overdue on the employee page (`src/app/(app)/learning/page.tsx`) derived on read, so it shows whether or not the reminder switch is on
 
 ### Proving it
 
-- [ ] T040 [US2] Extend `scripts/verify-course-tracks.mts`: `resolveDeadline` is stable for the same input; both kinds on one step refused by the action AND by a direct insert; a course in two tracks takes the earlier date AFTER both resolve, including one-of-each-kind; completing makes it not-overdue with nothing written
-- [ ] T041 [US2] Extend `scripts/verify-course-tracks.mts` with the bound: five sends across the schedule then silence on day 35; the same day twice produces one row and one send; a failed send writes no row; either switch off sends nothing; and assert `LearningSettings` has NO cadence column, so nobody adds one later
+- [x] T040 [US2] Extend `scripts/verify-course-tracks.mts`: `resolveDeadline` is stable for the same input; both kinds on one step refused by the action AND by a direct insert; a course in two tracks takes the earlier date AFTER both resolve, including one-of-each-kind; completing makes it not-overdue with nothing written
+- [x] T041 [US2] Extend `scripts/verify-course-tracks.mts` with the bound: five sends across the schedule then silence on day 35; the same day twice produces one row and one send; a failed send writes no row; either switch off sends nothing; and assert `LearningSettings` has NO cadence column, so nobody adds one later
 - [ ] T042 [US2] Drive it in a browser: set one deadline of each kind, confirm both print dd/mm/yyyy and that the date shown is the date chased on; hit the cron route and read the mail; hit it again the same day and confirm silence; complete the course and confirm silence
 - [ ] T043 [US2] Drive the switch in a browser: a learning manager turns it off (nothing sends, overdue still visible everywhere); the same person is refused turning it on; an HR Admin succeeds
 - [ ] T044 [US2] Run `npx tsc --noEmit` and `npm run build`; update the three docs in the same commit

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireLearningManager } from "@/lib/learning/managers";
+import { requireAdmin } from "@/lib/roles";
+import { setRemindersEnabled } from "@/lib/learning/settings";
 import {
   addStep,
   assignTrack,
@@ -142,4 +144,24 @@ export async function revokeTrackAction(
   const result = await revokeTrackAssignment(assignmentId);
   if (result.ok) revalidate(trackId);
   return result;
+}
+
+/**
+ * Turn the overdue chasing on or off (spec 043).
+ *
+ * ASYMMETRIC ON PURPOSE, and it is the only asymmetric guard in the module. Switching it OFF is
+ * open to anyone who runs Learning: stopping mail to the whole company is always a safe act, and
+ * the person watching the module must be able to do it the moment they see it going wrong, not
+ * after a deploy. Switching it back ON is the act that starts a scheduled process emailing
+ * employees, so it takes an HR Admin.
+ *
+ * Two guards, ONE write path — so there is a single thing to audit rather than two writes that can
+ * drift apart. It is a deliberate departure from this settings page's usual split (a learning
+ * manager reads, only HR writes) and is recorded as such in the spec.
+ */
+export async function setRemindersEnabledAction(enabled: boolean): Promise<TrackResult> {
+  const actor = enabled ? await requireAdmin() : await requireLearningManager();
+  await setRemindersEnabled(enabled, actor.id);
+  revalidatePath("/admin/learning/settings");
+  return { ok: true };
 }

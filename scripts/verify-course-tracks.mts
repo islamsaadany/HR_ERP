@@ -24,6 +24,9 @@ import {
   setStepDeadline,
 } from "../src/lib/learning/tracks";
 import { TRACK_CHANGED } from "../src/lib/learning/track-results";
+import { deadlinesFor, overdueNow } from "../src/lib/learning/overdue";
+import { REMINDER_SCHEDULE, isReminderDay } from "../src/lib/learning/deadlines";
+import { getLearningSettings, setRemindersEnabled } from "../src/lib/learning/settings";
 
 const prisma = new PrismaClient();
 
@@ -243,6 +246,144 @@ async function main() {
     constraintHeld = true;
   }
   check("and the database refuses it too, not only the action", constraintHeld);
+
+  // ── Deadlines end to end ─────────────────────────────────────────────
+  console.log("\nDeadlines, resolved against a real database");
+
+  // Rebuild a clean track: one step due 10 days after joining, one due on a fixed past date.
+  await prisma.learningTrack.deleteMany({ where: { name: { startsWith: "VCT " } } });
+  await prisma.courseEnrollment.deleteMany({ where: { userId: { in: Object.values(U) } } });
+  const dl = await createTrack("VCT Deadlines", null, U.actor);
+  const dlId = (dl as { id: string }).id;
+  await addStep(dlId, C.first);
+  await addStep(dlId, C.second);
+
+  const [stepA, stepB] = await prisma.learningTrackStep.findMany({
+    where: { trackId: dlId },
+    orderBy: { order: "asc" },
+    select: { id: true, courseId: true },
+  });
+  await setStepDeadline(stepA.id, { dueDays: 10, dueOn: null });
+  await setStepDeadline(stepB.id, { dueDays: null, dueOn: new Date("2026-01-31") });
+  await assignTrack(dlId, { userId: U.onTrack }, U.actor);
+
+  // Joined 40 days ago, so the 10-day step is 30 days overdue.
+  const joined = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000);
+  await prisma.learningTrackAssignment.updateMany({
+    where: { trackId: dlId, userId: U.onTrack },
+    data: { assignedAt: joined },
+  });
+
+  const resolved = await deadlinesFor(U.onTrack);
+  check("a period resolves from the day they joined", resolved.get(stepA.courseId)?.due !== null);
+  check("a fixed date resolves to itself", resolved.get(stepB.courseId)?.due?.getUTCFullYear() === 2026);
+  check("the track's name comes with it", resolved.get(stepA.courseId)?.trackName === "VCT Deadlines");
+
+  const overdue = await overdueNow();
+  const mine = overdue.filter((o) => o.userId === U.onTrack);
+  check("both are overdue", mine.length === 2, `${mine.length}`);
+
+  // Completing one removes it — with nothing written anywhere about overdue-ness.
+  await prisma.courseEnrollment.create({
+    data: { courseId: stepA.courseId, userId: U.onTrack, completedAt: new Date() },
+  });
+  const afterDone = (await overdueNow()).filter((o) => o.userId === U.onTrack);
+  check(
+    "completing a course stops it being overdue, with nothing written",
+    afterDone.length === 1 && afterDone[0].courseId === stepB.courseId
+  );
+
+  // A course in two tracks: the earlier date governs, both resolved first.
+  const second = await createTrack("VCT Second Path", null, U.actor);
+  const secondId = (second as { id: string }).id;
+  await addStep(secondId, stepB.courseId);
+  const otherStep = await prisma.learningTrackStep.findFirstOrThrow({
+    where: { trackId: secondId },
+    select: { id: true },
+  });
+  await setStepDeadline(otherStep.id, { dueDays: null, dueOn: new Date("2030-12-31") });
+  await assignTrack(secondId, { userId: U.onTrack }, U.actor);
+
+  const twoPaths = await deadlinesFor(U.onTrack);
+  check(
+    "a course in two tracks takes the EARLIER date — adding work never pushes a date later",
+    twoPaths.get(stepB.courseId)?.due?.getUTCFullYear() === 2026,
+    String(twoPaths.get(stepB.courseId)?.due)
+  );
+  const listed = (await overdueNow()).filter((o) => o.courseId === stepB.courseId && o.userId === U.onTrack);
+  check("and it is listed once, not twice", listed.length === 1, `${listed.length}`);
+
+  // ── The bound ────────────────────────────────────────────────────────
+  console.log("\nThe reminder bound");
+  check("five messages and no more", REMINDER_SCHEDULE.length === 5);
+  check(
+    "only the scheduled days chase",
+    REMINDER_SCHEDULE.every((d) => isReminderDay(d)) && ![1, 8, 29, 35].some((d) => isReminderDay(d))
+  );
+
+  // The bound must not be reachable from the database — a settings column would make it a
+  // decision nobody made, which the constitution forbids.
+  const columns = await prisma.$queryRawUnsafe<{ column_name: string }[]>(
+    `SELECT column_name FROM information_schema.columns WHERE table_name = 'LearningSettings'`
+  );
+  const names = columns.map((c) => c.column_name.toLowerCase());
+  check(
+    "LearningSettings has NO cadence column — the bound cannot become configurable",
+    !names.some((n) => /day|week|cadence|interval|schedule|count|max/.test(n)),
+    names.join(",")
+  );
+
+  // Never twice on one day.
+  const today = new Date();
+  const todayOnly = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  await prisma.learningReminderLog.deleteMany({ where: { userId: U.onTrack } });
+  await prisma.learningReminderLog.create({
+    data: { userId: U.onTrack, courseId: stepB.courseId, sentOn: todayOnly },
+  });
+  let twiceRefused = false;
+  try {
+    await prisma.learningReminderLog.create({
+      data: { userId: U.onTrack, courseId: stepB.courseId, sentOn: todayOnly },
+    });
+  } catch {
+    twiceRefused = true;
+  }
+  check("the same reminder twice in one day is refused by the database", twiceRefused);
+
+  // ── The switch ───────────────────────────────────────────────────────
+  console.log("\nThe switch");
+  // The DEFAULT, not the current value: the singleton is shared state that any other actor (or an
+  // earlier test) may have switched, so asserting what it happens to hold right now is the same
+  // mistake as asserting a count about the whole database. What matters is that a fresh deployment
+  // starts OFF — the scheduled-email reversal must never switch itself on.
+  const defaults = await prisma.$queryRawUnsafe<{ column_default: string | null }[]>(
+    `SELECT column_default FROM information_schema.columns
+     WHERE table_name = 'LearningSettings' AND column_name = 'deadlineRemindersEnabled'`
+  );
+  check(
+    "chasing is OFF by default — a fresh deployment does not switch itself on",
+    (defaults[0]?.column_default ?? "").toLowerCase().includes("false"),
+    String(defaults[0]?.column_default)
+  );
+
+  await setRemindersEnabled(true, U.actor);
+  check("it can be turned on", (await getLearningSettings()).deadlineRemindersEnabled);
+
+  await setRemindersEnabled(false, U.actor);
+  const off = await getLearningSettings();
+  check("and off again", off.deadlineRemindersEnabled === false);
+  check("recording who pulled the brake", off.remindersDisabledByName !== null, String(off.remindersDisabledByName));
+
+  // Silencing must not hide the fact.
+  const stillOverdue = (await overdueNow()).filter((o) => o.userId === U.onTrack);
+  check(
+    "switching the chasing off does NOT hide the overdue state",
+    stillOverdue.length > 0,
+    `${stillOverdue.length}`
+  );
+
+  await prisma.learningReminderLog.deleteMany({ where: { userId: { in: Object.values(U) } } });
+  await setRemindersEnabled(false, U.actor);
 
   // ── Cleanup ──────────────────────────────────────────────────────────
   await prisma.learningTrack.deleteMany({ where: { name: { startsWith: "VCT " } } });

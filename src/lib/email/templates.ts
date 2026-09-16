@@ -652,3 +652,82 @@ export function incentivePaymentToEmployee(d: {
     ),
   };
 }
+
+// ─── Learning deadlines (spec 043, 2026-09-16) ──────────────────────────
+//
+// THE SIXTH EMAIL WORKFLOW, and the first message in the platform that reaches an EMPLOYEE without
+// a human choosing to send it (constitution v2.0.0). The reversal is conditional, and the wording
+// carries its side of the bargain: the person is told what is late, when it was due, and — because
+// being chased by a machine with no end in sight is what gets a sender filtered — the reminders
+// say so plainly rather than arriving indefinitely without explanation.
+
+export function learningOverdue(d: {
+  name: string;
+  courseTitle: string;
+  trackName: string | null;
+  due: string;
+  daysOverdue: number;
+  /** True on the last scheduled reminder, so the message can say it is the last. */
+  finalReminder: boolean;
+}) {
+  const path = d.trackName ? `, part of ${d.trackName},` : "";
+  const closing = d.finalReminder
+    ? para(
+        "This is the last reminder we will send about it. It stays on your learning page until it " +
+          "is done, and your manager can see it there too."
+      )
+    : "";
+  return {
+    subject: `Overdue: ${d.courseTitle}`,
+    html: layout(
+      "A course is past its date",
+      para(`Hello ${d.name},`) +
+        para(
+          `<strong>${d.courseTitle}</strong>${path} was due on <strong>${d.due}</strong> and is not ` +
+            `finished yet — ${d.daysOverdue === 1 ? "one day" : `${d.daysOverdue} days`} ago.`
+        ) +
+        row("Course", d.courseTitle) +
+        (d.trackName ? row("Part of", d.trackName) : "") +
+        row("Was due", d.due) +
+        closing,
+      { href: link("/learning"), label: "Open my learning" },
+      {
+        eyebrow: "Forefront People · Learning",
+        footer:
+          "Sent because a course you hold passed its date. At most five reminders are sent about " +
+          "any one course.",
+      }
+    ),
+  };
+}
+
+export function learningOverdueManager(d: {
+  managerName: string;
+  learnerName: string;
+  courseTitle: string;
+  trackName: string | null;
+  due: string;
+  daysOverdue: number;
+}) {
+  return {
+    subject: `${d.learnerName} is overdue on ${d.courseTitle}`,
+    html: layout(
+      "Someone on your team is behind",
+      para(`Hello ${d.managerName},`) +
+        para(
+          `<strong>${d.learnerName}</strong> has not finished <strong>${d.courseTitle}</strong>, ` +
+            `which was due on <strong>${d.due}</strong>.`
+        ) +
+        row("Who", d.learnerName) +
+        row("Course", d.courseTitle) +
+        (d.trackName ? row("Part of", d.trackName) : "") +
+        row("Was due", d.due) +
+        row("Days late", String(d.daysOverdue)),
+      { href: link("/learning/team"), label: "See my team's training" },
+      {
+        eyebrow: "Forefront People · Learning",
+        footer: "Sent because you manage this person. They have been told as well.",
+      }
+    ),
+  };
+}
