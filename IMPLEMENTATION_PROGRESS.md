@@ -34,9 +34,9 @@
   somebody had turned on — all survived); the fifth access route; the track reads and writes; the
   deadline derivation; the overdue sweep; the reminder log; the Learning switch; both email
   templates; the fourth cron; and the manager's half.
-- **Not built**: every screen. They are gated on `design-mockups/learning/2026-09-16_learning-tracks.html`,
-  which is published and awaiting sign-off. `myLearning` has not yet been extended to carry track
-  position, because its shape follows the approved design.
+- **Screens built** after the mockup was approved (2026-09-16): the tracks list, the builder with
+  both kinds of deadline in one control, the assignee panel, the door from the Learning page, the
+  employee's list grouped by path, and the reminder switch on Learning settings.
 - **Three faults the checks caught, none visible to `tsc` or the build**:
   - `courseRoster` builds a **candidate list** by unioning the people each route reaches and only
     then asks the rule. Setting the new fact alone would have left a track-only holder out of that
@@ -51,10 +51,16 @@
   failures by design, which is right where a state change must not be blocked by mail and wrong
   here: the log row means "this person was told today", so a failed send must release the claim and
   be retried rather than be recorded as a success.
+- **The browser found the one that mattered.** Every piece of data was present and correct, and the
+  employee's page still showed the COMPANY order rather than the track's — because the sequencing
+  derivation had been written and nothing ever applied it. A type check cannot see a function that
+  is simply not called; the only evidence was an employee's list in the wrong order on screen.
 - **Verified**: `scripts/verify-course-tracks.mts` — 71 checks, passing twice in a row and alongside
   another script's fixtures; 206 unit tests; `verify-course-access` (18) and `verify-learning-manager`
-  (26) still green; `npx tsc --noEmit` and `npm run build` clean. **Not** yet driven in a browser —
-  there is nothing to drive until the screens exist.
+  (26) still green; and the real app driven in a real browser — a track built, courses added and
+  reordered, both kinds of deadline set and read back as dd/mm/yyyy, a draft course refused, the
+  track assigned, the employee's own page in the right order, the switch turned on by an HR admin,
+  390px with no sideways scroll, and a clean console. `npx tsc --noEmit` and `npm run build` clean.
 
 ## Learning: the admin arranges the courses (built 2026-09-15 — no migration)
 - **Asked for as** *"an option in the learning module to reorder the courses by the learning admin"*,

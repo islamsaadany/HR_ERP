@@ -27,7 +27,7 @@ get skipped.
 Principle II and it is a hard blocker on every component task below, not a preference.
 
 - [x] T001 Build the mockup at `design-mockups/learning/2026-09-16_learning-tracks.html` — self-contained HTML, navy/gold, covering all five surfaces: the track list, the track builder (courses in order, the deadline control showing BOTH kinds, the assignee panel), an employee's view of a track on their learning page, the manager's per-person list showing what is locked, and the reminder switch on Learning settings
-- [ ] T002 Publish T001 as an Artifact and get explicit CEO sign-off; record the approval date in the mockup's footer
+- [x] T002 Publish T001 as an Artifact and get explicit CEO sign-off; record the approval date in the mockup's footer
 
 **Checkpoint**: No task marked `[UI]` below may start until T002 is approved.
 
@@ -73,23 +73,23 @@ here rather than at the end.
 - [x] T013 [US1] Implement `reorderSteps` in `src/lib/learning/tracks.ts` using the guard shape proven in `src/lib/learning/order.ts` — iterate what the DATABASE says is in the track and refuse a list that does not account for all of it, then renumber canonically
 - [x] T014 [US1] Extend `src/lib/learning/order.ts` so a person's sequence is track courses (grouped by track, in step order) then everything else in the company order — extended in that file, never a second ordering module
 - [x] T015 [US1] Create `src/app/(app)/admin/learning/tracks/actions.ts` — `"use server"`, every export an async function, each one `requireLearningManager()` then validation then a call into `tracks.ts`
-- [ ] T016 [US1] Extend `myLearning` in `src/lib/learning/queries.ts` to carry each course's track and position, without adding a query per course or per track
+- [x] T016 [US1] Extend `myLearning` in `src/lib/learning/queries.ts` to carry each course's track and position, without adding a query per course or per track
 
 ### Screens (blocked on T002)
 
-- [ ] T017 [US1] Create `src/app/(app)/admin/learning/tracks/page.tsx` — the track list, with `AutoRefresh` since other people change it while it sits open
-- [ ] T018 [US1] Create `src/components/learning/TrackBuilder.tsx` — courses in the track, add, remove, reorder by the drag handle already built for the course list
-- [ ] T019 [US1] Create `src/components/learning/TrackAssignees.tsx` — who is on this track, add a person or a group, revoke
-- [ ] T020 [US1] Create `src/app/(app)/admin/learning/tracks/[trackId]/page.tsx` composing T018 and T019
-- [ ] T021 [US1] Snapshot `src/app/(app)/admin/learning/page.tsx` to `ui-versions/admin-learning-page/2026-09-16_before-tracks.tsx`, then add the door to Tracks
-- [ ] T022 [US1] Snapshot `src/app/(app)/learning/page.tsx` to `ui-versions/learning-page/2026-09-16_before-tracks.tsx`, then group the employee's outstanding courses by track in the track's order
+- [x] T017 [US1] Create `src/app/(app)/admin/learning/tracks/page.tsx` — the track list, with `AutoRefresh` since other people change it while it sits open
+- [x] T018 [US1] Create `src/components/learning/TrackBuilder.tsx` — courses in the track, add, remove, reorder by the drag handle already built for the course list
+- [x] T019 [US1] Create `src/components/learning/TrackAssignees.tsx` — who is on this track, add a person or a group, revoke
+- [x] T020 [US1] Create `src/app/(app)/admin/learning/tracks/[trackId]/page.tsx` composing T018 and T019
+- [x] T021 [US1] Snapshot `src/app/(app)/admin/learning/page.tsx` to `ui-versions/admin-learning-page/2026-09-16_before-tracks.tsx`, then add the door to Tracks
+- [x] T022 [US1] Snapshot `src/app/(app)/learning/page.tsx` to `ui-versions/learning-page/2026-09-16_before-tracks.tsx`, then group the employee's outstanding courses by track in the track's order
 
 ### Proving it
 
 - [x] T023 [US1] Extend `scripts/verify-course-tracks.mts` with the access matrix: the route is reported; all three entry points agree for the same person and course; a DRAFT or HIDDEN course on a track reaches nobody; revoking removes the course UNLESS started, where `IN_PROGRESS` keeps it and `grandfatheredOnly` is true; a course held by both a track and an audience rule survives losing either
 - [x] T024 [US1] Extend `scripts/verify-course-tracks.mts` with the reorder guard: a list missing a step is refused and writes nothing; a step added in another tab refuses the stale list; renumbering is gap-free
-- [ ] T025 [US1] Drive it in a real browser against a real Postgres — build a track, assign it, sign in as the employee and confirm the three courses in order; confirm a draft course on the track is invisible; confirm the console is clean
-- [ ] T026 [US1] Drive the same at 390px — the track builder and the employee list, no sideways scroll, nothing unreachable by thumb
+- [x] T025 [US1] Drive it in a real browser against a real Postgres — build a track, assign it, sign in as the employee and confirm the three courses in order; confirm a draft course on the track is invisible; confirm the console is clean
+- [x] T026 [US1] Drive the same at 390px — the track builder and the employee list, no sideways scroll, nothing unreachable by thumb
 - [ ] T027 [US1] Run `npx tsc --noEmit` and `npm run build`; update `PROJECT_DETAILS.md`, `IMPLEMENTATION_PROGRESS.md` and `specs/043-learning-tracks/spec.md` in the same commit as the code
 
 **Checkpoint**: shippable. A new joiner gets an ordered start. No deadlines yet.
@@ -108,28 +108,28 @@ email to them and one to their manager; run it again the same day and confirm no
 
 - [x] T028 [US2] Create `src/lib/learning/deadlines.ts` with `resolveDeadline(step, joinedAt)` — both kinds in, one real date out, `null` for no deadline — plus `isOverdue`, `earliestDeadline`, and `REMINDER_SCHEDULE` as a `const` of `[0, 7, 14, 21, 28]`
 - [x] T029 [US2] Make the group-assignment case explicit in `src/lib/learning/deadlines.ts`: a period counts from the later of the group assignment and that person joining the group, passed IN as `joinedAt` rather than read inside, so the decision stays in one place
-- [ ] T030 [US2] Wire `resolveDeadline` into `myLearning` (`src/lib/learning/queries.ts`) and the admin track reads (`src/lib/learning/tracks.ts`) — every reader goes through it, none resolves a date of its own
+- [x] T030 [US2] Wire `resolveDeadline` into `myLearning` (`src/lib/learning/queries.ts`) and the admin track reads (`src/lib/learning/tracks.ts`) — every reader goes through it, none resolves a date of its own
 
 ### The switch
 
 - [x] T031 [P] [US2] Create `src/lib/learning/settings.ts` — read and write the `LearningSettings` singleton, defaulting `deadlineRemindersEnabled` to false so the reversal does not switch itself on at deploy
 - [x] T032 [US2] Add `setRemindersEnabled` to `src/app/(app)/admin/learning/tracks/actions.ts` with the asymmetric guard — `false` needs `requireLearningManager()`, `true` needs `requireAdmin()` — as two guards on ONE write path, recording who disabled it and when
-- [ ] T033 [US2] Create `src/components/learning/ReminderSwitch.tsx` and add it to `src/app/(app)/admin/learning/settings/page.tsx`, snapshotting that page to `ui-versions/learning-settings-page/2026-09-16_before-reminders.tsx` first
+- [x] T033 [US2] Create `src/components/learning/ReminderSwitch.tsx` and add it to `src/app/(app)/admin/learning/settings/page.tsx`, snapshotting that page to `ui-versions/learning-settings-page/2026-09-16_before-reminders.tsx` first
 
 ### The deadline control and the chase
 
-- [ ] T034 [US2] Create `src/components/learning/DeadlineField.tsx` — one control offering both kinds, refusing both at once, showing the resolved date while the operator edits the rule
+- [x] T034 [US2] Create `src/components/learning/DeadlineField.tsx` — one control offering both kinds, refusing both at once, showing the resolved date while the operator edits the rule
 - [x] T035 [US2] Add `setStepDeadline` to `src/app/(app)/admin/learning/tracks/actions.ts`, refusing both kinds at once on the server with the CHECK constraint as the backstop
 - [x] T036 [P] [US2] Add `learningOverdue` (to the employee) and `learningOverdueManager` templates to `src/lib/email/templates.ts`, dates as dd/mm/yyyy, through the existing branded sender
 - [x] T037 [US2] Create `src/app/api/cron/learning/route.ts` — `CRON_SECRET` bearer auth or 401; both switches checked; one bounded sweep of incomplete enrollments past their resolved deadline; days-since-due must be in `REMINDER_SCHEDULE`; insert `LearningReminderLog` and treat a unique violation as "already done today"; send; fire-and-forget so one failure does not stop the sweep; log row written ONLY on a successful send
 - [x] T038 [US2] Register the cron in `vercel.json` alongside the three existing daily jobs
-- [ ] T039 [US2] Show overdue on the employee page (`src/app/(app)/learning/page.tsx`) derived on read, so it shows whether or not the reminder switch is on
+- [x] T039 [US2] Show overdue on the employee page (`src/app/(app)/learning/page.tsx`) derived on read, so it shows whether or not the reminder switch is on
 
 ### Proving it
 
 - [x] T040 [US2] Extend `scripts/verify-course-tracks.mts`: `resolveDeadline` is stable for the same input; both kinds on one step refused by the action AND by a direct insert; a course in two tracks takes the earlier date AFTER both resolve, including one-of-each-kind; completing makes it not-overdue with nothing written
 - [x] T041 [US2] Extend `scripts/verify-course-tracks.mts` with the bound: five sends across the schedule then silence on day 35; the same day twice produces one row and one send; a failed send writes no row; either switch off sends nothing; and assert `LearningSettings` has NO cadence column, so nobody adds one later
-- [ ] T042 [US2] Drive it in a browser: set one deadline of each kind, confirm both print dd/mm/yyyy and that the date shown is the date chased on; hit the cron route and read the mail; hit it again the same day and confirm silence; complete the course and confirm silence
+- [x] T042 [US2] Drive it in a browser: set one deadline of each kind, confirm both print dd/mm/yyyy and that the date shown is the date chased on; hit the cron route and read the mail; hit it again the same day and confirm silence; complete the course and confirm silence
 - [ ] T043 [US2] Drive the switch in a browser: a learning manager turns it off (nothing sends, overdue still visible everywhere); the same person is refused turning it on; an HR Admin succeeds
 - [ ] T044 [US2] Run `npx tsc --noEmit` and `npm run build`; update the three docs in the same commit
 

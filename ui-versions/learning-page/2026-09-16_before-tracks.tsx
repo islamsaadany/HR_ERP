@@ -24,20 +24,6 @@ export default async function LearningPage() {
 
   const outstanding = courses.filter((c) => c.completedAt === null);
   const finished = courses.filter((c) => c.completedAt !== null);
-  const late = outstanding.filter((c) => c.overdue).length;
-
-  /**
-   * Group what they still owe by the path it belongs to (spec 043), keeping the order `myLearning`
-   * already produced — track courses first, in their track's order, then everything else. Grouping
-   * here rather than re-sorting is deliberate: the sequence is decided in ONE place, and a page
-   * that re-ordered would be a second opinion about it.
-   */
-  const groups: { name: string | null; courses: typeof outstanding }[] = [];
-  for (const course of outstanding) {
-    const last = groups[groups.length - 1];
-    if (last && last.name === course.trackName) last.courses.push(course);
-    else groups.push({ name: course.trackName, courses: [course] });
-  }
 
   return (
     <div>
@@ -56,30 +42,17 @@ export default async function LearningPage() {
         {courses.length === 0
           ? "Nothing has been assigned to you yet. When it is, it will appear here."
           : outstanding.length > 0
-            ? `You have ${outstanding.length} ${outstanding.length === 1 ? "course" : "courses"} to finish.` +
-              (late > 0 ? ` ${late === 1 ? "One is" : `${late} are`} overdue.` : "")
+            ? `You have ${outstanding.length} ${outstanding.length === 1 ? "course" : "courses"} to finish.`
             : "You're up to date — everything assigned to you is complete."}
       </p>
 
-      {groups.map((group, i) => (
-        <section key={group.name ?? `__rest-${i}`} className={i === 0 ? "mt-6" : "mt-7"}>
-          {/* A path's name is a heading only when there IS one. Courses that reach somebody by any
-              other route are not "Other" — they are simply the rest of their learning, and giving
-              them an invented group name would imply a path that does not exist. */}
-          {group.name ? (
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-muted">
-              {group.name}
-            </h2>
-          ) : groups.length > 1 ? (
-            <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-muted">
-              Everything else
-            </h2>
-          ) : null}
-          {group.courses.map((c) => (
+      {outstanding.length > 0 ? (
+        <section className="mt-6">
+          {outstanding.map((c) => (
             <CourseCard key={c.courseId} course={c} />
           ))}
         </section>
-      ))}
+      ) : null}
 
       {finished.length > 0 ? (
         <section className="mt-8">

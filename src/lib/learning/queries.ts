@@ -3,6 +3,9 @@ import { accessibleCoursesFor } from "@/lib/learning/access";
 import { audienceWhere, type AudienceRule } from "@/lib/learning/audience";
 import { computeProgressPercent, firstIncompleteLessonId, type LessonRef } from "@/lib/learning/progress";
 import { renewalState, type RenewalState } from "@/lib/learning/renewal";
+import { deadlinesFor } from "@/lib/learning/overdue";
+import { isOverdue } from "@/lib/learning/deadlines";
+import { sequenceForLearner, type TrackPlacement } from "@/lib/learning/order";
 import type { CourseCardData } from "@/components/learning/CourseCard";
 
 /**
@@ -48,7 +51,7 @@ export async function myLearning(userId: string): Promise<CourseCardData[]> {
   if (held.length === 0) return [];
 
   const courseIds = held.map((h) => h.courseId);
-  const [lessons, progress] = await Promise.all([
+  const [lessons, progress, deadlines] = await Promise.all([
     lessonsByCourse(courseIds),
     prisma.lessonProgress.findMany({
       where: {
@@ -57,7 +60,12 @@ export async function myLearning(userId: string): Promise<CourseCardData[]> {
       },
       select: { lessonId: true, enrollment: { select: { courseId: true } } },
     }),
+    // Spec 043 — the track a course belongs to and its deadline for THIS person. One call for the
+    // whole list, resolved through the same derivation the reminder job reads, so the date on
+    // screen and the date somebody is chased on cannot differ.
+    deadlinesFor(userId),
   ]);
+  const now = new Date();
 
   const doneByCourse = new Map<string, Set<string>>();
   for (const row of progress) {
@@ -66,7 +74,7 @@ export async function myLearning(userId: string): Promise<CourseCardData[]> {
     doneByCourse.set(row.enrollment.courseId, set);
   }
 
-  return held.map((h) => {
+  const cards = held.map((h) => {
     const list: TitledLesson[] = lessons.get(h.courseId) ?? [];
     const done = doneByCourse.get(h.courseId) ?? new Set<string>();
     const nextId = firstIncompleteLessonId(list, done);
@@ -95,8 +103,46 @@ export async function myLearning(userId: string): Promise<CourseCardData[]> {
       reopenedAt: h.enrollment?.reopenedAt ?? null,
       grandfatheredOnly: h.access.grandfatheredOnly,
       renewal,
+      trackName: deadlines.get(h.courseId)?.trackName ?? null,
+      due: deadlines.get(h.courseId)?.due ?? null,
+      // Derived, never stored — so it is true whether or not anybody is being emailed about it.
+      overdue: isOverdue(
+        deadlines.get(h.courseId)?.due ?? null,
+        lapsed ? null : (h.enrollment?.completedAt ?? null),
+        now
+      ),
     };
   });
+
+  /**
+   * THE SEQUENCE, decided in one place (spec 043).
+   *
+   * `accessibleCoursesFor` returns them in the COMPANY order, which is right for anything that is
+   * not on a path — but a track exists precisely to say which of them matters first, and that order
+   * has to be applied somewhere. Here, through the same derivation the admin screens read, rather
+   * than by any page sorting for itself.
+   *
+   * This is the step that was missing when the screens were first driven in a browser: every piece
+   * of data was present and correct, the employee's page simply showed the company order because
+   * nothing had ever applied the track's. Nothing in a type check can see that.
+   */
+  const placements: TrackPlacement[] = [];
+  for (const [courseId, deadline] of deadlines) {
+    if (!deadline.trackId || !deadline.trackName) continue;
+    placements.push({
+      courseId,
+      trackId: deadline.trackId,
+      trackName: deadline.trackName,
+      trackOrder: deadline.trackOrder,
+    });
+  }
+  const trackOrder = [...new Set(placements.map((p) => p.trackId))];
+
+  return sequenceForLearner(
+    cards.map((card, index) => ({ ...card, order: index, title: card.title })),
+    placements,
+    trackOrder
+  ).map(({ track: _track, order: _order, ...card }) => card);
 }
 
 /** How many courses this employee still owes — for the nav badge and the dashboard tile. */

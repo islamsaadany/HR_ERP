@@ -86,24 +86,6 @@ export default async function AdminLearningPage() {
         <LearningSettingsMenu />
       </div>
 
-      {/* The door to tracks (spec 043). Beside the courses rather than behind the gear: a track is
-          a way of handing out courses, so it belongs with them, not with the module's setup. */}
-      <Link
-        href="/admin/learning/tracks"
-        className="ff-card mt-5 flex items-center gap-3 rounded-xl border border-line bg-surface p-4 hover:border-navy-300"
-      >
-        <span className="min-w-0 flex-1">
-          <span className="block text-[14.5px] font-bold text-navy-800">Tracks</span>
-          <span className="mt-0.5 block text-xs text-muted">
-            Build a path of courses in the order you want them done, and hand it to a person or a
-            group
-          </span>
-        </span>
-        <span aria-hidden className="text-sm text-muted">
-          →
-        </span>
-      </Link>
-
       <NewCourseForm />
 
       <SuggestionQueue suggestions={suggestions} />

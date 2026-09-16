@@ -34,6 +34,8 @@ export type PersonalDeadline = {
   courseId: string;
   trackId: string | null;
   trackName: string | null;
+  /** The course's position within that track — what the learner's sequence is built from. */
+  trackOrder: number;
   due: Date | null;
 };
 
@@ -42,6 +44,7 @@ type StepRow = StepDeadline & {
   courseTitle: string;
   trackId: string | null;
   trackName: string | null;
+  trackOrder: number;
   /** The day THIS person joined — what a period counts from. */
   joinedAt: Date;
 };
@@ -74,7 +77,9 @@ async function stepsByUser(userIds: string[] | null): Promise<Map<string, StepRo
             id: true,
             name: true,
             steps: {
+              orderBy: { order: "asc" },
               select: {
+                order: true,
                 courseId: true,
                 dueDays: true,
                 dueOn: true,
@@ -87,9 +92,11 @@ async function stepsByUser(userIds: string[] | null): Promise<Map<string, StepRo
     }),
     prisma.learningPersonalStep.findMany({
       where: { removedAt: null, ...(userFilter ? { userId: userFilter } : {}) },
+      orderBy: { order: "asc" },
       select: {
         userId: true,
         courseId: true,
+        order: true,
         dueDays: true,
         dueOn: true,
         addedAt: true,
@@ -140,6 +147,7 @@ async function stepsByUser(userIds: string[] | null): Promise<Map<string, StepRo
           courseTitle: step.course.title,
           trackId: assignment.track.id,
           trackName: assignment.track.name,
+          trackOrder: step.order,
           dueDays: step.dueDays,
           dueOn: step.dueOn,
           joinedAt: subject.joinedAt,
@@ -155,6 +163,7 @@ async function stepsByUser(userIds: string[] | null): Promise<Map<string, StepRo
       courseTitle: step.course.title,
       trackId: null,
       trackName: null,
+      trackOrder: step.order,
       dueDays: step.dueDays,
       dueOn: step.dueOn,
       joinedAt: step.addedAt,
@@ -177,6 +186,7 @@ export async function deadlinesFor(userId: string): Promise<Map<string, Personal
         courseId: step.courseId,
         trackId: step.trackId,
         trackName: step.trackName,
+        trackOrder: step.trackOrder,
         due,
       });
       continue;

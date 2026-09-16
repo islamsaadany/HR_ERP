@@ -73,9 +73,6 @@ export function CourseCard({ course }: { course: CourseCardData }) {
           {course.grandfatheredOnly && !complete ? (
             <span className={CHIP.attention}>Finish by</span>
           ) : null}
-          {/* Spec 043 — overdue is derived on read, so it reads the same whether or not the
-              reminder emails are switched on. Silencing the chasing hides the mail, not the fact. */}
-          {course.overdue ? <span className={CHIP.danger}>Overdue</span> : null}
         </div>
 
         <p className="mt-0.5 text-xs text-muted">
@@ -106,13 +103,6 @@ export function CourseCard({ course }: { course: CourseCardData }) {
               {course.nextLessonTitle ? <> · next up: {course.nextLessonTitle}</> : null}
             </>
           )}
-          {/* The deadline sits with the other facts about the course rather than in a chip of its
-              own: it is a date, not a state. `due` is already resolved for THIS person — both kinds
-              of deadline become a real date in one place, so what they read here is what they would
-              be chased on. dd/mm/yyyy like every other date on the platform. */}
-          {course.due && !complete ? (
-            <> · {course.overdue ? "was due" : "due"} {formatDate(course.due)}</>
-          ) : null}
         </p>
 
         <div className="mt-2">

@@ -7,8 +7,6 @@ import {
   type AlwaysRow,
   type ManagerRow,
 } from "@/components/learning/LearningManagers";
-import { ReminderSwitch } from "@/components/learning/ReminderSwitch";
-import { getLearningSettings } from "@/lib/learning/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +21,7 @@ export default async function LearningSettingsPage() {
   const actor = await requireLearningManager();
   const canEdit = isAdmin(actor.role);
 
-  const [appointed, admins, employees, learningSettings] = await Promise.all([
+  const [appointed, admins, employees] = await Promise.all([
     learningManagers(),
     prisma.user.findMany({
       where: { status: "ACTIVE", role: { in: ["HR_ADMIN", "SUPER_USER"] } },
@@ -38,7 +36,6 @@ export default async function LearningSettingsPage() {
       orderBy: { name: "asc" },
       select: { id: true, name: true, department: true },
     }),
-    getLearningSettings(),
   ]);
 
   const managers: ManagerRow[] = appointed.map((m) => ({
@@ -100,15 +97,6 @@ export default async function LearningSettingsPage() {
           remove the appointment at any time.
         </p>
       </div>
-
-      {/* Spec 043 — the brake on the overdue chasing, here rather than at Admin → Notifications
-          because this is the screen the person who owns the consequence can actually open. */}
-      <ReminderSwitch
-        enabled={learningSettings.deadlineRemindersEnabled}
-        canTurnOn={canEdit}
-        disabledByName={learningSettings.remindersDisabledByName}
-        disabledAt={learningSettings.remindersDisabledAt}
-      />
     </div>
   );
 }
