@@ -88,7 +88,18 @@ export async function sendEmail(input: EmailInput): Promise<void> {
       return;
     }
     const fromHeader = settings.fromName ? `${settings.fromName} <${from}>` : from;
-    await resend.emails.send({ from: fromHeader, to, subject: input.subject, html: input.html });
+    // Resend does NOT throw when it refuses a message — it RETURNS `{ error }`. This line used
+    // to ignore the result, so a refused send left no trace anywhere, not even a log line, and
+    // "she never got the email" could not be diagnosed (2026-10-04). Read it, and log BOTH
+    // outcomes with the recipient: a missing email must always leave a line saying which.
+    const res = await resend.emails.send({ from: fromHeader, to, subject: input.subject, html: input.html });
+    if (res.error) {
+      console.error(
+        `[email] REFUSED by Resend — to: ${to} · subject: ${input.subject} · reason: ${res.error.message ?? "unknown"}`
+      );
+      return;
+    }
+    console.info(`[email] sent — to: ${to} · subject: ${input.subject} · id: ${res.data?.id ?? "?"}`);
   } catch (err) {
     // Fire-and-forget: swallow so the triggering state change is never affected.
     console.error("[email] send failed (ignored):", err);
@@ -131,16 +142,28 @@ export async function sendBulkEmail(input: {
     }
     const fromHeader = settings.fromName ? `${settings.fromName} <${from}>` : from;
     const CHUNK = 100; // Resend's per-call ceiling
+    let addressed = 0;
     for (let i = 0; i < recipients.length; i += CHUNK) {
-      const batch = recipients.slice(i, i + CHUNK).map((to) => ({
+      const chunk = recipients.slice(i, i + CHUNK);
+      const batch = chunk.map((to) => ({
         from: fromHeader,
         to,
         subject: input.subject,
         html: input.html,
       }));
-      await resend.batch.send(batch);
+      // Same as sendEmail: Resend returns a refusal rather than throwing it, so a refused
+      // chunk is logged by name and not counted as reached.
+      const res = await resend.batch.send(batch);
+      if (res.error) {
+        console.error(
+          `[email] bulk chunk REFUSED by Resend — ${chunk.length} recipient(s): ${chunk.join(", ")} · subject: ${input.subject} · reason: ${res.error.message ?? "unknown"}`
+        );
+        continue;
+      }
+      addressed += chunk.length;
     }
-    return recipients.length;
+    console.info(`[email] bulk sent — ${addressed} of ${recipients.length} · subject: ${input.subject}`);
+    return addressed;
   } catch (err) {
     // Fire-and-forget: a send failure must never undo the state change that triggered it.
     console.error("[email] bulk send failed (ignored):", err);
