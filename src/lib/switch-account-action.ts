@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { AuthError } from "next-auth";
 import { auth, signIn } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { IMPERSONATE_COOKIE } from "@/lib/impersonation";
@@ -67,6 +68,17 @@ export async function switchAccountAction(formData: FormData) {
   if (!ticket) return;
 
   // Issues the target's session. `signIn` redirects, which throws internally —
-  // it must not sit inside the try/catch above.
-  await signIn("switch-account", { ticket, redirectTo: "/dashboard" });
+  // it must not sit inside the try/catch above. A REFUSAL, though, arrives as
+  // an AuthError (CredentialsSignin, AccessDenied …), and left uncaught it
+  // replaces the whole page with "Application error". Honour the promise above
+  // instead: the switch fails, the current session stays, nothing breaks.
+  try {
+    await signIn("switch-account", { ticket, redirectTo: "/dashboard" });
+  } catch (err) {
+    if (err instanceof AuthError) {
+      console.error("[switch-account] refused:", err.type, err.cause ?? "");
+      return;
+    }
+    throw err; // the redirect itself, or anything genuinely unexpected
+  }
 }

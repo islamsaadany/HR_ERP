@@ -88,6 +88,7 @@ A Super User viewing the app as another employee (spec 024 impersonation) must n
 - **Employee ID differing only by case or surrounding spaces**: treated consistently with how HR's linking warning matches, so the switcher and the link check never disagree about what counts as the same ID.
 - **Two different people mistakenly given the same Employee ID**: they become linked and can switch into each other's accounts without a password. See *Residual Risks*.
 - **Repeat/replayed switch request**: re-evaluated from stored records each time; a stale or repeated request grants nothing a fresh one would not.
+- **Linked account on another company's email domain** (fixed 2026-10-04): the company-domain sign-in lock belongs to Google sign-in only — it was lifted for password sign-in on 2026-08-07 — and MUST NOT apply to a switch. Until this date it did, so every switch into a Visual Shift address was refused, and the refusal surfaced as a bare "Application error" page instead of FR-004's untouched session. Both are fixed: the switch provider is exempt from the lock, and any refusal raised while issuing the session is caught and leaves the person where they were.
 
 ## Requirements *(mandatory)*
 

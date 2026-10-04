@@ -147,8 +147,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: { signIn: "/signin" },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Credentials were already validated in authorize() above.
-      if (account?.provider === "credentials") return true;
+      // Credentials were already validated in authorize() above. So was a
+      // linked-account switch: its authorize() re-proved the Employee ID link
+      // from stored records. Everything below is the GOOGLE gate — the domain
+      // lock in particular was lifted for password sign-in (2026-08-07), and a
+      // switch must not reinstate it: a person's second contract lives on the
+      // other company's domain (Visual Shift), so the lock refused every switch
+      // into it and, uncaught, painted the bare "Application error" page.
+      if (account?.provider === "credentials" || account?.provider === "switch-account") {
+        return true;
+      }
 
       const email = (user.email ?? profile?.email ?? "").toLowerCase();
       if (!email) return false;
