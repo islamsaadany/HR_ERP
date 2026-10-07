@@ -1,5 +1,9 @@
+import { randomUUID } from "crypto";
 import { Resend } from "resend";
-import { getNotificationSettings } from "@/lib/notifications/settings";
+import type { EmailOutcome } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { getNotificationSettings, isEmailOn } from "@/lib/notifications/settings";
+import type { EmailKind } from "@/lib/email/kinds";
 
 // Env-gated, fire-and-forget email (spec 020). The whole subsystem is inert unless
 // RESEND_API_KEY + EMAIL_FROM are set AND the in-app master toggle is on. A send
@@ -12,11 +16,56 @@ const from = process.env.EMAIL_FROM;
 const resend = apiKey ? new Resend(apiKey) : null;
 
 export type EmailInput = {
-  /** Recipient address; an empty/blank value skips the send (no error). */
+  /**
+   * Which email this is. Required, so nothing can be sent that is missing from the list at
+   * Admin → Notifications — the list is where its switch and its "last sent" live (2026-10-07).
+   */
+  kind: EmailKind;
+  /** Recipient address; an empty/blank value skips the send, and is recorded as having no address. */
   to: string | null | undefined;
   subject: string;
   html: string;
 };
+
+// ─── The record of every send (2026-10-07) ──────────────────────────────────────────────────
+//
+// Written HERE, by the send functions, and never by a caller — so no path can send an email
+// without leaving a row, and "she never got the email" is answered on the Notifications page
+// rather than in a server log. Only real sends are recorded. A sample or a test is a rehearsal:
+// recording it would show an email as live that has never reached anybody it is meant for.
+
+type SendRecord = {
+  kind: EmailKind;
+  recipient: string | null;
+  subject: string;
+  outcome: EmailOutcome;
+  error?: string | null;
+  providerId?: string | null;
+  batchId?: string | null;
+};
+
+/** Never throws: a record that cannot be written must not undo or block the send it describes. */
+async function recordSends(rows: SendRecord[]): Promise<void> {
+  if (rows.length === 0) return;
+  try {
+    await prisma.emailLog.createMany({
+      data: rows.map((r) => ({
+        kind: r.kind,
+        recipient: r.recipient,
+        subject: r.subject.slice(0, 500),
+        outcome: r.outcome,
+        error: r.error ? r.error.slice(0, 500) : null,
+        providerId: r.providerId ?? null,
+        batchId: r.batchId ?? null,
+      })),
+    });
+  } catch (err) {
+    // Pre-migration database, or the database itself is down — the send already happened.
+    console.error("[email] could not record the send (ignored):", err);
+  }
+}
+
+const NO_ADDRESS = "There was no address to send it to.";
 
 /**
  * Absolute base URL for links in emails. Emails have no request context, so a
@@ -40,38 +89,61 @@ export function emailConfigured(): boolean {
 export const emailFromAddress = from ?? null;
 
 /**
- * Send a one-off test email. Unlike sendEmail this REPORTS success/failure (so the
- * settings screen can show it) and IGNORES the master toggle — it only needs the
- * env secrets, so an admin can verify delivery before turning notifications on.
+ * Send ONE rehearsal — a sample of a real email, or a test — and REPORT what happened.
+ *
+ * Unlike `sendEmail` this reports success or failure, so the screen can say it. It IGNORES both
+ * switches — the main one and the email's own — because the point of a sample is to check an
+ * email before switching it on. It needs only the env secrets. And it is NOT recorded: a sample
+ * reaching the operator says nothing about whether the real email reached anybody.
  */
-export async function sendTestEmail(to: string): Promise<{ ok: boolean; error?: string }> {
+export async function sendRehearsal(input: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ ok: boolean; error?: string }> {
   if (!resend || !from) {
     return { ok: false, error: "Email isn't configured — set RESEND_API_KEY and EMAIL_FROM in the environment." };
   }
-  const recipient = (to ?? "").trim();
+  const recipient = (input.to ?? "").trim();
   if (!recipient) return { ok: false, error: "Enter a recipient address." };
   const settings = await getNotificationSettings();
   const fromHeader = settings.fromName ? `${settings.fromName} <${from}>` : from;
-  const html = `<div style="font-family:Helvetica,Arial,sans-serif;color:#16202e;padding:24px;">
-    <h2 style="margin:0 0 8px;">Test email ✓</h2>
-    <p>If you can read this, your Forefront People email sending (Resend) is working.</p>
-    <p style="color:#5f6472;font-size:12px;">Sent from ${from}. This is only a test — no action needed.</p>
-  </div>`;
   try {
     const res = await resend.emails.send({
       from: fromHeader,
       to: recipient,
-      subject: "Test email — Forefront People",
-      html,
+      subject: input.subject,
+      html: input.html,
     });
-    if (res.error) return { ok: false, error: res.error.message ?? "Resend rejected the send." };
+    if (res.error) return { ok: false, error: plainReason(res.error.message) };
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Send failed." };
   }
 }
 
+/**
+ * The mail provider's refusal, in words a person can act on.
+ *
+ * Only the refusals that actually turn up are translated; anything else is passed through in the
+ * provider's own words rather than guessed at, because a wrong explanation sends somebody to fix
+ * the wrong thing.
+ */
+export function plainReason(message: string | null | undefined): string {
+  const m = (message ?? "").trim();
+  if (!m) return "The mail provider refused it without saying why.";
+  if (/invalid\s+`?to`?/i.test(m)) return "the address isn't valid.";
+  if (/your own email address/i.test(m)) {
+    return "the company's email domain isn't approved yet, so mail only reaches the account owner.";
+  }
+  if (/domain is not verified/i.test(m)) return "the sending domain isn't approved with the email provider yet.";
+  if (/too many requests|rate limit/i.test(m)) return "too many emails at once; the provider asked us to slow down.";
+  return m;
+}
+
 export async function sendEmail(input: EmailInput): Promise<void> {
+  const to = (input.to ?? "").trim();
+  const base = { kind: input.kind, recipient: to || null, subject: input.subject };
   try {
     if (!resend || !from) {
       console.info("[email] disabled (no RESEND_API_KEY / EMAIL_FROM) — skipping:", input.subject);
@@ -82,9 +154,13 @@ export async function sendEmail(input: EmailInput): Promise<void> {
       console.info("[email] disabled via settings — skipping:", input.subject);
       return;
     }
-    const to = (input.to ?? "").trim();
+    if (!isEmailOn(settings, input.kind)) {
+      console.info(`[email] "${input.kind}" is switched off at Admin → Notifications — skipping:`, input.subject);
+      return;
+    }
     if (!to) {
       console.warn("[email] no recipient configured — skipping:", input.subject);
+      await recordSends([{ ...base, outcome: "NO_ADDRESS", error: NO_ADDRESS }]);
       return;
     }
     const fromHeader = settings.fromName ? `${settings.fromName} <${from}>` : from;
@@ -97,12 +173,17 @@ export async function sendEmail(input: EmailInput): Promise<void> {
       console.error(
         `[email] REFUSED by Resend — to: ${to} · subject: ${input.subject} · reason: ${res.error.message ?? "unknown"}`
       );
+      await recordSends([{ ...base, outcome: "REFUSED", error: plainReason(res.error.message) }]);
       return;
     }
     console.info(`[email] sent — to: ${to} · subject: ${input.subject} · id: ${res.data?.id ?? "?"}`);
+    await recordSends([{ ...base, outcome: "SENT", providerId: res.data?.id ?? null }]);
   } catch (err) {
     // Fire-and-forget: swallow so the triggering state change is never affected.
     console.error("[email] send failed (ignored):", err);
+    await recordSends([
+      { ...base, outcome: "FAILED", error: err instanceof Error ? err.message : "The send failed." },
+    ]);
   }
 }
 
@@ -119,6 +200,7 @@ export async function sendEmail(input: EmailInput): Promise<void> {
  * valid addresses — and is not an error.
  */
 export async function sendBulkEmail(input: {
+  kind: EmailKind;
   to: (string | null | undefined)[];
   subject: string;
   html: string;
@@ -133,34 +215,57 @@ export async function sendBulkEmail(input: {
       console.info("[email] disabled via settings — skipping bulk:", input.subject);
       return 0;
     }
+    if (!isEmailOn(settings, input.kind)) {
+      console.info(`[email] "${input.kind}" is switched off at Admin → Notifications — skipping bulk:`, input.subject);
+      return 0;
+    }
     const recipients = Array.from(
       new Set(input.to.map((t) => (t ?? "").trim()).filter((t) => t.length > 0))
     );
     if (recipients.length === 0) {
       console.warn("[email] no recipients — skipping bulk:", input.subject);
+      await recordSends([
+        { kind: input.kind, recipient: null, subject: input.subject, outcome: "NO_ADDRESS", error: NO_ADDRESS },
+      ]);
       return 0;
     }
     const fromHeader = settings.fromName ? `${settings.fromName} <${from}>` : from;
     const CHUNK = 100; // Resend's per-call ceiling
+    // Every copy of this one broadcast shares a batch id, so the page can say "to 48 people".
+    const batchId = randomUUID();
     let addressed = 0;
     for (let i = 0; i < recipients.length; i += CHUNK) {
       const chunk = recipients.slice(i, i + CHUNK);
-      const batch = chunk.map((to) => ({
-        from: fromHeader,
-        to,
-        subject: input.subject,
-        html: input.html,
-      }));
-      // Same as sendEmail: Resend returns a refusal rather than throwing it, so a refused
-      // chunk is logged by name and not counted as reached.
-      const res = await resend.batch.send(batch);
-      if (res.error) {
-        console.error(
-          `[email] bulk chunk REFUSED by Resend — ${chunk.length} recipient(s): ${chunk.join(", ")} · subject: ${input.subject} · reason: ${res.error.message ?? "unknown"}`
+      const base = (to: string) => ({ kind: input.kind, recipient: to, subject: input.subject, batchId });
+      try {
+        const batch = chunk.map((to) => ({
+          from: fromHeader,
+          to,
+          subject: input.subject,
+          html: input.html,
+        }));
+        // Same as sendEmail: Resend returns a refusal rather than throwing it, so a refused
+        // chunk is logged by name and not counted as reached.
+        const res = await resend.batch.send(batch);
+        if (res.error) {
+          console.error(
+            `[email] bulk chunk REFUSED by Resend — ${chunk.length} recipient(s): ${chunk.join(", ")} · subject: ${input.subject} · reason: ${res.error.message ?? "unknown"}`
+          );
+          const error = plainReason(res.error.message);
+          await recordSends(chunk.map((to) => ({ ...base(to), outcome: "REFUSED" as const, error })));
+          continue;
+        }
+        const ids = (res.data?.data ?? []) as Array<{ id?: string }>;
+        await recordSends(
+          chunk.map((to, j) => ({ ...base(to), outcome: "SENT" as const, providerId: ids[j]?.id ?? null }))
         );
-        continue;
+        addressed += chunk.length;
+      } catch (err) {
+        // One chunk failing must not stop the rest of the company being reached.
+        console.error("[email] bulk chunk failed (ignored):", err);
+        const error = err instanceof Error ? err.message : "The send failed.";
+        await recordSends(chunk.map((to) => ({ ...base(to), outcome: "FAILED" as const, error })));
       }
-      addressed += chunk.length;
     }
     console.info(`[email] bulk sent — ${addressed} of ${recipients.length} · subject: ${input.subject}`);
     return addressed;
@@ -264,7 +369,15 @@ function chunk<T>(items: T[], size: number): T[][] {
  * writes any recipient rows, so that a refusal is reported to the operator rather than discovered
  * as silence. It does still require the env secrets, and says so.
  */
-export async function sendBatch(messages: BatchMessage[]): Promise<BatchResult[]> {
+export async function sendBatch(
+  messages: BatchMessage[],
+  /**
+   * Which email this is, so every copy is recorded for Admin → Notifications — or `null` for a
+   * test, which is a rehearsal and is never recorded. Required rather than optional so a new
+   * broadcast cannot forget to say (2026-10-07).
+   */
+  kind: EmailKind | null,
+): Promise<BatchResult[]> {
   if (messages.length === 0) return [];
   if (!resend || !from) {
     const error = "Email isn't configured — set RESEND_API_KEY and EMAIL_FROM in the environment.";
@@ -274,6 +387,7 @@ export async function sendBatch(messages: BatchMessage[]): Promise<BatchResult[]
   const settings = await getNotificationSettings();
   const fromHeader = settings.fromName ? `${settings.fromName} <${from}>` : from;
   const results: BatchResult[] = [];
+  const batchId = randomUUID();
 
   for (const group of chunk(messages, BATCH_MAX)) {
     try {
@@ -307,6 +421,24 @@ export async function sendBatch(messages: BatchMessage[]): Promise<BatchResult[]
       const error = err instanceof Error ? err.message : "Send failed.";
       group.forEach((m) => results.push({ ref: m.ref, ok: false, error }));
     }
+  }
+
+  if (kind) {
+    const byRef = new Map(messages.map((m) => [m.ref, m]));
+    await recordSends(
+      results.map((r) => {
+        const m = byRef.get(r.ref);
+        return {
+          kind,
+          recipient: m?.to ?? null,
+          subject: m?.subject ?? "",
+          batchId,
+          ...(r.ok
+            ? { outcome: "SENT" as const, providerId: r.providerId }
+            : { outcome: "REFUSED" as const, error: plainReason(r.error) }),
+        };
+      })
+    );
   }
 
   return results;
@@ -350,6 +482,17 @@ export async function deliveryReadiness(): Promise<Readiness> {
     const res = await resend!.domains.list();
     if (res.error) {
       const message = res.error.message ?? "";
+      // A SENDING-ONLY key is the recommended kind for production, and it is allowed to send but
+      // not to list domains. Its refusal mentions "API key" too, so without this it read as "the
+      // key is refused" on a key that sends perfectly well (2026-10-07). It tells us nothing
+      // about the domain, so it is UNKNOWN — never a verdict either way.
+      if (res.error.name === "restricted_api_key" || /restricted/i.test(message)) {
+        return {
+          state: "UNKNOWN",
+          detail:
+            "The API key is allowed to send but not to look up domains, so whether the domain is approved can't be checked from here. Check it on the email provider's Domains page.",
+        };
+      }
       if (/api[_ ]?key/i.test(message) || /unauthor/i.test(message)) {
         return {
           state: "KEY_REFUSED",

@@ -126,6 +126,28 @@ export function formatDate(d: Date | null | undefined): string {
   });
 }
 
+/**
+ * A moment — date AND time — as the office reads it: "07/10/2026 · 11:42" (2026-10-07).
+ *
+ * In Cairo time on purpose. The server runs in UTC, so a plain format would print an email sent
+ * at 2:30 in the morning as the previous evening. Both halves come from the same zone, so the date
+ * cannot disagree with the time beside it.
+ */
+export function formatDateTime(d: Date | null | undefined): string {
+  if (!d) return "—";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Cairo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(d);
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("day")}/${get("month")}/${get("year")} · ${get("hour")}:${get("minute")}`;
+}
+
 /** Date → "YYYY-MM-DD" for <input type="date">, or "" when null. */
 export function toDateInput(d: Date | null | undefined): string {
   if (!d) return "";

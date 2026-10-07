@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { isEmailKind, type EmailKind } from "@/lib/email/kinds";
 
 // Non-secret notification config (spec 020). Secrets (RESEND_API_KEY, EMAIL_FROM)
 // live in env, never here. Read is cached per request, like lib/brand.ts.
@@ -20,6 +21,8 @@ export type NotificationSettingsData = {
   incentiveEmailHeading: string | null;
   incentiveEmailBody: string | null;
   incentiveEmailFooter: string | null;
+  /** The emails switched off one by one at Admin → Notifications (2026-10-07). */
+  disabledEmails: EmailKind[];
 };
 
 export const NOTIFICATION_DEFAULTS: NotificationSettingsData = {
@@ -32,6 +35,7 @@ export const NOTIFICATION_DEFAULTS: NotificationSettingsData = {
   incentiveEmailHeading: null,
   incentiveEmailBody: null,
   incentiveEmailFooter: null,
+  disabledEmails: [],
 };
 
 /** The singleton notification settings, or safe defaults (also when the table doesn't exist yet). */
@@ -52,6 +56,8 @@ export const getNotificationSettings = cache(
         incentiveEmailHeading: row.incentiveEmailHeading,
         incentiveEmailBody: row.incentiveEmailBody,
         incentiveEmailFooter: row.incentiveEmailFooter,
+        // A key that is no longer in the list (retired) is ignored rather than trusted.
+        disabledEmails: (row.disabledEmails ?? []).filter(isEmailKind),
       };
     } catch {
       // Pre-migration DB (no NotificationSettings table) → inert, never throws.
@@ -59,3 +65,25 @@ export const getNotificationSettings = cache(
     }
   }
 );
+
+/**
+ * Is this one email switched on? Its own switch only — the main switch (`emailEnabled`) is asked
+ * separately, because the two answer different questions on screen ("is email on at all" and
+ * "is THIS email on") and a send needs both.
+ */
+export function isEmailOn(settings: Pick<NotificationSettingsData, "disabledEmails">, kind: EmailKind): boolean {
+  return !settings.disabledEmails.includes(kind);
+}
+
+/**
+ * How long a submitted payment waits before its confirmers get the morning reminder (spec 041).
+ *
+ * One derivation, asked by the daily job that sends it and by the Notifications page that
+ * describes it — so the sentence "while a payment has waited 2 days or more" cannot drift from
+ * what the job actually does. Capped low regardless of the holiday lead: a transfer waiting two
+ * weeks is a person waiting two weeks.
+ */
+export function confirmationReminderLeadDays(settings: Pick<NotificationSettingsData, "verificationLeadDays">): number {
+  const leadDays = settings.verificationLeadDays > 0 ? settings.verificationLeadDays : 14;
+  return Math.min(leadDays, 2);
+}

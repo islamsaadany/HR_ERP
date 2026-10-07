@@ -421,6 +421,7 @@ async function approveOne(id: string, adminId: string): Promise<boolean> {
   });
   const settings = await getNotificationSettings();
   await sendEmail({
+    kind: "claim.approved",
     to: settings.financeInbox,
     ...claimApprovedToFinance({
       employeeName: claim.user.name ?? claim.user.email,
@@ -488,6 +489,7 @@ export async function rejectClaim(formData: FormData): Promise<void> {
     data: { status: "REJECTED", decisionNote: reason, reviewedById: admin.id, decidedAt: new Date() },
   });
   await sendEmail({
+    kind: "claim.declined",
     to: claim.user.email,
     ...claimRejectedToEmployee({ benefitName: benefitNameOf(claim), reason }),
   });
@@ -573,6 +575,7 @@ export async function reopenClaim(formData: FormData): Promise<void> {
   });
 
   await sendEmail({
+    kind: "claim.reopened",
     to: claim.user.email,
     ...claimReopenedToEmployee({ benefitName: benefitNameOf(claim), reason }),
   });

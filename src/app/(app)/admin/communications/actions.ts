@@ -287,7 +287,8 @@ export async function sendAnnouncement(
         cta: message.ctaLabel && message.ctaHref ? { label: message.ctaLabel, href: message.ctaHref } : null,
       });
       return { to: r.email, subject: message.subject, html, text, ref: rowByUser.get(r.userId) ?? r.userId };
-    })
+    }),
+    "comms.message"
   );
 
   let sent = 0;
@@ -551,9 +552,10 @@ export async function sendCongratulation(id: string): Promise<Result> {
     select: { id: true },
   });
 
-  const [result] = await sendBatch([
-    { to: person.email, subject: message.subject, html, text, ref: recipient.id },
-  ]);
+  const [result] = await sendBatch(
+    [{ to: person.email, subject: message.subject, html, text, ref: recipient.id }],
+    "comms.message"
+  );
 
   if (result?.ok) {
     await prisma.messageRecipient.update({

@@ -79,6 +79,7 @@ export async function rejectRequest(formData: FormData): Promise<void> {
   });
 
   await sendEmail({
+    kind: "payback.declined",
     to: request.user.email,
     ...paybackRejectedToEmployee({
       amount: formatEGP2(request.amount),

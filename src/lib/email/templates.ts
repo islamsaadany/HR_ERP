@@ -652,3 +652,32 @@ export function incentivePaymentToEmployee(d: {
     ),
   };
 }
+
+// ─── Communications (spec 039) ─────────────────────────────────────────────
+
+/**
+ * N1 — the morning nudge: congratulations are drafted and waiting for this person to send.
+ *
+ * Moved here unchanged from the daily job (2026-10-07) so Admin → Notifications can send a sample
+ * of exactly what the job sends. The words are the job's, not new ones.
+ */
+export function congratulationsWaiting(d: { waiting: number }) {
+  const { waiting } = d;
+  return {
+    subject:
+      waiting === 1
+        ? "A message is waiting for you to send"
+        : `${waiting} messages are waiting for you to send`,
+    html:
+      `<div style="font-family:Helvetica,Arial,sans-serif;color:#16202e;padding:24px;">` +
+      `<h2 style="margin:0 0 8px;font-size:18px;">${waiting === 1 ? "A message is waiting" : `${waiting} messages are waiting`}</h2>` +
+      `<p style="margin:0 0 12px;font-size:14px;line-height:1.6;">` +
+      `Someone on your team has a birthday or a joining anniversary coming up. The words are ` +
+      `already written — read them, change anything you like, and send.</p>` +
+      (appBaseUrl
+        ? `<p style="margin:0;"><a href="${appBaseUrl}/messages" style="background:#0f2444;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 20px;border-radius:8px;display:inline-block;">Open your messages</a></p>`
+        : "") +
+      `<p style="margin:16px 0 0;font-size:12px;color:#5f6472;">Nothing is sent until you send it.</p>` +
+      `</div>`,
+  };
+}

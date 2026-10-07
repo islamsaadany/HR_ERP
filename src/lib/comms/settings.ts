@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getNotificationSettings } from "@/lib/notifications/settings";
+import { getNotificationSettings, isEmailOn } from "@/lib/notifications/settings";
 
 /**
  * Communication settings, and the group identity every email carries (spec 039).
@@ -22,7 +22,12 @@ export type CommsSettings = {
   fromName: string | null;
   /** The umbrella name in small caps above the unit, e.g. "Forefront Group". */
   groupName: string;
-  /** Whether sending is on at all. */
+  /**
+   * Whether Communications may send: the main switch AND this module's own switch at
+   * Admin → Notifications (2026-10-07). One answer, so every screen and both send actions that
+   * already ask it — the banners, the disabled Send button, the refusals — honour the new switch
+   * without each having to learn about it.
+   */
   emailEnabled: boolean;
   /** How many days ahead congratulations are prepared. */
   congratsLeadDays: number;
@@ -39,7 +44,7 @@ export async function getCommsSettings(): Promise<CommsSettings> {
   return {
     fromName: s.fromName,
     groupName: row?.groupName?.trim() || DEFAULT_GROUP_NAME,
-    emailEnabled: s.emailEnabled,
+    emailEnabled: s.emailEnabled && isEmailOn(s, "comms.message"),
     // Before migrations 067 / 074 these columns do not exist; the documented defaults are the
     // honest answer rather than an error on a database that has not caught up yet.
     congratsLeadDays: row?.congratsLeadDays ?? 3,

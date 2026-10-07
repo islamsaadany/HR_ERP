@@ -1,0 +1,459 @@
+<title>Who Gets Which Email</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+  /* Layout: a sign-off sheet — the proposal in prose, then the real admin page drawn in a frame,
+     then the list of what changes. Product palette (navy/gold), the app's own two faces. */
+  :root{
+    --navy-50:#eceff5;--navy-100:#d6deea;--navy-200:#aebfd6;--navy-300:#7d97ba;--navy-500:#2f4d78;
+    --navy-600:#1f3a63;--navy-700:#163055;--navy-800:#0f2444;--navy-900:#0a1a30;
+    --gold-50:#fbf7ea;--gold-100:#f6ecca;--gold-200:#ecd894;--gold-300:#e0c05a;--gold-400:#d4ac39;--gold-500:#c9a227;--gold-600:#a8821e;--gold-800:#6f521c;
+    --paper:#f5f3ee;--surface:#fefdfb;--ink:#16202e;--muted:#5f6472;--line:#e7e3da;--frame:#e9ebf0;
+    --green:#1c7c37;--green-bg:#eef9f0;--green-line:#bbe3c5;
+    --red:#b91c1c;--red-bg:#fdf3f3;--red-line:#f3c6c6;
+    --off:#9a9ca5;
+    --sans:"Hanken Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --serif:"Fraunces","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    color-scheme:light;
+  }
+  /* Renders in the product's own light navy/gold world — it exists to show what the app will
+     look like, so it deliberately does not follow the viewer's theme. */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:34px 90px}
+  .eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:0}
+  h1{font-family:var(--serif);font-weight:600;font-size:30px;margin:4px 0 0;text-wrap:balance}
+  .lede{color:var(--muted);font-size:14.5px;margin:8px 0 0;max-width:72ch}
+  .meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+  .tag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+  .tag.ex{border-color:var(--gold-300);background:var(--gold-100);color:var(--gold-800)}
+
+  section.screen{margin-top:40px}
+  section.screen>h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0 0 3px;text-wrap:balance}
+  section.screen>.sub{color:var(--muted);font-size:13.5px;margin:0 0 15px;max-width:82ch}
+
+  .frame{border:1px solid var(--line);border-radius:14px;background:var(--frame);padding:16px;box-shadow:0 1px 3px rgba(16,36,68,.06)}
+  .app{background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .bar{display:flex;align-items:center;gap:8px;padding:9px 14px;background:var(--navy-800);color:#fff}
+  .bar .dot{width:9px;height:9px;border-radius:99px;background:rgba(255,255,255,.28)}
+  .bar .path{margin-left:8px;font-size:11.5px;color:rgba(255,255,255,.72);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .page{padding:24px 26px 30px;min-width:0;display:flex;flex-direction:column;gap:18px}
+  .back{font-size:12.5px;font-weight:600;color:var(--navy-700);text-decoration:none}
+  .page-eyebrow{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--gold-600);margin:6px 0 0}
+  .page h3{font-family:var(--serif);font-weight:600;font-size:27px;margin:2px 0 0}
+  .page .intro{color:var(--muted);font-size:13.5px;margin:4px 0 0}
+
+  .card{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:18px 20px;min-width:0}
+  .card>h4{font-size:14px;font-weight:700;margin:0}
+  .card>.hint{font-size:12.5px;color:var(--muted);margin:3px 0 0;max-width:80ch}
+  .new{position:relative}
+  .new::before{content:"New";position:absolute;top:-9px;right:16px;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--gold-500);color:var(--navy-900)}
+  .same::before{content:"Unchanged";background:var(--navy-100);color:var(--navy-700)}
+
+  /* ── health check ── */
+  .health{border-color:var(--gold-300);background:linear-gradient(var(--gold-50),var(--surface) 70%)}
+  .health .head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .health .verdict{font-family:var(--serif);font-weight:600;font-size:20px;margin:0;color:var(--gold-800)}
+  .health .tally{font-size:12.5px;color:var(--muted);margin:2px 0 0;font-variant-numeric:tabular-nums}
+  .checks{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 22px}
+  .checks li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;align-items:start;padding:9px 0;border-top:1px solid var(--line)}
+  .checks b{display:block;font-size:13px;font-weight:600}
+  .checks span.d{display:block;font-size:12px;color:var(--muted)}
+  .checks a{font-size:12px;font-weight:600;color:var(--navy-700);text-decoration:underline;text-underline-offset:2px}
+  .mark{width:20px;height:20px;border-radius:99px;display:grid;place-items:center;font-size:12px;font-weight:700;line-height:1;margin-top:1px}
+  .mark.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-line)}
+  .mark.bad{background:var(--red-bg);color:var(--red);border:1px solid var(--red-line)}
+  .checks li.bad{background:var(--red-bg);border-radius:0 0 8px 8px;padding-inline:8px;margin-inline:-8px}
+
+  /* ── who gets what ── */
+  .wg-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+  .sample-to{display:flex;flex-direction:column;gap:4px;min-width:0;flex:0 1 330px}
+  .sample-to label{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  input.i{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 11px;font:inherit;font-size:13px;color:var(--ink)}
+  input.i:focus-visible{outline:2px solid var(--navy-500);outline-offset:1px}
+  .sample-note{font-size:11.5px;color:var(--muted);margin:10px 0 0;max-width:90ch}
+
+  .scroll{overflow-x:auto;margin-top:14px;border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:900px}
+  thead th{background:var(--navy-800);color:#fff;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px;white-space:nowrap}
+  tbody td{padding:11px 12px;border-top:1px solid var(--line);vertical-align:top}
+  tr.grp td{background:var(--navy-50);padding:7px 12px;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-700)}
+  tr.grp td span{font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted);margin-left:6px}
+  td.on{width:70px}
+  .tick{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+  .tick input{width:18px;height:18px;accent-color:var(--navy-800);margin:1px 0 0;cursor:pointer}
+  .tick input:focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+  .saved{font-size:10px;font-weight:700;color:var(--green);opacity:0;transition:opacity .2s}
+  .saved.show{opacity:1}
+  td.em b{display:block;font-size:13px;font-weight:600}
+  td.em .when{display:block;font-size:12px;color:var(--muted);margin-top:1px}
+  td.to .who{display:block}
+  td.to .addr{display:inline-block;margin-top:3px;font-size:11.5px;background:var(--navy-50);color:var(--navy-700);padding:1px 7px;border-radius:5px}
+  td.to .set{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+  td.to .set a{color:var(--navy-700);font-weight:600}
+  td.to .warn{display:block;margin-top:5px;font-size:11.5px;color:var(--red);font-weight:600}
+  td.last{width:250px;font-variant-numeric:tabular-nums}
+  .st{display:flex;gap:7px;align-items:flex-start}
+  .st .mark{width:17px;height:17px;font-size:10.5px;flex:none}
+  .st b{font-weight:600}
+  .st small{display:block;font-size:11.5px;color:var(--muted)}
+  .st.fail b{color:var(--red)}
+  .st.fail small{color:var(--red)}
+  .st.none{color:var(--muted)}
+  .st .mark.none{background:var(--surface);border:1px dashed var(--navy-200);color:var(--navy-300)}
+  .st .mark.off{background:var(--paper);border:1px solid var(--line);color:var(--off)}
+  .when-off{display:none}
+  tr.is-off td.em, tr.is-off td.to{color:var(--off)}
+  tr.is-off td.em .when, tr.is-off td.to .set{color:var(--off)}
+  tr.is-off .when-on{display:none}
+  tr.is-off .when-off{display:flex}
+  td.act{width:132px;text-align:right}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-size:12px;font-weight:600;border-radius:8px;padding:7px 11px;border:1px solid var(--navy-200);background:var(--surface);color:var(--navy-700);cursor:pointer;white-space:nowrap}
+  .btn:hover{background:var(--navy-50)}
+  .btn:focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+  .btn.sent{border-color:var(--green-line);background:var(--green-bg);color:var(--green)}
+  .btn.primary{background:var(--navy-800);border-color:var(--navy-800);color:#fff;font-size:13px;padding:9px 18px}
+
+  /* ── settings (as today) ── */
+  .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--paper);margin-top:14px}
+  .toggle .tl{font-size:13.5px;font-weight:600}
+  .toggle .td{font-size:12px;color:var(--muted)}
+  .toggle input{width:20px;height:20px;accent-color:var(--navy-800);flex:none}
+  .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+  .f label{display:block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .f p{font-size:11.5px;color:var(--muted);margin:4px 0 0}
+  .stub{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .stub span{font-size:12.5px;color:var(--muted)}
+
+  /* ── what changes ── */
+  .rules{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .rule{border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:14px 16px}
+  .rule h4{font-family:var(--serif);font-size:15px;font-weight:600;margin:0 0 5px}
+  .rule p{margin:0;font-size:12.5px;color:var(--muted)}
+  .rule p+p{margin-top:6px}
+  .note{margin-top:16px;border-left:3px solid var(--gold-500);background:var(--gold-50);border-radius:0 9px 9px 0;padding:12px 15px;font-size:13px;color:var(--gold-800);max-width:86ch}
+  .note b{color:var(--navy-800)}
+
+  @media (max-width:760px){
+    .checks,.grid2{grid-template-columns:1fr}
+    .page{padding:18px 14px 22px}
+    .frame{padding:8px}
+    h1{font-size:25px}
+  }
+  @media (prefers-reduced-motion:reduce){.saved{transition:none}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Admin · Notifications · Mockup for sign-off</p>
+  <h1>Who gets which email, and is it working</h1>
+  <p class="lede">
+    The Notifications page today has one switch for every email, two inboxes, and a plain test
+    message. This adds a health check at the top and lists all 18 emails the app sends. Each one
+    shows who receives it and when it last went out, has its own tick to switch it on or off, and
+    has a button that sends you a sample.
+  </p>
+  <div class="meta">
+    <span class="tag">07/10/2026</span>
+    <span class="tag">Proposal — nothing built yet</span>
+    <span class="tag">Navy / gold</span>
+    <span class="tag ex">Names, dates and counts below are examples</span>
+  </div>
+
+  <section class="screen">
+    <h2>The Notifications page</h2>
+    <p class="sub">
+      Try it: untick an email and the row goes grey and says it is off. “Send sample” shows what
+      happens when you press it. Nothing here actually sends.
+    </p>
+
+    <div class="frame">
+      <div class="app">
+        <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span class="path">forefront.consulting/admin/notifications</span></div>
+        <div class="page">
+          <div>
+            <a class="back" href="#who" onclick="return false">← Admin</a>
+            <p class="page-eyebrow">Admin · Notifications</p>
+            <h3>Email notifications</h3>
+            <p class="intro">Who gets which email, and whether it is working. Super User only.</p>
+          </div>
+
+          <!-- 1 · Health check -->
+          <div class="card health new">
+            <div class="head">
+              <div>
+                <p class="verdict">2 things need you</p>
+                <p class="tally"><span id="on-count">17</span> of 18 emails switched on · 214 sent in the last 30 days · 1 refused</p>
+              </div>
+            </div>
+            <ul class="checks">
+              <li><span class="mark ok" aria-label="Working">✓</span><span><b>Sending is set up</b><span class="d">Emails go out as hr@forefront.consulting.</span></span></li>
+              <li><span class="mark ok" aria-label="Working">✓</span><span><b>Everyone can receive them</b><span class="d">forefront.consulting is approved with the email provider, so mail reaches every inbox, not just yours.</span></span></li>
+              <li><span class="mark ok" aria-label="Working">✓</span><span><b>Emails are switched on</b><span class="d">The main switch in Settings below is on.</span></span></li>
+              <li><span class="mark ok" aria-label="Working">✓</span><span><b>HR and Finance inboxes are filled in</b><span class="d">hr@forefront.consulting · finance@forefront.consulting</span></span></li>
+              <li class="bad"><span class="mark bad" aria-label="Needs attention">!</span><span><b>Visual Shift has nobody to confirm its payments</b><span class="d">Its “waiting for your confirmation” emails have no one to go to.</span><a href="#who" onclick="return false">Appoint someone →</a></span></li>
+              <li class="bad"><span class="mark bad" aria-label="Needs attention">!</span><span><b>1 email was refused this week</b><span class="d">“Time-off decided” to omar.f@forefront.consultng on 05/10/2026: the address isn’t valid.</span><a href="#who" onclick="return false">Fix the address →</a></span></li>
+            </ul>
+          </div>
+
+          <!-- 2 · Who gets what -->
+          <div class="card new" id="who">
+            <div class="wg-head">
+              <div>
+                <h4 style="font-size:14px;font-weight:700;margin:0">Who gets what</h4>
+                <p style="font-size:12.5px;color:var(--muted);margin:3px 0 0;max-width:62ch">Every email the app sends. Untick one to stop it. A change saves as soon as you tick or untick.</p>
+              </div>
+              <div class="sample-to">
+                <label for="sample-to">Send samples to</label>
+                <input class="i" id="sample-to" type="email" value="islam.saadany@forefront.consulting">
+              </div>
+            </div>
+            <p class="sample-note">A sample is the real email filled in with made-up details, with “SAMPLE” in the subject. It is sent even when that email is switched off, so you can check it before switching it on.</p>
+
+            <div class="scroll">
+              <table>
+                <thead><tr><th>On</th><th>Email</th><th>Goes to</th><th>Last sent</th><th></th></tr></thead>
+                <tbody>
+                  <tr class="grp"><td colspan="5">Benefits <span>5 emails</span></td></tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e1" aria-label="Send: New claim to review"><span class="saved"></span></label></td>
+                    <td class="em"><b>New claim to review</b><span class="when">An employee submits a claim</span></td>
+                    <td class="to"><span class="who">HR inbox</span><span class="addr">hr@forefront.consulting</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>07/10/2026 · 11:42</b><small>to hr@forefront.consulting</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e2" aria-label="Send: Approved claim"><span class="saved"></span></label></td>
+                    <td class="em"><b>Approved claim, release payment</b><span class="when">HR approves a claim</span></td>
+                    <td class="to"><span class="who">Finance inbox</span><span class="addr">finance@forefront.consulting</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>06/10/2026 · 16:05</b><small>to finance@forefront.consulting</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e3" aria-label="Send: Claim declined"><span class="saved"></span></label></td>
+                    <td class="em"><b>Claim declined</b><span class="when">HR declines a claim</span></td>
+                    <td class="to"><span class="who">The employee who claimed</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>29/09/2026 · 10:17</b><small>to mariam.a@forefront.consulting</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e4" aria-label="Send: Claim reviewed again"><span class="saved"></span></label></td>
+                    <td class="em"><b>Claim being reviewed again</b><span class="when">HR reopens a declined claim</span></td>
+                    <td class="to"><span class="who">The employee who claimed</span></td>
+                    <td class="last"><div class="st when-on none"><span class="mark none">–</span><span><b>Not sent yet</b></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e5" aria-label="Send: Claim reimbursed"><span class="saved"></span></label></td>
+                    <td class="em"><b>Claim reimbursed</b><span class="when">The bank payment is confirmed</span></td>
+                    <td class="to"><span class="who">The employee who claimed</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>02/10/2026 · 13:30</b><small>to 6 people</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+
+                  <tr class="grp"><td colspan="5">Payback <span>3 emails</span></td></tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e6" aria-label="Send: Payback request to review"><span class="saved"></span></label></td>
+                    <td class="em"><b>Payback request to review</b><span class="when">An employee submits a receipt</span></td>
+                    <td class="to"><span class="who">Finance inbox</span><span class="addr">finance@forefront.consulting</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>05/10/2026 · 09:51</b><small>to finance@forefront.consulting</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e7" aria-label="Send: Payback declined"><span class="saved"></span></label></td>
+                    <td class="em"><b>Payback declined</b><span class="when">Finance declines a request</span></td>
+                    <td class="to"><span class="who">The employee who asked</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>21/09/2026 · 15:02</b><small>to karim.h@forefront.consulting</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e8" aria-label="Send: You've been paid back"><span class="saved"></span></label></td>
+                    <td class="em"><b>You’ve been paid back</b><span class="when">The bank payment is confirmed</span></td>
+                    <td class="to"><span class="who">The employee who asked</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>02/10/2026 · 13:30</b><small>to 3 people</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+
+                  <tr class="grp"><td colspan="5">Payments <span>3 emails</span></td></tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e9" aria-label="Send: Waiting for your confirmation"><span class="saved"></span></label></td>
+                    <td class="em"><b>Waiting for your confirmation</b><span class="when">Finance submits payments for confirmation</span></td>
+                    <td class="to"><span class="who">Whoever is appointed to confirm for that business unit</span><span class="set">Set in <a href="#who" onclick="return false">Who moves money</a></span><span class="warn">Visual Shift: nobody appointed</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>01/10/2026 · 12:20</b><small>to islam.saadany@forefront.consulting</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e10" aria-label="Send: Still waiting reminder"><span class="saved"></span></label></td>
+                    <td class="em"><b>Still waiting for your confirmation</b><span class="when">Every morning, while a payment has waited 2 days or more</span></td>
+                    <td class="to"><span class="who">The same people</span><span class="set">Set in <a href="#who" onclick="return false">Who moves money</a></span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>03/10/2026 · 11:00</b><small>to islam.saadany@forefront.consulting</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e11" aria-label="Send: Incentive payment"><span class="saved"></span></label></td>
+                    <td class="em"><b>Incentive payment</b><span class="when">The bank payment is confirmed</span></td>
+                    <td class="to"><span class="who">Each person paid</span><span class="set">Wording is edited at the bottom of this page</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>02/10/2026 · 13:31</b><small>to 14 people</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+
+                  <tr class="grp"><td colspan="5">Time off <span>2 emails</span></td></tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e12" aria-label="Send: Time-off request to decide"><span class="saved"></span></label></td>
+                    <td class="em"><b>Time-off request to decide</b><span class="when">Someone requests leave</span></td>
+                    <td class="to"><span class="who">Their manager, or the Super Users if they have none</span><span class="set">Set by “Reports to” on the employee record</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>07/10/2026 · 09:10</b><small>to nour.s@forefront.consulting</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e13" aria-label="Send: Time-off decided"><span class="saved"></span></label></td>
+                    <td class="em"><b>Time-off decided</b><span class="when">A request is approved or declined</span></td>
+                    <td class="to"><span class="who">The person who asked</span></td>
+                    <td class="last"><div class="st when-on fail"><span class="mark bad">✕</span><span><b>Refused 05/10/2026 · 17:44</b><small>to omar.f@forefront.consultng: the address isn’t valid</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+
+                  <tr class="grp"><td colspan="5">Holidays <span>3 emails</span></td></tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e14" aria-label="Send: Day off is now a holiday"><span class="saved"></span></label></td>
+                    <td class="em"><b>Your day off is now a public holiday</b><span class="when">A holiday moves onto someone’s booked leave</span></td>
+                    <td class="to"><span class="who">That person</span></td>
+                    <td class="last"><div class="st when-on none"><span class="mark none">–</span><span><b>Not sent yet</b></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e15" aria-label="Send: Confirm a holiday date"><span class="saved"></span></label></td>
+                    <td class="em"><b>Confirm a holiday date</b><span class="when">Every morning, for an unconfirmed holiday 14 days away</span></td>
+                    <td class="to"><span class="who">HR inbox</span><span class="addr">hr@forefront.consulting</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>23/09/2026 · 09:00</b><small>to hr@forefront.consulting</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e16" aria-label="Send: Holiday announcement"><span class="saved"></span></label></td>
+                    <td class="em"><b>Holiday announcement</b><span class="when">HR presses Send on the Holidays screen</span></td>
+                    <td class="to"><span class="who">Everyone</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>24/09/2026 · 14:12</b><small>to 48 people</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+
+                  <tr class="grp"><td colspan="5">Communications <span>2 emails</span></td></tr>
+                  <tr>
+                    <td class="on"><label class="tick"><input type="checkbox" checked id="e17" aria-label="Send: Announcements and congratulations"><span class="saved"></span></label></td>
+                    <td class="em"><b>Announcements and congratulations</b><span class="when">Someone presses Send in Communications</span></td>
+                    <td class="to"><span class="who">The people chosen when sending</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>01/10/2026 · 10:03</b><small>to 48 people</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                  <tr class="is-off">
+                    <td class="on"><label class="tick"><input type="checkbox" id="e18" aria-label="Send: Congratulations waiting"><span class="saved"></span></label></td>
+                    <td class="em"><b>Congratulations waiting to be sent</b><span class="when">Every morning, while one is waiting</span></td>
+                    <td class="to"><span class="who">The person’s manager, or HR if they have none</span></td>
+                    <td class="last"><div class="st when-on"><span class="mark ok">✓</span><span><b>30/09/2026 · 10:00</b><small>to nour.s@forefront.consulting</small></span></div><div class="st when-off none"><span class="mark off">–</span><span><b>Off, not sending</b><small>Last sent 30/09/2026</small></span></div></td>
+                    <td class="act"><button class="btn smp" type="button">Send sample</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3 · Settings (today's form) -->
+          <div class="card new same">
+            <h4>Settings</h4>
+            <p class="hint">The main switch, the team inboxes and the sender name. The same form as today, now below the list.</p>
+            <label class="toggle" for="master">
+              <span><span class="tl" style="display:block">Send workflow emails</span><span class="td" style="display:block">Main switch. Off = nothing is sent, whatever is ticked above.</span></span>
+              <input type="checkbox" id="master" checked>
+            </label>
+            <div class="grid2">
+              <div class="f"><label for="hr">HR team inbox</label><input class="i" id="hr" type="email" value="hr@forefront.consulting"></div>
+              <div class="f"><label for="fin">Finance team inbox</label><input class="i" id="fin" type="email" value="finance@forefront.consulting"></div>
+              <div class="f"><label for="from">From name (shown on emails)</label><input class="i" id="from" value="Forefront People"></div>
+              <div class="f"><label for="lead">Holiday reminders: days ahead</label><input class="i" id="lead" type="number" value="14"><p>Appears in the “Confirm a holiday date” row above.</p></div>
+            </div>
+            <div style="margin-top:14px"><button class="btn primary" type="button">Save settings</button></div>
+          </div>
+
+          <!-- 4 · Incentive message (unchanged) -->
+          <div class="card new same">
+            <div class="stub"><h4 style="margin:0">Incentive payment message</h4><span>Unchanged: the editor you have today.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen">
+    <h2>What changes</h2>
+    <div class="rules">
+      <div class="rule">
+        <h4>A health check at the top</h4>
+        <p>Each line gets a tick or a warning, and every warning says what to do and links to where you fix it. It checks that sending is set up, that the company’s email address is approved so mail reaches everyone and not only you, that the main switch is on, that both inboxes are filled in, that every business unit has someone to confirm its payments, and whether any email was refused recently.</p>
+        <p>When everything passes, the card turns green and says “Everything is working”.</p>
+      </div>
+      <div class="rule">
+        <h4>A tick on every email</h4>
+        <p>All 18 can be switched off one by one, including the ones that tell people their money has arrived. A tick saves the moment you click it, and nothing else on the page moves. The main switch in Settings still turns everything off at once.</p>
+      </div>
+      <div class="rule">
+        <h4>What “off” means</h4>
+        <p>Automatic emails simply aren’t sent; the work itself carries on as normal. The three morning reminders still show their flags on screen. The two you send by hand (holiday announcement, Communications) refuse at their Send button and say they are switched off here.</p>
+      </div>
+      <div class="rule">
+        <h4>When it last went out</h4>
+        <p>From the day this ships, the app keeps a record of every email it sends: when, to whom, and whether it was accepted. Older sends won’t appear. A refusal shows in red on its row with the reason, and also in the health check.</p>
+        <p>A green tick means the email provider accepted it. The app can’t see whether it then landed in someone’s spam folder.</p>
+      </div>
+      <div class="rule">
+        <h4>Send yourself a sample</h4>
+        <p>Every row can send you the real email filled in with made-up details, marked “SAMPLE”. This replaces today’s “Send a test email” box, which only sent a plain message.</p>
+      </div>
+      <div class="rule">
+        <h4>Inboxes stay in one place</h4>
+        <p>Where an email goes to the HR or Finance inbox, the row shows the address, but you still change it in Settings. Each inbox feeds two emails, so changing it on one row would quietly change the other one too. Where an email goes to a person, the row says who and where that’s decided.</p>
+      </div>
+      <div class="rule">
+        <h4>Layout</h4>
+        <p>The page gets wider so the list fits. The order becomes: health check, the list, Settings, then the incentive message. On a phone the list scrolls sideways inside its own box.</p>
+      </div>
+    </div>
+    <p class="note"><b>Nothing else changes.</b> Who receives each email stays exactly as it is today. This page shows those rules and lets you switch each email off; it doesn’t change them.</p>
+  </section>
+</div>
+
+<script>
+  (function () {
+    var boxes = document.querySelectorAll('td.on input[type="checkbox"]');
+    var count = document.getElementById("on-count");
+    function recount() {
+      var n = 0;
+      boxes.forEach(function (b) { if (b.checked) n++; });
+      if (count) count.textContent = n;
+    }
+    boxes.forEach(function (box) {
+      var timer;
+      box.addEventListener("change", function () {
+        var row = box.closest("tr");
+        row.classList.toggle("is-off", !box.checked);
+        var saved = row.querySelector(".saved");
+        saved.textContent = "Saved";
+        saved.classList.add("show");
+        clearTimeout(timer);
+        timer = setTimeout(function () { saved.classList.remove("show"); }, 1600);
+        recount();
+      });
+    });
+    document.querySelectorAll("button.smp").forEach(function (btn) {
+      var timer;
+      btn.addEventListener("click", function () {
+        btn.textContent = "Sample sent ✓";
+        btn.classList.add("sent");
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          btn.textContent = "Send sample";
+          btn.classList.remove("sent");
+        }, 3500);
+      });
+    });
+    recount();
+  })();
+</script>

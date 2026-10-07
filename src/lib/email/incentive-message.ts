@@ -50,6 +50,20 @@ export function resolveIncentiveMessage(stored: Partial<Record<keyof IncentiveMe
 
 export type MessageValues = Record<(typeof INCENTIVE_PLACEHOLDERS)[number], string>;
 
+/**
+ * What a preview or a sample stands in with, so the operator reads a real message rather than
+ * braces. One set, shared by the editor's live preview and the "Send sample" button at
+ * Admin → Notifications, so the two cannot show different made-up people.
+ */
+export const INCENTIVE_SAMPLE_VALUES: MessageValues = {
+  "{first name}": "Ahmed",
+  "{full name}": "Ahmed Fathy",
+  "{cycle}": "H1-2026",
+  "{total}": "EGP 85,130.00",
+  "{transfer date}": "26-Aug 2026",
+  "{business unit}": "Forefront Consulting",
+};
+
 /** Substitute the six placeholders. Anything else in braces has already been refused on save. */
 export function fillMessage(text: string, values: MessageValues): string {
   return INCENTIVE_PLACEHOLDERS.reduce((t, k) => t.split(k).join(values[k]), text);

@@ -80,6 +80,7 @@ export async function GET(request: Request) {
     await prisma.publicHoliday.update({ where: { id: h.id }, data: { reminderSentAt: new Date() } });
     reminded += 1;
     await sendEmail({
+      kind: "holiday.verify",
       to: settings.hrInbox,
       ...holidayVerificationReminder({
         holidayName: h.name,

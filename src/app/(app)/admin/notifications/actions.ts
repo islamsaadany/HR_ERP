@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireSuperUser } from "@/lib/roles";
-import { sendTestEmail } from "@/lib/email/client";
+import { sendRehearsal } from "@/lib/email/client";
+import { sampleOf } from "@/lib/email/catalog";
+import { isEmailKind } from "@/lib/email/kinds";
+import { groupName } from "@/lib/comms/settings";
+import { getNotificationSettings } from "@/lib/notifications/settings";
 import {
   INCENTIVE_MESSAGE_DEFAULTS,
   checkIncentiveMessage,
@@ -56,14 +60,57 @@ export async function updateNotificationSettings(formData: FormData): Promise<No
   return { ok: true };
 }
 
-/** Send a test email to confirm the Resend key + sender work (Super User only). */
-export async function sendTestEmailAction(formData: FormData): Promise<NotifResult> {
+/**
+ * Switch ONE email on or off (2026-10-07). Saves the moment the box is ticked — the page shows
+ * "Saved" on that row and refreshes in place; nothing else on the page moves.
+ *
+ * Written as an atomic array update rather than read-modify-write, so two people ticking two
+ * different rows at the same moment cannot undo each other.
+ */
+export async function setEmailSwitch(kind: string, on: boolean): Promise<NotifResult> {
   await requireSuperUser();
-  const to = ((formData.get("to") as string | null) ?? "").trim();
-  if (!EMAIL_RE.test(to)) return err("Enter a valid recipient address.");
-  const res = await sendTestEmail(to);
+  if (!isEmailKind(kind)) return err("That email isn't on the list any more. Refresh the page.");
+
+  await prisma.notificationSettings.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: { id: "singleton" },
+  });
+  if (on) {
+    await prisma.$executeRaw`
+      UPDATE "NotificationSettings"
+         SET "disabledEmails" = array_remove("disabledEmails", ${kind}::text), "updatedAt" = NOW()
+       WHERE "id" = 'singleton'`;
+  } else {
+    await prisma.$executeRaw`
+      UPDATE "NotificationSettings"
+         SET "disabledEmails" = array_append(array_remove("disabledEmails", ${kind}::text), ${kind}::text),
+             "updatedAt" = NOW()
+       WHERE "id" = 'singleton'`;
+  }
+
+  revalidatePath("/admin/notifications");
+  return { ok: true };
+}
+
+/**
+ * Send a SAMPLE of one email: the real template, made-up details, "SAMPLE" in the subject.
+ *
+ * Goes even when that email (or email altogether) is switched off — checking it before switching
+ * it on is the point. Needs only the sending setup, and is never recorded as a real send. Super
+ * User only, like the test email it replaces: an action that takes an address can mail anyone.
+ */
+export async function sendSample(kind: string, to: string): Promise<NotifResult> {
+  await requireSuperUser();
+  if (!isEmailKind(kind)) return err("That email isn't on the list any more. Refresh the page.");
+  const address = (to ?? "").trim();
+  if (!EMAIL_RE.test(address)) return err("Enter a valid address to send samples to.");
+
+  const [settings, group] = await Promise.all([getNotificationSettings(), groupName()]);
+  const { subject, html } = sampleOf(kind, { settings, groupName: group });
+  const res = await sendRehearsal({ to: address, subject, html });
   if (res.ok) return { ok: true };
-  return err(res.error ?? "Send failed.");
+  return err(`Not sent to ${address}: ${res.error ?? "the send failed."}`);
 }
 
 /**

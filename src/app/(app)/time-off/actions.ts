@@ -90,7 +90,7 @@ export async function createLeaveRequest(formData: FormData): Promise<void> {
     note: data.note ?? null,
   });
   for (const approver of approvers) {
-    await sendEmail({ to: approver.email, ...message });
+    await sendEmail({ kind: "leave.requested", to: approver.email, ...message });
   }
 
   revalidatePath("/time-off");
@@ -157,6 +157,7 @@ async function applyDecision(
   // in-app badge stays as it was; the email is in addition, and its failure changes nothing.
   const holidays = await getHolidaySet();
   await sendEmail({
+    kind: "leave.decided",
     to: req.user.email,
     ...leaveDecidedToEmployee({
       decision,

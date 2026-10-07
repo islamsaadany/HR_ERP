@@ -67,8 +67,8 @@ export default async function CommsSettingsPage() {
 
       {!settings.emailEnabled ? (
         <p className="mt-4 max-w-[720px] rounded-r-lg border-l-[3px] border-gold-500 bg-gold-100 px-3 py-2 text-[12.5px] text-gold-800">
-          Email from Communications is switched off at <b>Admin → Notifications</b>. Drafts can be
-          written and previewed; nothing will send until it is on.
+          The master email toggle is off at <b>Admin → Notifications</b>. Drafts can be written and
+          previewed; nothing will send until it is on.
         </p>
       ) : null}
     </div>

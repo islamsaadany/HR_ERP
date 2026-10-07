@@ -1237,7 +1237,50 @@ model NotificationSettings {
   incentiveEmailBody    String?
   incentiveEmailFooter  String?
 
+  /// The emails switched OFF one by one at Admin → Notifications (2026-10-07), by their key in
+  /// `src/lib/email/kinds.ts`. The OFF set is stored rather than the ON set on purpose: an email
+  /// added to the product later starts ON, exactly as every email did before switches existed,
+  /// instead of arriving silently disabled because nobody had ever ticked it.
+  disabledEmails String[] @default([])
+
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// What happened to one email the platform tried to send (2026-10-07).
+enum EmailOutcome {
+  /// The mail provider accepted it. It cannot tell us whether it then landed in spam.
+  SENT
+  /// The mail provider answered with a refusal — an invalid address, an unverified domain.
+  REFUSED
+  /// There was nobody to send it to: an empty inbox setting, a person with no address.
+  NO_ADDRESS
+  /// The send threw — the provider could not be reached at all.
+  FAILED
+}
+
+/// One row per email the platform tried to send, so "did she get it?" has an answer on screen
+/// rather than in a server log (2026-10-07). Written by the send functions themselves
+/// (`src/lib/email/client.ts`), never by a caller, so no path can send without leaving a row.
+/// Samples and tests are rehearsals and are deliberately NOT recorded here — they would make an
+/// email look live that has never reached anybody.
+model EmailLog {
+  id         String       @id @default(cuid())
+  /// Which email this was — a key from `src/lib/email/kinds.ts`.
+  kind       String
+  /// Null when there was nobody to send it to (NO_ADDRESS). Not called `to`, a reserved word.
+  recipient  String?
+  subject    String
+  outcome    EmailOutcome
+  /// The reason, in the provider's words, when it was not SENT.
+  error      String?
+  providerId String?
+  /// Shared by every copy of one broadcast, so "to 48 people" is one send and not 48.
+  batchId    String?
+  createdAt  DateTime     @default(now())
+
+  @@index([kind, createdAt])
+  @@index([createdAt])
+  @@index([batchId])
 }
 
 // ─── Profile change requests (spec 029) ─────────────────────────────────

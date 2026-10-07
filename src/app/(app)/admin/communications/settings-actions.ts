@@ -144,7 +144,7 @@ export async function sendTestToSelf(): Promise<Result> {
 
   const [result] = await sendBatch([
     { to: me.email, subject: "Test — this is what your emails will look like", html, text, ref: "test" },
-  ]);
+  ], null); // a test: never recorded as a real send
 
   if (!result) return { ok: false, error: "Nothing was sent." };
   if (!result.ok) return { ok: false, error: result.error };

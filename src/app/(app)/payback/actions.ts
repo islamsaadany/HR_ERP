@@ -77,6 +77,7 @@ export async function submitRequest(formData: FormData): Promise<void> {
   // an email getting through.
   const settings = await getNotificationSettings();
   await sendEmail({
+    kind: "payback.submitted",
     to: settings.financeInbox,
     ...paybackSubmittedToFinance({
       requesterName: user.name ?? "An employee",

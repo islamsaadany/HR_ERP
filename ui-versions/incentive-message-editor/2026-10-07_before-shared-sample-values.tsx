@@ -7,10 +7,19 @@ import type { NotifResult } from "@/app/(app)/admin/notifications/actions";
 import {
   INCENTIVE_MESSAGE_DEFAULTS,
   INCENTIVE_PLACEHOLDERS,
-  INCENTIVE_SAMPLE_VALUES as SAMPLE,
   fillMessage,
   type IncentiveMessage,
 } from "@/lib/email/incentive-message";
+
+/** What the preview stands in with, so the operator reads a real message rather than braces. */
+const SAMPLE = {
+  "{first name}": "Ahmed",
+  "{full name}": "Ahmed Fathy",
+  "{cycle}": "H1-2026",
+  "{total}": "EGP 85,130.00",
+  "{transfer date}": "26-Aug 2026",
+  "{business unit}": "Forefront Consulting",
+} as const;
 
 const FIELDS = [
   { key: "subject", label: "Subject", rows: 0 },
