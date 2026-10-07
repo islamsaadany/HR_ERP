@@ -186,6 +186,7 @@ async function tellEveryonePaid(told: {
     });
     for (const r of rows) {
       await sendEmail({
+        kind: "payback.paid",
         to: r.user.email,
         ...paybackPaidToEmployee({
           amount: formatEGP2(r.amountTransferred),
@@ -209,6 +210,7 @@ async function tellEveryonePaid(told: {
     });
     for (const r of rows) {
       await sendEmail({
+        kind: "claim.reimbursed",
         to: r.user.email,
         ...claimReimbursedToEmployee({
           benefitName: r.guaranteedBenefit?.name ?? r.catalogItem?.name ?? "a benefit",
@@ -252,6 +254,7 @@ async function tellEveryonePaid(told: {
       const fullName = person.user.name ?? person.personName;
       const transferDate = formatDate(told.valueDate);
       await sendEmail({
+        kind: "incentive.paid",
         to: email,
         ...incentivePaymentToEmployee({
           message,

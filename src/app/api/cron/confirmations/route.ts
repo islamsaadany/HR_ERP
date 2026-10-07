@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { confirmersForUnit } from "@/lib/finance/confirmers";
-import { getNotificationSettings } from "@/lib/notifications/settings";
+import { confirmationReminderLeadDays, getNotificationSettings } from "@/lib/notifications/settings";
 import { sendEmail } from "@/lib/email/client";
 import { confirmationReminder } from "@/lib/email/templates";
 import { formatEGP2 } from "@/lib/labels";
@@ -30,10 +30,10 @@ export async function GET(req: Request) {
   }
 
   const settings = await getNotificationSettings();
-  const leadDays = settings.verificationLeadDays > 0 ? settings.verificationLeadDays : 14;
   // The confirmation nudge is a different rhythm from the holiday one: a transfer waiting two
-  // weeks is a person waiting two weeks. Cap it low regardless of the holiday lead.
-  const lead = Math.min(leadDays, 2);
+  // weeks is a person waiting two weeks. One derivation, shared with the Notifications page that
+  // describes this reminder, so the page cannot say "2 days" while the job does something else.
+  const lead = confirmationReminderLeadDays(settings);
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - lead);
@@ -114,6 +114,7 @@ export async function GET(req: Request) {
       data: { batchId: marker, userId, sentOn: today },
     });
     await sendEmail({
+      kind: "payments.reminder",
       to: pending.email,
       ...confirmationReminder({
         count: pending.batches.length,

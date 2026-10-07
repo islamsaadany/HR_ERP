@@ -328,6 +328,7 @@ async function createClaimImpl(formData: FormData): Promise<void> {
   const settings = await getNotificationSettings();
   const amountClaimed = Number.isFinite(amount) && amount > 0 ? amount : claimAmount;
   await sendEmail({
+    kind: "claim.submitted",
     to: settings.hrInbox,
     ...claimSubmittedToHR({
       employeeName: me.name ?? me.email ?? "An employee",

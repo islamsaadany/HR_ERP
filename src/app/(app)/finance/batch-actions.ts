@@ -93,6 +93,7 @@ async function notifyConfirmers(batch: {
 
   for (const c of confirmers) {
     await sendEmail({
+      kind: "payments.awaiting",
       to: c.email,
       ...transactionsAwaitingConfirmation({
         summary,

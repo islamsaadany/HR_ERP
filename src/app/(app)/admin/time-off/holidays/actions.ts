@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/roles";
 import { formatDate } from "@/lib/labels";
 import { expandRange, getHolidaySet } from "@/lib/holidays";
 import { sendEmail, sendBulkEmail, sendReportedEmail } from "@/lib/email/client";
+import { getNotificationSettings, isEmailOn } from "@/lib/notifications/settings";
 import {
   holidayDayReturned,
   renderHolidayAnnouncement,
@@ -130,6 +131,7 @@ async function notifyDaysReturned(newlyHoliday: string[], holidayName: string): 
     });
     if (covered.length === 0) continue;
     await sendEmail({
+      kind: "holiday.dayReturned",
       to: req.user.email,
       ...holidayDayReturned({
         employeeName: req.user.name,
@@ -585,7 +587,14 @@ export async function sendAnnouncement(formData: FormData): Promise<ComposerResu
     },
   });
 
-  const reached = await sendBulkEmail({
+  // Its own switch at Admin → Notifications (2026-10-07). Asked HERE as well as inside the send so
+  // the sentence below can say why nothing went, rather than "check email settings". The record and
+  // the dashboard banner still go live, exactly as they do when the main switch is off.
+  const notif = await getNotificationSettings();
+  const switchedOff = !isEmailOn(notif, "holiday.announcement");
+
+  const reached = switchedOff ? 0 : await sendBulkEmail({
+    kind: "holiday.announcement",
     to: recipients.map((r) => r.email),
     subject: rendered.subject,
     html: rendered.html,
@@ -599,6 +608,8 @@ export async function sendAnnouncement(formData: FormData): Promise<ComposerResu
     reached > 0
       ? `${isCorrection ? "Correction" : "Announcement"} sent to ${reached} ${reached === 1 ? "person" : "people"}${toSelected ? " (the people you picked)" : ""}.`
       : `${isCorrection ? "Correction" : "Announcement"} recorded, and the dashboard banner is live. ` +
-        `No email went out — check email settings if you expected it to.`
+        (switchedOff
+          ? `No email went out — the holiday announcement email is switched off at Admin → Notifications.`
+          : `No email went out — check email settings if you expected it to.`)
   );
 }

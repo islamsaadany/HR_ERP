@@ -23,6 +23,33 @@
 | 12 — Team Communications | 🟢 **Built** (spec 039 — one door with three options: the dashboard noticeboard, email to a chosen audience, and birthday & work-anniversary congratulations drafted by the platform and sent by a human; migrations `067` + `074`) |
 | 13 — Reviews & 1:1s | 🟢 **Built** (spec 042 — quarterly review sheets sealed until both sides submit and both confirm they met, ad-hoc 1:1s, a private journal, Gallup strengths parsed from the uploaded report; migration `071`) |
 
+## Notifications: who gets which email, and is it working (built 2026-10-07 — migration `078`)
+- **Asked for as** *"is there somewhere to setup who gets emails for when and what with checkmark
+  to make sure it's working and maybe test if it's working?"* — answered "partly", then
+  **mockup-approved** (`design-mockups/notification-settings/2026-10-07_who-gets-what.html`) with
+  one decision: *"all switchable"*.
+- **Built (spec 020 FR-023–028):** a health check of ticks and warnings at the top of Admin →
+  Notifications; all 18 emails listed by area with when, who and where that is decided; a tick per
+  email that saves in place; the last send per email; a sample per email (the old plain test box
+  is gone); the settings form below, unchanged in what it does.
+- **Structural:** `src/lib/email/kinds.ts` is the one list; the send functions require a key from
+  it, check that email's switch and write the `EmailLog` row themselves. `catalog.ts` is keyed by
+  it, so the type checker refuses an email without a row on the page. The congratulations nudge's
+  wording moved from the cron route into `templates.ts` (unchanged) so its sample is the real thing.
+- **Also fixed on the way:** a sending-only API key (the recommended kind) made the delivery check
+  say "the key is refused" though it sends fine — it now says the domain can't be checked from
+  here. The Communications setup banner said "the master toggle is off" where it can now also be
+  Communications' own switch — reworded to be true in both cases.
+- **Verified:** `tsc` + `next build` clean. Migration `078` applied onto a database shaped like
+  production, replayed (no-op, an existing switch survived), and compared to the schema: no
+  difference. 12 checks against the real send functions with a stand-in mail provider (sent,
+  refused, no address, switched off, main switch off, broadcasts, tests and samples not recorded).
+  In a real browser: a real time-off request recorded and shown against the manager; untick saves
+  without moving the page; all 18 samples rendered and sent with "SAMPLE"; a bad sample address
+  refused in words; no sideways scroll at phone width; no console errors.
+- **Not testable from here:** the live mail provider and Neon. The first real sends after deploy
+  are what fill "Last sent"; until then every row reads "Not sent yet".
+
 ## Learning: the admin arranges the courses (built 2026-09-15 — no migration)
 - **Asked for as** *"an option in the learning module to reorder the courses by the learning admin"*,
   then narrowed: *"ordering in the groups but I believe the groups should be quick filtered

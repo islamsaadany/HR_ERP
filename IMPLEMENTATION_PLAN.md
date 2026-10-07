@@ -27,6 +27,20 @@ Team Directory is built before Benefits on purpose: it's the cheapest way to pro
 
 ## Decisions log
 
+- **2026-10-07 — Admin → Notifications lists every email, with a switch, a last-sent status and a
+  sample (built, spec 020 FR-023–028, migration `078`).** *"For the emails notification is there
+  somewhere to setup who gets emails for when and what with checkmark to make sure it's working and
+  maybe test if it's working?"* There was one switch for all email, two inboxes and a plain test
+  message. **Decisions**, after a mockup the CEO approved: **every one of the 18 emails is
+  switchable, including the three "your money has arrived" ones** (asked explicitly — *"all
+  switchable"*); a health check at the top in ticks and warnings; the last send per email, which
+  meant recording every send (`EmailLog`) from now on — older sends cannot appear; a sample per
+  email replacing the plain test; team inboxes stay edited in one place, since each feeds two
+  emails and editing on one row would silently change the other. Recipients stay **derived where
+  each email is sent** — the page describes them and never becomes a second place deciding them.
+  Structural: the send functions now REQUIRE the email's key, so an email cannot exist without its
+  row on the page.
+
 - **2026-09-08 — The confirmer's screen is a tab on Payments, not its own surface (built, spec 041
   FR-036, no migration).** *"The confirmations of transactions is appearing in the external panel
   which is not correct, it can be part of the payments panel as a subtab for me to go and confirm

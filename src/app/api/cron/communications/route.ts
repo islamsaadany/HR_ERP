@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email/client";
+import { congratulationsWaiting } from "@/lib/email/templates";
 import { getCommsSettings } from "@/lib/comms/settings";
 import { pendingCountFor, prepareOccasions } from "@/lib/comms/drafts";
-import { appBaseUrl } from "@/lib/email/client";
 
 export const dynamic = "force-dynamic";
 
@@ -59,22 +59,9 @@ export async function GET(request: Request) {
     // Fire-and-forget, like every other operator notification here: a mail failure must never stop
     // the rest of the run. The in-app count is the guaranteed channel; this is the courtesy.
     await sendEmail({
+      kind: "comms.nudge",
       to: person.email,
-      subject:
-        waiting === 1
-          ? "A message is waiting for you to send"
-          : `${waiting} messages are waiting for you to send`,
-      html:
-        `<div style="font-family:Helvetica,Arial,sans-serif;color:#16202e;padding:24px;">` +
-        `<h2 style="margin:0 0 8px;font-size:18px;">${waiting === 1 ? "A message is waiting" : `${waiting} messages are waiting`}</h2>` +
-        `<p style="margin:0 0 12px;font-size:14px;line-height:1.6;">` +
-        `Someone on your team has a birthday or a joining anniversary coming up. The words are ` +
-        `already written — read them, change anything you like, and send.</p>` +
-        (appBaseUrl
-          ? `<p style="margin:0;"><a href="${appBaseUrl}/messages" style="background:#0f2444;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 20px;border-radius:8px;display:inline-block;">Open your messages</a></p>`
-          : "") +
-        `<p style="margin:16px 0 0;font-size:12px;color:#5f6472;">Nothing is sent until you send it.</p>` +
-        `</div>`,
+      ...congratulationsWaiting({ waiting }),
     });
     nudged += 1;
   }
